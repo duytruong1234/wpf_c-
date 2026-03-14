@@ -1,0 +1,773 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<UserControl x:Class="QuanLyKhoNguyenLieuPizza.Views.DashboardView"
+             xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006" 
+             xmlns:d="http://schemas.microsoft.com/expression/blend/2008" 
+             xmlns:vm="clr-namespace:QuanLyKhoNguyenLieuPizza.ViewModels"
+             xmlns:converters="clr-namespace:QuanLyKhoNguyenLieuPizza.Converters"
+             mc:Ignorable="d" 
+             d:DesignHeight="900" d:DesignWidth="1200">
+
+    <d:UserControl.DataContext>
+        <vm:DashboardViewModel/>
+    </d:UserControl.DataContext>
+
+    <UserControl.Resources>
+        <converters:ValueToPercentageConverter x:Key="ValueToPercentageConverter"/>
+        <converters:ValueToBarHeightConverter x:Key="ValueToBarHeightConverter"/>
+        <converters:DonutChartPathConverter x:Key="DonutChartPathConverter"/>
+
+        <!-- MODERN COLOR PALETTE -->
+        <SolidColorBrush x:Key="PrimaryBlue" Color="#5B6AFF"/>
+        <SolidColorBrush x:Key="DarkBlue" Color="#4A56D6"/>
+        <SolidColorBrush x:Key="LightBlue" Color="#EEF0FF"/>
+        <SolidColorBrush x:Key="SuccessGreen" Color="#22C55E"/>
+        <SolidColorBrush x:Key="SuccessGreenLight" Color="#F0FDF4"/>
+        <SolidColorBrush x:Key="WarningOrange" Color="#F59E0B"/>
+        <SolidColorBrush x:Key="WarningOrangeLight" Color="#FFFBEB"/>
+        <SolidColorBrush x:Key="DangerRed" Color="#EF4444"/>
+        <SolidColorBrush x:Key="DangerRedLight" Color="#FEF2F2"/>
+        <SolidColorBrush x:Key="InfoCyan" Color="#06B6D4"/>
+        <SolidColorBrush x:Key="InfoCyanLight" Color="#ECFEFF"/>
+        <SolidColorBrush x:Key="Gray50" Color="#F8FAFC"/>
+        <SolidColorBrush x:Key="Gray100" Color="#F1F5F9"/>
+        <SolidColorBrush x:Key="Gray200" Color="#E2E8F0"/>
+        <SolidColorBrush x:Key="Gray300" Color="#CBD5E1"/>
+        <SolidColorBrush x:Key="Gray400" Color="#94A3B8"/>
+        <SolidColorBrush x:Key="Gray500" Color="#64748B"/>
+        <SolidColorBrush x:Key="Gray600" Color="#475569"/>
+        <SolidColorBrush x:Key="Gray800" Color="#1E293B"/>
+        <SolidColorBrush x:Key="Gray900" Color="#0F172A"/>
+
+        <!-- Card Style -->
+        <Style x:Key="CardStyle" TargetType="Border">
+            <Setter Property="Background" Value="White"/>
+            <Setter Property="CornerRadius" Value="16"/>
+            <Setter Property="Effect">
+                <Setter.Value>
+                    <DropShadowEffect BlurRadius="24" ShadowDepth="2" Direction="270" Color="#000000" Opacity="0.05"/>
+                </Setter.Value>
+            </Setter>
+        </Style>
+    </UserControl.Resources>
+
+    <!-- Main Content -->
+    <Grid Background="{StaticResource Gray50}">
+        <ScrollViewer VerticalScrollBarVisibility="Auto" HorizontalScrollBarVisibility="Disabled">
+            <Grid Margin="30,20,30,30">
+                <Grid.RowDefinitions>
+                    <RowDefinition Height="Auto"/>
+                    <RowDefinition Height="Auto"/>
+                    <RowDefinition Height="Auto"/>
+                    <RowDefinition Height="Auto"/>
+                    <RowDefinition Height="Auto"/>
+                    <RowDefinition Height="Auto"/>
+                </Grid.RowDefinitions>
+
+                <!-- HEADER SECTION -->
+                <Grid Grid.Row="0" Margin="0,0,0,24">
+                    <Grid.ColumnDefinitions>
+                        <ColumnDefinition Width="*"/>
+                        <ColumnDefinition Width="Auto"/>
+                    </Grid.ColumnDefinitions>
+
+                    <StackPanel Grid.Column="0" Orientation="Horizontal" VerticalAlignment="Center">
+                        <Border Background="{StaticResource LightBlue}" CornerRadius="12" Width="44" Height="44" Margin="0,0,14,0">
+                            <TextBlock Text="&#xE80F;" FontFamily="Segoe MDL2 Assets" FontSize="20" 
+                                       Foreground="{StaticResource PrimaryBlue}" 
+                                       HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                        </Border>
+                        <StackPanel VerticalAlignment="Center">
+                            <TextBlock Text="T?ng quan" FontSize="22" FontWeight="Bold" Foreground="{StaticResource Gray900}"/>
+                            <TextBlock Text="Theo d�i t�nh tr?ng kho nguy�n li?u" FontSize="12" 
+                                       Foreground="{StaticResource Gray400}" Margin="0,2,0,0"/>
+                        </StackPanel>
+                    </StackPanel>
+
+                    <!-- Refresh Button -->
+                    <Button Grid.Column="1" Command="{Binding RefreshCommand}" Cursor="Hand" VerticalAlignment="Center">
+                        <Button.Template>
+                            <ControlTemplate TargetType="Button">
+                                <Border x:Name="border" Background="White" BorderBrush="{StaticResource Gray200}" 
+                                        BorderThickness="1" CornerRadius="10" Width="44" Height="44">
+                                    <Border.Effect>
+                                        <DropShadowEffect BlurRadius="8" ShadowDepth="1" Direction="270" Color="#000000" Opacity="0.04"/>
+                                    </Border.Effect>
+                                    <TextBlock Text="&#xE72C;" FontFamily="Segoe MDL2 Assets" FontSize="16" 
+                                               Foreground="{StaticResource Gray600}" 
+                                               HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                                </Border>
+                                <ControlTemplate.Triggers>
+                                    <Trigger Property="IsMouseOver" Value="True">
+                                        <Setter TargetName="border" Property="Background" Value="{StaticResource Gray100}"/>
+                                    </Trigger>
+                                </ControlTemplate.Triggers>
+                            </ControlTemplate>
+                        </Button.Template>
+                    </Button>
+                </Grid>
+
+                <!-- STAT CARDS ROW -->
+                <Grid Grid.Row="1" Margin="0,0,0,24">
+                    <Grid.ColumnDefinitions>
+                        <ColumnDefinition Width="*"/>
+                        <ColumnDefinition Width="16"/>
+                        <ColumnDefinition Width="*"/>
+                        <ColumnDefinition Width="16"/>
+                        <ColumnDefinition Width="*"/>
+                        <ColumnDefinition Width="16"/>
+                        <ColumnDefinition Width="*"/>
+                    </Grid.ColumnDefinitions>
+
+                    <!-- Card 1: T?ng nguy�n li?u -->
+                    <Border Grid.Column="0" Style="{StaticResource CardStyle}" Padding="22">
+                        <Grid>
+                            <Grid.ColumnDefinitions>
+                                <ColumnDefinition Width="*"/>
+                                <ColumnDefinition Width="Auto"/>
+                            </Grid.ColumnDefinitions>
+                            <StackPanel Grid.Column="0">
+                                <TextBlock Text="T?ng nguy�n li?u" FontSize="13" Foreground="{StaticResource Gray500}" Margin="0,0,0,10"/>
+                                <TextBlock Text="{Binding SoLuongTonKho}" FontSize="32" FontWeight="Bold" Foreground="{StaticResource Gray900}" Margin="0,0,0,8"/>
+                                <StackPanel Orientation="Horizontal">
+                                    <Border Background="{StaticResource SuccessGreenLight}" CornerRadius="6" Padding="8,3">
+                                        <TextBlock Text="�ang t?n kho" FontSize="11" FontWeight="Medium" Foreground="{StaticResource SuccessGreen}"/>
+                                    </Border>
+                                </StackPanel>
+                            </StackPanel>
+                            <Border Grid.Column="1" Width="48" Height="48" CornerRadius="14" 
+                                    Background="{StaticResource LightBlue}" VerticalAlignment="Top">
+                                <TextBlock Text="&#xE7B8;" FontFamily="Segoe MDL2 Assets" FontSize="22" 
+                                           Foreground="{StaticResource PrimaryBlue}" 
+                                           HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                            </Border>
+                        </Grid>
+                    </Border>
+
+                    <!-- Card 2: T?n kho th?p -->
+                    <Border Grid.Column="2" Style="{StaticResource CardStyle}" Padding="22">
+                        <Grid>
+                            <Grid.ColumnDefinitions>
+                                <ColumnDefinition Width="*"/>
+                                <ColumnDefinition Width="Auto"/>
+                            </Grid.ColumnDefinitions>
+                            <StackPanel Grid.Column="0">
+                                <TextBlock Text="T?n kho th?p" FontSize="13" Foreground="{StaticResource Gray500}" Margin="0,0,0,10"/>
+                                <TextBlock Text="{Binding SoLuongTonKhoThap}" FontSize="32" FontWeight="Bold" Foreground="{StaticResource Gray900}" Margin="0,0,0,8"/>
+                                <StackPanel Orientation="Horizontal">
+                                    <Border Background="{StaticResource WarningOrangeLight}" CornerRadius="6" Padding="8,3">
+                                        <TextBlock Text="C?n b? sung" FontSize="11" FontWeight="Medium" Foreground="{StaticResource WarningOrange}"/>
+                                    </Border>
+                                </StackPanel>
+                            </StackPanel>
+                            <Border Grid.Column="1" Width="48" Height="48" CornerRadius="14" 
+                                    Background="{StaticResource WarningOrangeLight}" VerticalAlignment="Top">
+                                <TextBlock Text="&#xE7BA;" FontFamily="Segoe MDL2 Assets" FontSize="22" 
+                                           Foreground="{StaticResource WarningOrange}" 
+                                           HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                            </Border>
+                        </Grid>
+                    </Border>
+
+                    <!-- Card 3: S?p h?t h?n -->
+                    <Border Grid.Column="4" Style="{StaticResource CardStyle}" Padding="22">
+                        <Grid>
+                            <Grid.ColumnDefinitions>
+                                <ColumnDefinition Width="*"/>
+                                <ColumnDefinition Width="Auto"/>
+                            </Grid.ColumnDefinitions>
+                            <StackPanel Grid.Column="0">
+                                <TextBlock Text="S?p h?t h?n" FontSize="13" Foreground="{StaticResource Gray500}" Margin="0,0,0,10"/>
+                                <TextBlock Text="{Binding SoLuongSapHetHan}" FontSize="32" FontWeight="Bold" Foreground="{StaticResource Gray900}" Margin="0,0,0,8"/>
+                                <StackPanel Orientation="Horizontal">
+                                    <Border Background="{StaticResource InfoCyanLight}" CornerRadius="6" Padding="8,3">
+                                        <TextBlock Text="Trong 7 ng�y" FontSize="11" FontWeight="Medium" Foreground="{StaticResource InfoCyan}"/>
+                                    </Border>
+                                </StackPanel>
+                            </StackPanel>
+                            <Border Grid.Column="1" Width="48" Height="48" CornerRadius="14" 
+                                    Background="{StaticResource InfoCyanLight}" VerticalAlignment="Top">
+                                <TextBlock Text="&#xE823;" FontFamily="Segoe MDL2 Assets" FontSize="22" 
+                                           Foreground="{StaticResource InfoCyan}" 
+                                           HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                            </Border>
+                        </Grid>
+                    </Border>
+
+                    <!-- Card 4: �� h?t h?n -->
+                    <Border Grid.Column="6" Style="{StaticResource CardStyle}" Padding="22">
+                        <Grid>
+                            <Grid.ColumnDefinitions>
+                                <ColumnDefinition Width="*"/>
+                                <ColumnDefinition Width="Auto"/>
+                            </Grid.ColumnDefinitions>
+                            <StackPanel Grid.Column="0">
+                                <TextBlock Text="�� h?t h?n" FontSize="13" Foreground="{StaticResource Gray500}" Margin="0,0,0,10"/>
+                                <TextBlock Text="{Binding SoLuongHetHan}" FontSize="32" FontWeight="Bold" Foreground="{StaticResource Gray900}" Margin="0,0,0,8"/>
+                                <StackPanel Orientation="Horizontal">
+                                    <Border Background="{StaticResource DangerRedLight}" CornerRadius="6" Padding="8,3">
+                                        <TextBlock Text="C?n x? l�" FontSize="11" FontWeight="Medium" Foreground="{StaticResource DangerRed}"/>
+                                    </Border>
+                                </StackPanel>
+                            </StackPanel>
+                            <Border Grid.Column="1" Width="48" Height="48" CornerRadius="14" 
+                                    Background="{StaticResource DangerRedLight}" VerticalAlignment="Top">
+                                <TextBlock Text="&#xE783;" FontFamily="Segoe MDL2 Assets" FontSize="22" 
+                                           Foreground="{StaticResource DangerRed}" 
+                                           HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                            </Border>
+                        </Grid>
+                    </Border>
+                </Grid>
+
+                <!-- CHARTS ROW -->
+                <Grid Grid.Row="2">
+                    <Grid.ColumnDefinitions>
+                        <ColumnDefinition Width="1.5*"/>
+                        <ColumnDefinition Width="20"/>
+                        <ColumnDefinition Width="*"/>
+                    </Grid.ColumnDefinitions>
+
+                    <!-- Line Chart: Th?ng k� nh?p xu?t -->
+                    <Border Grid.Column="0" Style="{StaticResource CardStyle}" Padding="28">
+                        <Grid>
+                            <Grid.RowDefinitions>
+                                <RowDefinition Height="Auto"/>
+                                <RowDefinition Height="*"/>
+                            </Grid.RowDefinitions>
+
+                            <!-- Chart Header -->
+                            <StackPanel Grid.Row="0" Orientation="Horizontal" Margin="0,0,0,24">
+                                <Border Background="{StaticResource LightBlue}" CornerRadius="10" Width="36" Height="36" Margin="0,0,12,0">
+                                    <TextBlock Text="&#xE9D2;" FontFamily="Segoe MDL2 Assets" FontSize="16" 
+                                               Foreground="{StaticResource PrimaryBlue}" 
+                                               HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                                </Border>
+                                <StackPanel VerticalAlignment="Center">
+                                    <TextBlock Text="Th?ng k� nh?p xu?t tu?n n�y" FontSize="16" FontWeight="SemiBold" 
+                                               Foreground="{StaticResource Gray900}"/>
+                                    <TextBlock Text="Bi?u d? xu hu?ng 7 ng�y" FontSize="11" 
+                                               Foreground="{StaticResource Gray400}" Margin="0,2,0,0"/>
+                                </StackPanel>
+                            </StackPanel>
+
+                            <!-- Line Chart -->
+                            <Grid Grid.Row="1" Height="220">
+                                <!-- Y-Axis Labels -->
+                                <StackPanel HorizontalAlignment="Left" VerticalAlignment="Stretch" Width="40">
+                                    <TextBlock Text="100" FontSize="11" Foreground="{StaticResource Gray400}" Margin="0,0,0,40"/>
+                                    <TextBlock Text="75" FontSize="11" Foreground="{StaticResource Gray400}" Margin="0,0,0,40"/>
+                                    <TextBlock Text="50" FontSize="11" Foreground="{StaticResource Gray400}" Margin="0,0,0,40"/>
+                                    <TextBlock Text="25" FontSize="11" Foreground="{StaticResource Gray400}" Margin="0,0,0,40"/>
+                                    <TextBlock Text="0" FontSize="11" Foreground="{StaticResource Gray400}"/>
+                                </StackPanel>
+
+                                <!-- Chart Area -->
+                                <Canvas Margin="50,0,10,30">
+                                    <!-- Grid Lines -->
+                                    <Line X1="0" Y1="0" X2="600" Y2="0" Stroke="#F1F5F9" StrokeThickness="1"/>
+                                    <Line X1="0" Y1="45" X2="600" Y2="45" Stroke="#F1F5F9" StrokeThickness="1"/>
+                                    <Line X1="0" Y1="90" X2="600" Y2="90" Stroke="#F1F5F9" StrokeThickness="1"/>
+                                    <Line X1="0" Y1="135" X2="600" Y2="135" Stroke="#F1F5F9" StrokeThickness="1"/>
+                                    <Line X1="0" Y1="180" X2="600" Y2="180" Stroke="#F1F5F9" StrokeThickness="1"/>
+
+                                    <!-- Area fill under line -->
+                                    <Polygon Points="0,150 80,130 160,140 240,100 320,80 400,60 480,70 480,180 0,180"
+                                             Opacity="0.08">
+                                        <Polygon.Fill>
+                                            <LinearGradientBrush StartPoint="0,0" EndPoint="0,1">
+                                                <GradientStop Color="#5B6AFF" Offset="0"/>
+                                                <GradientStop Color="#5B6AFF" Offset="1"/>
+                                            </LinearGradientBrush>
+                                        </Polygon.Fill>
+                                    </Polygon>
+
+                                    <!-- Line Chart -->
+                                    <Polyline Points="0,150 80,130 160,140 240,100 320,80 400,60 480,70" 
+                                              Stroke="#5B6AFF" StrokeThickness="3" Fill="Transparent"
+                                              StrokeLineJoin="Round"/>
+
+                                    <!-- Data Points -->
+                                    <Ellipse Width="10" Height="10" Fill="White" Stroke="#5B6AFF" StrokeThickness="2.5" Canvas.Left="-5" Canvas.Top="145"/>
+                                    <Ellipse Width="10" Height="10" Fill="White" Stroke="#5B6AFF" StrokeThickness="2.5" Canvas.Left="75" Canvas.Top="125"/>
+                                    <Ellipse Width="10" Height="10" Fill="White" Stroke="#5B6AFF" StrokeThickness="2.5" Canvas.Left="155" Canvas.Top="135"/>
+                                    <Ellipse Width="10" Height="10" Fill="White" Stroke="#5B6AFF" StrokeThickness="2.5" Canvas.Left="235" Canvas.Top="95"/>
+                                    <Ellipse Width="10" Height="10" Fill="White" Stroke="#5B6AFF" StrokeThickness="2.5" Canvas.Left="315" Canvas.Top="75"/>
+                                    <Ellipse Width="10" Height="10" Fill="White" Stroke="#5B6AFF" StrokeThickness="2.5" Canvas.Left="395" Canvas.Top="55"/>
+                                    <Ellipse Width="10" Height="10" Fill="White" Stroke="#5B6AFF" StrokeThickness="2.5" Canvas.Left="475" Canvas.Top="65"/>
+                                </Canvas>
+
+                                <!-- X-Axis Labels -->
+                                <StackPanel Orientation="Horizontal" VerticalAlignment="Bottom" Margin="50,0,10,0">
+                                    <TextBlock Text="T2" FontSize="12" Foreground="{StaticResource Gray400}" Width="80" TextAlignment="Center"/>
+                                    <TextBlock Text="T3" FontSize="12" Foreground="{StaticResource Gray400}" Width="80" TextAlignment="Center"/>
+                                    <TextBlock Text="T4" FontSize="12" Foreground="{StaticResource Gray400}" Width="80" TextAlignment="Center"/>
+                                    <TextBlock Text="T5" FontSize="12" Foreground="{StaticResource Gray400}" Width="80" TextAlignment="Center"/>
+                                    <TextBlock Text="T6" FontSize="12" Foreground="{StaticResource Gray400}" Width="80" TextAlignment="Center"/>
+                                    <TextBlock Text="T7" FontSize="12" Foreground="{StaticResource Gray400}" Width="80" TextAlignment="Center"/>
+                                    <TextBlock Text="CN" FontSize="12" Foreground="{StaticResource Gray400}" Width="80" TextAlignment="Center"/>
+                                </StackPanel>
+                            </Grid>
+                        </Grid>
+                    </Border>
+
+                    <!-- Bar Chart: Tr?ng th�i nguy�n li?u -->
+                    <Border Grid.Column="2" Style="{StaticResource CardStyle}" Padding="28">
+                        <Grid>
+                            <Grid.RowDefinitions>
+                                <RowDefinition Height="Auto"/>
+                                <RowDefinition Height="*"/>
+                            </Grid.RowDefinitions>
+
+                            <!-- Chart Header -->
+                            <StackPanel Grid.Row="0" Orientation="Horizontal" Margin="0,0,0,24">
+                                <Border Background="{StaticResource WarningOrangeLight}" CornerRadius="10" Width="36" Height="36" Margin="0,0,12,0">
+                                    <TextBlock Text="&#xE9D9;" FontFamily="Segoe MDL2 Assets" FontSize="16" 
+                                               Foreground="{StaticResource WarningOrange}" 
+                                               HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                                </Border>
+                                <StackPanel VerticalAlignment="Center">
+                                    <TextBlock Text="Tr?ng th�i nguy�n li?u" FontSize="16" FontWeight="SemiBold" 
+                                               Foreground="{StaticResource Gray900}"/>
+                                    <TextBlock Text="Ph�n lo?i theo t�nh tr?ng" FontSize="11" 
+                                               Foreground="{StaticResource Gray400}" Margin="0,2,0,0"/>
+                                </StackPanel>
+                            </StackPanel>
+
+                            <!-- Bar Chart -->
+                            <Grid Grid.Row="1" Height="220">
+                                <Grid.ColumnDefinitions>
+                                    <ColumnDefinition Width="*"/>
+                                    <ColumnDefinition Width="*"/>
+                                    <ColumnDefinition Width="*"/>
+                                    <ColumnDefinition Width="*"/>
+                                </Grid.ColumnDefinitions>
+
+                                <!-- Bar 1: T?n kho -->
+                                <StackPanel Grid.Column="0" VerticalAlignment="Bottom" HorizontalAlignment="Center">
+                                    <TextBlock Text="{Binding SoLuongTonKho}" FontSize="14" FontWeight="Bold" 
+                                               Foreground="{StaticResource PrimaryBlue}" HorizontalAlignment="Center" Margin="0,0,0,8"/>
+                                    <Border Width="42" CornerRadius="8,8,0,0" Background="{StaticResource PrimaryBlue}"
+                                            Height="{Binding SoLuongTonKho, Converter={StaticResource ValueToBarHeightConverter}, ConverterParameter='140,10'}">
+                                        <Border.Effect>
+                                            <DropShadowEffect BlurRadius="8" ShadowDepth="1" Direction="270" Color="#5B6AFF" Opacity="0.2"/>
+                                        </Border.Effect>
+                                    </Border>
+                                    <TextBlock Text="T?n kho" FontSize="11" Foreground="{StaticResource Gray500}" 
+                                               HorizontalAlignment="Center" Margin="0,10,0,0" FontWeight="Medium"/>
+                                </StackPanel>
+
+                                <!-- Bar 2: T?n th?p -->
+                                <StackPanel Grid.Column="1" VerticalAlignment="Bottom" HorizontalAlignment="Center">
+                                    <TextBlock Text="{Binding SoLuongTonKhoThap}" FontSize="14" FontWeight="Bold" 
+                                               Foreground="{StaticResource WarningOrange}" HorizontalAlignment="Center" Margin="0,0,0,8"/>
+                                    <Border Width="42" CornerRadius="8,8,0,0" Background="{StaticResource WarningOrange}"
+                                            Height="{Binding SoLuongTonKhoThap, Converter={StaticResource ValueToBarHeightConverter}, ConverterParameter='140,10'}">
+                                        <Border.Effect>
+                                            <DropShadowEffect BlurRadius="8" ShadowDepth="1" Direction="270" Color="#F59E0B" Opacity="0.2"/>
+                                        </Border.Effect>
+                                    </Border>
+                                    <TextBlock Text="T?n th?p" FontSize="11" Foreground="{StaticResource Gray500}" 
+                                               HorizontalAlignment="Center" Margin="0,10,0,0" FontWeight="Medium"/>
+                                </StackPanel>
+
+                                <!-- Bar 3: S?p h?t h?n -->
+                                <StackPanel Grid.Column="2" VerticalAlignment="Bottom" HorizontalAlignment="Center">
+                                    <TextBlock Text="{Binding SoLuongSapHetHan}" FontSize="14" FontWeight="Bold" 
+                                               Foreground="{StaticResource InfoCyan}" HorizontalAlignment="Center" Margin="0,0,0,8"/>
+                                    <Border Width="42" CornerRadius="8,8,0,0" Background="{StaticResource InfoCyan}"
+                                            Height="{Binding SoLuongSapHetHan, Converter={StaticResource ValueToBarHeightConverter}, ConverterParameter='140,10'}">
+                                        <Border.Effect>
+                                            <DropShadowEffect BlurRadius="8" ShadowDepth="1" Direction="270" Color="#06B6D4" Opacity="0.2"/>
+                                        </Border.Effect>
+                                    </Border>
+                                    <TextBlock Text="S?p h?t h?n" FontSize="11" Foreground="{StaticResource Gray500}" 
+                                               HorizontalAlignment="Center" Margin="0,10,0,0" FontWeight="Medium" TextWrapping="Wrap" TextAlignment="Center"/>
+                                </StackPanel>
+
+                                <!-- Bar 4: H?t h?n -->
+                                <StackPanel Grid.Column="3" VerticalAlignment="Bottom" HorizontalAlignment="Center">
+                                    <TextBlock Text="{Binding SoLuongHetHan}" FontSize="14" FontWeight="Bold" 
+                                               Foreground="{StaticResource DangerRed}" HorizontalAlignment="Center" Margin="0,0,0,8"/>
+                                    <Border Width="42" CornerRadius="8,8,0,0" Background="{StaticResource DangerRed}"
+                                            Height="{Binding SoLuongHetHan, Converter={StaticResource ValueToBarHeightConverter}, ConverterParameter='140,10'}">
+                                        <Border.Effect>
+                                            <DropShadowEffect BlurRadius="8" ShadowDepth="1" Direction="270" Color="#EF4444" Opacity="0.2"/>
+                                        </Border.Effect>
+                                    </Border>
+                                    <TextBlock Text="H?t h?n" FontSize="11" Foreground="{StaticResource Gray500}" 
+                                               HorizontalAlignment="Center" Margin="0,10,0,0" FontWeight="Medium"/>
+                                </StackPanel>
+                            </Grid>
+                        </Grid>
+                    </Border>
+                </Grid>
+
+                <!-- SALES SECTION DIVIDER -->
+                <Grid Grid.Row="3" Margin="0,32,0,24">
+                    <Grid.ColumnDefinitions>
+                        <ColumnDefinition Width="*"/>
+                        <ColumnDefinition Width="Auto"/>
+                    </Grid.ColumnDefinitions>
+
+                    <StackPanel Grid.Column="0" Orientation="Horizontal" VerticalAlignment="Center">
+                        <Border CornerRadius="12" Width="44" Height="44" Margin="0,0,14,0">
+                            <Border.Background>
+                                <LinearGradientBrush StartPoint="0,0" EndPoint="1,1">
+                                    <GradientStop Color="#FEF3C7" Offset="0"/>
+                                    <GradientStop Color="#FDE68A" Offset="1"/>
+                                </LinearGradientBrush>
+                            </Border.Background>
+                            <TextBlock Text="&#xE7BF;" FontFamily="Segoe MDL2 Assets" FontSize="20" 
+                                       Foreground="#D97706" HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                        </Border>
+                        <StackPanel VerticalAlignment="Center">
+                            <TextBlock Text="Doanh thu &amp; B�n h�ng" FontSize="22" FontWeight="Bold" Foreground="{StaticResource Gray900}"/>
+                            <TextBlock Text="Th?ng k� doanh thu, chi ph� v� l?i nhu?n" FontSize="12" 
+                                       Foreground="{StaticResource Gray400}" Margin="0,2,0,0"/>
+                        </StackPanel>
+                    </StackPanel>
+                </Grid>
+
+                <!-- SALES STAT CARDS -->
+                <Grid Grid.Row="4" Margin="0,0,0,24">
+                    <Grid.ColumnDefinitions>
+                        <ColumnDefinition Width="*"/>
+                        <ColumnDefinition Width="16"/>
+                        <ColumnDefinition Width="*"/>
+                        <ColumnDefinition Width="16"/>
+                        <ColumnDefinition Width="*"/>
+                        <ColumnDefinition Width="16"/>
+                        <ColumnDefinition Width="*"/>
+                    </Grid.ColumnDefinitions>
+
+                    <!-- Card: Doanh thu h�m nay -->
+                    <Border Grid.Column="0" Style="{StaticResource CardStyle}" Padding="22">
+                        <Grid>
+                            <Grid.ColumnDefinitions>
+                                <ColumnDefinition Width="*"/>
+                                <ColumnDefinition Width="Auto"/>
+                            </Grid.ColumnDefinitions>
+                            <StackPanel Grid.Column="0">
+                                <TextBlock Text="Doanh thu h�m nay" FontSize="13" Foreground="{StaticResource Gray500}" Margin="0,0,0,10"/>
+                                <TextBlock Text="{Binding DoanhThuHomNay, StringFormat='{}{0:N0}d'}" FontSize="24" FontWeight="Bold" Foreground="{StaticResource Gray900}" Margin="0,0,0,8"/>
+                                <StackPanel Orientation="Horizontal">
+                                    <Border Background="{StaticResource LightBlue}" CornerRadius="6" Padding="8,3">
+                                        <TextBlock FontSize="11" FontWeight="Medium" Foreground="{StaticResource PrimaryBlue}">
+                                            <Run Text="{Binding TongDonHomNay, Mode=OneWay}"/>
+                                            <Run Text=" don h�ng"/>
+                                        </TextBlock>
+                                    </Border>
+                                </StackPanel>
+                            </StackPanel>
+                            <Border Grid.Column="1" Width="48" Height="48" CornerRadius="14" VerticalAlignment="Top">
+                                <Border.Background>
+                                    <LinearGradientBrush StartPoint="0,0" EndPoint="1,1">
+                                        <GradientStop Color="#DBEAFE" Offset="0"/>
+                                        <GradientStop Color="#EEF0FF" Offset="1"/>
+                                    </LinearGradientBrush>
+                                </Border.Background>
+                                <TextBlock Text="&#xE7BF;" FontFamily="Segoe MDL2 Assets" FontSize="22" 
+                                           Foreground="{StaticResource PrimaryBlue}" 
+                                           HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                            </Border>
+                        </Grid>
+                    </Border>
+
+                    <!-- Card: Doanh thu th�ng -->
+                    <Border Grid.Column="2" Style="{StaticResource CardStyle}" Padding="22">
+                        <Grid>
+                            <Grid.ColumnDefinitions>
+                                <ColumnDefinition Width="*"/>
+                                <ColumnDefinition Width="Auto"/>
+                            </Grid.ColumnDefinitions>
+                            <StackPanel Grid.Column="0">
+                                <TextBlock Text="Doanh thu th�ng" FontSize="13" Foreground="{StaticResource Gray500}" Margin="0,0,0,10"/>
+                                <TextBlock Text="{Binding DoanhThuThang, StringFormat='{}{0:N0}d'}" FontSize="24" FontWeight="Bold" Foreground="{StaticResource Gray900}" Margin="0,0,0,8"/>
+                                <StackPanel Orientation="Horizontal">
+                                    <Border Background="{StaticResource SuccessGreenLight}" CornerRadius="6" Padding="8,3">
+                                        <TextBlock FontSize="11" FontWeight="Medium" Foreground="{StaticResource SuccessGreen}">
+                                            <Run Text="{Binding TongDonThang, Mode=OneWay}"/>
+                                            <Run Text=" don ho�n th�nh"/>
+                                        </TextBlock>
+                                    </Border>
+                                </StackPanel>
+                            </StackPanel>
+                            <Border Grid.Column="1" Width="48" Height="48" CornerRadius="14" 
+                                    Background="{StaticResource SuccessGreenLight}" VerticalAlignment="Top">
+                                <TextBlock Text="&#xE9D2;" FontFamily="Segoe MDL2 Assets" FontSize="22" 
+                                           Foreground="{StaticResource SuccessGreen}" 
+                                           HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                            </Border>
+                        </Grid>
+                    </Border>
+
+                    <!-- Card: Chi ph� nguy�n li?u -->
+                    <Border Grid.Column="4" Style="{StaticResource CardStyle}" Padding="22">
+                        <Grid>
+                            <Grid.ColumnDefinitions>
+                                <ColumnDefinition Width="*"/>
+                                <ColumnDefinition Width="Auto"/>
+                            </Grid.ColumnDefinitions>
+                            <StackPanel Grid.Column="0">
+                                <TextBlock Text="Chi ph� NL th�ng" FontSize="13" Foreground="{StaticResource Gray500}" Margin="0,0,0,10"/>
+                                <TextBlock Text="{Binding ChiPhiNguyenLieuThang, StringFormat='{}{0:N0}d'}" FontSize="24" FontWeight="Bold" Foreground="#DC2626" Margin="0,0,0,8"/>
+                                <StackPanel Orientation="Horizontal">
+                                    <Border Background="{StaticResource DangerRedLight}" CornerRadius="6" Padding="8,3">
+                                        <TextBlock Text="Gi� v?n nguy�n li?u" FontSize="11" FontWeight="Medium" Foreground="{StaticResource DangerRed}"/>
+                                    </Border>
+                                </StackPanel>
+                            </StackPanel>
+                            <Border Grid.Column="1" Width="48" Height="48" CornerRadius="14" 
+                                    Background="{StaticResource DangerRedLight}" VerticalAlignment="Top">
+                                <TextBlock Text="&#xE7B8;" FontFamily="Segoe MDL2 Assets" FontSize="22" 
+                                           Foreground="{StaticResource DangerRed}" 
+                                           HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                            </Border>
+                        </Grid>
+                    </Border>
+
+                    <!-- Card: L?i nhu?n r�ng -->
+                    <Border Grid.Column="6" Style="{StaticResource CardStyle}" Padding="22">
+                        <Grid>
+                            <Grid.ColumnDefinitions>
+                                <ColumnDefinition Width="*"/>
+                                <ColumnDefinition Width="Auto"/>
+                            </Grid.ColumnDefinitions>
+                            <StackPanel Grid.Column="0">
+                                <TextBlock Text="L?i nhu?n th�ng" FontSize="13" Foreground="{StaticResource Gray500}" Margin="0,0,0,10"/>
+                                <TextBlock Text="{Binding LoiNhuanThang, StringFormat='{}{0:N0}d'}" FontSize="24" FontWeight="Bold" Foreground="#059669" Margin="0,0,0,8"/>
+                                <StackPanel Orientation="Horizontal">
+                                    <Border CornerRadius="6" Padding="8,3">
+                                        <Border.Background>
+                                            <SolidColorBrush Color="#D1FAE5"/>
+                                        </Border.Background>
+                                        <TextBlock Text="Doanh thu - Chi ph� NL" FontSize="11" FontWeight="Medium" Foreground="#059669"/>
+                                    </Border>
+                                </StackPanel>
+                            </StackPanel>
+                            <Border Grid.Column="1" Width="48" Height="48" CornerRadius="14" VerticalAlignment="Top">
+                                <Border.Background>
+                                    <SolidColorBrush Color="#D1FAE5"/>
+                                </Border.Background>
+                                <TextBlock Text="&#xE8CB;" FontFamily="Segoe MDL2 Assets" FontSize="22" 
+                                           Foreground="#059669" 
+                                           HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                            </Border>
+                        </Grid>
+                    </Border>
+                </Grid>
+
+                <!-- TOP PIZZA + RECENT ORDERS -->
+                <Grid Grid.Row="5">
+                    <Grid.ColumnDefinitions>
+                        <ColumnDefinition Width="*"/>
+                        <ColumnDefinition Width="20"/>
+                        <ColumnDefinition Width="1.5*"/>
+                    </Grid.ColumnDefinitions>
+
+                    <!-- Top Pizza b�n ch?y -->
+                    <Border Grid.Column="0" Style="{StaticResource CardStyle}" Padding="24">
+                        <Grid>
+                            <Grid.RowDefinitions>
+                                <RowDefinition Height="Auto"/>
+                                <RowDefinition Height="*"/>
+                            </Grid.RowDefinitions>
+
+                            <StackPanel Grid.Row="0" Orientation="Horizontal" Margin="0,0,0,20">
+                                <Border Background="{StaticResource WarningOrangeLight}" CornerRadius="10" Width="36" Height="36" Margin="0,0,12,0">
+                                    <TextBlock Text="&#xE735;" FontFamily="Segoe MDL2 Assets" FontSize="16" 
+                                               Foreground="{StaticResource WarningOrange}" 
+                                               HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                                </Border>
+                                <StackPanel VerticalAlignment="Center">
+                                    <TextBlock Text="Top Pizza b�n ch?y" FontSize="16" FontWeight="SemiBold" Foreground="{StaticResource Gray900}"/>
+                                    <TextBlock Text="Trong th�ng n�y" FontSize="11" Foreground="{StaticResource Gray400}" Margin="0,2,0,0"/>
+                                </StackPanel>
+                            </StackPanel>
+
+                            <ItemsControl Grid.Row="1" ItemsSource="{Binding TopPizzas}">
+                                <ItemsControl.ItemTemplate>
+                                    <DataTemplate>
+                                        <Border Margin="0,0,0,8" Padding="14,12" CornerRadius="12">
+                                            <Border.Style>
+                                                <Style TargetType="Border">
+                                                    <Setter Property="Background" Value="#FAFAFA"/>
+                                                    <Style.Triggers>
+                                                        <Trigger Property="IsMouseOver" Value="True">
+                                                            <Setter Property="Background" Value="#F1F5F9"/>
+                                                        </Trigger>
+                                                    </Style.Triggers>
+                                                </Style>
+                                            </Border.Style>
+                                            <Grid>
+                                                <Grid.ColumnDefinitions>
+                                                    <ColumnDefinition Width="Auto"/>
+                                                    <ColumnDefinition Width="*"/>
+                                                    <ColumnDefinition Width="Auto"/>
+                                                </Grid.ColumnDefinitions>
+
+                                                <Border Grid.Column="0" Width="32" Height="32" CornerRadius="10" Margin="0,0,12,0">
+                                                    <Border.Style>
+                                                        <Style TargetType="Border">
+                                                            <Setter Property="Background" Value="#E2E8F0"/>
+                                                            <Style.Triggers>
+                                                                <DataTrigger Binding="{Binding Rank}" Value="1">
+                                                                    <Setter Property="Background" Value="#FEF3C7"/>
+                                                                </DataTrigger>
+                                                                <DataTrigger Binding="{Binding Rank}" Value="2">
+                                                                    <Setter Property="Background" Value="#E2E8F0"/>
+                                                                </DataTrigger>
+                                                                <DataTrigger Binding="{Binding Rank}" Value="3">
+                                                                    <Setter Property="Background" Value="#FED7AA"/>
+                                                                </DataTrigger>
+                                                            </Style.Triggers>
+                                                        </Style>
+                                                    </Border.Style>
+                                                    <TextBlock Text="{Binding Rank}" FontSize="13" FontWeight="Bold" 
+                                                               Foreground="#64748B" HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                                                </Border>
+
+                                                <StackPanel Grid.Column="1" VerticalAlignment="Center">
+                                                    <StackPanel Orientation="Horizontal">
+                                                        <TextBlock Text="{Binding TenPizza}" FontSize="14" FontWeight="SemiBold" Foreground="#1E293B"/>
+                                                        <Border Background="#EEF0FF" CornerRadius="4" Padding="6,2" Margin="8,0,0,0" VerticalAlignment="Center">
+                                                            <TextBlock Text="{Binding KichThuoc}" FontSize="10" FontWeight="Bold" Foreground="#5B6AFF"/>
+                                                        </Border>
+                                                    </StackPanel>
+                                                    <TextBlock FontSize="11" Foreground="#94A3B8" Margin="0,2,0,0">
+                                                        <Run Text="{Binding SoLuongBan, Mode=OneWay}"/>
+                                                        <Run Text=" d� b�n"/>
+                                                    </TextBlock>
+                                                </StackPanel>
+
+                                                <TextBlock Grid.Column="2" Text="{Binding DoanhThu, StringFormat='{}{0:N0}d'}" 
+                                                           FontSize="13" FontWeight="SemiBold" Foreground="#059669" VerticalAlignment="Center"/>
+                                            </Grid>
+                                        </Border>
+                                    </DataTemplate>
+                                </ItemsControl.ItemTemplate>
+                            </ItemsControl>
+                        </Grid>
+                    </Border>
+
+                    <!-- �on h�ng g?n d�y -->
+                    <Border Grid.Column="2" Style="{StaticResource CardStyle}" Padding="24">
+                        <Grid>
+                            <Grid.RowDefinitions>
+                                <RowDefinition Height="Auto"/>
+                                <RowDefinition Height="Auto"/>
+                                <RowDefinition Height="*"/>
+                            </Grid.RowDefinitions>
+
+                            <StackPanel Grid.Row="0" Orientation="Horizontal" Margin="0,0,0,20">
+                                <Border Background="{StaticResource LightBlue}" CornerRadius="10" Width="36" Height="36" Margin="0,0,12,0">
+                                    <TextBlock Text="&#xE7BF;" FontFamily="Segoe MDL2 Assets" FontSize="16" 
+                                               Foreground="{StaticResource PrimaryBlue}" 
+                                               HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                                </Border>
+                                <StackPanel VerticalAlignment="Center">
+                                    <TextBlock Text="�on h�ng g?n d�y" FontSize="16" FontWeight="SemiBold" Foreground="{StaticResource Gray900}"/>
+                                    <TextBlock Text="10 don h�ng m?i nh?t" FontSize="11" Foreground="{StaticResource Gray400}" Margin="0,2,0,0"/>
+                                </StackPanel>
+                            </StackPanel>
+
+                            <!-- Table Header -->
+                            <Border Grid.Row="1" Background="{StaticResource Gray50}" CornerRadius="10,10,0,0" Padding="14,10">
+                                <Grid>
+                                    <Grid.ColumnDefinitions>
+                                        <ColumnDefinition Width="1.2*"/>
+                                        <ColumnDefinition Width="*"/>
+                                        <ColumnDefinition Width="*"/>
+                                        <ColumnDefinition Width="*"/>
+                                        <ColumnDefinition Width="0.8*"/>
+                                    </Grid.ColumnDefinitions>
+                                    <TextBlock Grid.Column="0" Text="M� don" FontSize="11" FontWeight="SemiBold" Foreground="{StaticResource Gray500}"/>
+                                    <TextBlock Grid.Column="1" Text="Th?i gian" FontSize="11" FontWeight="SemiBold" Foreground="{StaticResource Gray500}" TextAlignment="Center"/>
+                                    <TextBlock Grid.Column="2" Text="Thanh to�n" FontSize="11" FontWeight="SemiBold" Foreground="{StaticResource Gray500}" TextAlignment="Right"/>
+                                    <TextBlock Grid.Column="3" Text="Phuong th?c" FontSize="11" FontWeight="SemiBold" Foreground="{StaticResource Gray500}" TextAlignment="Center"/>
+                                    <TextBlock Grid.Column="4" Text="Tr?ng th�i" FontSize="11" FontWeight="SemiBold" Foreground="{StaticResource Gray500}" TextAlignment="Center"/>
+                                </Grid>
+                            </Border>
+
+                            <!-- Table Body -->
+                            <ScrollViewer Grid.Row="2" VerticalScrollBarVisibility="Auto" MaxHeight="300">
+                                <ItemsControl ItemsSource="{Binding RecentDonHangs}">
+                                    <ItemsControl.ItemTemplate>
+                                        <DataTemplate>
+                                            <Border BorderBrush="{StaticResource Gray100}" BorderThickness="0,0,0,1" Padding="14,10">
+                                                <Border.Style>
+                                                    <Style TargetType="Border">
+                                                        <Setter Property="Background" Value="White"/>
+                                                        <Style.Triggers>
+                                                            <Trigger Property="IsMouseOver" Value="True">
+                                                                <Setter Property="Background" Value="{StaticResource Gray50}"/>
+                                                            </Trigger>
+                                                        </Style.Triggers>
+                                                    </Style>
+                                                </Border.Style>
+                                                <Grid>
+                                                    <Grid.ColumnDefinitions>
+                                                        <ColumnDefinition Width="1.2*"/>
+                                                        <ColumnDefinition Width="*"/>
+                                                        <ColumnDefinition Width="*"/>
+                                                        <ColumnDefinition Width="*"/>
+                                                        <ColumnDefinition Width="0.8*"/>
+                                                    </Grid.ColumnDefinitions>
+                                                    <TextBlock Grid.Column="0" Text="{Binding MaDonHang}" FontSize="12" FontWeight="Medium" 
+                                                               Foreground="{StaticResource Gray800}" VerticalAlignment="Center"/>
+                                                    <TextBlock Grid.Column="1" Text="{Binding NgayTao, StringFormat={}{0:dd/MM HH:mm}}" 
+                                                               FontSize="12" Foreground="{StaticResource Gray500}" TextAlignment="Center" VerticalAlignment="Center"/>
+                                                    <TextBlock Grid.Column="2" Text="{Binding ThanhToan, StringFormat='{}{0:N0}d'}" 
+                                                               FontSize="12" FontWeight="SemiBold" Foreground="{StaticResource Gray800}" TextAlignment="Right" VerticalAlignment="Center"/>
+                                                    <TextBlock Grid.Column="3" Text="{Binding PhuongThucTT}" 
+                                                               FontSize="11" Foreground="{StaticResource Gray500}" TextAlignment="Center" VerticalAlignment="Center"/>
+
+                                                    <Border Grid.Column="4" HorizontalAlignment="Center" VerticalAlignment="Center"
+                                                            CornerRadius="8" Padding="8,4">
+                                                        <Border.Style>
+                                                            <Style TargetType="Border">
+                                                                <Setter Property="Background" Value="#D1FAE5"/>
+                                                                <Style.Triggers>
+                                                                    <DataTrigger Binding="{Binding TrangThai}" Value="1">
+                                                                        <Setter Property="Background" Value="#FEF3C7"/>
+                                                                    </DataTrigger>
+                                                                    <DataTrigger Binding="{Binding TrangThai}" Value="3">
+                                                                        <Setter Property="Background" Value="#FEE2E2"/>
+                                                                    </DataTrigger>
+                                                                </Style.Triggers>
+                                                            </Style>
+                                                        </Border.Style>
+                                                        <TextBlock FontSize="10" FontWeight="SemiBold">
+                                                            <TextBlock.Style>
+                                                                <Style TargetType="TextBlock">
+                                                                    <Setter Property="Text" Value="Ho�n th�nh"/>
+                                                                    <Setter Property="Foreground" Value="#059669"/>
+                                                                    <Style.Triggers>
+                                                                        <DataTrigger Binding="{Binding TrangThai}" Value="1">
+                                                                            <Setter Property="Text" Value="�ang x? l�"/>
+                                                                            <Setter Property="Foreground" Value="#D97706"/>
+                                                                        </DataTrigger>
+                                                                        <DataTrigger Binding="{Binding TrangThai}" Value="3">
+                                                                            <Setter Property="Text" Value="�� h?y"/>
+                                                                            <Setter Property="Foreground" Value="#DC2626"/>
+                                                                        </DataTrigger>
+                                                                    </Style.Triggers>
+                                                                </Style>
+                                                            </TextBlock.Style>
+                                                        </TextBlock>
+                                                    </Border>
+                                                </Grid>
+                                            </Border>
+                                        </DataTemplate>
+                                    </ItemsControl.ItemTemplate>
+                                </ItemsControl>
+                            </ScrollViewer>
+                        </Grid>
+                    </Border>
+                </Grid>
+            </Grid>
+        </ScrollViewer>
+    </Grid>
+</UserControl>

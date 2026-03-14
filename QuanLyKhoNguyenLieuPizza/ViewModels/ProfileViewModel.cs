@@ -1,0 +1,180 @@
+using System.IO;
+using System.Windows.Input;
+using System.Windows;
+using Microsoft.Win32;
+using QuanLyKhoNguyenLieuPizza.Services;
+
+namespace QuanLyKhoNguyenLieuPizza.ViewModels;
+
+public class ProfileViewModel : BaseViewModel
+{
+    private readonly DatabaseService _databaseService;
+    private string? _hinhAnh;
+    private string? _pendingAvatarPath;
+    private string? _pendingAvatarSourceFile;
+    private bool _isAvatarChanged;
+
+    public string Username => CurrentUserSession.Instance.CurrentUser?.Username ?? "N/A";
+    public string HoTen => CurrentUserSession.Instance.CurrentUser?.NhanVien?.HoTen ?? "N/A";
+    public string? Email => CurrentUserSession.Instance.CurrentUser?.NhanVien?.Email;
+    public string? SDT => CurrentUserSession.Instance.CurrentUser?.NhanVien?.SDT;
+    public DateTime? NgaySinh => CurrentUserSession.Instance.CurrentUser?.NhanVien?.NgaySinh;
+    public string? DiaChi => CurrentUserSession.Instance.CurrentUser?.NhanVien?.DiaChi;
+    public string ChucVu => CurrentUserSession.Instance.CurrentUser?.NhanVien?.ChucVu?.TenChucVu ?? "Nhân viên";
+    
+    public string? HinhAnh
+    {
+        get => _hinhAnh;
+        set => SetProperty(ref _hinhAnh, value);
+    }
+
+    public bool HasAvatar => !string.IsNullOrEmpty(HinhAnh);
+
+    public bool IsAvatarChanged
+    {
+        get => _isAvatarChanged;
+        set => SetProperty(ref _isAvatarChanged, value);
+    }
+
+    public ICommand CloseCommand { get; }
+    public ICommand ChangePasswordCommand { get; }
+    public ICommand LogoutCommand { get; }
+    public ICommand ChangeAvatarCommand { get; }
+    public ICommand SaveAvatarCommand { get; }
+    public ICommand CancelAvatarChangeCommand { get; }
+
+    public event Action? OnClose;
+    public event Action? OnChangePassword;
+    public event Action? OnLogout;
+
+    public ProfileViewModel()
+    {
+        _databaseService = new DatabaseService();
+        
+        CloseCommand = new RelayCommand(_ => OnClose?.Invoke());
+        ChangePasswordCommand = new RelayCommand(_ => OnChangePassword?.Invoke());
+        LogoutCommand = new RelayCommand(_ => OnLogout?.Invoke());
+        ChangeAvatarCommand = new RelayCommand(_ => SelectAvatarAsync());
+        SaveAvatarCommand = new RelayCommand(async _ => await SaveAvatarAsync(), _ => IsAvatarChanged);
+        CancelAvatarChangeCommand = new RelayCommand(_ => CancelAvatarChange(), _ => IsAvatarChanged);
+        
+        // Load current avatar
+        _hinhAnh = CurrentUserSession.Instance.CurrentUser?.NhanVien?.HinhAnh;
+    }
+
+    private void SelectAvatarAsync()
+    {
+        var openFileDialog = new OpenFileDialog
+        {
+            Title = "Ch?n ?nh ??i di?n",
+            Filter = "Image files (*.png;*.jpg;*.jpeg)|*.png;*.jpg;*.jpeg|All files (*.*)|*.*",
+            FilterIndex = 1
+        };
+
+        if (openFileDialog.ShowDialog() == true)
+        {
+            try
+            {
+                // Store source file and show preview
+                _pendingAvatarSourceFile = openFileDialog.FileName;
+                
+                // Show preview immediately using the source file
+                HinhAnh = _pendingAvatarSourceFile;
+                IsAvatarChanged = true;
+                
+                OnPropertyChanged(nameof(HasAvatar));
+                
+                System.Diagnostics.Debug.WriteLine($"Avatar preview loaded: {_pendingAvatarSourceFile}");
+            }
+            catch (Exception ex)
+            {
+                System.Diagnostics.Debug.WriteLine($"Error loading avatar preview: {ex.Message}");
+                MessageBox.Show("Không th? t?i ?nh. Vui lòng th? l?i!", "L?i", MessageBoxButton.OK, MessageBoxImage.Error);
+            }
+        }
+    }
+
+    private async Task SaveAvatarAsync()
+    {
+        if (string.IsNullOrEmpty(_pendingAvatarSourceFile))
+            return;
+
+        try
+        {
+            var sourceFile = _pendingAvatarSourceFile;
+            var fileName = $"avatar_{CurrentUserSession.Instance.CurrentUser?.NhanVien?.NhanVienID}_{DateTime.Now:yyyyMMddHHmmss}{Path.GetExtension(sourceFile)}";
+            var relativePath = Path.Combine("Resources", "Images", fileName);
+            var destinationPath = Path.Combine(AppDomain.CurrentDomain.BaseDirectory, relativePath);
+
+            // Ensure directory exists
+            var directory = Path.GetDirectoryName(destinationPath);
+            if (!string.IsNullOrEmpty(directory) && !Directory.Exists(directory))
+            {
+                Directory.CreateDirectory(directory);
+            }
+
+            // Copy file to Resources/Images
+            File.Copy(sourceFile, destinationPath, true);
+
+            // Update database
+            var nhanVien = CurrentUserSession.Instance.CurrentUser?.NhanVien;
+            if (nhanVien != null)
+            {
+                var success = await _databaseService.UpdateNhanVienAvatarAsync(nhanVien.NhanVienID, relativePath);
+                
+                if (success)
+                {
+                    // Update session
+                    nhanVien.HinhAnh = relativePath;
+                    
+                    // Update UI
+                    HinhAnh = relativePath;
+                    IsAvatarChanged = false;
+                    _pendingAvatarSourceFile = null;
+                    
+                    OnPropertyChanged(nameof(HasAvatar));
+                    
+                    MessageBox.Show("C?p nh?t ?nh ??i di?n thành công!", "Thành công", MessageBoxButton.OK, MessageBoxImage.Information);
+                    System.Diagnostics.Debug.WriteLine($"Avatar updated successfully: {relativePath}");
+                }
+                else
+                {
+                    MessageBox.Show("Không th? l?u ?nh vào database!", "L?i", MessageBoxButton.OK, MessageBoxImage.Error);
+                    System.Diagnostics.Debug.WriteLine("Failed to update avatar in database");
+                }
+            }
+        }
+        catch (Exception ex)
+        {
+            MessageBox.Show($"L?i khi l?u ?nh: {ex.Message}", "L?i", MessageBoxButton.OK, MessageBoxImage.Error);
+            System.Diagnostics.Debug.WriteLine($"Error saving avatar: {ex.Message}");
+            System.Diagnostics.Debug.WriteLine($"Stack trace: {ex.StackTrace}");
+        }
+    }
+
+    private void CancelAvatarChange()
+    {
+        // Restore original avatar
+        HinhAnh = CurrentUserSession.Instance.CurrentUser?.NhanVien?.HinhAnh;
+        IsAvatarChanged = false;
+        _pendingAvatarSourceFile = null;
+        
+        OnPropertyChanged(nameof(HasAvatar));
+        System.Diagnostics.Debug.WriteLine("Avatar change cancelled");
+    }
+
+    public void RefreshData()
+    {
+        _hinhAnh = CurrentUserSession.Instance.CurrentUser?.NhanVien?.HinhAnh;
+        
+        OnPropertyChanged(nameof(Username));
+        OnPropertyChanged(nameof(HoTen));
+        OnPropertyChanged(nameof(Email));
+        OnPropertyChanged(nameof(SDT));
+        OnPropertyChanged(nameof(NgaySinh));
+        OnPropertyChanged(nameof(DiaChi));
+        OnPropertyChanged(nameof(ChucVu));
+        OnPropertyChanged(nameof(HinhAnh));
+        OnPropertyChanged(nameof(HasAvatar));
+    }
+}

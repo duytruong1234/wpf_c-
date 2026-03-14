@@ -1,0 +1,703 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<UserControl x:Class="QuanLyKhoNguyenLieuPizza.Views.ShellView"
+         xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+         xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006" 
+         xmlns:d="http://schemas.microsoft.com/expression/blend/2008" 
+         xmlns:vm="clr-namespace:QuanLyKhoNguyenLieuPizza.ViewModels"
+         xmlns:views="clr-namespace:QuanLyKhoNguyenLieuPizza.Views"
+         xmlns:converters="clr-namespace:QuanLyKhoNguyenLieuPizza.Converters"
+         mc:Ignorable="d" 
+         d:DesignHeight="700" d:DesignWidth="1200"
+         Background="{StaticResource SoftWhiteBrush}">
+    
+<d:UserControl.DataContext>
+    <vm:ShellViewModel/>
+</d:UserControl.DataContext>
+
+<UserControl.Resources>
+<converters:BoolToVisibilityConverter x:Key="BoolToVisibilityConverter"/>
+<converters:ImagePathConverter x:Key="ImagePathConverter"/>
+<converters:InverseBoolToVisibilityConverter x:Key="InverseBoolToVisibilityConverter"/>
+    
+<!-- DataTemplates for ViewModel to View mapping -->
+<DataTemplate DataType="{x:Type vm:DashboardViewModel}">
+    <views:DashboardView/>
+</DataTemplate>
+<DataTemplate DataType="{x:Type vm:TonKhoViewModel}">
+    <views:TonKhoView/>
+</DataTemplate>
+<DataTemplate DataType="{x:Type vm:NguyenLieuViewModel}">
+    <views:NguyenLieuView/>
+</DataTemplate>
+<DataTemplate DataType="{x:Type vm:PhieuNhapViewModel}">
+    <views:PhieuNhapView/>
+</DataTemplate>
+<DataTemplate DataType="{x:Type vm:PhieuXuatViewModel}">
+    <views:PhieuXuatView/>
+</DataTemplate>
+<DataTemplate DataType="{x:Type vm:NhaCungCapViewModel}">
+    <views:NhaCungCapView/>
+</DataTemplate>
+<DataTemplate DataType="{x:Type vm:NhanVienViewModel}">
+    <views:NhanVienView/>
+</DataTemplate>
+<DataTemplate DataType="{x:Type vm:BanHangViewModel}">
+    <views:BanHangView/>
+</DataTemplate>
+<DataTemplate DataType="{x:Type vm:DonHangViewModel}">
+    <views:DonHangView/>
+</DataTemplate>
+<DataTemplate DataType="{x:Type vm:PizzaViewModel}">
+    <views:PizzaView/>
+</DataTemplate>
+
+    <!-- Modern Sidebar Button with Indicator -->
+    <Style x:Key="ModernSidebarButton" TargetType="Button">
+        <Setter Property="Background" Value="Transparent"/>
+        <Setter Property="Foreground" Value="#94A3B8"/>
+        <Setter Property="FontSize" Value="14"/>
+        <Setter Property="FontWeight" Value="Medium"/>
+        <Setter Property="FontFamily" Value="Segoe UI Variable, Segoe UI, Arial"/>
+        <Setter Property="Padding" Value="16,14"/>
+        <Setter Property="Margin" Value="0,2"/>
+        <Setter Property="HorizontalContentAlignment" Value="Left"/>
+        <Setter Property="Cursor" Value="Hand"/>
+        <Setter Property="Template">
+            <Setter.Value>
+                <ControlTemplate TargetType="Button">
+                    <Grid>
+                        <Border x:Name="indicator" 
+                                Width="4" 
+                                HorizontalAlignment="Left" 
+                                Background="Transparent" 
+                                CornerRadius="0,2,2,0"/>
+                        <Border x:Name="border" 
+                                Background="{TemplateBinding Background}" 
+                                CornerRadius="0,12,12,0"
+                                Margin="4,0,12,0"
+                                Padding="{TemplateBinding Padding}">
+                            <ContentPresenter HorizontalAlignment="{TemplateBinding HorizontalContentAlignment}" 
+                                              VerticalAlignment="Center"/>
+                        </Border>
+                    </Grid>
+                    <ControlTemplate.Triggers>
+                        <Trigger Property="IsMouseOver" Value="True">
+                            <Setter TargetName="border" Property="Background" Value="#374151"/>
+                            <Setter Property="Foreground" Value="White"/>
+                        </Trigger>
+                    </ControlTemplate.Triggers>
+                </ControlTemplate>
+            </Setter.Value>
+        </Setter>
+    </Style>
+
+    <!-- Active Sidebar Button Style with Pizza Gradient Indicator -->
+    <Style x:Key="ActiveSidebarButton" TargetType="Button">
+        <Setter Property="Background" Value="#374151"/>
+        <Setter Property="Foreground" Value="White"/>
+        <Setter Property="FontSize" Value="14"/>
+        <Setter Property="FontWeight" Value="SemiBold"/>
+        <Setter Property="FontFamily" Value="Segoe UI Variable, Segoe UI, Arial"/>
+        <Setter Property="Padding" Value="16,14"/>
+        <Setter Property="Margin" Value="0,2"/>
+        <Setter Property="HorizontalContentAlignment" Value="Left"/>
+        <Setter Property="Cursor" Value="Hand"/>
+        <Setter Property="Template">
+            <Setter.Value>
+                <ControlTemplate TargetType="Button">
+                    <Grid>
+                        <Border x:Name="indicator" 
+                                Width="4" 
+                                HorizontalAlignment="Left" 
+                                CornerRadius="0,2,2,0">
+                            <Border.Background>
+                                <LinearGradientBrush StartPoint="0,0" EndPoint="0,1">
+                                    <GradientStop Color="#C0392B" Offset="0"/>
+                                    <GradientStop Color="#F1C40F" Offset="1"/>
+                                </LinearGradientBrush>
+                            </Border.Background>
+                        </Border>
+                        <Border x:Name="border" 
+                                Background="{TemplateBinding Background}" 
+                                CornerRadius="0,12,12,0"
+                                Margin="4,0,12,0"
+                                Padding="{TemplateBinding Padding}">
+                            <ContentPresenter HorizontalAlignment="{TemplateBinding HorizontalContentAlignment}" 
+                                              VerticalAlignment="Center"/>
+                        </Border>
+                    </Grid>
+                </ControlTemplate>
+            </Setter.Value>
+        </Setter>
+    </Style>
+    </UserControl.Resources>
+    
+    <Grid>
+        <Grid.ColumnDefinitions>
+            <ColumnDefinition Width="260"/>
+            <ColumnDefinition Width="*"/>
+        </Grid.ColumnDefinitions>
+
+        <!-- Sidebar - Dark Modern Style with Pizza Branding -->
+        <Border Grid.Column="0" CornerRadius="0,24,24,0">
+            <Border.Background>
+                <LinearGradientBrush StartPoint="0,0" EndPoint="0,1">
+                    <GradientStop Color="#1F2937" Offset="0"/>
+                    <GradientStop Color="#111827" Offset="1"/>
+                </LinearGradientBrush>
+            </Border.Background>
+            <Border.Effect>
+                <DropShadowEffect BlurRadius="30" ShadowDepth="5" Direction="0" Color="#000000" Opacity="0.15"/>
+            </Border.Effect>
+            
+            <Grid>
+                <Grid.RowDefinitions>
+                    <RowDefinition Height="Auto"/>
+                    <RowDefinition Height="*"/>
+                    <RowDefinition Height="Auto"/>
+                </Grid.RowDefinitions>
+
+                <!-- Logo with Pizza Theme -->
+                <StackPanel Grid.Row="0" Margin="24,32,24,32">
+                    <StackPanel Orientation="Horizontal">
+                        <!-- Pizza Logo Icon -->
+                        <Border Width="44" Height="44" CornerRadius="12">
+                            <Border.Background>
+                                <LinearGradientBrush StartPoint="0,0" EndPoint="1,1">
+                                    <GradientStop Color="#C0392B" Offset="0"/>
+                                    <GradientStop Color="#E74C3C" Offset="1"/>
+                                </LinearGradientBrush>
+                            </Border.Background>
+                            <Grid>
+                                <Ellipse Width="28" Height="28" Fill="#F1C40F" Opacity="0.3"/>
+                                <TextBlock Text="🍕" FontSize="22" HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                            </Grid>
+                        </Border>
+                        <StackPanel VerticalAlignment="Center" Margin="14,0,0,0">
+                            <TextBlock Text="PizzaInn" 
+                                       FontSize="24" 
+                                       FontWeight="Bold"
+                                       Foreground="White"
+                                       FontFamily="Segoe UI Variable, Segoe UI, Arial"/>
+                            <TextBlock Text="Quản lý kho" 
+                                       FontSize="11" 
+                                       Foreground="#9CA3AF"
+                                       Margin="0,2,0,0"/>
+                        </StackPanel>
+                    </StackPanel>
+                </StackPanel>
+
+                <!-- Menu Items -->
+                <ScrollViewer Grid.Row="1" VerticalScrollBarVisibility="Hidden">
+                <StackPanel Margin="0,0,0,0">
+                    <!-- Bao cao thong ke -->
+                    <Button Command="{Binding NavigateCommand}"
+                            CommandParameter="BaoCaoThongKe"
+                            Visibility="{Binding CanViewBaoCaoThongKe, Converter={StaticResource BoolToVisibilityConverter}}">
+                        <Button.Style>
+                            <Style TargetType="Button" BasedOn="{StaticResource ModernSidebarButton}">
+                                <Style.Triggers>
+                                    <DataTrigger Binding="{Binding SelectedMenuItem}" Value="BaoCaoThongKe">
+                                        <Setter Property="Background" Value="#374151"/>
+                                        <Setter Property="Foreground" Value="White"/>
+                                        <Setter Property="FontWeight" Value="SemiBold"/>
+                                        <Setter Property="Template">
+                                            <Setter.Value>
+                                                <ControlTemplate TargetType="Button">
+                                                    <Grid>
+                                                        <Border Width="4" HorizontalAlignment="Left" CornerRadius="0,2,2,0">
+                                                            <Border.Background>
+                                                                <LinearGradientBrush StartPoint="0,0" EndPoint="0,1">
+                                                                    <GradientStop Color="#C0392B" Offset="0"/>
+                                                                    <GradientStop Color="#F1C40F" Offset="1"/>
+                                                                </LinearGradientBrush>
+                                                            </Border.Background>
+                                                        </Border>
+                                                        <Border Background="#374151" CornerRadius="0,12,12,0" Margin="4,0,12,0" Padding="16,14">
+                                                            <ContentPresenter HorizontalAlignment="Left" VerticalAlignment="Center"/>
+                                                        </Border>
+                                                    </Grid>
+                                                </ControlTemplate>
+                                            </Setter.Value>
+                                        </Setter>
+                                    </DataTrigger>
+                                </Style.Triggers>
+                            </Style>
+                        </Button.Style>
+                        <StackPanel Orientation="Horizontal">
+                            <Border Width="32" Height="32" CornerRadius="8" Background="#374151" Margin="0,0,12,0">
+                                <TextBlock Text="📊" FontSize="14" HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                            </Border>
+                            <TextBlock Text="Báo cáo thống kê" VerticalAlignment="Center"/>
+                        </StackPanel>
+                    </Button>
+                    
+                    <!-- Ton kho -->
+                    <Button Command="{Binding NavigateCommand}"
+                            CommandParameter="TonKho"
+                            Visibility="{Binding CanViewTonKho, Converter={StaticResource BoolToVisibilityConverter}}">
+                        <Button.Style>
+                            <Style TargetType="Button" BasedOn="{StaticResource ModernSidebarButton}">
+                                <Style.Triggers>
+                                    <DataTrigger Binding="{Binding SelectedMenuItem}" Value="TonKho">
+                                        <Setter Property="Background" Value="#374151"/>
+                                        <Setter Property="Foreground" Value="White"/>
+                                        <Setter Property="FontWeight" Value="SemiBold"/>
+                                        <Setter Property="Template">
+                                            <Setter.Value>
+                                                <ControlTemplate TargetType="Button">
+                                                    <Grid>
+                                                        <Border Width="4" HorizontalAlignment="Left" CornerRadius="0,2,2,0">
+                                                            <Border.Background>
+                                                                <LinearGradientBrush StartPoint="0,0" EndPoint="0,1">
+                                                                    <GradientStop Color="#C0392B" Offset="0"/>
+                                                                    <GradientStop Color="#F1C40F" Offset="1"/>
+                                                                </LinearGradientBrush>
+                                                            </Border.Background>
+                                                        </Border>
+                                                        <Border Background="#374151" CornerRadius="0,12,12,0" Margin="4,0,12,0" Padding="16,14">
+                                                            <ContentPresenter HorizontalAlignment="Left" VerticalAlignment="Center"/>
+                                                        </Border>
+                                                    </Grid>
+                                                </ControlTemplate>
+                                            </Setter.Value>
+                                        </Setter>
+                                    </DataTrigger>
+                                </Style.Triggers>
+                            </Style>
+                        </Button.Style>
+                        <StackPanel Orientation="Horizontal">
+                            <Border Width="32" Height="32" CornerRadius="8" Background="#374151" Margin="0,0,12,0">
+                                <TextBlock Text="📦" FontSize="14" HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                            </Border>
+                            <TextBlock Text="Tồn kho" VerticalAlignment="Center"/>
+                        </StackPanel>
+                    </Button>
+                    
+                    <!-- Quan ly phieu nhap -->
+                    <Button Command="{Binding NavigateCommand}"
+                            CommandParameter="PhieuNhap"
+                            Visibility="{Binding CanViewPhieuNhap, Converter={StaticResource BoolToVisibilityConverter}}">
+                        <Button.Style>
+                            <Style TargetType="Button" BasedOn="{StaticResource ModernSidebarButton}">
+                                <Style.Triggers>
+                                    <DataTrigger Binding="{Binding SelectedMenuItem}" Value="PhieuNhap">
+                                        <Setter Property="Background" Value="#374151"/>
+                                        <Setter Property="Foreground" Value="White"/>
+                                        <Setter Property="FontWeight" Value="SemiBold"/>
+                                        <Setter Property="Template">
+                                            <Setter.Value>
+                                                <ControlTemplate TargetType="Button">
+                                                    <Grid>
+                                                        <Border Width="4" HorizontalAlignment="Left" CornerRadius="0,2,2,0">
+                                                            <Border.Background>
+                                                                <LinearGradientBrush StartPoint="0,0" EndPoint="0,1">
+                                                                    <GradientStop Color="#C0392B" Offset="0"/>
+                                                                    <GradientStop Color="#F1C40F" Offset="1"/>
+                                                                </LinearGradientBrush>
+                                                            </Border.Background>
+                                                        </Border>
+                                                        <Border Background="#374151" CornerRadius="0,12,12,0" Margin="4,0,12,0" Padding="16,14">
+                                                            <ContentPresenter HorizontalAlignment="Left" VerticalAlignment="Center"/>
+                                                        </Border>
+                                                    </Grid>
+                                                </ControlTemplate>
+                                            </Setter.Value>
+                                        </Setter>
+                                    </DataTrigger>
+                                </Style.Triggers>
+                            </Style>
+                        </Button.Style>
+                        <StackPanel Orientation="Horizontal">
+                            <Border Width="32" Height="32" CornerRadius="8" Background="#374151" Margin="0,0,12,0">
+                                <TextBlock Text="📥" FontSize="14" HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                            </Border>
+                            <TextBlock Text="Quản lý phiếu nhập" VerticalAlignment="Center"/>
+                        </StackPanel>
+                    </Button>
+                    
+                    <!-- Quan ly phieu xuat -->
+                    <Button Command="{Binding NavigateCommand}"
+                            CommandParameter="PhieuXuat"
+                            Visibility="{Binding CanViewPhieuXuat, Converter={StaticResource BoolToVisibilityConverter}}">
+                        <Button.Style>
+                            <Style TargetType="Button" BasedOn="{StaticResource ModernSidebarButton}">
+                                <Style.Triggers>
+                                    <DataTrigger Binding="{Binding SelectedMenuItem}" Value="PhieuXuat">
+                                        <Setter Property="Background" Value="#374151"/>
+                                        <Setter Property="Foreground" Value="White"/>
+                                        <Setter Property="FontWeight" Value="SemiBold"/>
+                                        <Setter Property="Template">
+                                            <Setter.Value>
+                                                <ControlTemplate TargetType="Button">
+                                                    <Grid>
+                                                        <Border Width="4" HorizontalAlignment="Left" CornerRadius="0,2,2,0">
+                                                            <Border.Background>
+                                                                <LinearGradientBrush StartPoint="0,0" EndPoint="0,1">
+                                                                    <GradientStop Color="#C0392B" Offset="0"/>
+                                                                    <GradientStop Color="#F1C40F" Offset="1"/>
+                                                                </LinearGradientBrush>
+                                                            </Border.Background>
+                                                        </Border>
+                                                        <Border Background="#374151" CornerRadius="0,12,12,0" Margin="4,0,12,0" Padding="16,14">
+                                                            <ContentPresenter HorizontalAlignment="Left" VerticalAlignment="Center"/>
+                                                        </Border>
+                                                    </Grid>
+                                                </ControlTemplate>
+                                            </Setter.Value>
+                                        </Setter>
+                                    </DataTrigger>
+                                </Style.Triggers>
+                            </Style>
+                        </Button.Style>
+                        <StackPanel Orientation="Horizontal">
+                            <Border Width="32" Height="32" CornerRadius="8" Background="#374151" Margin="0,0,12,0">
+                                <TextBlock Text="📤" FontSize="14" HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                            </Border>
+                            <TextBlock Text="Quản lý phiếu xuất" VerticalAlignment="Center"/>
+                        </StackPanel>
+                    </Button>
+                    
+                    <!-- Quan ly nguyen lieu -->
+                    <Button Command="{Binding NavigateCommand}"
+                            CommandParameter="NguyenLieu"
+                            Visibility="{Binding CanViewNguyenLieu, Converter={StaticResource BoolToVisibilityConverter}}">
+                        <Button.Style>
+                            <Style TargetType="Button" BasedOn="{StaticResource ModernSidebarButton}">
+                                <Style.Triggers>
+                                    <DataTrigger Binding="{Binding SelectedMenuItem}" Value="NguyenLieu">
+                                        <Setter Property="Background" Value="#374151"/>
+                                        <Setter Property="Foreground" Value="White"/>
+                                        <Setter Property="FontWeight" Value="SemiBold"/>
+                                        <Setter Property="Template">
+                                            <Setter.Value>
+                                                <ControlTemplate TargetType="Button">
+                                                    <Grid>
+                                                        <Border Width="4" HorizontalAlignment="Left" CornerRadius="0,2,2,0">
+                                                            <Border.Background>
+                                                                <LinearGradientBrush StartPoint="0,0" EndPoint="0,1">
+                                                                    <GradientStop Color="#C0392B" Offset="0"/>
+                                                                    <GradientStop Color="#F1C40F" Offset="1"/>
+                                                                </LinearGradientBrush>
+                                                            </Border.Background>
+                                                        </Border>
+                                                        <Border Background="#374151" CornerRadius="0,12,12,0" Margin="4,0,12,0" Padding="16,14">
+                                                            <ContentPresenter HorizontalAlignment="Left" VerticalAlignment="Center"/>
+                                                        </Border>
+                                                    </Grid>
+                                                </ControlTemplate>
+                                            </Setter.Value>
+                                        </Setter>
+                                    </DataTrigger>
+                                </Style.Triggers>
+                            </Style>
+                        </Button.Style>
+                        <StackPanel Orientation="Horizontal">
+                            <Border Width="32" Height="32" CornerRadius="8" Background="#374151" Margin="0,0,12,0">
+                                <TextBlock Text="🍕" FontSize="14" HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                            </Border>
+                            <TextBlock Text="Quản lý nguyên liệu" VerticalAlignment="Center"/>
+                        </StackPanel>
+                    </Button>
+
+                    <!-- Quan ly pizza (mon an) -->
+                    <Button Command="{Binding NavigateCommand}"
+                            CommandParameter="Pizza"
+                            Visibility="{Binding CanViewPizza, Converter={StaticResource BoolToVisibilityConverter}}">
+                        <Button.Style>
+                            <Style TargetType="Button" BasedOn="{StaticResource ModernSidebarButton}">
+                                <Style.Triggers>
+                                    <DataTrigger Binding="{Binding SelectedMenuItem}" Value="Pizza">
+                                        <Setter Property="Background" Value="#374151"/>
+                                        <Setter Property="Foreground" Value="White"/>
+                                        <Setter Property="FontWeight" Value="SemiBold"/>
+                                        <Setter Property="Template">
+                                            <Setter.Value>
+                                                <ControlTemplate TargetType="Button">
+                                                    <Grid>
+                                                        <Border Width="4" HorizontalAlignment="Left" CornerRadius="0,2,2,0">
+                                                            <Border.Background>
+                                                                <LinearGradientBrush StartPoint="0,0" EndPoint="0,1">
+                                                                    <GradientStop Color="#C0392B" Offset="0"/>
+                                                                    <GradientStop Color="#F1C40F" Offset="1"/>
+                                                                </LinearGradientBrush>
+                                                            </Border.Background>
+                                                        </Border>
+                                                        <Border Background="#374151" CornerRadius="0,12,12,0" Margin="4,0,12,0" Padding="16,14">
+                                                            <ContentPresenter HorizontalAlignment="Left" VerticalAlignment="Center"/>
+                                                        </Border>
+                                                    </Grid>
+                                                </ControlTemplate>
+                                            </Setter.Value>
+                                        </Setter>
+                                    </DataTrigger>
+                                </Style.Triggers>
+                            </Style>
+                        </Button.Style>
+                        <StackPanel Orientation="Horizontal">
+                            <Border Width="32" Height="32" CornerRadius="8" Background="#374151" Margin="0,0,12,0">
+                                <TextBlock Text="🍕" FontSize="14" HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                            </Border>
+                            <TextBlock Text="Quản lý món ăn" VerticalAlignment="Center"/>
+                        </StackPanel>
+                    </Button>
+
+                    <!-- Quan ly nha cung cap -->
+                    <Button Command="{Binding NavigateCommand}"
+                            CommandParameter="NhaCungCap"
+                            Visibility="{Binding CanViewNhaCungCap, Converter={StaticResource BoolToVisibilityConverter}}">
+                        <Button.Style>
+                            <Style TargetType="Button" BasedOn="{StaticResource ModernSidebarButton}">
+                                <Style.Triggers>
+                                    <DataTrigger Binding="{Binding SelectedMenuItem}" Value="NhaCungCap">
+                                        <Setter Property="Background" Value="#374151"/>
+                                        <Setter Property="Foreground" Value="White"/>
+                                        <Setter Property="FontWeight" Value="SemiBold"/>
+                                        <Setter Property="Template">
+                                            <Setter.Value>
+                                                <ControlTemplate TargetType="Button">
+                                                    <Grid>
+                                                        <Border Width="4" HorizontalAlignment="Left" CornerRadius="0,2,2,0">
+                                                            <Border.Background>
+                                                                <LinearGradientBrush StartPoint="0,0" EndPoint="0,1">
+                                                                    <GradientStop Color="#C0392B" Offset="0"/>
+                                                                    <GradientStop Color="#F1C40F" Offset="1"/>
+                                                                </LinearGradientBrush>
+                                                            </Border.Background>
+                                                        </Border>
+                                                        <Border Background="#374151" CornerRadius="0,12,12,0" Margin="4,0,12,0" Padding="16,14">
+                                                            <ContentPresenter HorizontalAlignment="Left" VerticalAlignment="Center"/>
+                                                        </Border>
+                                                    </Grid>
+                                                </ControlTemplate>
+                                            </Setter.Value>
+                                        </Setter>
+                                    </DataTrigger>
+                                </Style.Triggers>
+                            </Style>
+                        </Button.Style>
+                        <StackPanel Orientation="Horizontal">
+                            <Border Width="32" Height="32" CornerRadius="8" Background="#374151" Margin="0,0,12,0">
+                                <TextBlock Text="🏢" FontSize="14" HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                            </Border>
+                            <TextBlock Text="Quản lý nhà cung cấp" VerticalAlignment="Center"/>
+                        </StackPanel>
+                    </Button>
+                    
+                    <!-- Quan ly nhan vien -->
+                    <Button Command="{Binding NavigateCommand}"
+                            CommandParameter="NhanVien"
+                            Visibility="{Binding CanViewNhanVien, Converter={StaticResource BoolToVisibilityConverter}}">
+                        <Button.Style>
+                            <Style TargetType="Button" BasedOn="{StaticResource ModernSidebarButton}">
+                                <Style.Triggers>
+                                    <DataTrigger Binding="{Binding SelectedMenuItem}" Value="NhanVien">
+                                        <Setter Property="Background" Value="#374151"/>
+                                        <Setter Property="Foreground" Value="White"/>
+                                        <Setter Property="FontWeight" Value="SemiBold"/>
+                                        <Setter Property="Template">
+                                            <Setter.Value>
+                                                <ControlTemplate TargetType="Button">
+                                                    <Grid>
+                                                        <Border Width="4" HorizontalAlignment="Left" CornerRadius="0,2,2,0">
+                                                            <Border.Background>
+                                                                <LinearGradientBrush StartPoint="0,0" EndPoint="0,1">
+                                                                    <GradientStop Color="#C0392B" Offset="0"/>
+                                                                    <GradientStop Color="#F1C40F" Offset="1"/>
+                                                                </LinearGradientBrush>
+                                                            </Border.Background>
+                                                        </Border>
+                                                        <Border Background="#374151" CornerRadius="0,12,12,0" Margin="4,0,12,0" Padding="16,14">
+                                                            <ContentPresenter HorizontalAlignment="Left" VerticalAlignment="Center"/>
+                                                        </Border>
+                                                    </Grid>
+                                                </ControlTemplate>
+                                            </Setter.Value>
+                                        </Setter>
+                                    </DataTrigger>
+                                </Style.Triggers>
+                            </Style>
+                        </Button.Style>
+                        <StackPanel Orientation="Horizontal">
+                            <Border Width="32" Height="32" CornerRadius="8" Background="#374151" Margin="0,0,12,0">
+                                <TextBlock Text="👥" FontSize="14" HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                            </Border>
+                            <TextBlock Text="Quản lý nhân viên" VerticalAlignment="Center"/>
+                        </StackPanel>
+                    </Button>
+
+                    <!-- Don hang -->
+                    <Button Command="{Binding NavigateCommand}"
+                            CommandParameter="DonHang"
+                            Visibility="{Binding CanViewDonHang, Converter={StaticResource BoolToVisibilityConverter}}">
+                        <Button.Style>
+                            <Style TargetType="Button" BasedOn="{StaticResource ModernSidebarButton}">
+                                <Style.Triggers>
+                                    <DataTrigger Binding="{Binding SelectedMenuItem}" Value="DonHang">
+                                        <Setter Property="Background" Value="#374151"/>
+                                        <Setter Property="Foreground" Value="White"/>
+                                        <Setter Property="FontWeight" Value="SemiBold"/>
+                                        <Setter Property="Template">
+                                            <Setter.Value>
+                                                <ControlTemplate TargetType="Button">
+                                                    <Grid>
+                                                        <Border Width="4" HorizontalAlignment="Left" CornerRadius="0,2,2,0">
+                                                            <Border.Background>
+                                                                <LinearGradientBrush StartPoint="0,0" EndPoint="0,1">
+                                                                    <GradientStop Color="#C0392B" Offset="0"/>
+                                                                    <GradientStop Color="#F1C40F" Offset="1"/>
+                                                                </LinearGradientBrush>
+                                                            </Border.Background>
+                                                        </Border>
+                                                        <Border Background="#374151" CornerRadius="0,12,12,0" Margin="4,0,12,0" Padding="16,14">
+                                                            <ContentPresenter HorizontalAlignment="Left" VerticalAlignment="Center"/>
+                                                        </Border>
+                                                    </Grid>
+                                                </ControlTemplate>
+                                            </Setter.Value>
+                                        </Setter>
+                                    </DataTrigger>
+                                </Style.Triggers>
+                            </Style>
+                        </Button.Style>
+                        <StackPanel Orientation="Horizontal">
+                            <Border Width="32" Height="32" CornerRadius="8" Background="#374151" Margin="0,0,12,0">
+                                <TextBlock Text="📋" FontSize="14" HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                            </Border>
+                            <TextBlock Text="Quản lý đơn hàng" VerticalAlignment="Center"/>
+                        </StackPanel>
+                    </Button>
+
+                    <!-- Ban hang -->
+                    <Button Command="{Binding NavigateCommand}"
+                            CommandParameter="BanHang"
+                            Visibility="{Binding CanViewBanHang, Converter={StaticResource BoolToVisibilityConverter}}">
+                        <Button.Style>
+                            <Style TargetType="Button" BasedOn="{StaticResource ModernSidebarButton}">
+                                <Style.Triggers>
+                                    <DataTrigger Binding="{Binding SelectedMenuItem}" Value="BanHang">
+                                        <Setter Property="Background" Value="#374151"/>
+                                        <Setter Property="Foreground" Value="White"/>
+                                        <Setter Property="FontWeight" Value="SemiBold"/>
+                                        <Setter Property="Template">
+                                            <Setter.Value>
+                                                <ControlTemplate TargetType="Button">
+                                                    <Grid>
+                                                        <Border Width="4" HorizontalAlignment="Left" CornerRadius="0,2,2,0">
+                                                            <Border.Background>
+                                                                <LinearGradientBrush StartPoint="0,0" EndPoint="0,1">
+                                                                    <GradientStop Color="#C0392B" Offset="0"/>
+                                                                    <GradientStop Color="#F1C40F" Offset="1"/>
+                                                                </LinearGradientBrush>
+                                                            </Border.Background>
+                                                        </Border>
+                                                        <Border Background="#374151" CornerRadius="0,12,12,0" Margin="4,0,12,0" Padding="16,14">
+                                                            <ContentPresenter HorizontalAlignment="Left" VerticalAlignment="Center"/>
+                                                        </Border>
+                                                    </Grid>
+                                                </ControlTemplate>
+                                            </Setter.Value>
+                                        </Setter>
+                                    </DataTrigger>
+                                </Style.Triggers>
+                            </Style>
+                        </Button.Style>
+                        <StackPanel Orientation="Horizontal">
+                            <Border Width="32" Height="32" CornerRadius="8" Background="#374151" Margin="0,0,12,0">
+                                <TextBlock Text="🛒" FontSize="14" HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                            </Border>
+                            <TextBlock Text="Bán hàng" VerticalAlignment="Center"/>
+                        </StackPanel>
+                    </Button>
+                </StackPanel>
+                </ScrollViewer>
+
+                <!-- User Profile & Logout -->
+                <StackPanel Grid.Row="2" Margin="16,16,16,24">
+                    <Border BorderBrush="#374151" BorderThickness="0,1,0,0" Padding="0,16,0,0">
+                        <Button Command="{Binding ShowProfileCommand}" 
+                                Background="Transparent" 
+                                BorderThickness="0" 
+                                Cursor="Hand"
+                                HorizontalContentAlignment="Left">
+                            <Button.Template>
+                                <ControlTemplate TargetType="Button">
+                                    <Border x:Name="border" Background="Transparent" CornerRadius="12" Padding="12">
+                                        <Grid>
+                                            <Grid.ColumnDefinitions>
+                                                <ColumnDefinition Width="Auto"/>
+                                                <ColumnDefinition Width="*"/>
+                                            </Grid.ColumnDefinitions>
+                                            
+                                            <!-- Avatar - Default gradient background -->
+                                            <Border Grid.Column="0" Width="44" Height="44" CornerRadius="22" ClipToBounds="True"
+                                                    Visibility="{Binding HasAvatar, Converter={StaticResource InverseBoolToVisibilityConverter}}">
+                                                <Border.Background>
+                                                    <LinearGradientBrush StartPoint="0,0" EndPoint="1,1">
+                                                        <GradientStop Color="#C0392B" Offset="0"/>
+                                                        <GradientStop Color="#E74C3C" Offset="1"/>
+                                                    </LinearGradientBrush>
+                                                </Border.Background>
+                                                <TextBlock Text="👤" FontSize="20" HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                                            </Border>
+                                            
+                                            <!-- Avatar - Image from database -->
+                                            <Border Grid.Column="0" Width="44" Height="44" CornerRadius="22" ClipToBounds="True"
+                                                    Visibility="{Binding HasAvatar, Converter={StaticResource BoolToVisibilityConverter}}">
+                                                <Border.Background>
+                                                    <ImageBrush ImageSource="{Binding AvatarNguoiDung, Converter={StaticResource ImagePathConverter}}"
+                                                                Stretch="UniformToFill"/>
+                                                </Border.Background>
+                                            </Border>
+                                            
+                                            <StackPanel Grid.Column="1" VerticalAlignment="Center" Margin="12,0,0,0">
+                                                <TextBlock Text="{Binding TenNguoiDung}" 
+                                                           FontSize="14"
+                                                           FontWeight="SemiBold"
+                                                           Foreground="White"
+                                                           FontFamily="Segoe UI Variable, Segoe UI, Arial"/>
+                                                <TextBlock Text="{Binding ChucVuNguoiDung}" 
+                                                           FontSize="12"
+                                                           Foreground="#F1C40F"
+                                                           Margin="0,2,0,0"/>
+                                            </StackPanel>
+                                        </Grid>
+                                    </Border>
+                                    <ControlTemplate.Triggers>
+                                        <Trigger Property="IsMouseOver" Value="True">
+                                            <Setter TargetName="border" Property="Background" Value="#374151"/>
+                                        </Trigger>
+                                    </ControlTemplate.Triggers>
+                                </ControlTemplate>
+                            </Button.Template>
+                        </Button>
+                    </Border>
+                </StackPanel>
+            </Grid>
+        </Border>
+
+        <!-- Main Content Area -->
+        <ContentControl Grid.Column="1" Content="{Binding CurrentContent}"/>
+
+        <!-- Profile Dialog Overlay -->
+        <Grid Grid.ColumnSpan="2" 
+              Visibility="{Binding IsProfileOpen, Converter={StaticResource BoolToVisibilityConverter}}"
+              Background="#80000000">
+            <Grid.InputBindings>
+                <MouseBinding MouseAction="LeftClick" Command="{Binding ProfileViewModel.CloseCommand}"/>
+            </Grid.InputBindings>
+            
+            <Border Width="420" 
+                    MaxHeight="750"
+                    VerticalAlignment="Center"
+                    HorizontalAlignment="Center"
+                    Effect="{x:Null}">
+                <Border.InputBindings>
+                    <MouseBinding MouseAction="LeftClick" Command="{x:Null}"/>
+                </Border.InputBindings>
+                <views:ProfileView DataContext="{Binding ProfileViewModel}"/>
+            </Border>
+        </Grid>
+    </Grid>
+</UserControl>
