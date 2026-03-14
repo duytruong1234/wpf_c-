@@ -1,4 +1,4 @@
-using System.Windows.Controls;
+﻿using System.Windows.Controls;
 
 namespace QuanLyKhoNguyenLieuPizza.Views;
 
@@ -9,3 +9,4 @@ public partial class NhaCungCapView : UserControl
         InitializeComponent();
     }
 }
+

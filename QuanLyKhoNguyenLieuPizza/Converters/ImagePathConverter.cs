@@ -1,4 +1,4 @@
-using System;
+﻿using System;
 using System.Globalization;
 using System.IO;
 using System.Windows.Data;
@@ -84,3 +84,4 @@ public class ImagePathConverter : IValueConverter
         throw new NotImplementedException();
     }
 }
+

@@ -1,4 +1,4 @@
-namespace QuanLyKhoNguyenLieuPizza.Models;
+﻿namespace QuanLyKhoNguyenLieuPizza.Models;
 
 public class GiaTheo_De
 {
@@ -10,3 +10,4 @@ public class GiaTheo_De
     public virtual DoanhMuc_Size? DoanhMucSize { get; set; }
     public virtual DoanhMuc_De? DoanhMucDe { get; set; }
 }
+

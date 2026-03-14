@@ -1,4 +1,4 @@
-using Microsoft.Data.SqlClient;
+﻿using Microsoft.Data.SqlClient;
 using QuanLyKhoNguyenLieuPizza.Services;
 
 namespace QuanLyKhoNguyenLieuPizza.Utilities;
@@ -46,3 +46,4 @@ public static class DatabaseConnectionTester
         }
     }
 }
+

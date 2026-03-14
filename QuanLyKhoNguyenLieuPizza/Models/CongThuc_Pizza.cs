@@ -1,4 +1,4 @@
-namespace QuanLyKhoNguyenLieuPizza.Models;
+﻿namespace QuanLyKhoNguyenLieuPizza.Models;
 
 public class CongThuc_Pizza
 {
@@ -14,3 +14,4 @@ public class CongThuc_Pizza
     public virtual NguyenLieu? NguyenLieu { get; set; }
     public virtual DonViTinh? DonViTinh { get; set; }
 }
+

@@ -1,4 +1,4 @@
-namespace QuanLyKhoNguyenLieuPizza.Models;
+﻿namespace QuanLyKhoNguyenLieuPizza.Models;
 
 public class LoaiNguyenLieu
 {
@@ -8,3 +8,4 @@ public class LoaiNguyenLieu
     // Navigation property
     public virtual ICollection<NguyenLieu> NguyenLieus { get; set; } = new List<NguyenLieu>();
 }
+

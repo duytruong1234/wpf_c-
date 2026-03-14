@@ -1,4 +1,4 @@
-using System.Windows;
+﻿using System.Windows;
 using System.Windows.Media.Animation;
 
 namespace QuanLyKhoNguyenLieuPizza.Views
@@ -22,3 +22,4 @@ namespace QuanLyKhoNguyenLieuPizza.Views
         }
     }
 }
+

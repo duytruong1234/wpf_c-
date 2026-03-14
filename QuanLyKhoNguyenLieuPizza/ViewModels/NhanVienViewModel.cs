@@ -1,4 +1,4 @@
-using System.Collections.ObjectModel;
+﻿using System.Collections.ObjectModel;
 using System.IO;
 using System.Windows.Input;
 using Microsoft.Win32;
@@ -692,3 +692,4 @@ public class NhanVienViewModel : BaseViewModel
     #endregion
     #endregion
 }
+

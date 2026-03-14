@@ -1,4 +1,4 @@
-using QuanLyKhoNguyenLieuPizza.Models;
+﻿using QuanLyKhoNguyenLieuPizza.Models;
 
 namespace QuanLyKhoNguyenLieuPizza.Services;
 
@@ -16,7 +16,7 @@ public class CurrentUserSession
 
     public TaiKhoan? CurrentUser => _currentUser;
 
-    public string TenNguoiDung => _currentUser?.NhanVien?.HoTen ?? _currentUser?.Username ?? "Ng??i d�ng";
+    public string TenNguoiDung => _currentUser?.NhanVien?.HoTen ?? _currentUser?.Username ?? "Ng??i đãng";
 
     public bool IsLoggedIn => _currentUser != null;
 
@@ -30,3 +30,5 @@ public class CurrentUserSession
         _currentUser = null;
     }
 }
+
+

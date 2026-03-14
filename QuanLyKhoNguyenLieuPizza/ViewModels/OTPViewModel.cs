@@ -86,11 +86,11 @@ public class OTPViewModel : BaseViewModel
     }
 
     /// <summary>
-    /// Kh?i t?o v� g?i OTP d?n email
+    /// Khởi tạo và gửi OTP đến email
     /// </summary>
     public async Task InitializeAndSendOTPAsync(string email)
     {
-        // Ngan g?i nhi?u l?n c�ng l�c
+        // Ngăn gửi nhiều lần cùng lúc
         if (_isSending)
         {
             System.Diagnostics.Debug.WriteLine("=== BLOCKED: Already sending OTP ===");
@@ -107,7 +107,7 @@ public class OTPViewModel : BaseViewModel
         catch (Exception ex)
         {
             System.Diagnostics.Debug.WriteLine($"InitializeAndSendOTPAsync Error: {ex}");
-            ErrorMessage = $"L?i kh?i t?o OTP: {ex.Message}";
+            ErrorMessage = $"Lỗi khởi tạo OTP: {ex.Message}";
         }
         finally
         {
@@ -123,14 +123,14 @@ public class OTPViewModel : BaseViewModel
 
         try
         {
-            // T?o m� OTP m?i
+            // Tạo mã OTP mới
             _currentOTP = _emailService.GenerateOTP(6);
             
             System.Diagnostics.Debug.WriteLine($"=== Sending OTP ===");
             System.Diagnostics.Debug.WriteLine($"Email: {Email}");
             System.Diagnostics.Debug.WriteLine($"OTP: {_currentOTP}");
 
-            // G?i OTP qua email
+            // Gửi OTP qua email
             var (success, message) = await _emailService.SendOTPAsync(Email, _currentOTP);
 
             if (success)
@@ -144,7 +144,7 @@ public class OTPViewModel : BaseViewModel
         }
         catch (Exception ex)
         {
-            ErrorMessage = $"L?i g?i OTP: {ex.Message}";
+            ErrorMessage = $"Lỗi gửi OTP: {ex.Message}";
             System.Diagnostics.Debug.WriteLine($"SendOTP Error: {ex}");
         }
         finally
@@ -155,7 +155,7 @@ public class OTPViewModel : BaseViewModel
 
     private void StartCountdown()
     {
-        _remainingSeconds = 300; // 5 ph�t
+        _remainingSeconds = 300; // 5 phút
         CanResend = false;
         _timer.Start();
     }
@@ -205,7 +205,7 @@ public class OTPViewModel : BaseViewModel
 
             if (isValid)
             {
-                SuccessMessage = "X�c th?c OTP th�nh c�ng!";
+                SuccessMessage = "Xác thực OTP thành công!";
                 _timer.Stop();
 
                 // Invoke success on UI thread to avoid cross-thread issues in subscribers
@@ -251,7 +251,7 @@ public class OTPViewModel : BaseViewModel
             }
             else
             {
-                ErrorMessage = "M� OTP kh�ng ch�nh x�c ho?c d� h?t h?n!";
+                ErrorMessage = "Mã OTP không chính xác hoặc đã hết hạn!";
             }
         }
         catch (Exception ex)
@@ -269,7 +269,7 @@ public class OTPViewModel : BaseViewModel
     {
         if (string.IsNullOrWhiteSpace(Email))
         {
-            ErrorMessage = "Email kh�ng h?p l?!";
+            ErrorMessage = "Email không hợp lệ!";
             return;
         }
 
@@ -281,3 +281,5 @@ public class OTPViewModel : BaseViewModel
         }
     }
 }
+
+

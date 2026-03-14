@@ -1,4 +1,4 @@
-using System.Windows.Input;
+﻿using System.Windows.Input;
 
 namespace QuanLyKhoNguyenLieuPizza.Core.Commands;
 
@@ -122,3 +122,4 @@ public class AsyncRelayCommand<T> : ICommand
         CommandManager.InvalidateRequerySuggested();
     }
 }
+

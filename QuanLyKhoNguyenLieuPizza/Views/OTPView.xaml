@@ -102,14 +102,14 @@
                 </Viewbox>
                 
                 <!-- Header -->
-                <TextBlock Text="X�c th?c OTP"
+                <TextBlock Text="Xác thực OTP"
                            FontSize="26" 
                            FontWeight="Bold" 
                            Foreground="{StaticResource TextPrimary}"
                            HorizontalAlignment="Center"
                            Margin="0,0,0,8"/>
                 
-                <TextBlock Text="Nh?p m� OTP d� g?i d?n email c?a b?n"
+                <TextBlock Text="Nhập mã OTP đã gửi đến email của bạn"
                            FontSize="14" 
                            Foreground="{StaticResource TextSecondary}"
                            HorizontalAlignment="Center"
@@ -198,7 +198,7 @@
                               Width="20" Height="20"
                               VerticalAlignment="Center"
                               Margin="0,0,12,0"/>
-                        <TextBlock Text="M� h?t h?n sau: "
+                        <TextBlock Text="Mã hết hạn sau: "
                                    Foreground="{StaticResource TextPrimary}"
                                    FontSize="14"
                                    FontWeight="Medium"
@@ -212,7 +212,7 @@
                 </Border>
 
                 <!-- Verify Button -->
-                <Button Content="X�c th?c"
+                <Button Content="Xác thực"
                         Style="{StaticResource PrimaryButtonStyle}"
                         Command="{Binding VerifyOTPCommand}"
                         HorizontalAlignment="Stretch"
@@ -228,11 +228,11 @@
                         Margin="0,0,0,8">
                     <StackPanel Orientation="Horizontal" 
                                 HorizontalAlignment="Center">
-                        <TextBlock Text="Kh�ng nh?n du?c m�? "
+                        <TextBlock Text="Không nhận được mã? "
                                    Foreground="{StaticResource TextSecondary}"
                                    FontSize="14"
                                    VerticalAlignment="Center"/>
-                        <TextBlock Text="G?i l?i"
+                        <TextBlock Text="Gửi lại"
                                    Foreground="{StaticResource PrimaryColor}"
                                    FontSize="14"
                                    FontWeight="SemiBold"
@@ -253,7 +253,7 @@
                                               Command="{Binding ResendOTPCommand}"/>
                             </TextBlock.InputBindings>
                         </TextBlock>
-                        <TextBlock Text="Vui l�ng ch?..."
+                        <TextBlock Text="Vui lòng chờ..."
                                    Foreground="{StaticResource TextSecondary}"
                                    FontSize="14"
                                    FontStyle="Italic"
@@ -263,7 +263,7 @@
                 </Border>
 
                 <!-- Back Button -->
-                <Button Content="? Quay l?i"
+                <Button Content="← Quay lại"
                         Background="Transparent"
                         Foreground="{StaticResource TextSecondary}"
                         FontSize="15"
@@ -307,3 +307,5 @@
         </Border>
     </Grid>
 </UserControl>
+
+

@@ -33,8 +33,8 @@ namespace QuanLyKhoNguyenLieuPizza
                 LogToFile($"DISPATCHER EXCEPTION: {args.Exception}");
                 System.Diagnostics.Debug.WriteLine($"=== UNHANDLED EXCEPTION ===\n{args.Exception}");
                 MessageBox.Show(
-                    $"�� x?y ra l?i:\n{args.Exception.Message}\n\nChi ti?t:\n{args.Exception.StackTrace}",
-                    "L?i ?ng d?ng",
+                    $"Đã xảy ra lỗi:\n{args.Exception.Message}\n\nChi tiết:\n{args.Exception.StackTrace}",
+                    "Lỗi ứng dụng",
                     MessageBoxButton.OK,
                     MessageBoxImage.Error);
                 args.Handled = true;
@@ -72,7 +72,7 @@ namespace QuanLyKhoNguyenLieuPizza
             }
             catch
             {
-                // Icon resource not found � continue with default icon
+                // Icon resource not found - continue with default icon
             }
             MainWindow = mainWindow;
             mainWindow.Show();
@@ -80,3 +80,5 @@ namespace QuanLyKhoNguyenLieuPizza
     }
 
 }
+
+

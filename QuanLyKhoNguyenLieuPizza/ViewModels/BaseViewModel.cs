@@ -1,4 +1,4 @@
-using System.ComponentModel;
+﻿using System.ComponentModel;
 using System.Runtime.CompilerServices;
 
 namespace QuanLyKhoNguyenLieuPizza.ViewModels;
@@ -22,3 +22,4 @@ public abstract class BaseViewModel : INotifyPropertyChanged
         return true;
     }
 }
+

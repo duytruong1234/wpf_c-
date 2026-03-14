@@ -1,4 +1,4 @@
-namespace QuanLyKhoNguyenLieuPizza.Models;
+﻿namespace QuanLyKhoNguyenLieuPizza.Models;
 
 public class TonKho
 {
@@ -10,3 +10,4 @@ public class TonKho
     // Navigation property
     public virtual NguyenLieu? NguyenLieu { get; set; }
 }
+

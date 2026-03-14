@@ -19,12 +19,12 @@ public class PrintService
             if (printDialog.ShowDialog() == true)
             {
                 var document = CreatePhieuNhapDocument(phieuNhap, chiTiets, printDialog.PrintableAreaWidth);
-                printDialog.PrintDocument(((IDocumentPaginatorSource)document).DocumentPaginator, $"Phi?u Nh?p - {phieuNhap.MaPhieuNhap}");
+                printDialog.PrintDocument(((IDocumentPaginatorSource)document).DocumentPaginator, $"Phiếu Nhập - {phieuNhap.MaPhieuNhap}");
             }
         }
         catch (Exception ex)
         {
-            MessageBox.Show($"L?i khi in phi?u: {ex.Message}", "L?i", MessageBoxButton.OK, MessageBoxImage.Error);
+            MessageBox.Show($"Lỗi khi in phiếu: {ex.Message}", "Lỗi", MessageBoxButton.OK, MessageBoxImage.Error);
         }
     }
 
@@ -40,7 +40,7 @@ public class PrintService
         };
 
         // Header
-        var headerPara = new Paragraph(new Run("PHI?U NH?P KHO"))
+        var headerPara = new Paragraph(new Run("PHIẾU NHẬP KHO"))
         {
             FontSize = 24,
             FontWeight = FontWeights.Bold,
@@ -50,7 +50,7 @@ public class PrintService
         document.Blocks.Add(headerPara);
 
         // Company name
-        var companyPara = new Paragraph(new Run("PIZZINN - Qu?n L� Kho Nguy�n Li?u"))
+        var companyPara = new Paragraph(new Run("PIZZINN - Quản Lý Kho Nguyên Liệu"))
         {
             FontSize = 14,
             TextAlignment = TextAlignment.Center,
@@ -63,13 +63,13 @@ public class PrintService
         {
             Margin = new Thickness(0, 0, 0, 20)
         };
-        infoPara.Inlines.Add(new Run("M� phi?u: ") { FontWeight = FontWeights.Bold });
+        infoPara.Inlines.Add(new Run("Mã phiếu: ") { FontWeight = FontWeights.Bold });
         infoPara.Inlines.Add(new Run($"{phieuNhap.MaPhieuNhap}\n"));
-        infoPara.Inlines.Add(new Run("Ng�y nh?p: ") { FontWeight = FontWeights.Bold });
+        infoPara.Inlines.Add(new Run("Ngày nhập: ") { FontWeight = FontWeights.Bold });
         infoPara.Inlines.Add(new Run($"{phieuNhap.NgayNhap:dd/MM/yyyy HH:mm}\n"));
-        infoPara.Inlines.Add(new Run("Nh�n vi�n nh?p: ") { FontWeight = FontWeights.Bold });
+        infoPara.Inlines.Add(new Run("Nhân viên nhập: ") { FontWeight = FontWeights.Bold });
         infoPara.Inlines.Add(new Run($"{phieuNhap.NhanVienNhap?.HoTen ?? "N/A"}\n"));
-        infoPara.Inlines.Add(new Run("Nh� cung c?p: ") { FontWeight = FontWeights.Bold });
+        infoPara.Inlines.Add(new Run("Nhà cung cấp: ") { FontWeight = FontWeights.Bold });
         infoPara.Inlines.Add(new Run($"{phieuNhap.NhaCungCap?.TenNCC ?? "N/A"}\n"));
         document.Blocks.Add(infoPara);
 
@@ -94,11 +94,11 @@ public class PrintService
         // Header row
         var headerRow = new TableRow { Background = Brushes.LightGray };
         headerRow.Cells.Add(CreateTableCell("STT", true));
-        headerRow.Cells.Add(CreateTableCell("T�n nguy�n li?u", true));
-        headerRow.Cells.Add(CreateTableCell("�on v?", true));
-        headerRow.Cells.Add(CreateTableCell("S? lu?ng", true));
-        headerRow.Cells.Add(CreateTableCell("�on gi�", true));
-        headerRow.Cells.Add(CreateTableCell("Th�nh ti?n", true));
+        headerRow.Cells.Add(CreateTableCell("Tên nguyên liệu", true));
+        headerRow.Cells.Add(CreateTableCell("Đơn vị", true));
+        headerRow.Cells.Add(CreateTableCell("Số lượng", true));
+        headerRow.Cells.Add(CreateTableCell("Đơn giá", true));
+        headerRow.Cells.Add(CreateTableCell("Thành tiền", true));
         rowGroup.Rows.Add(headerRow);
 
         // Data rows
@@ -124,8 +124,8 @@ public class PrintService
             TextAlignment = TextAlignment.Right,
             Margin = new Thickness(0, 20, 0, 0)
         };
-        totalPara.Inlines.Add(new Run("T?NG TI?N: ") { FontWeight = FontWeights.Bold, FontSize = 16 });
-        totalPara.Inlines.Add(new Run($"{phieuNhap.TongTien:N0} VN�") { FontWeight = FontWeights.Bold, FontSize = 16, Foreground = Brushes.Red });
+        totalPara.Inlines.Add(new Run("TỔNG TIỀN: ") { FontWeight = FontWeights.Bold, FontSize = 16 });
+        totalPara.Inlines.Add(new Run($"{phieuNhap.TongTien:N0} VNĐ") { FontWeight = FontWeights.Bold, FontSize = 16, Foreground = Brushes.Red });
         document.Blocks.Add(totalPara);
 
         // Footer - Chu ky
@@ -137,14 +137,14 @@ public class PrintService
         signatureTable.RowGroups.Add(signatureRowGroup);
         
         var signatureRow = new TableRow();
-        signatureRow.Cells.Add(CreateSignatureCell("Ngu?i l?p phi?u"));
-        signatureRow.Cells.Add(CreateSignatureCell("Ngu?i nh?n h�ng"));
+        signatureRow.Cells.Add(CreateSignatureCell("Người lập phiếu"));
+        signatureRow.Cells.Add(CreateSignatureCell("Người nhận hàng"));
         signatureRowGroup.Rows.Add(signatureRow);
 
         document.Blocks.Add(signatureTable);
 
         // Print date
-        var printDatePara = new Paragraph(new Run($"Ng�y in: {DateTime.Now:dd/MM/yyyy HH:mm}"))
+        var printDatePara = new Paragraph(new Run($"Ngày in: {DateTime.Now:dd/MM/yyyy HH:mm}"))
         {
             FontSize = 10,
             FontStyle = FontStyles.Italic,
@@ -166,12 +166,12 @@ public class PrintService
             if (printDialog.ShowDialog() == true)
             {
                 var document = CreatePhieuXuatDocument(phieuXuat, chiTiets, printDialog.PrintableAreaWidth);
-                printDialog.PrintDocument(((IDocumentPaginatorSource)document).DocumentPaginator, $"Phi?u Xu?t - {phieuXuat.MaPhieuXuat}");
+                printDialog.PrintDocument(((IDocumentPaginatorSource)document).DocumentPaginator, $"Phiếu Xuất - {phieuXuat.MaPhieuXuat}");
             }
         }
         catch (Exception ex)
         {
-            MessageBox.Show($"L?i khi in phi?u: {ex.Message}", "L?i", MessageBoxButton.OK, MessageBoxImage.Error);
+            MessageBox.Show($"Lỗi khi in phiếu: {ex.Message}", "Lỗi", MessageBoxButton.OK, MessageBoxImage.Error);
         }
     }
 
@@ -187,7 +187,7 @@ public class PrintService
         };
 
         // Header
-        var headerPara = new Paragraph(new Run("PHI?U XU?T KHO"))
+        var headerPara = new Paragraph(new Run("PHIẾU XUẤT KHO"))
         {
             FontSize = 24,
             FontWeight = FontWeights.Bold,
@@ -197,7 +197,7 @@ public class PrintService
         document.Blocks.Add(headerPara);
 
         // Company name
-        var companyPara = new Paragraph(new Run("PIZZINN - Qu?n L� Kho Nguy�n Li?u"))
+        var companyPara = new Paragraph(new Run("PIZZINN - Quản Lý Kho Nguyên Liệu"))
         {
             FontSize = 14,
             TextAlignment = TextAlignment.Center,
@@ -208,10 +208,10 @@ public class PrintService
         // Trang thai
         string trangThaiText = phieuXuat.TrangThai switch
         {
-            1 => "Ch? duy?t",
-            2 => "�� duy?t",
-            3 => "T? ch?i",
-            _ => "Kh�ng x�c d?nh"
+            1 => "Chờ duyệt",
+            2 => "Đã duyệt",
+            3 => "Từ chối",
+            _ => "Không xác định"
         };
 
         // Thong tin phieu
@@ -219,23 +219,23 @@ public class PrintService
         {
             Margin = new Thickness(0, 0, 0, 20)
         };
-        infoPara.Inlines.Add(new Run("M� phi?u: ") { FontWeight = FontWeights.Bold });
+        infoPara.Inlines.Add(new Run("Mã phiếu: ") { FontWeight = FontWeights.Bold });
         infoPara.Inlines.Add(new Run($"{phieuXuat.MaPhieuXuat}\n"));
-        infoPara.Inlines.Add(new Run("Tr?ng th�i: ") { FontWeight = FontWeights.Bold });
+        infoPara.Inlines.Add(new Run("Trạng thái: ") { FontWeight = FontWeights.Bold });
         infoPara.Inlines.Add(new Run($"{trangThaiText}\n") { Foreground = phieuXuat.TrangThai == 2 ? Brushes.Green : (phieuXuat.TrangThai == 3 ? Brushes.Red : Brushes.Orange) });
-        infoPara.Inlines.Add(new Run("Ng�y y�u c?u: ") { FontWeight = FontWeights.Bold });
+        infoPara.Inlines.Add(new Run("Ngày yêu cầu: ") { FontWeight = FontWeights.Bold });
         infoPara.Inlines.Add(new Run($"{phieuXuat.NgayYeuCau:dd/MM/yyyy HH:mm}\n"));
-        infoPara.Inlines.Add(new Run("Ngu?i y�u c?u: ") { FontWeight = FontWeights.Bold });
+        infoPara.Inlines.Add(new Run("Người yêu cầu: ") { FontWeight = FontWeights.Bold });
         infoPara.Inlines.Add(new Run($"{phieuXuat.NhanVienYeuCau?.HoTen ?? "N/A"}\n"));
 
         if (phieuXuat.NgayDuyet.HasValue)
         {
-            infoPara.Inlines.Add(new Run("Ng�y duy?t: ") { FontWeight = FontWeights.Bold });
+            infoPara.Inlines.Add(new Run("Ngày duyệt: ") { FontWeight = FontWeights.Bold });
             infoPara.Inlines.Add(new Run($"{phieuXuat.NgayDuyet:dd/MM/yyyy HH:mm}\n"));
         }
         if (phieuXuat.NhanVienDuyet != null)
         {
-            infoPara.Inlines.Add(new Run("Ngu?i duy?t: ") { FontWeight = FontWeights.Bold });
+            infoPara.Inlines.Add(new Run("Người duyệt: ") { FontWeight = FontWeights.Bold });
             infoPara.Inlines.Add(new Run($"{phieuXuat.NhanVienDuyet.HoTen}\n"));
         }
         document.Blocks.Add(infoPara);
@@ -259,9 +259,9 @@ public class PrintService
         // Header row
         var headerRow = new TableRow { Background = Brushes.LightGray };
         headerRow.Cells.Add(CreateTableCell("STT", true));
-        headerRow.Cells.Add(CreateTableCell("T�n nguy�n li?u", true));
-        headerRow.Cells.Add(CreateTableCell("�on v?", true));
-        headerRow.Cells.Add(CreateTableCell("S? lu?ng", true));
+        headerRow.Cells.Add(CreateTableCell("Tên nguyên liệu", true));
+        headerRow.Cells.Add(CreateTableCell("Đơn vị", true));
+        headerRow.Cells.Add(CreateTableCell("Số lượng", true));
         rowGroup.Rows.Add(headerRow);
 
         // Data rows
@@ -289,15 +289,15 @@ public class PrintService
         signatureTable.RowGroups.Add(signatureRowGroup);
         
         var signatureRow = new TableRow();
-        signatureRow.Cells.Add(CreateSignatureCell("Ngu?i y�u c?u"));
-        signatureRow.Cells.Add(CreateSignatureCell("Ngu?i duy?t"));
-        signatureRow.Cells.Add(CreateSignatureCell("Th? kho"));
+        signatureRow.Cells.Add(CreateSignatureCell("Người yêu cầu"));
+        signatureRow.Cells.Add(CreateSignatureCell("Người duyệt"));
+        signatureRow.Cells.Add(CreateSignatureCell("Thủ kho"));
         signatureRowGroup.Rows.Add(signatureRow);
 
         document.Blocks.Add(signatureTable);
 
         // Print date
-        var printDatePara = new Paragraph(new Run($"Ng�y in: {DateTime.Now:dd/MM/yyyy HH:mm}"))
+        var printDatePara = new Paragraph(new Run($"Ngày in: {DateTime.Now:dd/MM/yyyy HH:mm}"))
         {
             FontSize = 10,
             FontStyle = FontStyles.Italic,
@@ -341,9 +341,11 @@ public class PrintService
         };
         para.Inlines.Add(new Run(title) { FontWeight = FontWeights.Bold });
         para.Inlines.Add(new Run("\n\n\n\n"));
-        para.Inlines.Add(new Run("(K� v� ghi r� h? t�n)") { FontStyle = FontStyles.Italic, FontSize = 10 });
+        para.Inlines.Add(new Run("(Ký và ghi rõ họ tên)") { FontStyle = FontStyles.Italic, FontSize = 10 });
         cell.Blocks.Add(para);
         return cell;
     }
     #endregion
 }
+
+

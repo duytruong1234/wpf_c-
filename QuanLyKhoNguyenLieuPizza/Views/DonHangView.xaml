@@ -77,8 +77,8 @@
                                    Foreground="White" HorizontalAlignment="Center" VerticalAlignment="Center"/>
                     </Border>
                     <StackPanel VerticalAlignment="Center">
-                        <TextBlock Text="Qu?n l� don h�ng" FontSize="24" FontWeight="Bold" Foreground="{StaticResource Gray900}"/>
-                        <TextBlock Text="Theo d�i l?ch s? don h�ng v� x? l� don sai s�t" FontSize="13" 
+                        <TextBlock Text="Quản lý don hàng" FontSize="24" FontWeight="Bold" Foreground="{StaticResource Gray900}"/>
+                <TextBlock Text="Theo dõi lịch sử đơn hàng và xử lý đơn sai sót" FontSize="13" 
                                    Foreground="{StaticResource Gray400}" Margin="0,4,0,0"/>
                     </StackPanel>
                 </StackPanel>
@@ -116,11 +116,11 @@
                     <ColumnDefinition Width="*"/>
                 </Grid.ColumnDefinitions>
 
-                <!-- T?ng don h�ng -->
+                <!-- Tổng don hàng -->
                 <Border Grid.Column="0" Style="{StaticResource CardStyle}" Padding="20">
                     <StackPanel>
                         <Grid Margin="0,0,0,12">
-                            <TextBlock Text="T?ng don h�ng" FontSize="12" Foreground="{StaticResource Gray500}"/>
+                            <TextBlock Text="Tổng don hàng" FontSize="12" Foreground="{StaticResource Gray500}"/>
                             <Border Background="{StaticResource LightBlue}" CornerRadius="8" Width="32" Height="32" HorizontalAlignment="Right">
                                 <TextBlock Text="&#xE7BF;" FontFamily="Segoe MDL2 Assets" FontSize="14" 
                                            Foreground="{StaticResource PrimaryBlue}" HorizontalAlignment="Center" VerticalAlignment="Center"/>
@@ -130,11 +130,11 @@
                     </StackPanel>
                 </Border>
 
-                <!-- Ho�n th�nh -->
+                <!-- Hoàn thành -->
                 <Border Grid.Column="2" Style="{StaticResource CardStyle}" Padding="20">
                     <StackPanel>
                         <Grid Margin="0,0,0,12">
-                            <TextBlock Text="Ho�n th�nh" FontSize="12" Foreground="{StaticResource Gray500}"/>
+                            <TextBlock Text="Hoàn thành" FontSize="12" Foreground="{StaticResource Gray500}"/>
                             <Border Background="{StaticResource SuccessGreenLight}" CornerRadius="8" Width="32" Height="32" HorizontalAlignment="Right">
                                 <TextBlock Text="&#xE8FB;" FontFamily="Segoe MDL2 Assets" FontSize="14" 
                                            Foreground="{StaticResource SuccessGreen}" HorizontalAlignment="Center" VerticalAlignment="Center"/>
@@ -189,7 +189,7 @@
                                      Text="{Binding SearchText, UpdateSourceTrigger=PropertyChanged}" 
                                      Background="Transparent" BorderThickness="0" FontSize="13" VerticalAlignment="Center"
                                      Foreground="{StaticResource Gray800}" Padding="0,9"/>
-                            <TextBlock Grid.Column="1" Text="T�m m� don, nh�n vi�n, ghi ch�..." FontSize="13" 
+                            <TextBlock Grid.Column="1" Text="Tìm mã đơn, nhân viên, ghi chú..." FontSize="13" 
                                        Foreground="{StaticResource Gray300}" VerticalAlignment="Center" IsHitTestVisible="False"
                                        Padding="0,9">
                                 <TextBlock.Style>
@@ -206,15 +206,15 @@
                         </Grid>
                     </Border>
 
-                    <!-- T? ng�y -->
+                    <!-- Từ ngày -->
                     <StackPanel Grid.Column="2" Orientation="Horizontal" VerticalAlignment="Center">
                         <TextBlock Text="T?:" FontSize="12" Foreground="{StaticResource Gray500}" VerticalAlignment="Center" Margin="0,0,8,0" FontWeight="Medium"/>
                         <DatePicker SelectedDate="{Binding TuNgay}" Width="130" FontSize="12"/>
                     </StackPanel>
 
-                    <!-- �?n ng�y -->
+                    <!-- Đến ngày -->
                     <StackPanel Grid.Column="4" Orientation="Horizontal" VerticalAlignment="Center">
-                        <TextBlock Text="�?n:" FontSize="12" Foreground="{StaticResource Gray500}" VerticalAlignment="Center" Margin="0,0,8,0" FontWeight="Medium"/>
+                        <TextBlock Text="Đến:" FontSize="12" Foreground="{StaticResource Gray500}" VerticalAlignment="Center" Margin="0,0,8,0" FontWeight="Medium"/>
                         <DatePicker SelectedDate="{Binding DenNgay}" Width="130" FontSize="12"/>
                     </StackPanel>
 
@@ -226,7 +226,7 @@
                                     <StackPanel Orientation="Horizontal">
                                         <TextBlock Text="&#xE894;" FontFamily="Segoe MDL2 Assets" FontSize="12" 
                                                    Foreground="{StaticResource Gray500}" VerticalAlignment="Center" Margin="0,0,6,0"/>
-                                        <TextBlock Text="X�a l?c" FontSize="12" Foreground="{StaticResource Gray500}" VerticalAlignment="Center" FontWeight="Medium"/>
+                                        <TextBlock Text="Xóa lọc" FontSize="12" Foreground="{StaticResource Gray500}" VerticalAlignment="Center" FontWeight="Medium"/>
                                     </StackPanel>
                                 </Border>
                                 <ControlTemplate.Triggers>
@@ -260,11 +260,11 @@
                                 <ColumnDefinition Width="0.9*"/>
                                 <ColumnDefinition Width="0.7*"/>
                             </Grid.ColumnDefinitions>
-                            <TextBlock Grid.Column="0" Text="M� �ON H�NG" FontSize="11" FontWeight="Bold" Foreground="{StaticResource Gray400}"/>
-                            <TextBlock Grid.Column="1" Text="TH?I GIAN" FontSize="11" FontWeight="Bold" Foreground="{StaticResource Gray400}" TextAlignment="Center"/>
-                            <TextBlock Grid.Column="2" Text="NH�N VI�N" FontSize="11" FontWeight="Bold" Foreground="{StaticResource Gray400}" TextAlignment="Center"/>
-                            <TextBlock Grid.Column="3" Text="THANH TO�N" FontSize="11" FontWeight="Bold" Foreground="{StaticResource Gray400}" TextAlignment="Right"/>
-                            <TextBlock Grid.Column="4" Text="PHUONG TH?C" FontSize="11" FontWeight="Bold" Foreground="{StaticResource Gray400}" TextAlignment="Center"/>
+                            <TextBlock Grid.Column="0" Text="Mã ĐƠN HÀNG" FontSize="11" FontWeight="Bold" Foreground="{StaticResource Gray400}"/>
+                            <TextBlock Grid.Column="1" Text="THỜI GIAN" FontSize="11" FontWeight="Bold" Foreground="{StaticResource Gray400}" TextAlignment="Center"/>
+                            <TextBlock Grid.Column="2" Text="NHÂN VIÊN" FontSize="11" FontWeight="Bold" Foreground="{StaticResource Gray400}" TextAlignment="Center"/>
+                            <TextBlock Grid.Column="3" Text="THANH TOÁN" FontSize="11" FontWeight="Bold" Foreground="{StaticResource Gray400}" TextAlignment="Right"/>
+                            <TextBlock Grid.Column="4" Text="PHƯƠNG THỨC" FontSize="11" FontWeight="Bold" Foreground="{StaticResource Gray400}" TextAlignment="Center"/>
                             <TextBlock Grid.Column="5" Text="" FontSize="11" FontWeight="Bold" Foreground="{StaticResource Gray400}" TextAlignment="Center"/>
                         </Grid>
                     </Border>
@@ -295,14 +295,14 @@
                                                 <ColumnDefinition Width="0.7*"/>
                                             </Grid.ColumnDefinitions>
 
-                                            <!-- M� don -->
+                                            <!-- Mã đơn -->
                                             <StackPanel Grid.Column="0" VerticalAlignment="Center">
                                                 <TextBlock Text="{Binding MaDonHang}" FontSize="13" FontWeight="SemiBold" Foreground="{StaticResource PrimaryBlue}"/>
                                                 <TextBlock Text="{Binding GhiChu}" FontSize="11" Foreground="{StaticResource Gray400}" 
                                                            TextTrimming="CharacterEllipsis" MaxWidth="160" HorizontalAlignment="Left" Margin="0,2,0,0"/>
                                             </StackPanel>
 
-                                            <!-- Th?i gian -->
+                                            <!-- Thời gian -->
                                             <StackPanel Grid.Column="1" VerticalAlignment="Center" HorizontalAlignment="Center">
                                                 <TextBlock Text="{Binding NgayTao, StringFormat={}{0:dd/MM/yyyy}}" 
                                                            FontSize="12" FontWeight="Medium" Foreground="{StaticResource Gray700}" TextAlignment="Center"/>
@@ -310,15 +310,15 @@
                                                            FontSize="11" Foreground="{StaticResource Gray400}" TextAlignment="Center" Margin="0,1,0,0"/>
                                             </StackPanel>
 
-                                            <!-- Nh�n vi�n -->
+                                            <!-- Nhân viên -->
                                             <TextBlock Grid.Column="2" Text="{Binding NhanVien.HoTen}" 
                                                        FontSize="12" Foreground="{StaticResource Gray600}" TextAlignment="Center" VerticalAlignment="Center"/>
 
-                                            <!-- Thanh to�n -->
+                                            <!-- Thanh toán -->
                                             <TextBlock Grid.Column="3" Text="{Binding ThanhToan, StringFormat='{}{0:N0}d'}" 
                                                        FontSize="13" FontWeight="Bold" Foreground="{StaticResource Gray800}" TextAlignment="Right" VerticalAlignment="Center"/>
 
-                                            <!-- Phuong th?c -->
+                                            <!-- Phương thức -->
                                             <Border Grid.Column="4" HorizontalAlignment="Center" VerticalAlignment="Center" CornerRadius="8" Padding="10,5">
                                                 <Border.Style>
                                                     <Style TargetType="Border">
@@ -328,10 +328,10 @@
                                                 <TextBlock Text="{Binding PhuongThucTT}" FontSize="11" FontWeight="Medium" Foreground="{StaticResource Gray600}"/>
                                             </Border>
 
-                                            <!-- Thao t�c -->
+                                            <!-- Thao tác -->
                                             <Button Grid.Column="5" Command="{Binding DataContext.ViewDetailCommand, RelativeSource={RelativeSource AncestorType=ItemsControl}}"
                                                     CommandParameter="{Binding}" Cursor="Hand" VerticalAlignment="Center" HorizontalAlignment="Center"
-                                                    ToolTip="Xem chi ti?t don h�ng">
+                                                    ToolTip="Xem chi tiết đơn hàng">
                                                 <Button.Template>
                                                     <ControlTemplate TargetType="Button">
                                                         <Border x:Name="btnBorder" Background="{StaticResource LightBlue}" CornerRadius="10" Padding="12,7">
@@ -363,7 +363,7 @@
                             <TextBlock Text="&#xE895;" FontFamily="Segoe MDL2 Assets" FontSize="24" 
                                        Foreground="{StaticResource PrimaryBlue}" HorizontalAlignment="Center" VerticalAlignment="Center"/>
                         </Border>
-                        <TextBlock Text="�ang t?i d? li?u..." FontSize="14" Foreground="{StaticResource Gray400}" HorizontalAlignment="Center"/>
+                        <TextBlock Text="Đang tải dữ liệu..." FontSize="14" Foreground="{StaticResource Gray400}" HorizontalAlignment="Center"/>
                     </StackPanel>
                 </Grid>
             </Border>
@@ -409,7 +409,7 @@
                                 <StackPanel Orientation="Horizontal" Margin="0,0,0,6">
                                     <TextBlock Text="&#xE7BF;" FontFamily="Segoe MDL2 Assets" FontSize="18" 
                                                Foreground="#C7D2FE" VerticalAlignment="Center" Margin="0,0,10,0"/>
-                                    <TextBlock Text="Chi ti?t don h�ng" FontSize="22" FontWeight="Bold" Foreground="White" VerticalAlignment="Center"/>
+                                    <TextBlock Text="Chi tiết đơn hàng" FontSize="22" FontWeight="Bold" Foreground="White" VerticalAlignment="Center"/>
                                 </StackPanel>
                                 <Border Background="#26FFFFFF" CornerRadius="6" Padding="10,4" HorizontalAlignment="Left">
                                     <TextBlock Text="{Binding SelectedDonHang.MaDonHang}" FontSize="13" FontWeight="SemiBold" Foreground="White"/>
@@ -439,7 +439,7 @@
                         <StackPanel Margin="32,24,32,24">
 
                             <!-- Order Info Section -->
-                            <TextBlock Text="Th�ng tin don h�ng" FontSize="14" FontWeight="Bold" 
+                            <TextBlock Text="Thông tin đơn hàng" FontSize="14" FontWeight="Bold" 
                                        Foreground="{StaticResource Gray800}" Margin="0,0,0,14"/>
                             
                             <Border Background="{StaticResource Gray50}" CornerRadius="14" Padding="20" Margin="0,0,0,20">
@@ -456,12 +456,12 @@
                                         <RowDefinition Height="Auto"/>
                                     </Grid.RowDefinitions>
 
-                                    <!-- Row 0: Th?i gian + Nh�n vi�n -->
+                                    <!-- Row 0: Thời gian + Nhân viên -->
                                     <StackPanel Grid.Row="0" Grid.Column="0">
                                         <StackPanel Orientation="Horizontal" Margin="0,0,0,6">
                                             <TextBlock Text="&#xE787;" FontFamily="Segoe MDL2 Assets" FontSize="12" 
                                                        Foreground="{StaticResource Gray400}" VerticalAlignment="Center" Margin="0,0,6,0"/>
-                                            <TextBlock Text="Th?i gian" FontSize="11" Foreground="{StaticResource Gray400}" FontWeight="Medium"/>
+                                            <TextBlock Text="Thời gian" FontSize="11" Foreground="{StaticResource Gray400}" FontWeight="Medium"/>
                                         </StackPanel>
                                         <TextBlock Text="{Binding SelectedDonHang.NgayTao, StringFormat={}{0:dd/MM/yyyy HH:mm:ss}}" 
                                                    FontSize="13" FontWeight="SemiBold" Foreground="{StaticResource Gray800}"/>
@@ -471,29 +471,29 @@
                                         <StackPanel Orientation="Horizontal" Margin="0,0,0,6">
                                             <TextBlock Text="&#xE77B;" FontFamily="Segoe MDL2 Assets" FontSize="12" 
                                                        Foreground="{StaticResource Gray400}" VerticalAlignment="Center" Margin="0,0,6,0"/>
-                                            <TextBlock Text="Nh�n vi�n" FontSize="11" Foreground="{StaticResource Gray400}" FontWeight="Medium"/>
+                                            <TextBlock Text="Nhân viên" FontSize="11" Foreground="{StaticResource Gray400}" FontWeight="Medium"/>
                                         </StackPanel>
                                         <TextBlock Text="{Binding SelectedDonHang.NhanVien.HoTen}" 
                                                    FontSize="13" FontWeight="SemiBold" Foreground="{StaticResource Gray800}"/>
                                     </StackPanel>
 
-                                    <!-- Row 2: Phuong th?c -->
+                                    <!-- Row 2: Phương thức -->
                                     <StackPanel Grid.Row="2" Grid.Column="0">
                                         <StackPanel Orientation="Horizontal" Margin="0,0,0,6">
                                             <TextBlock Text="&#xE8C7;" FontFamily="Segoe MDL2 Assets" FontSize="12" 
                                                        Foreground="{StaticResource Gray400}" VerticalAlignment="Center" Margin="0,0,6,0"/>
-                                            <TextBlock Text="Phuong th?c thanh to�n" FontSize="11" Foreground="{StaticResource Gray400}" FontWeight="Medium"/>
+                                            <TextBlock Text="Phương thức thanh toán" FontSize="11" Foreground="{StaticResource Gray400}" FontWeight="Medium"/>
                                         </StackPanel>
                                         <TextBlock Text="{Binding SelectedDonHang.PhuongThucTT}" 
                                                    FontSize="13" FontWeight="SemiBold" Foreground="{StaticResource Gray800}"/>
                                     </StackPanel>
 
-                                    <!-- Row 4: Ghi ch� -->
+                                    <!-- Row 4: Ghi chú -->
                                     <StackPanel Grid.Row="4" Grid.ColumnSpan="2">
                                         <StackPanel Orientation="Horizontal" Margin="0,0,0,6">
                                             <TextBlock Text="&#xE70B;" FontFamily="Segoe MDL2 Assets" FontSize="12" 
                                                        Foreground="{StaticResource Gray400}" VerticalAlignment="Center" Margin="0,0,6,0"/>
-                                            <TextBlock Text="Ghi ch�" FontSize="11" Foreground="{StaticResource Gray400}" FontWeight="Medium"/>
+                                            <TextBlock Text="Ghi chú" FontSize="11" Foreground="{StaticResource Gray400}" FontWeight="Medium"/>
                                         </StackPanel>
                                         <TextBlock FontSize="13" Foreground="{StaticResource Gray600}" TextWrapping="Wrap">
                                             <TextBlock.Style>
@@ -501,12 +501,12 @@
                                                     <Setter Property="Text" Value="{Binding SelectedDonHang.GhiChu}"/>
                                                     <Style.Triggers>
                                                         <DataTrigger Binding="{Binding SelectedDonHang.GhiChu}" Value="{x:Null}">
-                                                            <Setter Property="Text" Value="Kh�ng c� ghi ch�"/>
+                                                            <Setter Property="Text" Value="Không có ghi chú"/>
                                                             <Setter Property="FontStyle" Value="Italic"/>
                                                             <Setter Property="Foreground" Value="{StaticResource Gray300}"/>
                                                         </DataTrigger>
                                                         <DataTrigger Binding="{Binding SelectedDonHang.GhiChu}" Value="">
-                                                            <Setter Property="Text" Value="Kh�ng c� ghi ch�"/>
+                                                            <Setter Property="Text" Value="Không có ghi chú"/>
                                                             <Setter Property="FontStyle" Value="Italic"/>
                                                             <Setter Property="Foreground" Value="{StaticResource Gray300}"/>
                                                         </DataTrigger>
@@ -519,7 +519,7 @@
                             </Border>
 
                             <!-- Financial Summary -->
-                            <TextBlock Text="T?ng k?t thanh to�n" FontSize="14" FontWeight="Bold" 
+                            <TextBlock Text="Tổng kết thanh toán" FontSize="14" FontWeight="Bold" 
                                        Foreground="{StaticResource Gray800}" Margin="0,0,0,14"/>
 
                             <Border CornerRadius="14" Padding="20" Margin="0,0,0,20">
@@ -535,18 +535,18 @@
                                 <Border.BorderThickness>1</Border.BorderThickness>
                                 <StackPanel>
                                     <Grid Margin="0,0,0,8">
-                                        <TextBlock Text="T?ng ti?n h�ng" FontSize="13" Foreground="{StaticResource Gray500}"/>
+                                        <TextBlock Text="Tổng tiền hàng" FontSize="13" Foreground="{StaticResource Gray500}"/>
                                         <TextBlock Text="{Binding SelectedDonHang.TongTien, StringFormat='{}{0:N0}d'}" 
                                                    FontSize="13" FontWeight="Medium" Foreground="{StaticResource Gray700}" HorizontalAlignment="Right"/>
                                     </Grid>
                                     <Grid Margin="0,0,0,12">
-                                        <TextBlock Text="Gi?m gi�" FontSize="13" Foreground="{StaticResource Gray500}"/>
+                                        <TextBlock Text="Giảm giá" FontSize="13" Foreground="{StaticResource Gray500}"/>
                                         <TextBlock Text="{Binding SelectedDonHang.GiamGia, StringFormat='-{0:N0}d'}" 
                                                    FontSize="13" FontWeight="Medium" Foreground="{StaticResource DangerRed}" HorizontalAlignment="Right"/>
                                     </Grid>
                                     <Border BorderBrush="#C7D2FE" BorderThickness="0,1,0,0" Padding="0,12,0,0">
                                         <Grid>
-                                            <TextBlock Text="Thanh to�n" FontSize="15" FontWeight="Bold" Foreground="{StaticResource PrimaryBlue}" VerticalAlignment="Center"/>
+                                            <TextBlock Text="Thanh toán" FontSize="15" FontWeight="Bold" Foreground="{StaticResource PrimaryBlue}" VerticalAlignment="Center"/>
                                             <TextBlock Text="{Binding SelectedDonHang.ThanhToan, StringFormat='{}{0:N0}d'}" 
                                                        FontSize="22" FontWeight="Bold" Foreground="{StaticResource PrimaryBlue}" HorizontalAlignment="Right"/>
                                         </Grid>
@@ -556,10 +556,10 @@
 
                             <!-- Products Section -->
                             <StackPanel Orientation="Horizontal" Margin="0,0,0,14">
-                                <TextBlock Text="S?n ph?m trong don" FontSize="14" FontWeight="Bold" 
+                                <TextBlock Text="Sản phẩm trong đơn" FontSize="14" FontWeight="Bold" 
                                            Foreground="{StaticResource Gray800}"/>
                                 <Border Background="{StaticResource LightBlue}" CornerRadius="10" Padding="8,2" Margin="10,0,0,0" VerticalAlignment="Center">
-                                    <TextBlock Text="{Binding ChiTietDonHangs.Count, StringFormat='{}{0} m�n'}" 
+                                    <TextBlock Text="{Binding ChiTietDonHangs.Count, StringFormat='{}{0} món'}" 
                                                FontSize="11" FontWeight="Bold" Foreground="{StaticResource PrimaryBlue}"/>
                                 </Border>
                             </StackPanel>
@@ -577,8 +577,8 @@
                                             </Grid.ColumnDefinitions>
                                             <TextBlock Grid.Column="0" Text="PIZZA" FontSize="10" FontWeight="Bold" Foreground="{StaticResource Gray400}"/>
                                             <TextBlock Grid.Column="1" Text="SL" FontSize="10" FontWeight="Bold" Foreground="{StaticResource Gray400}" TextAlignment="Center"/>
-                                            <TextBlock Grid.Column="2" Text="�ON GI�" FontSize="10" FontWeight="Bold" Foreground="{StaticResource Gray400}" TextAlignment="Right"/>
-                                            <TextBlock Grid.Column="3" Text="TH�NH TI?N" FontSize="10" FontWeight="Bold" Foreground="{StaticResource Gray400}" TextAlignment="Right"/>
+                                            <TextBlock Grid.Column="2" Text="ĐƠN GIÁ" FontSize="10" FontWeight="Bold" Foreground="{StaticResource Gray400}" TextAlignment="Right"/>
+                                            <TextBlock Grid.Column="3" Text="THÀNH TIỀN" FontSize="10" FontWeight="Bold" Foreground="{StaticResource Gray400}" TextAlignment="Right"/>
                                         </Grid>
                                     </Border>
 
@@ -632,7 +632,7 @@
                             <StackPanel Orientation="Horizontal" VerticalAlignment="Center">
                                 <TextBlock Text="&#xE946;" FontFamily="Segoe MDL2 Assets" FontSize="12" 
                                            Foreground="{StaticResource Gray300}" VerticalAlignment="Center" Margin="0,0,6,0"/>
-                                <TextBlock Text="�on b�n tr?c ti?p" 
+                                                        <TextBlock Text="Đơn bán trực tiếp" 
                                            FontSize="11" Foreground="{StaticResource Gray400}" VerticalAlignment="Center" FontStyle="Italic"/>
                             </StackPanel>
                         </Grid>
@@ -642,3 +642,5 @@
         </Grid>
     </Grid>
 </UserControl>
+
+

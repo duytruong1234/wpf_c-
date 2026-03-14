@@ -1,4 +1,4 @@
-using System.IO;
+﻿using System.IO;
 using System.Text.Json;
 
 namespace QuanLyKhoNguyenLieuPizza.Services;
@@ -77,3 +77,4 @@ public class ConfigurationService
         return _appSettings.TryGetValue(key, out var value) ? value : string.Empty;
     }
 }
+

@@ -1,4 +1,4 @@
-using System.Collections.ObjectModel;
+﻿using System.Collections.ObjectModel;
 using System.Windows.Input;
 using QuanLyKhoNguyenLieuPizza.Models;
 using QuanLyKhoNguyenLieuPizza.Services;
@@ -327,7 +327,7 @@ public class NhaCungCapViewModel : BaseViewModel
                 DiaChi = string.IsNullOrWhiteSpace(FormDiaChi) ? null : FormDiaChi.Trim(),
                 SDT = string.IsNullOrWhiteSpace(FormSDT) ? null : FormSDT.Trim(),
                 Email = string.IsNullOrWhiteSpace(FormEmail) ? null : FormEmail.Trim(),
-                TrangThai = true // M?c ??nh "?ang h?p t�c"
+                TrangThai = true // Mặc định "Đang hợp tác"
             };
 
             if (!IsCreateMode && SelectedNhaCungCap != null)
@@ -397,3 +397,5 @@ public class NhaCungCapViewModel : BaseViewModel
     }
     #endregion
 }
+
+

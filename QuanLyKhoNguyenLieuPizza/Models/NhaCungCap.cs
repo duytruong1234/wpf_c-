@@ -1,4 +1,4 @@
-namespace QuanLyKhoNguyenLieuPizza.Models;
+﻿namespace QuanLyKhoNguyenLieuPizza.Models;
 
 public class NhaCungCap
 {
@@ -13,3 +13,4 @@ public class NhaCungCap
     public virtual ICollection<NguyenLieuNhaCungCap> NguyenLieuNhaCungCaps { get; set; } = new List<NguyenLieuNhaCungCap>();
     public virtual ICollection<PhieuNhap> PhieuNhaps { get; set; } = new List<PhieuNhap>();
 }
+

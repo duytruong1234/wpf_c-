@@ -1,4 +1,4 @@
-using System.Collections.ObjectModel;
+﻿using System.Collections.ObjectModel;
 using System.Windows.Input;
 using QuanLyKhoNguyenLieuPizza.Core.Interfaces;
 using QuanLyKhoNguyenLieuPizza.Models;
@@ -189,7 +189,7 @@ public class DashboardViewModel : BaseViewModel
 
         // Load current user name
         var currentUser = CurrentUserSession.Instance.CurrentUser;
-        TenNguoiDung = currentUser?.NhanVien?.HoTen ?? currentUser?.Username ?? "Ng??i d�ng";
+        TenNguoiDung = currentUser?.NhanVien?.HoTen ?? currentUser?.Username ?? "Ng??i đãng";
 
         _ = LoadDataAsync();
     }
@@ -270,3 +270,5 @@ public class DashboardViewModel : BaseViewModel
         }
     }
 }
+
+

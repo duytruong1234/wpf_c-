@@ -1,4 +1,4 @@
-<Window x:Class="QuanLyKhoNguyenLieuPizza.Views.SplashWindow"
+﻿<Window x:Class="QuanLyKhoNguyenLieuPizza.Views.SplashWindow"
         xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
         WindowStyle="None"
@@ -152,3 +152,4 @@
         </Grid>
     </Border>
 </Window>
+

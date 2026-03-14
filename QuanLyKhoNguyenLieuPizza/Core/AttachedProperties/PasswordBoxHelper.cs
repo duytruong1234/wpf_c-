@@ -1,4 +1,4 @@
-using System.Windows;
+﻿using System.Windows;
 using System.Windows.Controls;
 
 namespace QuanLyKhoNguyenLieuPizza.Core.AttachedProperties;
@@ -123,3 +123,4 @@ public static class PasswordBoxHelper
         d.SetValue(ShowPasswordProperty, value);
     }
 }
+

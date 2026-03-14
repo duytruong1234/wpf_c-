@@ -1,4 +1,4 @@
-namespace QuanLyKhoNguyenLieuPizza.Models;
+﻿namespace QuanLyKhoNguyenLieuPizza.Models;
 
 public class ChucVu
 {
@@ -8,3 +8,4 @@ public class ChucVu
     // Navigation property
     public virtual ICollection<NhanVien> NhanViens { get; set; } = new List<NhanVien>();
 }
+

@@ -1,4 +1,4 @@
-namespace QuanLyKhoNguyenLieuPizza.Models;
+﻿namespace QuanLyKhoNguyenLieuPizza.Models;
 
 public class PhieuBanHang
 {
@@ -12,3 +12,4 @@ public class PhieuBanHang
     public virtual NhanVien? NhanVienBan { get; set; }
     public virtual ICollection<CT_PhieuBan> CT_PhieuBans { get; set; } = new List<CT_PhieuBan>();
 }
+

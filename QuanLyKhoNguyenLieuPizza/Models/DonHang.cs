@@ -1,4 +1,4 @@
-namespace QuanLyKhoNguyenLieuPizza.Models;
+﻿namespace QuanLyKhoNguyenLieuPizza.Models;
 
 public class DonHang
 {
@@ -17,3 +17,4 @@ public class DonHang
     public virtual NhanVien? NhanVien { get; set; }
     public virtual ICollection<CT_DonHang> CT_DonHangs { get; set; } = new List<CT_DonHang>();
 }
+

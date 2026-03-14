@@ -1,4 +1,4 @@
-using System.Collections.ObjectModel;
+Ôªøusing System.Collections.ObjectModel;
 using System.Windows.Input;
 using QuanLyKhoNguyenLieuPizza.Models;
 using QuanLyKhoNguyenLieuPizza.Services;
@@ -271,8 +271,8 @@ public class PhieuXuatViewModel : BaseViewModel
         // Detect if current user is employee (not manager)
         var currentUser = CurrentUserSession.Instance.CurrentUser;
         var chucVuId = currentUser?.NhanVien?.ChucVuID ?? 0;
-        IsNhanVien = chucVuId == 3 || chucVuId == 4; // 3: Nh‚n viÍn b?p, 4: Nh‚n viÍn kho
-        CurrentUserName = currentUser?.NhanVien?.HoTen ?? "Nh‚n viÍn";
+        IsNhanVien = chucVuId == 3 || chucVuId == 4; // 3: Nh√¢n vi√™n b·∫øp, 4: Nh√¢n vi√™n kho
+        CurrentUserName = currentUser?.NhanVien?.HoTen ?? "Nh√¢n vi√™n";
 
         LoadDataCommand = new RelayCommand(async _ => await LoadDataAsync());
         CreatePhieuXuatCommand = new RelayCommand(_ => OpenCreateDialog());
@@ -654,10 +654,10 @@ public class PhieuXuatViewModel : BaseViewModel
 
         try
         {
-            // Load chi ti?t n?u ch?a cÛ
+            // Load chi ti·∫øt n·∫øu ch∆∞a c√≥
             var chiTiets = await _databaseService.GetChiTietPhieuXuatAsync(phieuXuat.PhieuXuatID);
             
-            // G?i PrintService
+            // G·ªçi PrintService
             PrintService.PrintPhieuXuat(phieuXuat, chiTiets);
         }
         catch (Exception ex)
@@ -667,3 +667,5 @@ public class PhieuXuatViewModel : BaseViewModel
     }
     #endregion
 }
+
+

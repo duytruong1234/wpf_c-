@@ -1,4 +1,4 @@
-using QuanLyKhoNguyenLieuPizza.Core.Interfaces;
+﻿using QuanLyKhoNguyenLieuPizza.Core.Interfaces;
 
 namespace QuanLyKhoNguyenLieuPizza.Services;
 
@@ -65,3 +65,4 @@ public class ServiceLocator
         }
     }
 }
+

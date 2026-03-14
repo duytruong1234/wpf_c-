@@ -1,4 +1,4 @@
-using System.Collections.ObjectModel;
+﻿using System.Collections.ObjectModel;
 using System.Windows.Input;
 using QuanLyKhoNguyenLieuPizza.Models;
 using QuanLyKhoNguyenLieuPizza.Services;
@@ -612,10 +612,10 @@ public class PhieuNhapViewModel : BaseViewModel
 
         try
         {
-            // Load chi ti?t n?u ch?a c�
+            // Load chi tiết nếu chưa có
             var chiTiets = await _databaseService.GetChiTietPhieuNhapAsync(phieuNhap.PhieuNhapID);
             
-            // G?i PrintService
+            // Gọi PrintService
             PrintService.PrintPhieuNhap(phieuNhap, chiTiets);
         }
         catch (Exception ex)
@@ -625,3 +625,5 @@ public class PhieuNhapViewModel : BaseViewModel
     }
     #endregion
 }
+
+

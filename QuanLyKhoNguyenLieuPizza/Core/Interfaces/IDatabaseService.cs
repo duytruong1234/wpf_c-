@@ -1,4 +1,4 @@
-using QuanLyKhoNguyenLieuPizza.Models;
+﻿using QuanLyKhoNguyenLieuPizza.Models;
 
 namespace QuanLyKhoNguyenLieuPizza.Core.Interfaces;
 
@@ -106,4 +106,5 @@ public interface IDatabaseService
     Task<decimal> GetDoanhThuBanHangAsync(DateTime fromDate, DateTime toDate);
     Task<int> GetTotalPhieuBanCountAsync(DateTime fromDate, DateTime toDate);
 }
+
 

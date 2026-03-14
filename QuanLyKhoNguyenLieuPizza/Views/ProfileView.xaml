@@ -130,7 +130,7 @@
                                 HorizontalAlignment="Right"
                                 VerticalAlignment="Bottom"
                                 Cursor="Hand"
-                                ToolTip="�?i ?nh d?i di?n"
+                                ToolTip="Đổi ảnh đại diện"
                                 Margin="0,0,0,2">
                             <Button.Template>
                                 <ControlTemplate TargetType="Button">
@@ -193,7 +193,7 @@
                                 <TextBlock Text="&#xE74E;" 
                                            FontFamily="Segoe MDL2 Assets" FontSize="13"
                                            Foreground="#16A34A" VerticalAlignment="Center" Margin="0,0,8,0"/>
-                                <TextBlock Text="B?n d� ch?n ?nh m?i. Luu thay d?i?" 
+                                <TextBlock Text="Bạn đã chọn ảnh mới. Lưu thay đổi?" 
                                            FontSize="13" 
                                            Foreground="#16A34A" 
                                            FontWeight="Medium"
@@ -206,7 +206,7 @@
                                             <Border x:Name="border" Background="{StaticResource SuccessGreen}" CornerRadius="8" Padding="22,9">
                                                 <StackPanel Orientation="Horizontal">
                                                     <TextBlock Text="&#xE74E;" FontFamily="Segoe MDL2 Assets" FontSize="12" Foreground="White" VerticalAlignment="Center" Margin="0,0,6,0"/>
-                                                    <TextBlock Text="Luu ?nh" FontSize="13" FontWeight="SemiBold" Foreground="White"/>
+                                                    <TextBlock Text="Lưu ảnh" FontSize="13" FontWeight="SemiBold" Foreground="White"/>
                                                 </StackPanel>
                                             </Border>
                                             <ControlTemplate.Triggers>
@@ -221,7 +221,7 @@
                                     <Button.Template>
                                         <ControlTemplate TargetType="Button">
                                             <Border x:Name="border" Background="{StaticResource Gray200}" CornerRadius="8" Padding="22,9">
-                                                <TextBlock Text="H?y" FontSize="13" FontWeight="SemiBold" Foreground="{StaticResource Gray600}"/>
+                                                <TextBlock Text="Hủy" FontSize="13" FontWeight="SemiBold" Foreground="{StaticResource Gray600}"/>
                                             </Border>
                                             <ControlTemplate.Triggers>
                                                 <Trigger Property="IsMouseOver" Value="True">
@@ -236,7 +236,7 @@
                     </Border>
 
                     <!-- Info Cards -->
-                    <TextBlock Text="TH�NG TIN C� NH�N" 
+                    <TextBlock Text="THÔNG TIN CÁ NHÂN" 
                                FontSize="11" FontWeight="Bold" 
                                Foreground="{StaticResource Gray400}"
                                Margin="4,0,0,12"/>
@@ -256,7 +256,7 @@
                                            HorizontalAlignment="Center" VerticalAlignment="Center"/>
                             </Border>
                             <StackPanel Grid.Column="1" VerticalAlignment="Center">
-                                <TextBlock Text="T�n dang nh?p" FontSize="11" Foreground="{StaticResource Gray400}" Margin="0,0,0,3"/>
+                                <TextBlock Text="Tên đăng nhập" FontSize="11" Foreground="{StaticResource Gray400}" Margin="0,0,0,3"/>
                                 <TextBlock Text="{Binding Username}" FontSize="14" FontWeight="SemiBold" Foreground="{StaticResource Gray900}"/>
                             </StackPanel>
                         </Grid>
@@ -278,7 +278,7 @@
                             </Border>
                             <StackPanel Grid.Column="1" VerticalAlignment="Center">
                                 <TextBlock Text="Email" FontSize="11" Foreground="{StaticResource Gray400}" Margin="0,0,0,3"/>
-                                <TextBlock Text="{Binding Email, TargetNullValue='Chua c?p nh?t'}" FontSize="14" FontWeight="SemiBold" Foreground="{StaticResource Gray900}" TextTrimming="CharacterEllipsis"/>
+                                <TextBlock Text="{Binding Email, TargetNullValue='Chưa cập nhật'}" FontSize="14" FontWeight="SemiBold" Foreground="{StaticResource Gray900}" TextTrimming="CharacterEllipsis"/>
                             </StackPanel>
                         </Grid>
                     </Border>
@@ -298,8 +298,8 @@
                                            HorizontalAlignment="Center" VerticalAlignment="Center"/>
                             </Border>
                             <StackPanel Grid.Column="1" VerticalAlignment="Center">
-                                <TextBlock Text="S? di?n tho?i" FontSize="11" Foreground="{StaticResource Gray400}" Margin="0,0,0,3"/>
-                                <TextBlock Text="{Binding SDT, TargetNullValue='Chua c?p nh?t'}" FontSize="14" FontWeight="SemiBold" Foreground="{StaticResource Gray900}"/>
+                                <TextBlock Text="Số điện thoại" FontSize="11" Foreground="{StaticResource Gray400}" Margin="0,0,0,3"/>
+                                <TextBlock Text="{Binding SDT, TargetNullValue='Chưa cập nhật'}" FontSize="14" FontWeight="SemiBold" Foreground="{StaticResource Gray900}"/>
                             </StackPanel>
                         </Grid>
                     </Border>
@@ -319,8 +319,8 @@
                                            HorizontalAlignment="Center" VerticalAlignment="Center"/>
                             </Border>
                             <StackPanel Grid.Column="1" VerticalAlignment="Center">
-                                <TextBlock Text="Ng�y sinh" FontSize="11" Foreground="{StaticResource Gray400}" Margin="0,0,0,3"/>
-                                <TextBlock Text="{Binding NgaySinh, StringFormat={}{0:dd/MM/yyyy}, TargetNullValue='Chua c?p nh?t'}" FontSize="14" FontWeight="SemiBold" Foreground="{StaticResource Gray900}"/>
+                                <TextBlock Text="Ngày sinh" FontSize="11" Foreground="{StaticResource Gray400}" Margin="0,0,0,3"/>
+                                <TextBlock Text="{Binding NgaySinh, StringFormat={}{0:dd/MM/yyyy}, TargetNullValue='Chưa cập nhật'}" FontSize="14" FontWeight="SemiBold" Foreground="{StaticResource Gray900}"/>
                             </StackPanel>
                         </Grid>
                     </Border>
@@ -341,8 +341,8 @@
                                            HorizontalAlignment="Center" VerticalAlignment="Center"/>
                             </Border>
                             <StackPanel Grid.Column="1" VerticalAlignment="Center">
-                                <TextBlock Text="�?a ch?" FontSize="11" Foreground="{StaticResource Gray400}" Margin="0,0,0,3"/>
-                                <TextBlock Text="{Binding DiaChi, TargetNullValue='Chua c?p nh?t'}" FontSize="14" FontWeight="SemiBold" Foreground="{StaticResource Gray900}" TextWrapping="Wrap"/>
+                                <TextBlock Text="Địa chỉ" FontSize="11" Foreground="{StaticResource Gray400}" Margin="0,0,0,3"/>
+                                <TextBlock Text="{Binding DiaChi, TargetNullValue='Chưa cập nhật'}" FontSize="14" FontWeight="SemiBold" Foreground="{StaticResource Gray900}" TextWrapping="Wrap"/>
                             </StackPanel>
                         </Grid>
                     </Border>
@@ -358,7 +358,7 @@
                                     <StackPanel Orientation="Horizontal" HorizontalAlignment="Center">
                                         <TextBlock Text="&#xE72E;" FontFamily="Segoe MDL2 Assets" FontSize="15"
                                                    Foreground="White" VerticalAlignment="Center" Margin="0,0,10,0"/>
-                                        <TextBlock Text="�?i m?t kh?u" FontSize="14" FontWeight="SemiBold" Foreground="White"/>
+                                        <TextBlock Text="Đổi mật khẩu" FontSize="14" FontWeight="SemiBold" Foreground="White"/>
                                     </StackPanel>
                                 </Border>
                                 <ControlTemplate.Triggers>
@@ -378,7 +378,7 @@
                                     <StackPanel Orientation="Horizontal" HorizontalAlignment="Center">
                                         <TextBlock Text="&#xF3B1;" FontFamily="Segoe MDL2 Assets" FontSize="15"
                                                    Foreground="{StaticResource DangerRed}" VerticalAlignment="Center" Margin="0,0,10,0"/>
-                                        <TextBlock Text="�ang xu?t" FontSize="14" FontWeight="SemiBold" Foreground="{StaticResource DangerRed}"/>
+                                        <TextBlock Text="Đang xuất" FontSize="14" FontWeight="SemiBold" Foreground="{StaticResource DangerRed}"/>
                                     </StackPanel>
                                 </Border>
                                 <ControlTemplate.Triggers>
@@ -395,4 +395,6 @@
         </Grid>
     </Border>
 </UserControl>
+
+
 

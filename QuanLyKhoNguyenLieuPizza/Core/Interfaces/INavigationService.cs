@@ -1,4 +1,4 @@
-namespace QuanLyKhoNguyenLieuPizza.Core.Interfaces;
+﻿namespace QuanLyKhoNguyenLieuPizza.Core.Interfaces;
 
 /// <summary>
 /// Navigation service interface for decoupling navigation logic from ViewModels
@@ -35,3 +35,4 @@ public interface INavigationService
     /// </summary>
     event Action<object?>? OnNavigated;
 }
+

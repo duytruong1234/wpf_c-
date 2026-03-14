@@ -1,4 +1,4 @@
-namespace QuanLyKhoNguyenLieuPizza.Core.Interfaces;
+﻿namespace QuanLyKhoNguyenLieuPizza.Core.Interfaces;
 
 /// <summary>
 /// Generic repository interface for basic CRUD operations
@@ -22,3 +22,4 @@ public interface IUnitOfWork : IDisposable
     Task CommitAsync();
     Task RollbackAsync();
 }
+

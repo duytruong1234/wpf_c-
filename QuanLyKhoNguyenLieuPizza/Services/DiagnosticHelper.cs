@@ -1,4 +1,4 @@
-using System.Diagnostics;
+﻿using System.Diagnostics;
 using System.Windows;
 
 namespace QuanLyKhoNguyenLieuPizza.Services;
@@ -29,3 +29,4 @@ public static class DiagnosticHelper
         Debug.WriteLine($"INFO: {message}");
     }
 }
+

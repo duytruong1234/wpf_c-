@@ -372,13 +372,13 @@ public class BanHangViewModel : BaseViewModel
     {
         if (!CartItems.Any())
         {
-            MessageBox.Show("Gi? h�ng tr?ng!", "Th�ng b�o", MessageBoxButton.OK, MessageBoxImage.Warning);
+            MessageBox.Show("Giỏ hàng trống!", "Thông báo", MessageBoxButton.OK, MessageBoxImage.Warning);
             return;
         }
 
         var result = MessageBox.Show(
-            $"X�c nh?n thanh to�n don h�ng?\nT?ng ti?n: {TongTienGioHang:N0} d",
-            "X�c nh?n thanh to�n", MessageBoxButton.YesNo, MessageBoxImage.Question);
+            $"Xác nhận thanh toán đơn hàng?\nTổng tiền: {TongTienGioHang:N0} d",
+            "Xác nhận thanh toán", MessageBoxButton.YesNo, MessageBoxImage.Question);
 
         if (result != MessageBoxResult.Yes) return;
 
@@ -409,8 +409,8 @@ public class BanHangViewModel : BaseViewModel
             var savedMa = await _db.SavePhieuBanHangAsync(phieuBan, chiTiets);
             if (!string.IsNullOrEmpty(savedMa))
             {
-                MessageBox.Show($"Thanh to�n th�nh c�ng!\nM� phi?u: {savedMa}\nT?ng ti?n: {TongTienGioHang:N0} d",
-                    "Th�nh c�ng", MessageBoxButton.OK, MessageBoxImage.Information);
+                MessageBox.Show($"Thanh toán thành công!\nMã phiếu: {savedMa}\nTổng tiền: {TongTienGioHang:N0} d",
+                    "Thành công", MessageBoxButton.OK, MessageBoxImage.Information);
                 CartItems.Clear();
                 GhiChu = string.Empty;
                 RefreshCartTotals();
@@ -418,12 +418,12 @@ public class BanHangViewModel : BaseViewModel
             }
             else
             {
-                MessageBox.Show("C� l?i x?y ra khi t?o phi?u b�n!", "L?i", MessageBoxButton.OK, MessageBoxImage.Error);
+                MessageBox.Show("Có lỗi xảy ra khi tạo phiếu bán!", "Lỗi", MessageBoxButton.OK, MessageBoxImage.Error);
             }
         }
         catch (Exception ex)
         {
-            MessageBox.Show($"C� l?i x?y ra: {ex.Message}", "L?i", MessageBoxButton.OK, MessageBoxImage.Error);
+            MessageBox.Show($"Có lỗi xảy ra: {ex.Message}", "Lỗi", MessageBoxButton.OK, MessageBoxImage.Error);
         }
         finally
         {
@@ -443,3 +443,5 @@ public class BanHangViewModel : BaseViewModel
     }
     #endregion
 }
+
+

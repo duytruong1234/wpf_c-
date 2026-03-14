@@ -1,4 +1,4 @@
-namespace QuanLyKhoNguyenLieuPizza.Views;
+﻿namespace QuanLyKhoNguyenLieuPizza.Views;
 
 public partial class ProfileView
 {
@@ -7,3 +7,4 @@ public partial class ProfileView
         InitializeComponent();
     }
 }
+

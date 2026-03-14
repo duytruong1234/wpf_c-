@@ -1,4 +1,4 @@
-using QuanLyKhoNguyenLieuPizza.Services;
+﻿using QuanLyKhoNguyenLieuPizza.Services;
 
 namespace QuanLyKhoNguyenLieuPizza.ViewModels;
 
@@ -53,12 +53,12 @@ public class MainViewModel : BaseViewModel
             App.LogToFile($"OnVerifyInfoSuccess START - email: {email}");
             System.Diagnostics.Debug.WriteLine($"=== OnVerifyInfoSuccess called with email: {email} ===");
 
-            // Chuy?n sang view OTP tr??c ?? user th?y loading
+            // Chuyển sang view OTP trước để user thấy loading
             App.LogToFile("Setting CurrentView = _otpViewModel");
             CurrentView = _otpViewModel;
             App.LogToFile("CurrentView set OK");
 
-            // Kh?i t?o v� g?i OTP ??n email
+            // Khởi tạo và gửi OTP đến email
             App.LogToFile("Calling InitializeAndSendOTPAsync");
             await _otpViewModel.InitializeAndSendOTPAsync(email);
 
@@ -70,8 +70,8 @@ public class MainViewModel : BaseViewModel
             App.LogToFile($"OnVerifyInfoSuccess ERROR: {ex}");
             System.Diagnostics.Debug.WriteLine($"=== OnVerifyInfoSuccess ERROR: {ex} ===");
             System.Windows.MessageBox.Show(
-                $"L?i khi g?i OTP: {ex.Message}",
-                "L?i",
+                $"Lỗi khi gửi OTP: {ex.Message}",
+                "Lỗi",
                 System.Windows.MessageBoxButton.OK,
                 System.Windows.MessageBoxImage.Error);
             CurrentView = _verifyInfoViewModel;
@@ -101,3 +101,5 @@ public class MainViewModel : BaseViewModel
         CurrentView = _loginViewModel;
     }
 }
+
+
