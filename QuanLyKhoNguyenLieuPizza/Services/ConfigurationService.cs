@@ -1,10 +1,10 @@
-﻿using System.IO;
+using System.IO;
 using System.Text.Json;
 
 namespace QuanLyKhoNguyenLieuPizza.Services;
 
 /// <summary>
-/// Service to read configuration from appsettings.json
+/// Dịch vụ đọc cấu hình từ appsettings.json
 /// </summary>
 public class ConfigurationService
 {
@@ -27,7 +27,7 @@ public class ConfigurationService
             
             if (!File.Exists(configPath))
             {
-                // Try development path
+                // Thử đường dẫn phát triển
                 configPath = Path.Combine(Directory.GetCurrentDirectory(), "appsettings.json");
             }
 
@@ -36,7 +36,7 @@ public class ConfigurationService
                 var json = File.ReadAllText(configPath);
                 var config = JsonSerializer.Deserialize<JsonElement>(json);
 
-                // Load ConnectionStrings
+                // Tải ConnectionStrings
                 if (config.TryGetProperty("ConnectionStrings", out var connStrings))
                 {
                     foreach (var prop in connStrings.EnumerateObject())
@@ -45,7 +45,7 @@ public class ConfigurationService
                     }
                 }
 
-                // Load AppSettings
+                // Tải AppSettings
                 if (config.TryGetProperty("AppSettings", out var appSettings))
                 {
                     foreach (var prop in appSettings.EnumerateObject())
@@ -57,7 +57,7 @@ public class ConfigurationService
             else
             {
                 System.Diagnostics.Debug.WriteLine("appsettings.json not found, using default values");
-                // Set default connection string
+                // Đặt chuỗi kết nối mặc định
                 _connectionStrings["DefaultConnection"] = "Server=localhost;Database=QuanLyKhoNguyenLieu;Trusted_Connection=True;TrustServerCertificate=True;";
             }
         }

@@ -1,4 +1,4 @@
-﻿namespace QuanLyKhoNguyenLieuPizza.Models;
+namespace QuanLyKhoNguyenLieuPizza.Models;
 
 public class QuyDinh_Bot
 {
@@ -7,7 +7,7 @@ public class QuyDinh_Bot
     public double? TrongLuongBot { get; set; }
     public int? DonViID { get; set; }
 
-    // Navigation properties
+    // Thuộc tính điều hướng
     public virtual DoanhMuc_Size? DoanhMucSize { get; set; }
     public virtual DonViTinh? DonViTinh { get; set; }
 }

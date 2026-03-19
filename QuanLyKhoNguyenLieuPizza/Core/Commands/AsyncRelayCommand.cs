@@ -1,9 +1,9 @@
-﻿using System.Windows.Input;
+using System.Windows.Input;
 
 namespace QuanLyKhoNguyenLieuPizza.Core.Commands;
 
 /// <summary>
-/// Async implementation of ICommand for proper async/await support
+/// Triển khai bất đồng bộ của ICommand hỗ trợ async/await đúng cách
 /// </summary>
 public class AsyncRelayCommand : ICommand
 {
@@ -63,7 +63,7 @@ public class AsyncRelayCommand : ICommand
 }
 
 /// <summary>
-/// Generic async command with typed parameter
+/// Lệnh bất đồng bộ generic với tham số có kiểu
 /// </summary>
 public class AsyncRelayCommand<T> : ICommand
 {

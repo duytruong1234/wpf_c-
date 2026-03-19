@@ -1,4 +1,4 @@
-﻿namespace QuanLyKhoNguyenLieuPizza.Models;
+namespace QuanLyKhoNguyenLieuPizza.Models;
 
 public class GiaTheo_De
 {
@@ -6,7 +6,7 @@ public class GiaTheo_De
     public string MaDeBanh { get; set; } = string.Empty;
     public decimal? GiaThem { get; set; }
 
-    // Navigation properties
+    // Thuộc tính điều hướng
     public virtual DoanhMuc_Size? DoanhMucSize { get; set; }
     public virtual DoanhMuc_De? DoanhMucDe { get; set; }
 }

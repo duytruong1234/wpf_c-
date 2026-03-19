@@ -1,4 +1,4 @@
-﻿using QuanLyKhoNguyenLieuPizza.Services;
+using QuanLyKhoNguyenLieuPizza.Services;
 
 namespace QuanLyKhoNguyenLieuPizza.ViewModels;
 
@@ -24,9 +24,13 @@ public class MainViewModel : BaseViewModel
         _otpViewModel = new OTPViewModel();
         _changePasswordViewModel = new ChangePasswordViewModel();
 
-        // Setup navigation events
+        // Thiết lập các sự kiện điều hướng
         _loginViewModel.OnLoginSuccess += OnLoginSuccess;
-        _loginViewModel.OnForgotPassword += () => CurrentView = _verifyInfoViewModel;
+        _loginViewModel.OnForgotPassword += async () =>
+        {
+            CurrentView = _verifyInfoViewModel;
+            await _verifyInfoViewModel.ReloadChucVusAsync();
+        };
 
         _verifyInfoViewModel.OnVerifySuccess += OnVerifyInfoSuccess;
         _verifyInfoViewModel.OnBack += () => CurrentView = _loginViewModel;
@@ -42,7 +46,7 @@ public class MainViewModel : BaseViewModel
         _changePasswordViewModel.OnChangePasswordSuccess += () => CurrentView = _loginViewModel;
         _changePasswordViewModel.OnBack += () => CurrentView = _otpViewModel;
 
-        // Start with login view
+        // Bắt đầu với màn hình đăng nhập
         CurrentView = _loginViewModel;
     }
 
@@ -80,7 +84,7 @@ public class MainViewModel : BaseViewModel
 
     private void OnLoginSuccess()
     {
-        // Create ShellViewModel AFTER login success, when CurrentUserSession is populated
+        // Tạo ShellViewModel SAU khi đăng nhập thành công, khi CurrentUserSession đã được điền
         _shellViewModel = new ShellViewModel();
         _shellViewModel.OnLogout += OnLogout;
         
@@ -89,7 +93,7 @@ public class MainViewModel : BaseViewModel
 
     private void OnLogout()
     {
-        // Clear the shell view model when logging out
+        // Xóa shell view model khi đăng xuất
         if (_shellViewModel != null)
         {
             _shellViewModel.OnLogout -= OnLogout;

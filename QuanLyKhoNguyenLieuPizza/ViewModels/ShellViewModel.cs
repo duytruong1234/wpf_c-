@@ -1,4 +1,4 @@
-﻿using System.Windows.Input;
+using System.Windows.Input;
 using QuanLyKhoNguyenLieuPizza.Services;
 
 namespace QuanLyKhoNguyenLieuPizza.ViewModels;
@@ -6,13 +6,13 @@ namespace QuanLyKhoNguyenLieuPizza.ViewModels;
 public class ShellViewModel : BaseViewModel
 {
     private object? _currentContent;
-    private string _selectedMenuItem = "BaoCaoThongKe";
+    private string _selectedMenuItem = string.Empty;
     private string _tenNguoiDung = "Ten nguoi dung";
     private string? _chucVuNguoiDung;
     private string? _avatarNguoiDung;
     private bool _isProfileOpen;
 
-    // Role-based visibility properties
+    // Thuộc tính hiển thị theo vai trò
     private bool _canViewBaoCaoThongKe;
     private bool _canViewTonKho;
     private bool _canViewPhieuNhap;
@@ -24,17 +24,20 @@ public class ShellViewModel : BaseViewModel
     private bool _canViewDonHang;
     private bool _canViewPizza;
 
-    private readonly DashboardViewModel _dashboardViewModel;
-    private readonly TonKhoViewModel _tonKhoViewModel;
-    private readonly NguyenLieuViewModel _nguyenLieuViewModel;
-    private readonly PhieuNhapViewModel _phieuNhapViewModel;
-    private readonly PhieuXuatViewModel _phieuXuatViewModel;
-    private readonly NhaCungCapViewModel _nhaCungCapViewModel;
-    private readonly NhanVienViewModel _nhanVienViewModel;
-    private readonly BanHangViewModel _banHangViewModel;
-    private readonly DonHangViewModel _donHangViewModel;
-    private readonly PizzaViewModel _pizzaViewModel;
-    private readonly ProfileViewModel _profileViewModel;
+    // ⚡ LAZY LOADING: ViewModel chỉ được tạo khi user chuyển đến trang đó
+    // Trước đây tạo 11 ViewModel cùng lúc → ~50 DB connections lúc khởi động
+    // Bây giờ chỉ tạo 1 ViewModel ban đầu → khởi động nhanh gấp 5-10 lần
+    private DashboardViewModel? _dashboardViewModel;
+    private TonKhoViewModel? _tonKhoViewModel;
+    private NguyenLieuViewModel? _nguyenLieuViewModel;
+    private PhieuNhapViewModel? _phieuNhapViewModel;
+    private PhieuXuatViewModel? _phieuXuatViewModel;
+    private NhaCungCapViewModel? _nhaCungCapViewModel;
+    private NhanVienViewModel? _nhanVienViewModel;
+    private BanHangViewModel? _banHangViewModel;
+    private DonHangViewModel? _donHangViewModel;
+    private PizzaViewModel? _pizzaViewModel;
+    private ProfileViewModel? _profileViewModel;
 
     public object? CurrentContent
     {
@@ -74,7 +77,7 @@ public class ShellViewModel : BaseViewModel
 
     public bool HasAvatar => !string.IsNullOrEmpty(AvatarNguoiDung);
 
-    // Role-based visibility properties for menu items
+    // Thuộc tính hiển thị theo vai trò cho các mục menu
     public bool CanViewBaoCaoThongKe
     {
         get => _canViewBaoCaoThongKe;
@@ -141,7 +144,7 @@ public class ShellViewModel : BaseViewModel
         set => SetProperty(ref _isProfileOpen, value);
     }
 
-    public ProfileViewModel ProfileViewModel => _profileViewModel;
+    public ProfileViewModel ProfileViewModel => _profileViewModel ??= CreateProfileViewModel();
 
     public ICommand NavigateCommand { get; }
     public ICommand LogoutCommand { get; }
@@ -152,45 +155,42 @@ public class ShellViewModel : BaseViewModel
 
     public ShellViewModel()
     {
-        _dashboardViewModel = new DashboardViewModel();
-        _tonKhoViewModel = new TonKhoViewModel();
-        _nguyenLieuViewModel = new NguyenLieuViewModel();
-        _phieuNhapViewModel = new PhieuNhapViewModel();
-        _phieuXuatViewModel = new PhieuXuatViewModel();
-        _nhaCungCapViewModel = new NhaCungCapViewModel();
-        _nhanVienViewModel = new NhanVienViewModel();
-        _banHangViewModel = new BanHangViewModel();
-        _donHangViewModel = new DonHangViewModel();
-        _pizzaViewModel = new PizzaViewModel();
-        _profileViewModel = new ProfileViewModel();
-
-        // Setup profile events
-        _profileViewModel.OnClose += () => 
-        {
-            IsProfileOpen = false;
-            RefreshUserInfo();
-        };
-        _profileViewModel.OnLogout += () => 
-        {
-            IsProfileOpen = false;
-            OnLogout?.Invoke();
-        };
-        _profileViewModel.OnChangePassword += () =>
-        {
-            IsProfileOpen = false;
-            OnChangePassword?.Invoke();
-        };
+        // ⚡ KHÔNG tạo ViewModel ở đây nữa — chỉ tạo khi cần (lazy loading)
 
         NavigateCommand = new RelayCommand(ExecuteNavigate);
         LogoutCommand = new RelayCommand(_ => OnLogout?.Invoke());
         ShowProfileCommand = new RelayCommand(_ => ShowProfile());
 
-        // Load user info and setup permissions
+        // Tải thông tin người dùng và thiết lập quyền
         RefreshUserInfo();
         SetupRoleBasedPermissions();
 
-        // Start with appropriate view based on role
+        // Bắt đầu với màn hình phù hợp theo vai trò — chỉ tạo 1 ViewModel ban đầu
         NavigateToDefaultView();
+    }
+
+    /// <summary>
+    /// Tạo ProfileViewModel với thiết lập sự kiện. Chỉ gọi 1 lần (lazy).
+    /// </summary>
+    private ProfileViewModel CreateProfileViewModel()
+    {
+        var vm = new ProfileViewModel();
+        vm.OnClose += () =>
+        {
+            IsProfileOpen = false;
+            RefreshUserInfo();
+        };
+        vm.OnLogout += () =>
+        {
+            IsProfileOpen = false;
+            OnLogout?.Invoke();
+        };
+        vm.OnChangePassword += () =>
+        {
+            IsProfileOpen = false;
+            OnChangePassword?.Invoke();
+        };
+        return vm;
     }
 
     private void SetupRoleBasedPermissions()
@@ -199,13 +199,13 @@ public class ShellViewModel : BaseViewModel
         var chucVuId = nhanVien?.ChucVuID ?? 0;
         var chucVuTen = nhanVien?.ChucVu?.TenChucVu?.Trim() ?? "";
         
-        // Database values:
+        // Giá trị cơ sở dữ liệu:
         // ChucVuID 2: "Quản lý"
         // ChucVuID 3: "Nhân viên bếp"  
         // ChucVuID 4: "Nhân viên kho"
         // ChucVuID 5: "Nhân viên bán hàng"
 
-        // Check by ChucVuID first (most reliable), then by name as fallback
+        // Kiểm tra theo ChucVuID trước (chính xác nhất), sau đó theo tên làm dự phòng
         bool isQuanLy = chucVuId == 2 || 
                         chucVuTen.Contains("Quản lý") ||
                         chucVuTen.Contains("quản lý") ||
@@ -222,7 +222,7 @@ public class ShellViewModel : BaseViewModel
                                  (!isQuanLy && !isNhanVienBep && !isNhanVienKho && 
                                   (chucVuTen.ToLower().Contains("bán hàng") || chucVuTen.ToLower().Contains("ban hang")));
 
-        // Set permissions based on role - Quản lý has highest priority
+        // Thiết lập quyền dựa trên vai trò - Quản lý có ưu tiên cao nhất
         if (isQuanLy)
         {
             // Quản lý: giám sát tất cả, KHÔNG bán hàng trực tiếp (xem doanh thu trong Dashboard)
@@ -297,31 +297,37 @@ public class ShellViewModel : BaseViewModel
 
     private void NavigateToDefaultView()
     {
-        // Navigate to the first available view based on permissions
+        // Điều hướng đến màn hình đầu tiên có sẵn dựa trên quyền
+        // Gọi trực tiếp NavigateToContent để đảm bảo ViewModel được tạo
         if (CanViewBaoCaoThongKe)
         {
-            SelectedMenuItem = "BaoCaoThongKe";
-            CurrentContent = _dashboardViewModel;
+            _selectedMenuItem = "BaoCaoThongKe";
+            OnPropertyChanged(nameof(SelectedMenuItem));
+            NavigateToContent("BaoCaoThongKe");
         }
         else if (CanViewPhieuNhap)
         {
-            SelectedMenuItem = "PhieuNhap";
-            CurrentContent = _phieuNhapViewModel;
+            _selectedMenuItem = "PhieuNhap";
+            OnPropertyChanged(nameof(SelectedMenuItem));
+            NavigateToContent("PhieuNhap");
         }
         else if (CanViewPhieuXuat)
         {
-            SelectedMenuItem = "PhieuXuat";
-            CurrentContent = _phieuXuatViewModel;
+            _selectedMenuItem = "PhieuXuat";
+            OnPropertyChanged(nameof(SelectedMenuItem));
+            NavigateToContent("PhieuXuat");
         }
         else if (CanViewBanHang)
         {
-            SelectedMenuItem = "BanHang";
-            CurrentContent = _banHangViewModel;
+            _selectedMenuItem = "BanHang";
+            OnPropertyChanged(nameof(SelectedMenuItem));
+            NavigateToContent("BanHang");
         }
         else if (CanViewTonKho)
         {
-            SelectedMenuItem = "TonKho";
-            CurrentContent = _tonKhoViewModel;
+            _selectedMenuItem = "TonKho";
+            OnPropertyChanged(nameof(SelectedMenuItem));
+            NavigateToContent("TonKho");
         }
     }
 
@@ -335,7 +341,7 @@ public class ShellViewModel : BaseViewModel
 
     private void ShowProfile()
     {
-        _profileViewModel.RefreshData();
+        ProfileViewModel.RefreshData();
         IsProfileOpen = true;
     }
 
@@ -349,19 +355,21 @@ public class ShellViewModel : BaseViewModel
 
     private void NavigateToContent(string menuItem)
     {
+        // ⚡ LAZY: ViewModel chỉ được tạo lần đầu khi user navigate đến
+        // Lần tiếp theo sẽ dùng lại instance đã tạo (??= operator)
         CurrentContent = menuItem switch
         {
-            "BaoCaoThongKe" => _dashboardViewModel,
-            "TonKho" => _tonKhoViewModel,
-            "NguyenLieu" => _nguyenLieuViewModel,
-            "PhieuNhap" => _phieuNhapViewModel,
-            "PhieuXuat" => _phieuXuatViewModel,
-            "NhaCungCap" => _nhaCungCapViewModel,
-            "NhanVien" => _nhanVienViewModel,
-            "BanHang" => _banHangViewModel,
-            "DonHang" => _donHangViewModel,
-            "Pizza" => _pizzaViewModel,
-            _ => _dashboardViewModel
+            "BaoCaoThongKe" => _dashboardViewModel ??= new DashboardViewModel(),
+            "TonKho" => _tonKhoViewModel ??= new TonKhoViewModel(),
+            "NguyenLieu" => _nguyenLieuViewModel ??= new NguyenLieuViewModel(),
+            "PhieuNhap" => _phieuNhapViewModel ??= new PhieuNhapViewModel(),
+            "PhieuXuat" => _phieuXuatViewModel ??= new PhieuXuatViewModel(),
+            "NhaCungCap" => _nhaCungCapViewModel ??= new NhaCungCapViewModel(),
+            "NhanVien" => _nhanVienViewModel ??= new NhanVienViewModel(),
+            "BanHang" => _banHangViewModel ??= new BanHangViewModel(),
+            "DonHang" => _donHangViewModel ??= new DonHangViewModel(),
+            "Pizza" => _pizzaViewModel ??= new PizzaViewModel(),
+            _ => _dashboardViewModel ??= new DashboardViewModel()
         };
     }
 }

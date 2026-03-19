@@ -1,4 +1,4 @@
-﻿using System.Linq;
+using System.Linq;
 using System.Windows;
 using System.Windows.Controls;
 using System.Windows.Input;
@@ -10,6 +10,12 @@ public partial class OTPView : UserControl
 {
     private OTPViewModel? ViewModel => DataContext as OTPViewModel;
     private bool _isSetup;
+    
+    // Cờ toàn cục để ngăn chặn sự kiện gọi lại lồng nhau
+    private bool _isProcessing;
+    
+    // Lưu cache các ô OTP để truy cập theo chỉ mục dễ dàng
+    private TextBox[] _otpBoxes = null!;
 
     public OTPView()
     {
@@ -28,138 +34,259 @@ public partial class OTPView : UserControl
         }
     }
 
-    private void OTPView_Loaded(object sender, System.Windows.RoutedEventArgs e)
+    private void OTPView_Loaded(object sender, RoutedEventArgs e)
     {
         try
         {
             App.LogToFile("OTPView: Loaded START");
-            System.Diagnostics.Debug.WriteLine("=== OTPView_Loaded ===");
 
-            // Chỉ setup event handlers một lần
+            // Khởi tạo mảng các ô OTP
+            _otpBoxes = new TextBox[] { otp1, otp2, otp3, otp4, otp5, otp6 };
+
+            // Chỉ thiết lập sự kiện một lần
             if (!_isSetup)
             {
-                SetupOTPBox(otp1, null, otp2);
-                SetupOTPBox(otp2, otp1, otp3);
-                SetupOTPBox(otp3, otp2, otp4);
-                SetupOTPBox(otp4, otp3, otp5);
-                SetupOTPBox(otp5, otp4, otp6);
-                SetupOTPBox(otp6, otp5, null);
+                foreach (var box in _otpBoxes)
+                {
+                    // Tắt IME (bàn phím tiếng Việt, v.v.) — OTP chỉ cần chữ số
+                    InputMethod.SetIsInputMethodEnabled(box, false);
+                    
+                    box.PreviewKeyDown += OTPBox_PreviewKeyDown;
+                    box.PreviewTextInput += OTPBox_PreviewTextInput;
+                    box.TextChanged += OTPBox_TextChanged;
+                    box.GotFocus += (s, args) =>
+                    {
+                        if (!_isProcessing)
+                            ((TextBox)s).SelectAll();
+                    };
+                    DataObject.AddPastingHandler(box, OnPaste);
+                }
                 _isSetup = true;
-                System.Diagnostics.Debug.WriteLine("=== All OTP boxes setup complete ===");
             }
 
-            // Clear old OTP values
-            otp1.Text = "";
-            otp2.Text = "";
-            otp3.Text = "";
-            otp4.Text = "";
-            otp5.Text = "";
-            otp6.Text = "";
+            // Xóa tất cả giá trị OTP một cách an toàn
+            ClearAllBoxes();
 
-            // Focus first box
-            Dispatcher.BeginInvoke(new Action(() => otp1.Focus()), System.Windows.Threading.DispatcherPriority.Input);
+            // Đặt con trỏ vào ô đầu tiên
+            Dispatcher.BeginInvoke(new Action(() =>
+            {
+                try { otp1.Focus(); } catch { }
+            }), System.Windows.Threading.DispatcherPriority.Input);
+            
             App.LogToFile("OTPView: Loaded DONE");
-            System.Diagnostics.Debug.WriteLine("=== Focused otp1 ===");
         }
         catch (Exception ex)
         {
             App.LogToFile($"OTPView: Loaded ERROR: {ex}");
             System.Diagnostics.Debug.WriteLine($"OTPView_Loaded ERROR: {ex}");
-            MessageBox.Show($"OTPView_Loaded Error:\n{ex.Message}\n\n{ex.StackTrace}", "Debug Error");
         }
     }
 
-    private void SetupOTPBox(TextBox current, TextBox? previous, TextBox? next)
+    /// <summary>
+    /// Xóa tất cả các ô OTP một cách an toàn
+    /// </summary>
+    private void ClearAllBoxes()
     {
-        // Handle text input
-        current.TextChanged += (s, e) =>
+        if (_isProcessing) return;
+        _isProcessing = true;
+        try
         {
-            try
+            foreach (var box in _otpBoxes)
             {
-                if (current.Text.Length > 0)
-                {
-                    // Only keep first character
-                    if (current.Text.Length > 1)
-                    {
-                        current.Text = current.Text[0].ToString();
-                        current.CaretIndex = 1;
-                        return; // TextChanged will fire again with single char
-                    }
-
-                    // Auto move to next box
-                    if (next != null)
-                    {
-                        next.Focus();
-                        next.SelectAll();
-                    }
-
-                    // Update ViewModel
-                    UpdateOTPCode();
-                }
+                box.Text = string.Empty;
             }
-            catch (Exception ex)
-            {
-                System.Diagnostics.Debug.WriteLine($"TextChanged ERROR: {ex}");
-            }
-        };
-
-        // Handle keyboard navigation
-        current.PreviewKeyDown += (s, e) =>
+            SyncOTPCode();
+        }
+        catch (Exception ex)
         {
-            try
-            {
-                if (e.Key == Key.Back && string.IsNullOrEmpty(current.Text) && previous != null)
-                {
-                    previous.Focus();
-                    previous.SelectAll();
-                    e.Handled = true;
-                }
-                else if (e.Key == Key.Left && previous != null)
-                {
-                    previous.Focus();
-                    previous.SelectAll();
-                    e.Handled = true;
-                }
-                else if (e.Key == Key.Right && next != null)
-                {
-                    next.Focus();
-                    next.SelectAll();
-                    e.Handled = true;
-                }
-            }
-            catch (Exception ex)
-            {
-                System.Diagnostics.Debug.WriteLine($"PreviewKeyDown ERROR: {ex}");
-            }
-        };
-
-        // Only allow numbers (0-9)
-        current.PreviewTextInput += (s, e) =>
+            System.Diagnostics.Debug.WriteLine($"ClearAllBoxes ERROR: {ex}");
+        }
+        finally
         {
-            try
-            {
-                if (string.IsNullOrEmpty(e.Text) || !char.IsDigit(e.Text, 0))
-                {
-                    e.Handled = true;
-                }
-            }
-            catch (Exception ex)
-            {
-                System.Diagnostics.Debug.WriteLine($"PreviewTextInput ERROR: {ex}");
-                e.Handled = true;
-            }
-        };
-
-        // Handle focus - select all text
-        current.GotFocus += (s, e) =>
-        {
-            current.SelectAll();
-        };
-
-        // Handle paste into any box
-        DataObject.AddPastingHandler(current, OnPaste);
+            _isProcessing = false;
+        }
     }
 
+    /// <summary>
+    /// Lưới an toàn: đảm bảo tối đa 1 chữ số mỗi ô. Xử lý mọi đầu vào bỏ qua PreviewTextInput.
+    /// </summary>
+    private void OTPBox_TextChanged(object sender, TextChangedEventArgs e)
+    {
+        // LUÔN kiểm tra _isProcessing để ngăn gọi lại lồng nhau
+        if (_isProcessing) return;
+        _isProcessing = true;
+        
+        try
+        {
+            var current = (TextBox)sender;
+            var text = current.Text ?? string.Empty;
+            
+            // Loại bỏ các ký tự không phải chữ số (chữ cái từ IME, v.v.)
+            var digitsOnly = new string(text.Where(char.IsDigit).ToArray());
+            
+            if (digitsOnly.Length == 0)
+            {
+                // Không có chữ số — xóa ô
+                if (text.Length > 0)
+                {
+                    current.Text = string.Empty;
+                }
+                SyncOTPCode();
+                return;
+            }
+            
+            if (digitsOnly.Length == 1 && text == digitsOnly)
+            {
+                // Đúng 1 chữ số, nội dung sạch — chỉ đồng bộ
+                SyncOTPCode();
+                return;
+            }
+            
+            // Có ký tự không phải số hoặc nhiều hơn 1 chữ số — sửa lại
+            var index = GetBoxIndex(current);
+            
+            // Giữ chữ số cuối cùng (chữ số mới nhất được nhập)
+            var keepDigit = digitsOnly[digitsOnly.Length - 1].ToString();
+            current.Text = keepDigit;
+            current.CaretIndex = 1;
+            
+            // Tự động chuyển sang ô tiếp theo
+            if (index >= 0 && index < 5)
+            {
+                _otpBoxes[index + 1].Focus();
+            }
+            
+            SyncOTPCode();
+        }
+        catch (Exception ex)
+        {
+            System.Diagnostics.Debug.WriteLine($"OTPBox_TextChanged ERROR: {ex}");
+        }
+        finally
+        {
+            _isProcessing = false;
+        }
+    }
+
+    /// <summary>
+    /// Trình xử lý đầu vào chính: chỉ cho phép nhập chữ số (0-9), tự động chuyển ô.
+    /// </summary>
+    private void OTPBox_PreviewTextInput(object sender, TextCompositionEventArgs e)
+    {
+        // Luôn xử lý — chúng ta quản lý toàn bộ văn bản
+        e.Handled = true;
+
+        if (_isProcessing) return;
+        if (string.IsNullOrEmpty(e.Text) || !char.IsDigit(e.Text[0])) return;
+
+        _isProcessing = true;
+        try
+        {
+            var current = (TextBox)sender;
+            var index = GetBoxIndex(current);
+            if (index < 0) return;
+
+            // Đặt chữ số
+            current.Text = e.Text;
+            current.CaretIndex = 1;
+
+            // Tự động chuyển sang ô tiếp theo
+            if (index < 5)
+            {
+                _otpBoxes[index + 1].Focus();
+            }
+
+            SyncOTPCode();
+        }
+        catch (Exception ex)
+        {
+            System.Diagnostics.Debug.WriteLine($"PreviewTextInput ERROR: {ex}");
+        }
+        finally
+        {
+            _isProcessing = false;
+        }
+    }
+
+    /// <summary>
+    /// Xử lý phím Backspace, Delete và điều hướng bằng phím mũi tên
+    /// </summary>
+    private void OTPBox_PreviewKeyDown(object sender, KeyEventArgs e)
+    {
+        if (_isProcessing) return;
+
+        var current = (TextBox)sender;
+        var index = GetBoxIndex(current);
+        if (index < 0) return;
+
+        try
+        {
+            switch (e.Key)
+            {
+                case Key.Back:
+                    e.Handled = true;
+                    _isProcessing = true;
+                    try
+                    {
+                        if (!string.IsNullOrEmpty(current.Text))
+                        {
+                            current.Text = string.Empty;
+                        }
+                        else if (index > 0)
+                        {
+                            var prev = _otpBoxes[index - 1];
+                            prev.Text = string.Empty;
+                            prev.Focus();
+                        }
+                        SyncOTPCode();
+                    }
+                    finally
+                    {
+                        _isProcessing = false;
+                    }
+                    break;
+
+                case Key.Delete:
+                    e.Handled = true;
+                    _isProcessing = true;
+                    try
+                    {
+                        current.Text = string.Empty;
+                        SyncOTPCode();
+                    }
+                    finally
+                    {
+                        _isProcessing = false;
+                    }
+                    break;
+
+                case Key.Left:
+                    if (index > 0)
+                    {
+                        e.Handled = true;
+                        _otpBoxes[index - 1].Focus();
+                    }
+                    break;
+
+                case Key.Right:
+                    if (index < 5)
+                    {
+                        e.Handled = true;
+                        _otpBoxes[index + 1].Focus();
+                    }
+                    break;
+            }
+        }
+        catch (Exception ex)
+        {
+            _isProcessing = false;
+            System.Diagnostics.Debug.WriteLine($"PreviewKeyDown ERROR: {ex}");
+        }
+    }
+
+    /// <summary>
+    /// Xử lý dán — điền tất cả 6 ô với các chữ số được dán
+    /// </summary>
     private void OnPaste(object sender, DataObjectPastingEventArgs e)
     {
         try
@@ -167,45 +294,66 @@ public partial class OTPView : UserControl
             if (e.DataObject.GetDataPresent(typeof(string)))
             {
                 var text = (string)e.DataObject.GetData(typeof(string));
-
                 var digits = new string(text.Where(char.IsDigit).ToArray());
 
                 if (digits.Length >= 6)
                 {
-                    otp1.Text = digits[0].ToString();
-                    otp2.Text = digits[1].ToString();
-                    otp3.Text = digits[2].ToString();
-                    otp4.Text = digits[3].ToString();
-                    otp5.Text = digits[4].ToString();
-                    otp6.Text = digits[5].ToString();
-
-                    otp6.Focus();
-                    UpdateOTPCode();
+                    _isProcessing = true;
+                    try
+                    {
+                        for (int i = 0; i < 6; i++)
+                        {
+                            _otpBoxes[i].Text = digits[i].ToString();
+                        }
+                        otp6.Focus();
+                        SyncOTPCode();
+                    }
+                    finally
+                    {
+                        _isProcessing = false;
+                    }
                 }
             }
         }
         catch (Exception ex)
         {
+            _isProcessing = false;
             System.Diagnostics.Debug.WriteLine($"OnPaste ERROR: {ex}");
         }
         e.CancelCommand();
     }
 
-    private void UpdateOTPCode()
+    /// <summary>
+    /// Lấy chỉ mục của TextBox trong mảng OTP (0-5), hoặc -1 nếu không tìm thấy
+    /// </summary>
+    private int GetBoxIndex(TextBox box)
+    {
+        if (_otpBoxes == null) return -1;
+        for (int i = 0; i < _otpBoxes.Length; i++)
+        {
+            if (ReferenceEquals(_otpBoxes[i], box))
+                return i;
+        }
+        return -1;
+    }
+
+    /// <summary>
+    /// Đồng bộ mã OTP đã nối vào ViewModel
+    /// </summary>
+    private void SyncOTPCode()
     {
         try
         {
-            if (ViewModel != null)
+            var vm = ViewModel;
+            if (vm != null && _otpBoxes != null)
             {
-                var code = $"{otp1.Text}{otp2.Text}{otp3.Text}{otp4.Text}{otp5.Text}{otp6.Text}";
-                ViewModel.OTPCode = code;
+                var code = string.Concat(_otpBoxes.Select(b => b.Text ?? string.Empty));
+                vm.OTPCode = code;
             }
         }
         catch (Exception ex)
         {
-            System.Diagnostics.Debug.WriteLine($"UpdateOTPCode ERROR: {ex}");
+            System.Diagnostics.Debug.WriteLine($"SyncOTPCode ERROR: {ex}");
         }
     }
 }
-
-

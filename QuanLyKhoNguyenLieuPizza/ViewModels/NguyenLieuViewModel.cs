@@ -1,4 +1,4 @@
-﻿using System.Collections.ObjectModel;
+using System.Collections.ObjectModel;
 using System.Windows.Input;
 using QuanLyKhoNguyenLieuPizza.Models;
 using QuanLyKhoNguyenLieuPizza.Services;
@@ -45,12 +45,12 @@ public class NguyenLieuViewModel : BaseViewModel
     private int _countNgungSuDung;
     private bool _isLoading;
     
-    // Add/Edit popup
+    // Popup thêm/sửa
     private bool _isAddEditPopupOpen;
     private bool _isEditing;
     private NguyenLieuItemViewModel? _selectedNguyenLieu;
     
-    // Add/Edit form fields
+    // Trường form thêm/sửa
     private string _formMaNguyenLieu = string.Empty;
     private string _formTenNguyenLieu = string.Empty;
     private string _formHinhAnh = string.Empty;
@@ -60,7 +60,7 @@ public class NguyenLieuViewModel : BaseViewModel
     private string _formGiaNhap = string.Empty;
     private bool _formTrangThai = true;
     
-    // LoaiNguyenLieu management
+    // Quản lý loại nguyên liệu
     private bool _isLoaiNguyenLieuViewVisible;
     
     public ObservableCollection<NguyenLieuItemViewModel> FilteredNguyenLieus
@@ -189,7 +189,7 @@ public class NguyenLieuViewModel : BaseViewModel
         set => SetProperty(ref _selectedNguyenLieu, value);
     }
     
-    // Form properties
+    // Thuộc tính form
     public string FormMaNguyenLieu
     {
         get => _formMaNguyenLieu;
@@ -244,7 +244,7 @@ public class NguyenLieuViewModel : BaseViewModel
         set => SetProperty(ref _isLoaiNguyenLieuViewVisible, value);
     }
     
-    // Commands
+    // Lệnh
     public ICommand LoadDataCommand { get; }
     public ICommand OpenAddPopupCommand { get; }
     public ICommand ClosePopupCommand { get; }
@@ -264,16 +264,18 @@ public class NguyenLieuViewModel : BaseViewModel
         LoaiNguyenLieuVM = new LoaiNguyenLieuViewModel();
         LoaiNguyenLieuVM.OnBack += () => IsLoaiNguyenLieuViewVisible = false;
         
-        LoadDataCommand = new RelayCommand(async _ => await LoadDataAsync());
+        // ⚡ AsyncRelayCommand thay vì async void trong RelayCommand
+        LoadDataCommand = new AsyncRelayCommand(async _ => await LoadDataAsync());
         OpenAddPopupCommand = new RelayCommand(_ => OpenAddPopup());
         ClosePopupCommand = new RelayCommand(_ => ClosePopup());
-        SaveCommand = new RelayCommand(async _ => await SaveAsync());
+        SaveCommand = new AsyncRelayCommand(async _ => await SaveAsync());
         OpenLoaiNguyenLieuCommand = new RelayCommand(_ => OpenLoaiNguyenLieu());
         BackFromLoaiNguyenLieuCommand = new RelayCommand(_ => IsLoaiNguyenLieuViewVisible = false);
         ClearFiltersCommand = new RelayCommand(_ => ClearFilters());
         BrowseImageCommand = new RelayCommand(_ => BrowseImage());
         
-        _ = LoadDataAsync();
+        // ⚡ SafeInitializeAsync thay vì fire-and-forget
+        SafeInitializeAsync(LoadDataAsync);
     }
     
     private async Task LoadDataAsync()
@@ -471,30 +473,30 @@ public class NguyenLieuViewModel : BaseViewModel
 
             if (openFileDialog.ShowDialog() == true)
             {
-                // Get the source file path
+                // Lấy đường dẫn file nguồn
                 var sourceFile = openFileDialog.FileName;
                 var fileName = System.IO.Path.GetFileName(sourceFile);
                 
-                // Generate unique filename to avoid overwriting
+                // Tạo tên file duy nhất để tránh ghi đè
                 var timestamp = DateTime.Now.ToString("yyyyMMddHHmmss");
                 var extension = System.IO.Path.GetExtension(fileName);
                 var nameWithoutExt = System.IO.Path.GetFileNameWithoutExtension(fileName);
                 var uniqueFileName = $"{nameWithoutExt}_{timestamp}{extension}";
                 
-                // Define destination path in Resources folder
+                // Xác định đường dẫn đích trong thư mục Resources
                 var projectPath = AppDomain.CurrentDomain.BaseDirectory;
                 var resourcesPath = System.IO.Path.Combine(projectPath, "Resources", "Images");
                 
-                // Create directory if it doesn't exist
+                // Tạo thư mục nếu chưa tồn tại
                 System.IO.Directory.CreateDirectory(resourcesPath);
                 
-                // Full destination path
+                // Đường dẫn đích đầy đủ
                 var destPath = System.IO.Path.Combine(resourcesPath, uniqueFileName);
                 
-                // Copy file to Resources folder
+                // Sao chép file vào thư mục Resources
                 System.IO.File.Copy(sourceFile, destPath, true);
                 
-                // Save relative path for database
+                // Lưu đường dẫn tương đối cho cơ sở dữ liệu
                 FormHinhAnh = $"/Resources/Images/{uniqueFileName}";
                 
                 System.Diagnostics.Debug.WriteLine($"Image saved to: {destPath}");
@@ -504,7 +506,7 @@ public class NguyenLieuViewModel : BaseViewModel
         catch (Exception ex)
         {
             System.Diagnostics.Debug.WriteLine($"Error browsing image: {ex.Message}");
-            // You can show error message to user here
+            // Có thể hiển thị thông báo lỗi cho người dùng tại đây
         }
     }
 }

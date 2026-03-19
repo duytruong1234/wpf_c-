@@ -1,4 +1,4 @@
-﻿using System.Collections.ObjectModel;
+using System.Collections.ObjectModel;
 using System.Windows;
 using System.Windows.Input;
 using QuanLyKhoNguyenLieuPizza.Core.Commands;
@@ -14,7 +14,9 @@ public class DonHangViewModel : BaseViewModel
 
     private ObservableCollection<DonHang> _donHangs = [];
     private ObservableCollection<CT_DonHang> _chiTietDonHangs = [];
+    private ObservableCollection<NhanVien> _nhanViens = [];
     private DonHang? _selectedDonHang;
+    private NhanVien? _selectedNhanVien;
     private string _searchText = string.Empty;
     private DateTime? _tuNgay;
     private DateTime? _denNgay;
@@ -23,6 +25,8 @@ public class DonHangViewModel : BaseViewModel
     private int _tongDonHang;
     private int _donHoanThanh;
     private decimal _tongDoanhThu;
+    private string _topNhanVienName = "—";
+    private decimal _topNhanVienDoanhThu;
 
     public ObservableCollection<DonHang> DonHangs
     {
@@ -34,6 +38,22 @@ public class DonHangViewModel : BaseViewModel
     {
         get => _chiTietDonHangs;
         set => SetProperty(ref _chiTietDonHangs, value);
+    }
+
+    public ObservableCollection<NhanVien> NhanViens
+    {
+        get => _nhanViens;
+        set => SetProperty(ref _nhanViens, value);
+    }
+
+    public NhanVien? SelectedNhanVien
+    {
+        get => _selectedNhanVien;
+        set
+        {
+            if (SetProperty(ref _selectedNhanVien, value))
+                _ = LoadDataAsync();
+        }
     }
 
     public DonHang? SelectedDonHang
@@ -108,10 +128,23 @@ public class DonHangViewModel : BaseViewModel
         set => SetProperty(ref _tongDoanhThu, value);
     }
 
+    public string TopNhanVienName
+    {
+        get => _topNhanVienName;
+        set => SetProperty(ref _topNhanVienName, value);
+    }
+
+    public decimal TopNhanVienDoanhThu
+    {
+        get => _topNhanVienDoanhThu;
+        set => SetProperty(ref _topNhanVienDoanhThu, value);
+    }
+
     public ICommand RefreshCommand { get; }
     public ICommand ViewDetailCommand { get; }
     public ICommand CloseDetailCommand { get; }
     public ICommand ClearFilterCommand { get; }
+    public ICommand PrintHoaDonCommand { get; }
 
     public DonHangViewModel()
     {
@@ -121,8 +154,24 @@ public class DonHangViewModel : BaseViewModel
         ViewDetailCommand = new RelayCommand(ExecuteViewDetail);
         CloseDetailCommand = new RelayCommand(_ => IsDetailOpen = false);
         ClearFilterCommand = new RelayCommand(ExecuteClearFilter);
+        PrintHoaDonCommand = new RelayCommand(_ => ExecutePrintHoaDon());
 
-        _ = LoadDataAsync();
+        _ = InitializeAsync();
+    }
+
+    private async Task InitializeAsync()
+    {
+        // Load NhanVien list for filter dropdown
+        try
+        {
+            var nhanViens = await _db.GetNhanViensAsync();
+            NhanViens = new ObservableCollection<NhanVien>(nhanViens.Where(nv => nv.TrangThai && nv.ChucVuID == 5));
+        }
+        catch (Exception ex)
+        {
+            System.Diagnostics.Debug.WriteLine($"Error loading NhanViens: {ex.Message}");
+        }
+        await LoadDataAsync();
     }
 
     private async Task LoadDataAsync()
@@ -132,13 +181,14 @@ public class DonHangViewModel : BaseViewModel
         {
             var allOrders = await _db.GetDonHangsAsync(TuNgay, DenNgay);
 
-            // Compute stats from full date-filtered set before applying search filter
-            TongDonHang = allOrders.Count;
-            DonHoanThanh = allOrders.Count(d => d.TrangThai == 2);
-            TongDoanhThu = allOrders.Sum(d => d.ThanhToan);
-
-            // Filter by search text
+            // Lọc theo nhân viên
             var filtered = allOrders.AsEnumerable();
+            if (SelectedNhanVien != null)
+            {
+                filtered = filtered.Where(d => d.NhanVienID == SelectedNhanVien.NhanVienID);
+            }
+
+            // Lọc theo văn bản tìm kiếm
             if (!string.IsNullOrWhiteSpace(SearchText))
             {
                 var search = SearchText.Trim().ToLower();
@@ -149,7 +199,24 @@ public class DonHangViewModel : BaseViewModel
                 );
             }
 
-            DonHangs = new ObservableCollection<DonHang>(filtered);
+            var filteredList = filtered.ToList();
+
+            // Tính thống kê từ danh sách đã lọc
+            TongDonHang = filteredList.Count;
+            DonHoanThanh = filteredList.Count(d => d.TrangThai == 2);
+            TongDoanhThu = filteredList.Sum(d => d.ThanhToan);
+
+            // Tính nhân viên bán chạy nhất (từ tất cả đơn hàng, không bị ảnh hưởng bởi filter NV)
+            var topNV = allOrders
+                .Where(d => d.NhanVien != null)
+                .GroupBy(d => new { d.NhanVienID, d.NhanVien!.HoTen })
+                .Select(g => new { g.Key.HoTen, DoanhThu = g.Sum(d => d.ThanhToan) })
+                .OrderByDescending(x => x.DoanhThu)
+                .FirstOrDefault();
+            TopNhanVienName = topNV?.HoTen ?? "—";
+            TopNhanVienDoanhThu = topNV?.DoanhThu ?? 0;
+
+            DonHangs = new ObservableCollection<DonHang>(filteredList);
         }
         catch (Exception ex)
         {
@@ -182,7 +249,8 @@ public class DonHangViewModel : BaseViewModel
                     Pizza = new Pizza
                     {
                         TenPizza = ct.HangHoa?.TenHangHoa ?? ct.MaHangHoa ?? "",
-                        KichThuoc = ct.DoanhMucSize?.TenSize ?? ct.SizeID ?? ""
+                        KichThuoc = ct.DoanhMucSize?.TenSize ?? ct.SizeID ?? "",
+                        HinhAnh = ct.HangHoa?.HinhAnh
                     }
                 }).ToList();
                 ChiTietDonHangs = new ObservableCollection<CT_DonHang>(mapped);
@@ -212,10 +280,18 @@ public class DonHangViewModel : BaseViewModel
         _searchText = string.Empty;
         _tuNgay = null;
         _denNgay = null;
+        _selectedNhanVien = null;
         OnPropertyChanged(nameof(SearchText));
         OnPropertyChanged(nameof(TuNgay));
         OnPropertyChanged(nameof(DenNgay));
+        OnPropertyChanged(nameof(SelectedNhanVien));
         _ = LoadDataAsync();
+    }
+
+    private void ExecutePrintHoaDon()
+    {
+        if (SelectedDonHang == null || !ChiTietDonHangs.Any()) return;
+        PrintService.PrintHoaDonBanHang(SelectedDonHang, ChiTietDonHangs);
     }
 }
 

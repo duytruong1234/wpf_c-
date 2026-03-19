@@ -1,4 +1,4 @@
-﻿using System.Windows.Input;
+using System.Windows.Input;
 using System.Windows.Threading;
 using QuanLyKhoNguyenLieuPizza.Services;
 using QuanLyKhoNguyenLieuPizza.Core.Commands;
@@ -198,7 +198,7 @@ public class OTPViewModel : BaseViewModel
             System.Diagnostics.Debug.WriteLine($"Input OTP: {OTPCode}");
             System.Diagnostics.Debug.WriteLine($"Expected OTP (local): {_currentOTP}");
 
-            // Verify OTP using EmailService (which has the actual OTP storage)
+            // Xác thực OTP bằng EmailService (nơi lưu OTP thực tế)
             bool isValid = _emailService.VerifyOTP(Email, OTPCode);
             
             System.Diagnostics.Debug.WriteLine($"VerifyOTP result: {isValid}");
@@ -208,7 +208,7 @@ public class OTPViewModel : BaseViewModel
                 SuccessMessage = "Xác thực OTP thành công!";
                 _timer.Stop();
 
-                // Invoke success on UI thread to avoid cross-thread issues in subscribers
+                // Gọi thành công trên UI thread để tránh lỗi cross-thread
                 try
                 {
                     var dispatcher = System.Windows.Application.Current?.Dispatcher;
@@ -245,7 +245,7 @@ public class OTPViewModel : BaseViewModel
                 }
                 finally
                 {
-                    // clear local OTP input
+                    // Xóa mã OTP đã nhập
                     OTPCode = string.Empty;
                 }
             }

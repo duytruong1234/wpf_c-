@@ -1,37 +1,37 @@
-﻿namespace QuanLyKhoNguyenLieuPizza.Core.Interfaces;
+namespace QuanLyKhoNguyenLieuPizza.Core.Interfaces;
 
 /// <summary>
-/// Navigation service interface for decoupling navigation logic from ViewModels
+/// Interface dịch vụ điều hướng để tách logic điều hướng khỏi ViewModels
 /// </summary>
 public interface INavigationService
 {
     /// <summary>
-    /// Current view being displayed
+    /// View hiện tại đang hiển thị
     /// </summary>
     object? CurrentView { get; }
     
     /// <summary>
-    /// Navigate to a specific ViewModel type
+    /// Điều hướng đến một kiểu ViewModel cụ thể
     /// </summary>
     void NavigateTo<TViewModel>() where TViewModel : class;
     
     /// <summary>
-    /// Navigate to a specific ViewModel with parameter
+    /// Điều hướng đến một ViewModel cụ thể với tham số
     /// </summary>
     void NavigateTo<TViewModel>(object parameter) where TViewModel : class;
     
     /// <summary>
-    /// Navigate back to previous view
+    /// Điều hướng quảy lại view trước đó
     /// </summary>
     void GoBack();
     
     /// <summary>
-    /// Check if can go back
+    /// Kiểm tra có thể quay lại không
     /// </summary>
     bool CanGoBack { get; }
     
     /// <summary>
-    /// Event fired when navigation occurs
+    /// Sự kiện khi điều hướng xảy ra
     /// </summary>
     event Action<object?>? OnNavigated;
 }

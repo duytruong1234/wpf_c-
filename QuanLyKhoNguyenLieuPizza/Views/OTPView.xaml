@@ -1,39 +1,46 @@
-﻿<?xml version="1.0" encoding="utf-8"?>
+<?xml version="1.0" encoding="utf-8"?>
 <UserControl x:Class="QuanLyKhoNguyenLieuPizza.Views.OTPView"
              xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
              xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
              xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006" 
              xmlns:d="http://schemas.microsoft.com/expression/blend/2008" 
              xmlns:vm="clr-namespace:QuanLyKhoNguyenLieuPizza.ViewModels"
+         xmlns:ui="http://schemas.lepo.co/wpfui/2022/xaml"
              mc:Ignorable="d" 
              d:DesignHeight="750" d:DesignWidth="550"
              Background="Transparent">
     
     <UserControl.Resources>
-        <Storyboard x:Key="FadeInAnimation">
+        <Storyboard x:Key="SlideInAnimation">
+            <DoubleAnimation Storyboard.TargetProperty="(UIElement.RenderTransform).(TranslateTransform.X)"
+                           From="50" To="0" Duration="0:0:0.4">
+                <DoubleAnimation.EasingFunction>
+                    <CubicEase EasingMode="EaseOut"/>
+                </DoubleAnimation.EasingFunction>
+            </DoubleAnimation>
             <DoubleAnimation Storyboard.TargetProperty="Opacity"
-                           From="0" To="1" Duration="0:0:0.5">
+                           From="0" To="1" Duration="0:0:0.4">
                 <DoubleAnimation.EasingFunction>
                     <CubicEase EasingMode="EaseOut"/>
                 </DoubleAnimation.EasingFunction>
             </DoubleAnimation>
         </Storyboard>
         
-        <!-- OTP Input Box Style with Pizza Theme -->
+        <!-- OTP Input Box Style with Glow -->
         <Style x:Key="OTPBoxStyle" TargetType="TextBox">
-            <Setter Property="Width" Value="50"/>
-            <Setter Property="Height" Value="56"/>
+            <Setter Property="Width" Value="52"/>
+            <Setter Property="Height" Value="60"/>
             <Setter Property="FontSize" Value="24"/>
             <Setter Property="FontWeight" Value="Bold"/>
             <Setter Property="TextAlignment" Value="Center"/>
             <Setter Property="MaxLength" Value="1"/>
             <Setter Property="BorderThickness" Value="2"/>
             <Setter Property="BorderBrush" Value="{StaticResource BorderColor}"/>
-            <Setter Property="Background" Value="White"/>
+            <Setter Property="Background" Value="#FAFBFC"/>
             <Setter Property="Foreground" Value="{StaticResource TextPrimary}"/>
             <Setter Property="CaretBrush" Value="{StaticResource PrimaryColor}"/>
             <Setter Property="VerticalContentAlignment" Value="Center"/>
-            <Setter Property="Margin" Value="6,0"/>
+            <Setter Property="Margin" Value="5,0"/>
             <Setter Property="Template">
                 <Setter.Value>
                     <ControlTemplate TargetType="TextBox">
@@ -50,10 +57,17 @@
                         <ControlTemplate.Triggers>
                             <Trigger Property="IsFocused" Value="True">
                                 <Setter TargetName="border" Property="BorderBrush" Value="{StaticResource PrimaryColor}"/>
-                                <Setter TargetName="border" Property="BorderThickness" Value="2.5"/>
+                                <Setter TargetName="border" Property="Background" Value="White"/>
+                                <Setter TargetName="border" Property="Effect">
+                                    <Setter.Value>
+                                        <DropShadowEffect BlurRadius="12" ShadowDepth="0" 
+                                                          Color="#E85D04" Opacity="0.2"/>
+                                    </Setter.Value>
+                                </Setter>
                             </Trigger>
                             <Trigger Property="IsMouseOver" Value="True">
-                                <Setter TargetName="border" Property="BorderBrush" Value="{StaticResource PrimaryColor}"/>
+                                <Setter TargetName="border" Property="BorderBrush" Value="#CBD5E1"/>
+                                <Setter TargetName="border" Property="Background" Value="White"/>
                             </Trigger>
                         </ControlTemplate.Triggers>
                     </ControlTemplate>
@@ -61,12 +75,6 @@
             </Setter>
         </Style>
     </UserControl.Resources>
-    
-    <UserControl.Triggers>
-        <EventTrigger RoutedEvent="Loaded">
-            <BeginStoryboard Storyboard="{StaticResource FadeInAnimation}"/>
-        </EventTrigger>
-    </UserControl.Triggers>
     
     <d:UserControl.DataContext>
         <vm:OTPViewModel/>
@@ -78,9 +86,42 @@
                 Padding="40,36"
                 Width="520"
                 Effect="{StaticResource CardShadow}">
+            <Border.RenderTransform>
+                <TranslateTransform/>
+            </Border.RenderTransform>
+            <Border.Triggers>
+                <EventTrigger RoutedEvent="Loaded">
+                    <BeginStoryboard Storyboard="{StaticResource SlideInAnimation}"/>
+                </EventTrigger>
+            </Border.Triggers>
+
             <StackPanel>
+                <!-- Step Indicator -->
+                <StackPanel Orientation="Horizontal" HorizontalAlignment="Center" Margin="0,0,0,16">
+                    <Border Width="28" Height="28" CornerRadius="14" Background="#E2E8F0" Margin="0,0,4,0">
+                        <TextBlock Text="1" FontSize="12" FontWeight="Bold" Foreground="#94A3B8" 
+                                   HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                    </Border>
+                    <Border Width="24" Height="2" Background="#E2E8F0" VerticalAlignment="Center" Margin="2,0"/>
+                    <Border Width="28" Height="28" CornerRadius="14" Margin="0,0,4,0">
+                        <Border.Background>
+                            <LinearGradientBrush StartPoint="0,0" EndPoint="1,1">
+                                <GradientStop Color="#E85D04" Offset="0"/>
+                                <GradientStop Color="#F48C06" Offset="1"/>
+                            </LinearGradientBrush>
+                        </Border.Background>
+                        <TextBlock Text="2" FontSize="12" FontWeight="Bold" Foreground="White" 
+                                   HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                    </Border>
+                    <Border Width="24" Height="2" Background="#E2E8F0" VerticalAlignment="Center" Margin="2,0"/>
+                    <Border Width="28" Height="28" CornerRadius="14" Background="#E2E8F0" Margin="0,0,0,0">
+                        <TextBlock Text="3" FontSize="12" FontWeight="Bold" Foreground="#94A3B8" 
+                                   HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                    </Border>
+                </StackPanel>
+
                 <!-- Email Icon -->
-                <Viewbox Width="70" Height="70" Margin="0,0,0,16">
+                <Viewbox Width="64" Height="64" Margin="0,0,0,14">
                     <Grid>
                         <Ellipse Width="70" Height="70">
                             <Ellipse.Fill>
@@ -90,32 +131,29 @@
                                 </LinearGradientBrush>
                             </Ellipse.Fill>
                         </Ellipse>
-                        <!-- Email/OTP Icon -->
-                        <Canvas Width="70" Height="70">
-                            <Path Data="M20,4 L4,4 C2.9,4 2,4.9 2,6 L2,18 C2,19.1 2.9,20 4,20 L20,20 C21.1,20 22,19.1 22,18 L22,6 C22,4.9 21.1,4 20,4 M20,8 L12,13 L4,8 L4,6 L12,11 L20,6" 
-                                  Fill="White" 
-                                  Stretch="Uniform" 
-                                  Width="32" Height="32"
-                                  Canvas.Left="19" Canvas.Top="19"/>
-                        </Canvas>
+                        <Path Data="M20,4 L4,4 C2.9,4 2,4.9 2,6 L2,18 C2,19.1 2.9,20 4,20 L20,20 C21.1,20 22,19.1 22,18 L22,6 C22,4.9 21.1,4 20,4 M20,8 L12,13 L4,8 L4,6 L12,11 L20,6" 
+                              Fill="White" 
+                              Stretch="Uniform" 
+                              Width="30" Height="30"
+                              HorizontalAlignment="Center" VerticalAlignment="Center"/>
                     </Grid>
                 </Viewbox>
                 
                 <!-- Header -->
-                <TextBlock Text="Xác thực OTP"
-                           FontSize="26" 
+                <TextBlock Text="X&#x00E1;c th&#x1EF1;c OTP"
+                           FontSize="24" 
                            FontWeight="Bold" 
                            Foreground="{StaticResource TextPrimary}"
                            HorizontalAlignment="Center"
-                           Margin="0,0,0,8"/>
+                           Margin="0,0,0,6"/>
                 
-                <TextBlock Text="Nhập mã OTP đã gửi đến email của bạn"
+                <TextBlock Text="Nh&#x1EAD;p m&#x00E3; OTP &#x0111;&#x00E3; g&#x1EED;i &#x0111;&#x1EBF;n email c&#x1EE7;a b&#x1EA1;n"
                            FontSize="14" 
                            Foreground="{StaticResource TextSecondary}"
                            HorizontalAlignment="Center"
                            TextWrapping="Wrap"
                            TextAlignment="Center"
-                           Margin="0,0,0,8"/>
+                           Margin="0,0,0,6"/>
 
                 <TextBlock x:Name="txtEmailHint"
                            FontSize="14" 
@@ -126,43 +164,69 @@
                            Text="{Binding Email}"/>
 
                 <!-- Error Message -->
-                <Border Background="#FEE2E2" 
-                        CornerRadius="12" 
-                        Padding="16,12"
-                        Margin="0,0,0,20"
+                <Border Background="#FEF2F2" 
+                        CornerRadius="14" 
+                        Padding="16,14"
+                        Margin="0,0,0,16"
+                        BorderBrush="#FECACA"
+                        BorderThickness="1"
                         Visibility="{Binding ErrorMessage, Converter={StaticResource StringToVisibilityConverter}}">
-                    <StackPanel Orientation="Horizontal" VerticalAlignment="Center">
-                        <Path Data="M12,2C6.48,2,2,6.48,2,12s4.48,10,10,10s10-4.48,10-10S17.52,2,12,2z M13,17h-2v-2h2V17z M13,13h-2V7h2V13z" 
-                              Fill="#DC2626" 
-                              Stretch="Uniform" 
-                              Width="18" Height="18"
-                              Margin="0,0,10,0"/>
-                        <TextBlock Text="{Binding ErrorMessage}" 
+                    <Grid>
+                        <Grid.ColumnDefinitions>
+                            <ColumnDefinition Width="Auto"/>
+                            <ColumnDefinition Width="*"/>
+                        </Grid.ColumnDefinitions>
+                        <Border Grid.Column="0" Width="32" Height="32" 
+                                CornerRadius="8" Background="#FEE2E2"
+                                Margin="0,0,12,0" VerticalAlignment="Center">
+                            <Path Data="M12,2C6.48,2,2,6.48,2,12s4.48,10,10,10s10-4.48,10-10S17.52,2,12,2z M13,17h-2v-2h2V17z M13,13h-2V7h2V13z" 
+                                  Fill="#DC2626" 
+                                  Stretch="Uniform" 
+                                  Width="16" Height="16"
+                                  HorizontalAlignment="Center"
+                                  VerticalAlignment="Center"/>
+                        </Border>
+                        <TextBlock Grid.Column="1" 
+                                   Text="{Binding ErrorMessage}" 
                                    Foreground="#DC2626" 
-                                   FontSize="14"
+                                   FontSize="13"
+                                   FontWeight="Medium"
                                    TextWrapping="Wrap"
                                    VerticalAlignment="Center"/>
-                    </StackPanel>
+                    </Grid>
                 </Border>
 
                 <!-- Success Message -->
-                <Border Background="#D1FAE5" 
-                        CornerRadius="12" 
-                        Padding="16,12"
-                        Margin="0,0,0,20"
+                <Border Background="#ECFDF5" 
+                        CornerRadius="14" 
+                        Padding="16,14"
+                        Margin="0,0,0,16"
+                        BorderBrush="#A7F3D0"
+                        BorderThickness="1"
                         Visibility="{Binding SuccessMessage, Converter={StaticResource StringToVisibilityConverter}}">
-                    <StackPanel Orientation="Horizontal" VerticalAlignment="Center">
-                        <Path Data="M12,2C6.48,2,2,6.48,2,12s4.48,10,10,10s10-4.48,10-10S17.52,2,12,2z M10,17l-5-5l1.41-1.41L10,14.17l7.59-7.59L19,8L10,17z" 
-                              Fill="#059669" 
-                              Stretch="Uniform" 
-                              Width="18" Height="18"
-                              Margin="0,0,10,0"/>
-                        <TextBlock Text="{Binding SuccessMessage}" 
+                    <Grid>
+                        <Grid.ColumnDefinitions>
+                            <ColumnDefinition Width="Auto"/>
+                            <ColumnDefinition Width="*"/>
+                        </Grid.ColumnDefinitions>
+                        <Border Grid.Column="0" Width="32" Height="32" 
+                                CornerRadius="8" Background="#D1FAE5"
+                                Margin="0,0,12,0" VerticalAlignment="Center">
+                            <Path Data="M12,2C6.48,2,2,6.48,2,12s4.48,10,10,10s10-4.48,10-10S17.52,2,12,2z M10,17l-5-5l1.41-1.41L10,14.17l7.59-7.59L19,8L10,17z" 
+                                  Fill="#059669" 
+                                  Stretch="Uniform" 
+                                  Width="16" Height="16"
+                                  HorizontalAlignment="Center"
+                                  VerticalAlignment="Center"/>
+                        </Border>
+                        <TextBlock Grid.Column="1" 
+                                   Text="{Binding SuccessMessage}" 
                                    Foreground="#059669" 
-                                   FontSize="14"
+                                   FontSize="13"
+                                   FontWeight="Medium"
                                    TextWrapping="Wrap"
                                    VerticalAlignment="Center"/>
-                    </StackPanel>
+                    </Grid>
                 </Border>
 
                 <!-- OTP Input Boxes -->
@@ -172,7 +236,7 @@
                     <TextBox Style="{StaticResource OTPBoxStyle}" x:Name="otp1"/>
                     <TextBox Style="{StaticResource OTPBoxStyle}" x:Name="otp2"/>
                     <TextBox Style="{StaticResource OTPBoxStyle}" x:Name="otp3"/>
-                    <Border Width="16"/>
+                    <Border Width="12"/>
                     <TextBox Style="{StaticResource OTPBoxStyle}" x:Name="otp4"/>
                     <TextBox Style="{StaticResource OTPBoxStyle}" x:Name="otp5"/>
                     <TextBox Style="{StaticResource OTPBoxStyle}" x:Name="otp6"/>
@@ -180,7 +244,7 @@
 
                 <!-- Countdown Timer -->
                 <Border CornerRadius="14"
-                        Padding="16,10"
+                        Padding="16,12"
                         Margin="0,0,0,20">
                     <Border.Background>
                         <LinearGradientBrush StartPoint="0,0" EndPoint="1,0">
@@ -198,7 +262,7 @@
                               Width="20" Height="20"
                               VerticalAlignment="Center"
                               Margin="0,0,12,0"/>
-                        <TextBlock Text="Mã hết hạn sau: "
+                        <TextBlock Text="M&#x00E3; h&#x1EBF;t h&#x1EA1;n sau: "
                                    Foreground="{StaticResource TextPrimary}"
                                    FontSize="14"
                                    FontWeight="Medium"
@@ -211,15 +275,63 @@
                     </StackPanel>
                 </Border>
 
-                <!-- Verify Button -->
-                <Button Content="Xác thực"
-                        Style="{StaticResource PrimaryButtonStyle}"
-                        Command="{Binding VerifyOTPCommand}"
+                <!-- Verify Button (Gradient like Login) -->
+                <Button Command="{Binding VerifyOTPCommand}"
                         HorizontalAlignment="Stretch"
-                        Padding="24,14"
                         FontSize="16"
                         FontWeight="SemiBold"
-                        Margin="0,0,0,16"/>
+                        Foreground="White"
+                        Cursor="Hand"
+                        BorderThickness="0"
+                        Margin="0,0,0,16">
+                    <Button.Template>
+                        <ControlTemplate TargetType="Button">
+                            <Border x:Name="btnBorder" 
+                                    CornerRadius="14" 
+                                    Padding="24,14">
+                                <Border.Background>
+                                    <LinearGradientBrush StartPoint="0,0" EndPoint="1,0">
+                                        <GradientStop Color="#E85D04" Offset="0"/>
+                                        <GradientStop Color="#F48C06" Offset="0.5"/>
+                                        <GradientStop Color="#FFBA08" Offset="1"/>
+                                    </LinearGradientBrush>
+                                </Border.Background>
+                                <TextBlock Text="&#x2714;  X&#x00E1;c th&#x1EF1;c OTP"
+                                           FontSize="16"
+                                           FontWeight="SemiBold"
+                                           Foreground="White"
+                                           HorizontalAlignment="Center"
+                                           VerticalAlignment="Center"/>
+                            </Border>
+                            <ControlTemplate.Triggers>
+                                <Trigger Property="IsMouseOver" Value="True">
+                                    <Setter TargetName="btnBorder" Property="Effect">
+                                        <Setter.Value>
+                                            <DropShadowEffect BlurRadius="20" ShadowDepth="4" 
+                                                              Direction="270" Color="#E85D04" Opacity="0.35"/>
+                                        </Setter.Value>
+                                    </Setter>
+                                    <Setter TargetName="btnBorder" Property="RenderTransform">
+                                        <Setter.Value>
+                                            <TranslateTransform Y="-2"/>
+                                        </Setter.Value>
+                                    </Setter>
+                                </Trigger>
+                                <Trigger Property="IsPressed" Value="True">
+                                    <Setter TargetName="btnBorder" Property="Opacity" Value="0.9"/>
+                                    <Setter TargetName="btnBorder" Property="RenderTransform">
+                                        <Setter.Value>
+                                            <TranslateTransform Y="0"/>
+                                        </Setter.Value>
+                                    </Setter>
+                                </Trigger>
+                                <Trigger Property="IsEnabled" Value="False">
+                                    <Setter TargetName="btnBorder" Property="Opacity" Value="0.5"/>
+                                </Trigger>
+                            </ControlTemplate.Triggers>
+                        </ControlTemplate>
+                    </Button.Template>
+                </Button>
 
                 <!-- Resend OTP -->
                 <Border Background="{StaticResource BackgroundColor}"
@@ -228,11 +340,11 @@
                         Margin="0,0,0,8">
                     <StackPanel Orientation="Horizontal" 
                                 HorizontalAlignment="Center">
-                        <TextBlock Text="Không nhận được mã? "
+                        <TextBlock Text="Kh&#x00F4;ng nh&#x1EAD;n &#x0111;&#x01B0;&#x1EE3;c m&#x00E3;? "
                                    Foreground="{StaticResource TextSecondary}"
                                    FontSize="14"
                                    VerticalAlignment="Center"/>
-                        <TextBlock Text="Gửi lại"
+                        <TextBlock Text="G&#x1EED;i l&#x1EA1;i"
                                    Foreground="{StaticResource PrimaryColor}"
                                    FontSize="14"
                                    FontWeight="SemiBold"
@@ -253,17 +365,17 @@
                                               Command="{Binding ResendOTPCommand}"/>
                             </TextBlock.InputBindings>
                         </TextBlock>
-                        <TextBlock Text="Vui lòng chờ..."
+                        <TextBlock Text="Vui l&#x00F2;ng ch&#x1EDD;..."
                                    Foreground="{StaticResource TextSecondary}"
                                    FontSize="14"
                                    FontStyle="Italic"
                                    VerticalAlignment="Center"
-                                   Visibility="{Binding CanResend, Converter={StaticResource BoolToVisibilityConverter}, ConverterParameter=Inverse}"/>
+                                   Visibility="{Binding CanResend, Converter={StaticResource InverseBoolToVisibilityConverter}}"/>
                     </StackPanel>
                 </Border>
 
                 <!-- Back Button -->
-                <Button Content="← Quay lại"
+                <Button Content="&#x2190; Quay l&#x1EA1;i"
                         Background="Transparent"
                         Foreground="{StaticResource TextSecondary}"
                         FontSize="15"
@@ -293,19 +405,70 @@
                         </Style>
                     </Button.Style>
                 </Button>
+            </StackPanel>
+        </Border>
 
-                <!-- Loading Indicator -->
-                <Grid Margin="0,10,0,0"
-                      Visibility="{Binding IsLoading, Converter={StaticResource BoolToVisibilityConverter}}">
-                    <StackPanel Orientation="Horizontal" HorizontalAlignment="Center">
-                        <TextBlock Text="&#x0110;ang x&#x1EED; l&#x00FD;..." 
-                                   Foreground="{StaticResource TextSecondary}"
-                                   FontSize="14"/>
-                    </StackPanel>
-                </Grid>
+        <!-- Loading Overlay -->
+        <Border Background="#CCFFFFFF" CornerRadius="28"
+                Visibility="{Binding IsLoading, Converter={StaticResource BoolToVisibilityConverter}}">
+            <StackPanel HorizontalAlignment="Center" VerticalAlignment="Center">
+                <StackPanel Orientation="Horizontal" HorizontalAlignment="Center" Margin="0,0,0,10">
+                    <Border Width="8" Height="8" Background="{StaticResource PrimaryColor}" CornerRadius="4" Margin="0,0,6,0">
+                        <Border.RenderTransform>
+                            <TranslateTransform x:Name="otpDot1"/>
+                        </Border.RenderTransform>
+                        <Border.Triggers>
+                            <EventTrigger RoutedEvent="Loaded">
+                                <BeginStoryboard>
+                                    <Storyboard RepeatBehavior="Forever">
+                                        <DoubleAnimation Storyboard.TargetName="otpDot1"
+                                                       Storyboard.TargetProperty="Y"
+                                                       From="0" To="-8" Duration="0:0:0.35"
+                                                       AutoReverse="True"/>
+                                    </Storyboard>
+                                </BeginStoryboard>
+                            </EventTrigger>
+                        </Border.Triggers>
+                    </Border>
+                    <Border Width="8" Height="8" Background="{StaticResource SecondaryColor}" CornerRadius="4" Margin="0,0,6,0">
+                        <Border.RenderTransform>
+                            <TranslateTransform x:Name="otpDot2"/>
+                        </Border.RenderTransform>
+                        <Border.Triggers>
+                            <EventTrigger RoutedEvent="Loaded">
+                                <BeginStoryboard>
+                                    <Storyboard RepeatBehavior="Forever">
+                                        <DoubleAnimation Storyboard.TargetName="otpDot2"
+                                                       Storyboard.TargetProperty="Y"
+                                                       From="0" To="-8" Duration="0:0:0.35"
+                                                       AutoReverse="True" BeginTime="0:0:0.1"/>
+                                    </Storyboard>
+                                </BeginStoryboard>
+                            </EventTrigger>
+                        </Border.Triggers>
+                    </Border>
+                    <Border Width="8" Height="8" Background="{StaticResource WarningColor}" CornerRadius="4">
+                        <Border.RenderTransform>
+                            <TranslateTransform x:Name="otpDot3"/>
+                        </Border.RenderTransform>
+                        <Border.Triggers>
+                            <EventTrigger RoutedEvent="Loaded">
+                                <BeginStoryboard>
+                                    <Storyboard RepeatBehavior="Forever">
+                                        <DoubleAnimation Storyboard.TargetName="otpDot3"
+                                                       Storyboard.TargetProperty="Y"
+                                                       From="0" To="-8" Duration="0:0:0.35"
+                                                       AutoReverse="True" BeginTime="0:0:0.2"/>
+                                    </Storyboard>
+                                </BeginStoryboard>
+                            </EventTrigger>
+                        </Border.Triggers>
+                    </Border>
+                </StackPanel>
+                <TextBlock Text="&#x0110;ang x&#x1EED; l&#x00FD;..." 
+                           FontSize="14" FontWeight="SemiBold"
+                           Foreground="{StaticResource PrimaryColor}" HorizontalAlignment="Center"/>
             </StackPanel>
         </Border>
     </Grid>
 </UserControl>
-
-

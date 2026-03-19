@@ -1,4 +1,4 @@
-﻿namespace QuanLyKhoNguyenLieuPizza.Models;
+namespace QuanLyKhoNguyenLieuPizza.Models;
 
 public class DonHang
 {
@@ -13,7 +13,7 @@ public class DonHang
     public byte TrangThai { get; set; } = 1; // 1: Đang xử lý, 2: Hoàn thành, 3: Hủy
     public string? GhiChu { get; set; }
 
-    // Navigation properties
+    // Thuộc tính điều hướng
     public virtual NhanVien? NhanVien { get; set; }
     public virtual ICollection<CT_DonHang> CT_DonHangs { get; set; } = new List<CT_DonHang>();
 }

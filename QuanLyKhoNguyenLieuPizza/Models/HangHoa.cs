@@ -1,4 +1,4 @@
-﻿namespace QuanLyKhoNguyenLieuPizza.Models;
+namespace QuanLyKhoNguyenLieuPizza.Models;
 
 public class HangHoa
 {
@@ -9,7 +9,7 @@ public class HangHoa
     public string? LoaiHangHoaID { get; set; }
     public bool? TinhTrang { get; set; } = true;
 
-    // Navigation properties
+    // Thuộc tính điều hướng
     public virtual DonViTinh? DonViTinh { get; set; }
     public virtual LoaiHangHoa? LoaiHangHoa { get; set; }
     public virtual ICollection<GiaTheo_Size> GiaTheoSizes { get; set; } = new List<GiaTheo_Size>();

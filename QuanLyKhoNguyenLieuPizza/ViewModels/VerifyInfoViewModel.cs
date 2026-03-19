@@ -1,4 +1,5 @@
-﻿using System.Collections.ObjectModel;
+using System.Collections.ObjectModel;
+using System.Windows;
 using System.Windows.Input;
 using QuanLyKhoNguyenLieuPizza.Models;
 using QuanLyKhoNguyenLieuPizza.Core.Interfaces;
@@ -74,24 +75,61 @@ public class VerifyInfoViewModel : BaseViewModel
 
         VerifyCommand = new AsyncRelayCommand(ExecuteVerifyAsync, CanExecuteVerify);
         BackCommand = new RelayCommand(_ => OnBack?.Invoke());
+    }
 
-        _ = LoadChucVusAsync();
+    /// <summary>
+    /// Gọi mỗi khi navigate đến view này để load/reload danh sách chức vụ
+    /// </summary>
+    public async Task ReloadChucVusAsync()
+    {
+        await LoadChucVusAsync();
     }
 
     private async Task LoadChucVusAsync()
     {
-        try 
+        try
         {
+            System.Diagnostics.Debug.WriteLine("LoadChucVusAsync: Starting...");
             var chucVus = await _databaseService.GetChucVusAsync();
-            ChucVus.Clear();
-            foreach (var cv in chucVus)
+            System.Diagnostics.Debug.WriteLine($"LoadChucVusAsync: Got {chucVus.Count} items from DB");
+
+            // Đảm bảo cập nhật ObservableCollection trên UI thread
+            if (Application.Current?.Dispatcher != null && !Application.Current.Dispatcher.CheckAccess())
             {
-                ChucVus.Add(cv);
+                Application.Current.Dispatcher.Invoke(() =>
+                {
+                    ChucVus.Clear();
+                    foreach (var cv in chucVus)
+                    {
+                        ChucVus.Add(cv);
+                    }
+                });
+            }
+            else
+            {
+                ChucVus.Clear();
+                foreach (var cv in chucVus)
+                {
+                    ChucVus.Add(cv);
+                }
+            }
+
+            System.Diagnostics.Debug.WriteLine($"LoadChucVusAsync: ChucVus.Count = {ChucVus.Count}");
+
+            if (ChucVus.Count == 0)
+            {
+                ErrorMessage = "Chưa có dữ liệu chức vụ. Vui lòng thêm chức vụ trong mục Quản lý nhân viên.";
+            }
+            else
+            {
+                ErrorMessage = string.Empty;
             }
         }
         catch (Exception ex)
         {
-             System.Diagnostics.Debug.WriteLine($"Error loading ChucVus: {ex.Message}");
+            ErrorMessage = "Không tải được danh sách chức vụ. Vui lòng kiểm tra kết nối cơ sở dữ liệu.";
+            System.Diagnostics.Debug.WriteLine($"Error loading ChucVus: {ex.Message}");
+            System.Diagnostics.Debug.WriteLine($"Error loading ChucVus Stack: {ex.StackTrace}");
         }
     }
 

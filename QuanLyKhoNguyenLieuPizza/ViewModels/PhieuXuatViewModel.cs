@@ -1,4 +1,4 @@
-﻿using System.Collections.ObjectModel;
+using System.Collections.ObjectModel;
 using System.Windows.Input;
 using QuanLyKhoNguyenLieuPizza.Models;
 using QuanLyKhoNguyenLieuPizza.Services;
@@ -84,6 +84,34 @@ public class PhieuXuatViewModel : BaseViewModel
     {
         get => _donViTinhs;
         set => SetProperty(ref _donViTinhs, value);
+    }
+
+    private int _soPhieuChoDuyet;
+    public int SoPhieuChoDuyet
+    {
+        get => _soPhieuChoDuyet;
+        set => SetProperty(ref _soPhieuChoDuyet, value);
+    }
+
+    private int _soPhieuDaDuyet;
+    public int SoPhieuDaDuyet
+    {
+        get => _soPhieuDaDuyet;
+        set => SetProperty(ref _soPhieuDaDuyet, value);
+    }
+
+    private int _soPhieuDaHuy;
+    public int SoPhieuDaHuy
+    {
+        get => _soPhieuDaHuy;
+        set => SetProperty(ref _soPhieuDaHuy, value);
+    }
+
+    private int _soPhieuHomNay;
+    public int SoPhieuHomNay
+    {
+        get => _soPhieuHomNay;
+        set => SetProperty(ref _soPhieuHomNay, value);
     }
 
     // Filter properties
@@ -355,6 +383,11 @@ public class PhieuXuatViewModel : BaseViewModel
                 trangThaiFilter.Any() ? trangThaiFilter : null);
 
             PhieuXuats = new ObservableCollection<PhieuXuat>(phieuXuats);
+
+            SoPhieuChoDuyet = phieuXuats.Count(p => p.TrangThai == 1);
+            SoPhieuDaDuyet = phieuXuats.Count(p => p.TrangThai == 2);
+            SoPhieuDaHuy = phieuXuats.Count(p => p.TrangThai == 3);
+            SoPhieuHomNay = phieuXuats.Count(p => p.NgayYeuCau.Date == DateTime.Today);
         }
         catch (Exception ex)
         {
@@ -415,7 +448,7 @@ public class PhieuXuatViewModel : BaseViewModel
         IsDialogOpen = true;
     }
 
-    private void AddNguyenLieuToForm(object? parameter)
+    private async void AddNguyenLieuToForm(object? parameter)
     {
         if (parameter is NguyenLieu nguyenLieu)
         {
@@ -425,6 +458,36 @@ public class PhieuXuatViewModel : BaseViewModel
                 return;
             }
 
+            // Load danh sách đơn vị quy đổi
+            var donViOptions = new System.Collections.ObjectModel.ObservableCollection<DonViOption>();
+            
+            var defaultOption = new DonViOption
+            {
+                DonViID = nguyenLieu.DonViID ?? 0,
+                TenDonVi = nguyenLieu.DonViTinh?.TenDonVi ?? "",
+                HeSo = 1
+            };
+            donViOptions.Add(defaultOption);
+
+            try
+            {
+                var quyDois = await _databaseService.GetQuyDoiDonVisAsync(nguyenLieu.NguyenLieuID);
+                foreach (var qd in quyDois)
+                {
+                    if (qd.DonViID == nguyenLieu.DonViID) continue;
+                    donViOptions.Add(new DonViOption
+                    {
+                        DonViID = qd.DonViID ?? 0,
+                        TenDonVi = qd.DonViTinh?.TenDonVi ?? "",
+                        HeSo = qd.HeSo
+                    });
+                }
+            }
+            catch (Exception ex)
+            {
+                System.Diagnostics.Debug.WriteLine($"Error loading QuyDoiDonVi: {ex.Message}");
+            }
+
             var chiTiet = new CT_PhieuXuat
             {
                 NguyenLieuID = nguyenLieu.NguyenLieuID,
@@ -432,8 +495,10 @@ public class PhieuXuatViewModel : BaseViewModel
                 SoLuong = 1,
                 DonViID = nguyenLieu.DonViID,
                 DonViTinh = nguyenLieu.DonViTinh,
-                HeSo = 1
+                HeSo = 1,
+                DonViOptions = donViOptions
             };
+            chiTiet.SelectedDonVi = defaultOption;
 
             ChiTietForm.Add(chiTiet);
         }
@@ -608,9 +673,9 @@ public class PhieuXuatViewModel : BaseViewModel
     {
         return trangThai switch
         {
-            1 => "Cho duyet",
-            2 => "Da duyet",
-            3 => "Da huy",
+            1 => "Chờ duyệt",
+            2 => "Đã xuất kho",
+            3 => "Đã hủy",
             _ => "Khong xac dinh"
         };
     }

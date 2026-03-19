@@ -1,4 +1,4 @@
-﻿using System.Collections.ObjectModel;
+using System.Collections.ObjectModel;
 using System.Windows.Input;
 using QuanLyKhoNguyenLieuPizza.Models;
 using QuanLyKhoNguyenLieuPizza.Services;
@@ -9,7 +9,7 @@ public class NhaCungCapViewModel : BaseViewModel
 {
     private readonly DatabaseService _databaseService;
 
-    #region Properties
+    #region Thuộc tính
     private ObservableCollection<NhaCungCap> _nhaCungCaps = new();
     public ObservableCollection<NhaCungCap> NhaCungCaps
     {
@@ -31,7 +31,7 @@ public class NhaCungCapViewModel : BaseViewModel
         set => SetProperty(ref _nguyenLieusOfNCC, value);
     }
 
-    // Filter properties
+    // Thuộc tính lọc
     private string _searchText = string.Empty;
     public string SearchText
     {
@@ -46,6 +46,7 @@ public class NhaCungCapViewModel : BaseViewModel
     }
 
     private bool _filterDangHopTac = true;
+    private bool _isUpdatingFilter;
     public bool FilterDangHopTac
     {
         get => _filterDangHopTac;
@@ -53,6 +54,12 @@ public class NhaCungCapViewModel : BaseViewModel
         {
             if (SetProperty(ref _filterDangHopTac, value))
             {
+                if (!_isUpdatingFilter && value)
+                {
+                    _isUpdatingFilter = true;
+                    FilterNgungHopTac = false;
+                    _isUpdatingFilter = false;
+                }
                 _ = LoadNhaCungCapsAsync();
             }
         }
@@ -66,6 +73,12 @@ public class NhaCungCapViewModel : BaseViewModel
         {
             if (SetProperty(ref _filterNgungHopTac, value))
             {
+                if (!_isUpdatingFilter && value)
+                {
+                    _isUpdatingFilter = true;
+                    FilterDangHopTac = false;
+                    _isUpdatingFilter = false;
+                }
                 _ = LoadNhaCungCapsAsync();
             }
         }
@@ -78,7 +91,7 @@ public class NhaCungCapViewModel : BaseViewModel
         set => SetProperty(ref _tongSo, value);
     }
 
-    // Dialog properties
+    // Thuộc tính hộp thoại
     private bool _isDialogOpen;
     public bool IsDialogOpen
     {
@@ -107,7 +120,7 @@ public class NhaCungCapViewModel : BaseViewModel
         set => SetProperty(ref _isCreateMode, value);
     }
 
-    // Form properties
+    // Thuộc tính form
     private string _formTenNCC = string.Empty;
     public string FormTenNCC
     {
@@ -158,7 +171,7 @@ public class NhaCungCapViewModel : BaseViewModel
     }
     #endregion
 
-    #region Commands
+    #region Lệnh
     public ICommand LoadDataCommand { get; }
     public ICommand CreateNhaCungCapCommand { get; }
     public ICommand ViewDetailCommand { get; }
@@ -190,11 +203,11 @@ public class NhaCungCapViewModel : BaseViewModel
         CloseStatusDialogCommand = new RelayCommand(_ => IsStatusDialogOpen = false);
         ClearFilterCommand = new RelayCommand(_ => ClearFilter());
 
-        // Load data on initialization
+        // Tải dữ liệu khi khởi tạo
         _ = LoadDataAsync();
     }
 
-    #region Methods
+    #region Phương thức
     private async Task LoadDataAsync()
     {
         IsLoading = true;
@@ -226,7 +239,7 @@ public class NhaCungCapViewModel : BaseViewModel
             {
                 trangThaiFilter = false;
             }
-            // If both checked or both unchecked, show all
+            // Nếu cả hai được chọn hoặc cả hai không được chọn, hiển thị tất cả
 
             var nhaCungCaps = await _databaseService.GetAllNhaCungCapsAsync(
                 string.IsNullOrWhiteSpace(SearchText) ? null : SearchText,

@@ -1,4 +1,4 @@
-﻿namespace QuanLyKhoNguyenLieuPizza.Models;
+namespace QuanLyKhoNguyenLieuPizza.Models;
 
 public class CongThuc
 {
@@ -8,7 +8,7 @@ public class CongThuc
     public decimal SoLuong { get; set; }
     public int? DonViID { get; set; }
 
-    // Navigation properties
+    // Thuộc tính điều hướng
     public virtual Pizza? Pizza { get; set; }
     public virtual NguyenLieu? NguyenLieu { get; set; }
     public virtual DonViTinh? DonViTinh { get; set; }

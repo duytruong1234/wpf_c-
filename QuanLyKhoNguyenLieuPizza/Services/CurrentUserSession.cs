@@ -1,9 +1,9 @@
-﻿using QuanLyKhoNguyenLieuPizza.Models;
+using QuanLyKhoNguyenLieuPizza.Models;
 
 namespace QuanLyKhoNguyenLieuPizza.Services;
 
 /// <summary>
-/// Singleton to store current logged-in user session
+/// Singleton lưu trữ phiên đăng nhập của người dùng hiện tại
 /// </summary>
 public class CurrentUserSession
 {

@@ -1,4 +1,4 @@
-﻿using System.IO;
+using System.IO;
 using System.Windows.Input;
 using System.Windows;
 using Microsoft.Win32;
@@ -10,7 +10,6 @@ public class ProfileViewModel : BaseViewModel
 {
     private readonly DatabaseService _databaseService;
     private string? _hinhAnh;
-    private string? _pendingAvatarPath;
     private string? _pendingAvatarSourceFile;
     private bool _isAvatarChanged;
 
@@ -58,7 +57,7 @@ public class ProfileViewModel : BaseViewModel
         SaveAvatarCommand = new RelayCommand(async _ => await SaveAvatarAsync(), _ => IsAvatarChanged);
         CancelAvatarChangeCommand = new RelayCommand(_ => CancelAvatarChange(), _ => IsAvatarChanged);
         
-        // Load current avatar
+        // Tải ảnh đại diện hiện tại
         _hinhAnh = CurrentUserSession.Instance.CurrentUser?.NhanVien?.HinhAnh;
     }
 
@@ -75,10 +74,10 @@ public class ProfileViewModel : BaseViewModel
         {
             try
             {
-                // Store source file and show preview
+                // Lưu file nguồn và hiển thị xem trước
                 _pendingAvatarSourceFile = openFileDialog.FileName;
                 
-                // Show preview immediately using the source file
+                // Hiển thị xem trước ngay lập tức bằng file nguồn
                 HinhAnh = _pendingAvatarSourceFile;
                 IsAvatarChanged = true;
                 
@@ -106,17 +105,17 @@ public class ProfileViewModel : BaseViewModel
             var relativePath = Path.Combine("Resources", "Images", fileName);
             var destinationPath = Path.Combine(AppDomain.CurrentDomain.BaseDirectory, relativePath);
 
-            // Ensure directory exists
+            // Đảm bảo thư mục tồn tại
             var directory = Path.GetDirectoryName(destinationPath);
             if (!string.IsNullOrEmpty(directory) && !Directory.Exists(directory))
             {
                 Directory.CreateDirectory(directory);
             }
 
-            // Copy file to Resources/Images
+            // Sao chép file vào Resources/Images
             File.Copy(sourceFile, destinationPath, true);
 
-            // Update database
+            // Cập nhật cơ sở dữ liệu
             var nhanVien = CurrentUserSession.Instance.CurrentUser?.NhanVien;
             if (nhanVien != null)
             {
@@ -124,10 +123,10 @@ public class ProfileViewModel : BaseViewModel
                 
                 if (success)
                 {
-                    // Update session
+                    // Cập nhật phiên
                     nhanVien.HinhAnh = relativePath;
                     
-                    // Update UI
+                    // Cập nhật giao diện
                     HinhAnh = relativePath;
                     IsAvatarChanged = false;
                     _pendingAvatarSourceFile = null;
@@ -154,7 +153,7 @@ public class ProfileViewModel : BaseViewModel
 
     private void CancelAvatarChange()
     {
-        // Restore original avatar
+        // Khôi phục ảnh đại diện gốc
         HinhAnh = CurrentUserSession.Instance.CurrentUser?.NhanVien?.HinhAnh;
         IsAvatarChanged = false;
         _pendingAvatarSourceFile = null;

@@ -1,4 +1,4 @@
-﻿<?xml version="1.0" encoding="utf-8"?>
+<?xml version="1.0" encoding="utf-8"?>
 <UserControl x:Class="QuanLyKhoNguyenLieuPizza.Views.NhanVienView"
              xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
              xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
@@ -6,6 +6,7 @@
              xmlns:d="http://schemas.microsoft.com/expression/blend/2008" 
              xmlns:vm="clr-namespace:QuanLyKhoNguyenLieuPizza.ViewModels"
              xmlns:converters="clr-namespace:QuanLyKhoNguyenLieuPizza.Converters"
+             xmlns:ui="http://schemas.lepo.co/wpfui/2022/xaml"
              mc:Ignorable="d" 
              d:DesignHeight="800" d:DesignWidth="1200">
 
@@ -154,68 +155,48 @@
                     <ColumnDefinition Width="*"/>
                 </Grid.ColumnDefinitions>
 
-                <Border Grid.Column="0" Style="{StaticResource CardStyle}" Padding="20,16">
-                    <Grid>
-                        <Grid.ColumnDefinitions>
-                            <ColumnDefinition Width="Auto"/>
-                            <ColumnDefinition Width="*"/>
-                        </Grid.ColumnDefinitions>
-                        <Border Background="{StaticResource LightBlue}" CornerRadius="12" Width="44" Height="44" Margin="0,0,14,0">
-                            <TextBlock Text="&#xE77B;" FontFamily="Segoe MDL2 Assets" FontSize="20" Foreground="{StaticResource PrimaryBlue}" HorizontalAlignment="Center" VerticalAlignment="Center"/>
-                        </Border>
-                        <StackPanel Grid.Column="1" VerticalAlignment="Center">
-                            <TextBlock Text="Tổng nhân viên" FontSize="12" Foreground="{StaticResource Gray400}"/>
-                            <TextBlock Text="{Binding TongSo}" FontSize="26" FontWeight="Bold" Foreground="{StaticResource Gray900}"/>
-                        </StackPanel>
-                    </Grid>
+                <Border Grid.Column="0" Background="#EEF2FF" BorderBrush="#C7D2FE" BorderThickness="1.5" MinHeight="110" Style="{StaticResource CardStyle}" Padding="20">
+                    <StackPanel>
+                        <Grid Margin="0,0,0,12">
+                            <TextBlock Text="Tổng nhân viên" FontSize="12" Foreground="{StaticResource Gray500}"/>
+                            <Border Background="{StaticResource LightBlue}" CornerRadius="8" Width="32" Height="32" HorizontalAlignment="Right">
+                                <ui:SymbolIcon Symbol="Person24" FontSize="14" Foreground="{StaticResource PrimaryBlue}" HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                            </Border>
+                        </Grid>
+                        <TextBlock Text="{Binding TongSo}" FontSize="32" FontWeight="Bold" Foreground="{StaticResource Gray900}"/>
+                    </StackPanel>
                 </Border>
 
-                <Border Grid.Column="2" Style="{StaticResource CardStyle}" Padding="20,16">
-                    <Grid>
-                        <Grid.ColumnDefinitions>
-                            <ColumnDefinition Width="Auto"/>
-                            <ColumnDefinition Width="*"/>
-                        </Grid.ColumnDefinitions>
-                        <Border Background="{StaticResource SuccessGreenLight}" CornerRadius="12" Width="44" Height="44" Margin="0,0,14,0">
-                            <TextBlock Text="&#xE8FB;" FontFamily="Segoe MDL2 Assets" FontSize="20" Foreground="{StaticResource SuccessGreen}" HorizontalAlignment="Center" VerticalAlignment="Center"/>
-                        </Border>
-                        <StackPanel Grid.Column="1" VerticalAlignment="Center">
-                            <TextBlock Text="Đang làm việc" FontSize="12" Foreground="{StaticResource Gray400}"/>
-                            <TextBlock Text="{Binding CountDangLamViec}" FontSize="26" FontWeight="Bold" Foreground="#059669"/>
-                        </StackPanel>
-                    </Grid>
+                <Border Grid.Column="2" Background="#ECFDF5" BorderBrush="#A7F3D0" BorderThickness="1.5" MinHeight="110" Style="{StaticResource CardStyle}" Padding="20">
+                    <StackPanel>
+                        <Grid Margin="0,0,0,12">
+                            <TextBlock Text="Đang làm việc" FontSize="12" Foreground="{StaticResource Gray500}"/>
+                            <Border Background="{StaticResource SuccessGreenLight}" CornerRadius="8" Width="32" Height="32" HorizontalAlignment="Right">
+                                <ui:SymbolIcon Symbol="Edit24" FontSize="16" Foreground="{StaticResource SuccessGreen}" HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                            </Border>
+                        </Grid>
+                        <TextBlock Text="{Binding CountDangLamViec}" FontSize="32" FontWeight="Bold" Foreground="#059669"/>
+                    </StackPanel>
                 </Border>
 
-                <Border Grid.Column="4" Style="{StaticResource CardStyle}" Padding="20,16">
-                    <Grid>
-                        <Grid.ColumnDefinitions>
-                            <ColumnDefinition Width="Auto"/>
-                            <ColumnDefinition Width="*"/>
-                        </Grid.ColumnDefinitions>
-                        <Border Background="{StaticResource DangerRedLight}" CornerRadius="12" Width="44" Height="44" Margin="0,0,14,0">
-                            <TextBlock Text="&#xE8FB;" FontFamily="Segoe MDL2 Assets" FontSize="20" Foreground="{StaticResource DangerRed}" HorizontalAlignment="Center" VerticalAlignment="Center"/>
-                        </Border>
-                        <StackPanel Grid.Column="1" VerticalAlignment="Center">
-                            <TextBlock Text="Đã nghỉ việc" FontSize="12" Foreground="{StaticResource Gray400}"/>
-                            <TextBlock Text="{Binding CountDaNghiViec}" FontSize="26" FontWeight="Bold" Foreground="#DC2626"/>
-                        </StackPanel>
-                    </Grid>
+                <Border Grid.Column="4" Background="#FEF2F2" BorderBrush="#FECACA" BorderThickness="1.5" MinHeight="110" Style="{StaticResource CardStyle}" Padding="20">
+                    <StackPanel>
+                        <Grid Margin="0,0,0,12">
+                            <TextBlock Text="Đã nghỉ việc" FontSize="12" Foreground="{StaticResource Gray500}"/>
+                            <Border Background="{StaticResource DangerRedLight}" CornerRadius="8" Width="32" Height="32" HorizontalAlignment="Right">
+                                <ui:SymbolIcon Symbol="Dismiss24" FontSize="16" Foreground="{StaticResource DangerRed}" HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                            </Border>
+                        </Grid>
+                        <TextBlock Text="{Binding CountDaNghiViec}" FontSize="32" FontWeight="Bold" Foreground="#DC2626"/>
+                    </StackPanel>
                 </Border>
             </Grid>
 
             <!-- SEARCH & FILTERS -->
             <Border Grid.Row="2" Style="{StaticResource CardStyle}" Padding="20" Margin="0,0,0,20">
-                <Grid>
-                    <Grid.ColumnDefinitions>
-                        <ColumnDefinition Width="Auto"/>
-                        <ColumnDefinition Width="24"/>
-                        <ColumnDefinition Width="Auto"/>
-                        <ColumnDefinition Width="24"/>
-                        <ColumnDefinition Width="*"/>
-                    </Grid.ColumnDefinitions>
-
+                <StackPanel>
                     <!-- Search Box -->
-                    <Border Background="White" BorderBrush="{StaticResource Gray200}" BorderThickness="1" CornerRadius="10" Padding="12,10" Width="300">
+                    <Border Background="White" BorderBrush="{StaticResource Gray200}" BorderThickness="1" CornerRadius="10" Padding="12,10" HorizontalAlignment="Left" Width="300" Margin="0,0,0,16">
                         <Grid>
                             <Grid.ColumnDefinitions>
                                 <ColumnDefinition Width="Auto"/>
@@ -243,19 +224,18 @@
                         </Grid>
                     </Border>
 
-                    <!-- Tình trạng -->
-                    <StackPanel Grid.Column="2" VerticalAlignment="Center">
-                        <StackPanel Orientation="Horizontal">
+                    <!-- Filters row: Tình trạng + Chức vụ -->
+                    <WrapPanel Orientation="Horizontal">
+                        <!-- Tình trạng -->
+                        <StackPanel Orientation="Horizontal" VerticalAlignment="Center" Margin="0,0,32,8">
                             <TextBlock Text="&#xE71C;" FontFamily="Segoe MDL2 Assets" FontSize="14" Foreground="{StaticResource Gray500}" VerticalAlignment="Center" Margin="0,0,8,0"/>
                             <TextBlock Text="Tình trạng:" FontSize="13" FontWeight="SemiBold" Foreground="{StaticResource Gray600}" VerticalAlignment="Center" Margin="0,0,16,0"/>
                             <CheckBox Content="Đang làm việc" IsChecked="{Binding FilterDangLamViec}" Margin="0,0,16,0" FontSize="13"/>
                             <CheckBox Content="Đã nghỉ việc" IsChecked="{Binding FilterDaNghiViec}" FontSize="13"/>
                         </StackPanel>
-                    </StackPanel>
 
-                    <!-- Chức vụ -->
-                    <StackPanel Grid.Column="4" VerticalAlignment="Center">
-                        <StackPanel Orientation="Horizontal">
+                        <!-- Chức vụ -->
+                        <StackPanel Orientation="Horizontal" VerticalAlignment="Center" Margin="0,0,0,8">
                             <TextBlock Text="&#xE716;" FontFamily="Segoe MDL2 Assets" FontSize="14" Foreground="{StaticResource Gray500}" VerticalAlignment="Center" Margin="0,0,8,0"/>
                             <TextBlock Text="Chức vụ:" FontSize="13" FontWeight="SemiBold" Foreground="{StaticResource Gray600}" VerticalAlignment="Center" Margin="0,0,12,0"/>
                             <ItemsControl ItemsSource="{Binding ChucVuFilters}">
@@ -268,15 +248,15 @@
                                     <DataTemplate>
                                         <CheckBox Content="{Binding ChucVu.TenChucVu}" 
                                                   IsChecked="{Binding IsSelected}"
-                                                  Margin="0,0,12,0" FontSize="13"
+                                                  Margin="0,0,12,4" FontSize="13"
                                                   Command="{Binding DataContext.ApplyChucVuFilterCommand, RelativeSource={RelativeSource AncestorType=ItemsControl}}"
                                                   CommandParameter="{Binding}"/>
                                     </DataTemplate>
                                 </ItemsControl.ItemTemplate>
                             </ItemsControl>
                         </StackPanel>
-                    </StackPanel>
-                </Grid>
+                    </WrapPanel>
+                </StackPanel>
             </Border>
 
             <!-- DATA TABLE -->
@@ -291,7 +271,6 @@
                     <Border Grid.Row="0" Background="{StaticResource Gray50}" CornerRadius="16,16,0,0" BorderBrush="{StaticResource Gray200}" BorderThickness="0,0,0,1">
                         <Grid>
                             <Grid.ColumnDefinitions>
-                                <ColumnDefinition Width="0.5*"/>
                                 <ColumnDefinition Width="1*"/>
                                 <ColumnDefinition Width="0.5*"/>
                                 <ColumnDefinition Width="0.7*"/>
@@ -303,17 +282,16 @@
                                 <ColumnDefinition Width="0.7*"/>
                                 <ColumnDefinition Width="0.6*"/>
                             </Grid.ColumnDefinitions>
-                            <TextBlock Grid.Column="0" Text="Mã NV" Style="{StaticResource TableHeaderStyle}"/>
-                            <TextBlock Grid.Column="1" Text="Tên nhân viên" Style="{StaticResource TableHeaderStyle}"/>
-                            <TextBlock Grid.Column="2" Text="Hình ảnh" Style="{StaticResource TableHeaderStyle}"/>
-                            <TextBlock Grid.Column="3" Text="Ngày sinh" Style="{StaticResource TableHeaderStyle}"/>
-                            <TextBlock Grid.Column="4" Text="Địa chỉ" Style="{StaticResource TableHeaderStyle}"/>
-                            <TextBlock Grid.Column="5" Text="Số điện thoại" Style="{StaticResource TableHeaderStyle}"/>
-                            <TextBlock Grid.Column="6" Text="Email" Style="{StaticResource TableHeaderStyle}"/>
-                            <TextBlock Grid.Column="7" Text="Chức vụ" Style="{StaticResource TableHeaderStyle}"/>
-                            <TextBlock Grid.Column="8" Text="Tài khoản" Style="{StaticResource TableHeaderStyle}"/>
-                            <TextBlock Grid.Column="9" Text="Trạng thái" Style="{StaticResource TableHeaderStyle}"/>
-                            <TextBlock Grid.Column="10" Text="Thao tác" Style="{StaticResource TableHeaderStyle}"/>
+                            <TextBlock Grid.Column="0" Text="Tên nhân viên" Style="{StaticResource TableHeaderStyle}"/>
+                            <TextBlock Grid.Column="1" Text="Hình ảnh" Style="{StaticResource TableHeaderStyle}"/>
+                            <TextBlock Grid.Column="2" Text="Ngày sinh" Style="{StaticResource TableHeaderStyle}"/>
+                            <TextBlock Grid.Column="3" Text="Địa chỉ" Style="{StaticResource TableHeaderStyle}"/>
+                            <TextBlock Grid.Column="4" Text="Số điện thoại" Style="{StaticResource TableHeaderStyle}"/>
+                            <TextBlock Grid.Column="5" Text="Email" Style="{StaticResource TableHeaderStyle}"/>
+                            <TextBlock Grid.Column="6" Text="Chức vụ" Style="{StaticResource TableHeaderStyle}"/>
+                            <TextBlock Grid.Column="7" Text="Tài khoản" Style="{StaticResource TableHeaderStyle}"/>
+                            <TextBlock Grid.Column="8" Text="Trạng thái" Style="{StaticResource TableHeaderStyle}"/>
+                            <TextBlock Grid.Column="9" Text="Thao tác" Style="{StaticResource TableHeaderStyle}"/>
                         </Grid>
                     </Border>
 
@@ -335,7 +313,6 @@
                                         </Border.Style>
                                         <Grid>
                                             <Grid.ColumnDefinitions>
-                                                <ColumnDefinition Width="0.5*"/>
                                                 <ColumnDefinition Width="1*"/>
                                                 <ColumnDefinition Width="0.5*"/>
                                                 <ColumnDefinition Width="0.7*"/>
@@ -348,11 +325,10 @@
                                                 <ColumnDefinition Width="0.6*"/>
                                             </Grid.ColumnDefinitions>
 
-                                            <TextBlock Grid.Column="0" Text="{Binding NhanVienID}" Style="{StaticResource TableCellStyle}"/>
-                                            <TextBlock Grid.Column="1" Text="{Binding HoTen}" Style="{StaticResource TableCellStyle}" FontWeight="SemiBold" TextAlignment="Left"/>
+                                            <TextBlock Grid.Column="0" Text="{Binding HoTen}" Style="{StaticResource TableCellStyle}" FontWeight="SemiBold" TextAlignment="Left"/>
 
                                             <!-- Avatar -->
-                                            <Border Grid.Column="2" Width="40" Height="40" CornerRadius="20" 
+                                            <Border Grid.Column="1" Width="40" Height="40" CornerRadius="20" 
                                                     Background="{StaticResource Gray200}" Margin="4" HorizontalAlignment="Center">
                                                 <Border CornerRadius="20" ClipToBounds="True">
                                                     <Border.Background>
@@ -361,14 +337,14 @@
                                                 </Border>
                                             </Border>
 
-                                            <TextBlock Grid.Column="3" Text="{Binding NgaySinh, StringFormat={}{0:dd/MM/yyyy}}" Style="{StaticResource TableCellStyle}"/>
-                                            <TextBlock Grid.Column="4" Text="{Binding DiaChi}" Style="{StaticResource TableCellStyle}" TextAlignment="Left"/>
-                                            <TextBlock Grid.Column="5" Text="{Binding SDT}" Style="{StaticResource TableCellStyle}"/>
-                                            <TextBlock Grid.Column="6" Text="{Binding Email}" Style="{StaticResource TableCellStyle}" TextAlignment="Left" FontSize="11"/>
-                                            <TextBlock Grid.Column="7" Text="{Binding ChucVu.TenChucVu}" Style="{StaticResource TableCellStyle}"/>
+                                            <TextBlock Grid.Column="2" Text="{Binding NgaySinh, StringFormat={}{0:dd/MM/yyyy}}" Style="{StaticResource TableCellStyle}"/>
+                                            <TextBlock Grid.Column="3" Text="{Binding DiaChi}" Style="{StaticResource TableCellStyle}" TextAlignment="Left"/>
+                                            <TextBlock Grid.Column="4" Text="{Binding SDT}" Style="{StaticResource TableCellStyle}"/>
+                                            <TextBlock Grid.Column="5" Text="{Binding Email}" Style="{StaticResource TableCellStyle}" TextAlignment="Left" FontSize="11"/>
+                                            <TextBlock Grid.Column="6" Text="{Binding ChucVu.TenChucVu}" Style="{StaticResource TableCellStyle}"/>
 
                                             <!-- Account -->
-                                            <StackPanel Grid.Column="8" HorizontalAlignment="Center" VerticalAlignment="Center">
+                                            <StackPanel Grid.Column="7" HorizontalAlignment="Center" VerticalAlignment="Center">
                                                 <TextBlock Text="{Binding TaiKhoan.Username}" FontSize="12" Foreground="{StaticResource Gray800}" 
                                                            Visibility="{Binding TaiKhoan, Converter={StaticResource NullToVisibilityConverter}}"/>
                                                 <Button Command="{Binding DataContext.OpenAccountDialogCommand, RelativeSource={RelativeSource AncestorType=ItemsControl}}"
@@ -390,7 +366,7 @@
                                             </StackPanel>
 
                                             <!-- Status Badge -->
-                                            <Border Grid.Column="9" HorizontalAlignment="Center" VerticalAlignment="Center"
+                                            <Border Grid.Column="8" HorizontalAlignment="Center" VerticalAlignment="Center"
                                                     CornerRadius="12" Padding="10,5">
                                                 <Border.Style>
                                                     <Style TargetType="Border">
@@ -419,7 +395,7 @@
                                             </Border>
 
                                             <!-- Action Buttons -->
-                                            <StackPanel Grid.Column="10" Orientation="Horizontal" HorizontalAlignment="Center" VerticalAlignment="Center">
+                                            <StackPanel Grid.Column="9" Orientation="Horizontal" HorizontalAlignment="Center" VerticalAlignment="Center">
                                                 <Button Command="{Binding DataContext.EditNhanVienCommand, RelativeSource={RelativeSource AncestorType=ItemsControl}}"
                                                         CommandParameter="{Binding}" ToolTip="Chỉnh sửa" Cursor="Hand" Margin="0,0,6,0">
                                                     <Button.Template>

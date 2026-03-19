@@ -1,7 +1,7 @@
-﻿namespace QuanLyKhoNguyenLieuPizza.Core.Interfaces;
+namespace QuanLyKhoNguyenLieuPizza.Core.Interfaces;
 
 /// <summary>
-/// Generic repository interface for basic CRUD operations
+/// Interface repository generic cho các thao tác CRUD cơ bản
 /// </summary>
 public interface IRepository<T> where T : class
 {
@@ -13,7 +13,7 @@ public interface IRepository<T> where T : class
 }
 
 /// <summary>
-/// Unit of Work pattern for transaction management
+/// Mẫu thiết kế Unit of Work cho quản lý giao dịch
 /// </summary>
 public interface IUnitOfWork : IDisposable
 {

@@ -1,4 +1,4 @@
-﻿namespace QuanLyKhoNguyenLieuPizza.Models;
+namespace QuanLyKhoNguyenLieuPizza.Models;
 
 public class NguyenLieuNhaCungCap
 {
@@ -7,7 +7,7 @@ public class NguyenLieuNhaCungCap
     public decimal GiaNhap { get; set; }
     public DateTime NgayCapNhat { get; set; } = DateTime.Now;
 
-    // Navigation properties
+    // Thuộc tính điều hướng
     public virtual NguyenLieu? NguyenLieu { get; set; }
     public virtual NhaCungCap? NhaCungCap { get; set; }
 }

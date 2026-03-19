@@ -1,4 +1,4 @@
-﻿using System.Collections.ObjectModel;
+using System.Collections.ObjectModel;
 using System.Windows.Input;
 using QuanLyKhoNguyenLieuPizza.Core.Interfaces;
 using QuanLyKhoNguyenLieuPizza.Models;
@@ -26,7 +26,7 @@ public class DashboardViewModel : BaseViewModel
     private DateTime? _ngayKetThuc;
     private bool _isLoading;
 
-    // Warehouse Statistics
+    // Thống kê kho hàng
     private int _soLuongTonKho;
     private int _soLuongTonKhoThap;
     private int _soLuongSapHetHan;
@@ -35,13 +35,18 @@ public class DashboardViewModel : BaseViewModel
     private int _soLuongXuat;
     private int _tonKho;
 
-    // Sales Statistics
+    // Thống kê bán hàng
     private decimal _doanhThuHomNay;
     private decimal _doanhThuThang;
     private int _tongDonHomNay;
     private int _tongDonThang;
     private decimal _loiNhuanThang;
     private decimal _chiPhiNguyenLieuThang;
+
+    // Dữ liệu biểu đồ
+    private double[] _dailyRevenueValues = [];
+    private string[] _dailyRevenueLabels = [];
+    private List<(string TenPizza, string KichThuoc, int SoLuongBan, decimal DoanhThu)> _topPizzaData = [];
 
     public string SelectedMenuItem
     {
@@ -121,7 +126,7 @@ public class DashboardViewModel : BaseViewModel
         set => SetProperty(ref _tonKho, value);
     }
 
-    // Sales properties
+    // Thuộc tính bán hàng
     public decimal DoanhThuHomNay
     {
         get => _doanhThuHomNay;
@@ -158,18 +163,39 @@ public class DashboardViewModel : BaseViewModel
         set => SetProperty(ref _chiPhiNguyenLieuThang, value);
     }
 
-    // Total nguyen lieu for chart calculations (default to 10 if 0)
+    // Thuộc tính dữ liệu biểu đồ
+    public double[] DailyRevenueValues
+    {
+        get => _dailyRevenueValues;
+        set => SetProperty(ref _dailyRevenueValues, value);
+    }
+
+    public string[] DailyRevenueLabels
+    {
+        get => _dailyRevenueLabels;
+        set => SetProperty(ref _dailyRevenueLabels, value);
+    }
+
+    public List<(string TenPizza, string KichThuoc, int SoLuongBan, decimal DoanhThu)> TopPizzaData
+    {
+        get => _topPizzaData;
+        set => SetProperty(ref _topPizzaData, value);
+    }
+
+    // Tổng nguyên liệu cho tính toán biểu đồ (mặc định là 10 nếu bằng 0)
     public int TotalNguyenLieu => Math.Max(SoLuongTonKho, 10);
 
     public ObservableCollection<NguyenLieu> NguyenLieus { get; } = [];
     public ObservableCollection<TopPizzaItem> TopPizzas { get; } = [];
     public ObservableCollection<DonHang> RecentDonHangs { get; } = [];
 
-    // Commands
+    // Lệnh
     public ICommand NavigateCommand { get; }
     public ICommand LogoutCommand { get; }
     public ICommand RefreshCommand { get; }
 
+    // Sự kiện cập nhật biểu đồ
+    public event Action? OnDataLoaded;
     public event Action? OnLogout;
 
     public DashboardViewModel()
@@ -185,13 +211,15 @@ public class DashboardViewModel : BaseViewModel
         
         NavigateCommand = new RelayCommand(ExecuteNavigate);
         LogoutCommand = new RelayCommand(_ => OnLogout?.Invoke());
-        RefreshCommand = new RelayCommand(async _ => await LoadDataAsync());
+        // ⚡ AsyncRelayCommand thay vì async void
+        RefreshCommand = new AsyncRelayCommand(async _ => await LoadDataAsync());
 
-        // Load current user name
+        // Tải tên người dùng hiện tại
         var currentUser = CurrentUserSession.Instance.CurrentUser;
-        TenNguoiDung = currentUser?.NhanVien?.HoTen ?? currentUser?.Username ?? "Ng??i đãng";
+        TenNguoiDung = currentUser?.NhanVien?.HoTen ?? currentUser?.Username ?? "Người dùng";
 
-        _ = LoadDataAsync();
+        // ⚡ SafeInitializeAsync thay vì fire-and-forget
+        SafeInitializeAsync(LoadDataAsync);
     }
 
     public DashboardViewModel(IDatabaseService databaseService)
@@ -200,9 +228,9 @@ public class DashboardViewModel : BaseViewModel
         
         NavigateCommand = new RelayCommand(ExecuteNavigate);
         LogoutCommand = new RelayCommand(_ => OnLogout?.Invoke());
-        RefreshCommand = new RelayCommand(async _ => await LoadDataAsync());
+        RefreshCommand = new AsyncRelayCommand(async _ => await LoadDataAsync());
 
-        _ = LoadDataAsync();
+        SafeInitializeAsync(LoadDataAsync);
     }
 
     private void ExecuteNavigate(object? parameter)
@@ -219,28 +247,60 @@ public class DashboardViewModel : BaseViewModel
 
         try
         {
-            // Load warehouse statistics
-            SoLuongTonKho = await _databaseService.GetTotalTonKhoCountAsync();
-            SoLuongTonKhoThap = await _databaseService.GetLowStockCountAsync(20);
-            SoLuongSapHetHan = await _databaseService.GetNearExpiryCountAsync(7);
-            SoLuongHetHan = await _databaseService.GetExpiredCountAsync();
-
-            // Load sales statistics
             var today = DateTime.Today;
             var firstDayOfMonth = new DateTime(today.Year, today.Month, 1);
 
-            DoanhThuHomNay = await _databaseService.GetDoanhThuAsync(today, today);
-            TongDonHomNay = await _databaseService.GetTotalDonHangCountAsync(today, today);
-            DoanhThuThang = await _databaseService.GetDoanhThuAsync(firstDayOfMonth, today);
-            TongDonThang = await _databaseService.GetTotalDonHangCountAsync(firstDayOfMonth, today);
-            LoiNhuanThang = await _databaseService.GetTotalLoiNhuanAsync(firstDayOfMonth, today);
-            ChiPhiNguyenLieuThang = await _databaseService.GetChiPhiNguyenLieuAsync(firstDayOfMonth, today);
+            // Đợt 1: Chạy tất cả truy vấn độc lập song song
+            var tonKhoTask = _databaseService.GetTotalTonKhoCountAsync();
+            var lowStockTask = _databaseService.GetLowStockCountAsync(20);
+            var nearExpiryTask = _databaseService.GetNearExpiryCountAsync(7);
+            var expiredTask = _databaseService.GetExpiredCountAsync();
+            var doanhThuTodayTask = _databaseService.GetDoanhThuAsync(today, today);
+            var tongDonTodayTask = _databaseService.GetTotalDonHangCountAsync(today, today);
+            var doanhThuMonthTask = _databaseService.GetDoanhThuAsync(firstDayOfMonth, today);
+            var tongDonMonthTask = _databaseService.GetTotalDonHangCountAsync(firstDayOfMonth, today);
+            var loiNhuanTask = _databaseService.GetTotalLoiNhuanAsync(firstDayOfMonth, today);
+            var chiPhiTask = _databaseService.GetChiPhiNguyenLieuAsync(firstDayOfMonth, today);
+            var topPizzasTask = _databaseService.GetTopPizzasAsync(firstDayOfMonth, today, 5);
+            var recentOrdersTask = _databaseService.GetRecentDonHangsAsync(8);
 
-            // Load top pizzas this month
-            var topPizzas = await _databaseService.GetTopPizzasAsync(firstDayOfMonth, today, 5);
+            // Doanh thu 7 ngày gần nhất
+            var dailyRevenueTasks = new List<Task<decimal>>();
+            var dailyLabels = new List<string>();
+            for (int i = 6; i >= 0; i--)
+            {
+                var date = today.AddDays(-i);
+                dailyRevenueTasks.Add(_databaseService.GetDoanhThuAsync(date, date));
+                dailyLabels.Add(date.ToString("dd/MM"));
+            }
+
+            await Task.WhenAll(
+                tonKhoTask, lowStockTask, nearExpiryTask, expiredTask,
+                doanhThuTodayTask, tongDonTodayTask, doanhThuMonthTask, tongDonMonthTask,
+                loiNhuanTask, chiPhiTask, topPizzasTask, recentOrdersTask);
+
+            await Task.WhenAll(dailyRevenueTasks);
+
+            // Gán kết quả
+            SoLuongTonKho = tonKhoTask.Result;
+            SoLuongTonKhoThap = lowStockTask.Result;
+            SoLuongSapHetHan = nearExpiryTask.Result;
+            SoLuongHetHan = expiredTask.Result;
+            DoanhThuHomNay = doanhThuTodayTask.Result;
+            TongDonHomNay = tongDonTodayTask.Result;
+            DoanhThuThang = doanhThuMonthTask.Result;
+            TongDonThang = tongDonMonthTask.Result;
+            LoiNhuanThang = loiNhuanTask.Result;
+            ChiPhiNguyenLieuThang = chiPhiTask.Result;
+
+            // Lưu dữ liệu biểu đồ
+            DailyRevenueValues = dailyRevenueTasks.Select(t => (double)(t.Result / 1000m)).ToArray();
+            DailyRevenueLabels = dailyLabels.ToArray();
+
+            // Cập nhật các danh sách
             TopPizzas.Clear();
             int rank = 1;
-            foreach (var (tenPizza, kichThuoc, soLuongBan, doanhThu) in topPizzas)
+            foreach (var (tenPizza, kichThuoc, soLuongBan, doanhThu) in topPizzasTask.Result)
             {
                 TopPizzas.Add(new TopPizzaItem
                 {
@@ -252,13 +312,16 @@ public class DashboardViewModel : BaseViewModel
                 });
             }
 
-            // Load recent orders
-            var recentOrders = await _databaseService.GetRecentDonHangsAsync(8);
+            TopPizzaData = topPizzasTask.Result;
+
             RecentDonHangs.Clear();
-            foreach (var order in recentOrders)
+            foreach (var order in recentOrdersTask.Result)
             {
                 RecentDonHangs.Add(order);
             }
+
+            // Thông báo cập nhật biểu đồ
+            OnDataLoaded?.Invoke();
         }
         catch (Exception ex)
         {
@@ -270,5 +333,3 @@ public class DashboardViewModel : BaseViewModel
         }
     }
 }
-
-

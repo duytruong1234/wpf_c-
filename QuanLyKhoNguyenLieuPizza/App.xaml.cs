@@ -1,11 +1,13 @@
-﻿using System.IO;
+using System.IO;
+using System.Globalization;
 using System.Windows;
+using System.Windows.Markup;
 using QuanLyKhoNguyenLieuPizza.Views;
 
 namespace QuanLyKhoNguyenLieuPizza
 {
     /// <summary>
-    /// Interaction logic for App.xaml
+    /// Logic tương tác cho App.xaml
     /// </summary>
     public partial class App : Application
     {
@@ -25,6 +27,15 @@ namespace QuanLyKhoNguyenLieuPizza
         protected override async void OnStartup(StartupEventArgs e)
         {
             base.OnStartup(e);
+
+            // Đặt định dạng ngày tháng theo Việt Nam (dd/MM/yyyy)
+            var culture = new CultureInfo("vi-VN");
+            Thread.CurrentThread.CurrentCulture = culture;
+            Thread.CurrentThread.CurrentUICulture = culture;
+            FrameworkElement.LanguageProperty.OverrideMetadata(
+                typeof(FrameworkElement),
+                new FrameworkPropertyMetadata(
+                    XmlLanguage.GetLanguage(culture.IetfLanguageTag)));
 
             LogToFile("=== App Started ===");
 
@@ -54,15 +65,15 @@ namespace QuanLyKhoNguyenLieuPizza
                 args.SetObserved();
             };
 
-            // Show splash screen
+            // Hiển thị màn hình khởi động
             var splash = new SplashWindow();
             splash.Show();
 
-            // Wait for splash display (and any async initialization)
+            // Đợi màn hình khởi động hiển thị (và khởi tạo bất đồng bộ)
             await splash.WaitAndCloseAsync();
             splash.Close();
 
-            // Open main window
+            // Mở cửa sổ chính
             ShutdownMode = ShutdownMode.OnMainWindowClose;
             var mainWindow = new MainWindow();
             try
@@ -72,7 +83,7 @@ namespace QuanLyKhoNguyenLieuPizza
             }
             catch
             {
-                // Icon resource not found - continue with default icon
+                // Không tìm thấy tài nguyên icon - tiếp tục với icon mặc định
             }
             MainWindow = mainWindow;
             mainWindow.Show();

@@ -1,4 +1,4 @@
-﻿using System.Collections.ObjectModel;
+using System.Collections.ObjectModel;
 using System.Windows.Input;
 using QuanLyKhoNguyenLieuPizza.Core.Interfaces;
 using QuanLyKhoNguyenLieuPizza.Models;
@@ -44,12 +44,12 @@ public class PizzaViewModel : BaseViewModel
     private int _countNgungBan;
     private bool _isLoading;
 
-    // Add/Edit popup
+    // Popup thêm/sửa
     private bool _isAddEditPopupOpen;
     private bool _isEditing;
     private PizzaItemViewModel? _selectedPizza;
 
-    // Form fields
+    // Trường form
     private string _formMaPizza = string.Empty;
     private string _formTenPizza = string.Empty;
     private string _formMoTa = string.Empty;
@@ -58,7 +58,7 @@ public class PizzaViewModel : BaseViewModel
     private string _formGiaBan = string.Empty;
     private bool _formTrangThai = true;
 
-    #region Properties
+    #region Thuộc tính
     public ObservableCollection<PizzaItemViewModel> FilteredPizzas
     {
         get => _filteredPizzas;
@@ -155,7 +155,7 @@ public class PizzaViewModel : BaseViewModel
         set => SetProperty(ref _selectedPizza, value);
     }
 
-    // Form properties
+    // Thuộc tính form
     public string FormMaPizza
     {
         get => _formMaPizza;
@@ -198,10 +198,10 @@ public class PizzaViewModel : BaseViewModel
         set => SetProperty(ref _formTrangThai, value);
     }
 
-    public List<string> KichThuocOptions { get; } = ["S", "M", "L"];
+    public ObservableCollection<string> KichThuocOptions { get; } = new();
     #endregion
 
-    #region Commands
+    #region Lệnh
     public ICommand LoadDataCommand { get; }
     public ICommand OpenAddPopupCommand { get; }
     public ICommand ClosePopupCommand { get; }
@@ -255,6 +255,12 @@ public class PizzaViewModel : BaseViewModel
                 item.DeleteCommand = new RelayCommand(async _ => await DeletePizzaAsync(item));
                 _pizzas.Add(item);
             }
+
+            // Update KichThuocOptions from actual data
+            var sizes = _pizzas.Select(p => p.KichThuoc).Distinct().OrderBy(s => s).ToList();
+            KichThuocOptions.Clear();
+            foreach (var s in sizes)
+                KichThuocOptions.Add(s);
 
             ApplyFilters();
         }

@@ -1,4 +1,4 @@
-﻿namespace QuanLyKhoNguyenLieuPizza.Models;
+namespace QuanLyKhoNguyenLieuPizza.Models;
 
 public class QuyDoiDonVi
 {
@@ -8,7 +8,7 @@ public class QuyDoiDonVi
     public decimal HeSo { get; set; }
     public bool LaDonViChuan { get; set; } = false;
 
-    // Navigation properties
+    // Thuộc tính điều hướng
     public virtual NguyenLieu? NguyenLieu { get; set; }
     public virtual DonViTinh? DonViTinh { get; set; }
 }

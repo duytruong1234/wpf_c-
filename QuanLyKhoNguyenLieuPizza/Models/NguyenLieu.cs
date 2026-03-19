@@ -1,4 +1,4 @@
-﻿namespace QuanLyKhoNguyenLieuPizza.Models;
+namespace QuanLyKhoNguyenLieuPizza.Models;
 
 public class NguyenLieu
 {
@@ -10,7 +10,7 @@ public class NguyenLieu
     public int? DonViID { get; set; }
     public bool TrangThai { get; set; } = true;
 
-    // Navigation properties
+    // Thuộc tính điều hướng
     public virtual LoaiNguyenLieu? LoaiNguyenLieu { get; set; }
     public virtual DonViTinh? DonViTinh { get; set; }
     public virtual TonKho? TonKho { get; set; }

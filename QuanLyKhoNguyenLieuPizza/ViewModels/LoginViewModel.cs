@@ -1,4 +1,4 @@
-﻿using System.Windows.Input;
+using System.Windows.Input;
 using QuanLyKhoNguyenLieuPizza.Core.Commands;
 using QuanLyKhoNguyenLieuPizza.Core.Interfaces;
 using QuanLyKhoNguyenLieuPizza.Services;
@@ -65,16 +65,15 @@ public class LoginViewModel : BaseViewModel
         LoginCommand = new AsyncRelayCommand(ExecuteLoginAsync, CanExecuteLogin);
         ForgotPasswordCommand = new RelayCommand(ExecuteForgotPassword);
         
-        // Test connection on startup
+        // Kiểm tra kết nối khi khởi động
         _ = TestConnectionAsync();
     }
 
     private async Task TestConnectionAsync()
     {
-        var (success, message) = await DatabaseConnectionTester.TestConnectionAsync();
-        System.Diagnostics.Debug.WriteLine($"=== Connection Test ===");
-        System.Diagnostics.Debug.WriteLine($"Success: {success}");
-        System.Diagnostics.Debug.WriteLine($"Message: {message}");
+        var (success, _) = await DatabaseConnectionTester.TestConnectionAsync();
+        if (!success)
+            System.Diagnostics.Debug.WriteLine("Database connection test failed");
     }
 
     private bool CanExecuteLogin()
@@ -91,10 +90,6 @@ public class LoginViewModel : BaseViewModel
 
         try
         {
-            System.Diagnostics.Debug.WriteLine($"=== Login Attempt ===");
-            System.Diagnostics.Debug.WriteLine($"Username: {Username}");
-            System.Diagnostics.Debug.WriteLine($"Password Length: {Password?.Length ?? 0}");
-            
             if (string.IsNullOrWhiteSpace(Username) || string.IsNullOrWhiteSpace(Password))
             {
                 ErrorMessage = "Vui lòng nhập đầy đủ thông tin đăng nhập!";
@@ -105,20 +100,16 @@ public class LoginViewModel : BaseViewModel
             
             if (taiKhoan != null)
             {
-                System.Diagnostics.Debug.WriteLine($"Login successful for: {taiKhoan.Username}");
-                // Store current user info if needed
                 CurrentUserSession.Instance.SetUser(taiKhoan);
                 OnLoginSuccess?.Invoke();
             }
             else
             {
-                System.Diagnostics.Debug.WriteLine("Login failed: Invalid credentials");
                 ErrorMessage = "Tên đăng nhập hoặc mật khẩu không đúng!";
             }
         }
         catch (Exception ex)
         {
-            System.Diagnostics.Debug.WriteLine($"Login exception: {ex}");
             ErrorMessage = $"Lỗi: {ex.Message}";
         }
         finally

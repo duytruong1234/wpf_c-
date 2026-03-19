@@ -1,4 +1,4 @@
-﻿namespace QuanLyKhoNguyenLieuPizza.Models;
+namespace QuanLyKhoNguyenLieuPizza.Models;
 
 public class Pizza
 {
@@ -12,12 +12,12 @@ public class Pizza
     public decimal GiaBan { get; set; }
     public bool TrangThai { get; set; } = true;
 
-    // Calculated properties
+    // Thuộc tính tính toán
     public decimal GiaVon { get; set; }
     public decimal LoiNhuan => GiaBan - GiaVon;
     public double TyLeLoi => GiaBan > 0 ? (double)((GiaBan - GiaVon) / GiaBan * 100) : 0;
 
-    // Navigation properties
+    // Thuộc tính điều hướng
     public virtual ICollection<CongThuc> CongThucs { get; set; } = new List<CongThuc>();
     public virtual ICollection<CT_DonHang> CT_DonHangs { get; set; } = new List<CT_DonHang>();
 }

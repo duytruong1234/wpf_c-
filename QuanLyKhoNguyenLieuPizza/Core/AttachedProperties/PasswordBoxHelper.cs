@@ -1,4 +1,4 @@
-﻿using System.Windows;
+using System.Windows;
 using System.Windows.Controls;
 
 namespace QuanLyKhoNguyenLieuPizza.Core.AttachedProperties;
@@ -64,7 +64,7 @@ public static class PasswordBoxHelper
         if (d is not PasswordBox passwordBox)
             return;
 
-        // Only manipulate subscription if binding is enabled
+        // Chỉ thao tác đăng ký sự kiện nếu binding được bật
         bool isBound = GetBindPassword(passwordBox);
         
         if (isBound)
@@ -105,7 +105,7 @@ public static class PasswordBoxHelper
         SetUpdatingPassword(passwordBox, false);
     }
 
-    // Password Visibility Toggle
+    // Chuyển đổi hiển thị mật khẩu
     public static readonly DependencyProperty ShowPasswordProperty =
         DependencyProperty.RegisterAttached(
             "ShowPassword",

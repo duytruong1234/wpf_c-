@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Globalization;
 using System.IO;
 using System.Windows.Data;
@@ -17,14 +17,14 @@ public class ImagePathConverter : IValueConverter
 
         try
         {
-            // Check if it's a URL
+            // Kiểm tra nếu là URL
             if (imagePath!.StartsWith("http://", StringComparison.OrdinalIgnoreCase) ||
                 imagePath.StartsWith("https://", StringComparison.OrdinalIgnoreCase))
             {
                 return new BitmapImage(new Uri(imagePath));
             }
 
-            // Check if it's a relative path starting with Resources
+            // Kiểm tra nếu là đường dẫn tương đối bắt đầu bằng Resources
             if (imagePath.StartsWith("Resources", StringComparison.OrdinalIgnoreCase))
             {
                 var basePath = AppDomain.CurrentDomain.BaseDirectory;
@@ -41,10 +41,10 @@ public class ImagePathConverter : IValueConverter
                 }
             }
 
-            // Check if it's a relative path starting with /
+            // Kiểm tra nếu là đường dẫn tương đối bắt đầu bằng /
             if (imagePath.StartsWith("/"))
             {
-                // Convert to absolute path
+                // Chuyển thành đường dẫn tuyệt đối
                 var basePath = AppDomain.CurrentDomain.BaseDirectory;
                 var absolutePath = Path.Combine(basePath, imagePath.TrimStart('/').Replace('/', Path.DirectorySeparatorChar));
 
@@ -59,7 +59,7 @@ public class ImagePathConverter : IValueConverter
                 }
             }
 
-            // Check if it's an absolute path
+            // Kiểm tra nếu là đường dẫn tuyệt đối
             if (File.Exists(imagePath))
             {
                 var bitmap = new BitmapImage();

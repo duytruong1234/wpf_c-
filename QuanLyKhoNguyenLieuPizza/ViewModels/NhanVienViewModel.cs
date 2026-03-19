@@ -1,4 +1,4 @@
-﻿using System.Collections.ObjectModel;
+using System.Collections.ObjectModel;
 using System.IO;
 using System.Windows.Input;
 using Microsoft.Win32;
@@ -23,7 +23,7 @@ public class NhanVienViewModel : BaseViewModel
 {
     private readonly DatabaseService _databaseService;
 
-    #region Properties
+    #region Thuộc tính
     private ObservableCollection<NhanVien> _nhanViens = new();
     public ObservableCollection<NhanVien> NhanViens
     {
@@ -52,7 +52,7 @@ public class NhanVienViewModel : BaseViewModel
         set => SetProperty(ref _chucVuFilters, value);
     }
 
-    // Filter properties
+    // Thuộc tính lọc
     private string _searchText = string.Empty;
     public string SearchText
     {
@@ -99,7 +99,7 @@ public class NhanVienViewModel : BaseViewModel
         set => SetProperty(ref _tongSo, value);
     }
 
-    // View states
+    // Trạng thái hiển thị
     private bool _isMainView = true;
     public bool IsMainView
     {
@@ -114,7 +114,7 @@ public class NhanVienViewModel : BaseViewModel
         set => SetProperty(ref _isChucVuView, value);
     }
 
-    // Dialog properties
+    // Thuộc tính hộp thoại
     private bool _isDialogOpen;
     public bool IsDialogOpen
     {
@@ -150,7 +150,7 @@ public class NhanVienViewModel : BaseViewModel
         set => SetProperty(ref _isChucVuCreateMode, value);
     }
 
-    // Form properties - NhanVien
+    // Thuộc tính form - Nhân viên
     private string _formHoTen = string.Empty;
     public string FormHoTen
     {
@@ -207,7 +207,7 @@ public class NhanVienViewModel : BaseViewModel
         set => SetProperty(ref _formTrangThai, value);
     }
 
-    // Form properties - ChucVu
+    // Thuộc tính form - Chức vụ
     private string _formTenChucVu = string.Empty;
     public string FormTenChucVu
     {
@@ -222,7 +222,7 @@ public class NhanVienViewModel : BaseViewModel
         set => SetProperty(ref _selectedChucVu, value);
     }
 
-    // Form properties - Account
+    // Thuộc tính form - Tài khoản
     private string _formUsername = string.Empty;
     public string FormUsername
     {
@@ -259,7 +259,7 @@ public class NhanVienViewModel : BaseViewModel
     }
     #endregion
 
-    #region Commands
+    #region Lệnh
     public ICommand LoadDataCommand { get; }
     public ICommand CreateNhanVienCommand { get; }
     public ICommand EditNhanVienCommand { get; }
@@ -277,16 +277,16 @@ public class NhanVienViewModel : BaseViewModel
     public ICommand SaveChucVuCommand { get; }
     public ICommand CancelChucVuDialogCommand { get; }
     
-    // Account commands
+    // Lệnh tài khoản
     public ICommand OpenAccountDialogCommand { get; }
     public ICommand SaveAccountCommand { get; }
     public ICommand CancelAccountDialogCommand { get; }
     
-    // Filter commands
+    // Lệnh lọc
     public ICommand ApplyChucVuFilterCommand { get; }
     public ICommand ClearFilterCommand { get; }
     
-    // Image command
+    // Lệnh hình ảnh
     public ICommand SelectImageCommand { get; }
     #endregion
 
@@ -322,7 +322,7 @@ public class NhanVienViewModel : BaseViewModel
         _ = LoadDataAsync();
     }
 
-    #region Methods
+    #region Phương thức
     private void SelectImage()
     {
         var openFileDialog = new OpenFileDialog
@@ -336,28 +336,28 @@ public class NhanVienViewModel : BaseViewModel
         {
             try
             {
-                // Get the source file path
+                // Lấy đường dẫn file nguồn
                 string sourceFilePath = openFileDialog.FileName;
                 string fileName = Path.GetFileName(sourceFilePath);
                 
-                // Generate unique filename to avoid conflicts
+                // Tạo tên file duy nhất để tránh xung đột
                 string uniqueFileName = $"{Guid.NewGuid()}_{fileName}";
                 
-                // Get the Images folder path in Resources
+                // Lấy đường dẫn thư mục Images trong Resources
                 string appDirectory = AppDomain.CurrentDomain.BaseDirectory;
                 string imagesFolder = Path.Combine(appDirectory, "Resources", "Images", "NhanVien");
                 
-                // Create directory if not exists
+                // Tạo thư mục nếu chưa tồn tại
                 if (!Directory.Exists(imagesFolder))
                 {
                     Directory.CreateDirectory(imagesFolder);
                 }
                 
-                // Copy file to Images folder
+                // Sao chép file vào thư mục Images
                 string destFilePath = Path.Combine(imagesFolder, uniqueFileName);
                 File.Copy(sourceFilePath, destFilePath, true);
                 
-                // Store the relative path
+                // Lưu đường dẫn tương đối
                 FormHinhAnh = Path.Combine("Resources", "Images", "NhanVien", uniqueFileName);
             }
             catch (Exception ex)
@@ -390,7 +390,7 @@ public class NhanVienViewModel : BaseViewModel
         var chucVus = await _databaseService.GetAllChucVusAsync();
         ChucVus = new ObservableCollection<ChucVu>(chucVus);
         
-        // Update filters
+        // Cập nhật bộ lọc
         ChucVuFilters = new ObservableCollection<ChucVuFilter>(
             chucVus.Select(cv => new ChucVuFilter { ChucVu = cv, IsSelected = false })
         );
@@ -444,7 +444,7 @@ public class NhanVienViewModel : BaseViewModel
         _ = LoadNhanViensAsync();
     }
 
-    #region NhanVien CRUD
+    #region CRUD Nhân Viên
     private void OpenCreateDialog()
     {
         IsCreateMode = true;
@@ -554,7 +554,7 @@ public class NhanVienViewModel : BaseViewModel
     }
     #endregion
 
-    #region ChucVu CRUD
+    #region CRUD Chức Vụ
     private void OpenChucVuView()
     {
         IsMainView = false;
@@ -644,7 +644,7 @@ public class NhanVienViewModel : BaseViewModel
     }
     #endregion
 
-    #region Account Management
+    #region Quản lý Tài khoản
     private void OpenAccountDialog(object? parameter)
     {
         if (parameter is NhanVien nv)

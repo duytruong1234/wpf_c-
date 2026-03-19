@@ -1,10 +1,11 @@
-﻿<UserControl x:Class="QuanLyKhoNguyenLieuPizza.Views.PhieuXuatView"
+<UserControl x:Class="QuanLyKhoNguyenLieuPizza.Views.PhieuXuatView"
              xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
              xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
              xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006" 
              xmlns:d="http://schemas.microsoft.com/expression/blend/2008" 
              xmlns:vm="clr-namespace:QuanLyKhoNguyenLieuPizza.ViewModels"
              xmlns:converters="clr-namespace:QuanLyKhoNguyenLieuPizza.Converters"
+             xmlns:ui="http://schemas.lepo.co/wpfui/2022/xaml"
              mc:Ignorable="d" 
              d:DesignHeight="800" d:DesignWidth="1200">
     
@@ -168,48 +169,37 @@
                     <ColumnDefinition Width="*"/>
                 </Grid.ColumnDefinitions>
 
-                <Border Grid.Column="0" Style="{StaticResource CardStyle}" Margin="0,0,10,0">
+                <Border Grid.Column="0" Background="#EEF2FF" BorderBrush="#C7D2FE" BorderThickness="1.5" MinHeight="110" Style="{StaticResource CardStyle}" Margin="0,0,10,0">
                     <StackPanel>
-                        <StackPanel Orientation="Horizontal">
-                            <Border Background="#FFF7ED" CornerRadius="10" Width="36" Height="36" Margin="0,0,12,0">
-                                <TextBlock Text="&#xE823;" FontFamily="Segoe MDL2 Assets" FontSize="16" Foreground="{StaticResource WarningOrange}"
-                                           HorizontalAlignment="Center" VerticalAlignment="Center"/>
-                            </Border>
-                            <StackPanel VerticalAlignment="Center">
-                                <TextBlock Text="Chờ duyệt" FontSize="12" Foreground="{StaticResource Gray400}"/>
-                                <TextBlock Text="{Binding CountChoDuyet}" FontSize="22" FontWeight="Bold" Foreground="#92400E"/>
-                            </StackPanel>
-                        </StackPanel>
+                        <TextBlock Text="Tổng phiếu xuất" FontSize="12" Foreground="{StaticResource Gray500}" Margin="0,0,0,12"/>
+                        <TextBlock Text="{Binding PhieuXuats.Count}" FontSize="32" FontWeight="Bold" Foreground="{StaticResource Gray900}"/>
                     </StackPanel>
                 </Border>
 
-                <Border Grid.Column="1" Style="{StaticResource CardStyle}" Margin="5,0,5,0">
+                <Border Grid.Column="1" Background="#ECFDF5" BorderBrush="#A7F3D0" BorderThickness="1.5" MinHeight="110" Style="{StaticResource CardStyle}" Margin="5,0,5,0">
                     <StackPanel>
-                        <StackPanel Orientation="Horizontal">
-                            <Border Background="#F0FDF4" CornerRadius="10" Width="36" Height="36" Margin="0,0,12,0">
-                                <TextBlock Text="&#xE8FB;" FontFamily="Segoe MDL2 Assets" FontSize="16" Foreground="{StaticResource SuccessGreen}"
-                                           HorizontalAlignment="Center" VerticalAlignment="Center"/>
-                            </Border>
-                            <StackPanel VerticalAlignment="Center">
-                                <TextBlock Text="Đã duyệt" FontSize="12" Foreground="{StaticResource Gray400}"/>
-                                <TextBlock Text="{Binding CountDaDuyet}" FontSize="22" FontWeight="Bold" Foreground="#16A34A"/>
-                            </StackPanel>
-                        </StackPanel>
+                        <TextBlock Text="Xuất hôm nay" FontSize="12" Foreground="{StaticResource Gray500}" Margin="0,0,0,12"/>
+                        <TextBlock Text="{Binding SoPhieuHomNay}" FontSize="32" FontWeight="Bold" Foreground="{StaticResource SuccessGreen}"/>
                     </StackPanel>
                 </Border>
 
-                <Border Grid.Column="2" Style="{StaticResource CardStyle}" Margin="10,0,0,0">
+                <Border Grid.Column="2" Background="#FFF7ED" BorderBrush="#FED7AA" BorderThickness="1.5" MinHeight="110" Style="{StaticResource CardStyle}" Margin="10,0,0,0">
                     <StackPanel>
-                        <StackPanel Orientation="Horizontal">
-                            <Border Background="{StaticResource LightBlue}" CornerRadius="10" Width="36" Height="36" Margin="0,0,12,0">
-                                <TextBlock Text="&#xE8EC;" FontFamily="Segoe MDL2 Assets" FontSize="16" Foreground="{StaticResource PrimaryBlue}"
-                                           HorizontalAlignment="Center" VerticalAlignment="Center"/>
-                            </Border>
-                            <StackPanel VerticalAlignment="Center">
-                                <TextBlock Text="Tổng phiếu xuất" FontSize="12" Foreground="{StaticResource Gray400}"/>
-                                <TextBlock Text="{Binding PhieuXuats.Count}" FontSize="22" FontWeight="Bold" Foreground="{StaticResource Gray900}"/>
+                        <TextBlock Text="Trạng thái phiếu" FontSize="12" Foreground="{StaticResource Gray500}" Margin="0,0,0,12"/>
+                        <UniformGrid Columns="3">
+                            <StackPanel HorizontalAlignment="Center">
+                                <TextBlock Text="{Binding SoPhieuChoDuyet}" FontSize="28" FontWeight="Bold" Foreground="{StaticResource WarningOrange}" HorizontalAlignment="Center"/>
+                                <TextBlock Text="Chờ duyệt" FontSize="11" Foreground="{StaticResource Gray500}" Margin="0,2,0,0" HorizontalAlignment="Center"/>
                             </StackPanel>
-                        </StackPanel>
+                            <StackPanel HorizontalAlignment="Center">
+                                <TextBlock Text="{Binding SoPhieuDaDuyet}" FontSize="28" FontWeight="Bold" Foreground="{StaticResource SuccessGreen}" HorizontalAlignment="Center"/>
+                                <TextBlock Text="Đã xuất kho" FontSize="11" Foreground="{StaticResource Gray500}" Margin="0,2,0,0" HorizontalAlignment="Center"/>
+                            </StackPanel>
+                            <StackPanel HorizontalAlignment="Center">
+                                <TextBlock Text="{Binding SoPhieuDaHuy}" FontSize="28" FontWeight="Bold" Foreground="{StaticResource DangerRed}" HorizontalAlignment="Center"/>
+                                <TextBlock Text="Đã hủy" FontSize="11" Foreground="{StaticResource Gray500}" Margin="0,2,0,0" HorizontalAlignment="Center"/>
+                            </StackPanel>
+                        </UniformGrid>
                     </StackPanel>
                 </Border>
             </Grid>
@@ -261,7 +251,7 @@
                         <TextBlock Text="Trạng thái" FontSize="12" Foreground="{StaticResource Gray500}" Margin="0,0,0,8"/>
                         <StackPanel Orientation="Horizontal">
                             <CheckBox Content="Chờ duyệt" IsChecked="{Binding FilterChoDuyet}" Margin="0,0,12,0" FontSize="13"/>
-                            <CheckBox Content="Đã duyệt" IsChecked="{Binding FilterDaDuyet}" Margin="0,0,12,0" FontSize="13"/>
+                            <CheckBox Content="Đã xuất kho" IsChecked="{Binding FilterDaDuyet}" Margin="0,0,12,0" FontSize="13"/>
                             <CheckBox Content="Đã hủy" IsChecked="{Binding FilterDaHuy}" FontSize="13"/>
                         </StackPanel>
                     </StackPanel>
@@ -364,11 +354,11 @@
                                                     <TextBlock FontSize="12" FontWeight="SemiBold">
                                                         <TextBlock.Style>
                                                             <Style TargetType="TextBlock">
-                                                                <Setter Property="Text" Value="Ch? duyệt"/>
+                                                                <Setter Property="Text" Value="Chờ duyệt"/>
                                                                 <Setter Property="Foreground" Value="#92400E"/>
                                                                 <Style.Triggers>
                                                                     <DataTrigger Binding="{Binding TrangThai}" Value="2">
-                                                                        <Setter Property="Text" Value="Đã duyệt"/>
+                                                                        <Setter Property="Text" Value="Đã xuất kho"/>
                                                                         <Setter Property="Foreground" Value="#16A34A"/>
                                                                     </DataTrigger>
                                                                     <DataTrigger Binding="{Binding TrangThai}" Value="3">
@@ -526,7 +516,7 @@
                         <TextBlock Text="Trạng thái" FontSize="12" Foreground="{StaticResource Gray500}" Margin="0,0,0,8"/>
                         <StackPanel Orientation="Horizontal">
                             <CheckBox Content="Chờ duyệt" IsChecked="{Binding FilterChoDuyet}" Margin="0,0,12,0" FontSize="13"/>
-                            <CheckBox Content="Đã duyệt" IsChecked="{Binding FilterDaDuyet}" Margin="0,0,12,0" FontSize="13"/>
+                            <CheckBox Content="Đã xuất kho" IsChecked="{Binding FilterDaDuyet}" Margin="0,0,12,0" FontSize="13"/>
                             <CheckBox Content="Đã hủy" IsChecked="{Binding FilterDaHuy}" FontSize="13"/>
                         </StackPanel>
                     </StackPanel>
@@ -628,11 +618,11 @@
                                                     <TextBlock FontSize="12" FontWeight="SemiBold">
                                                         <TextBlock.Style>
                                                             <Style TargetType="TextBlock">
-                                                                <Setter Property="Text" Value="Ch? duyệt"/>
+                                                                <Setter Property="Text" Value="Chờ duyệt"/>
                                                                 <Setter Property="Foreground" Value="#92400E"/>
                                                                 <Style.Triggers>
                                                                     <DataTrigger Binding="{Binding TrangThai}" Value="2">
-                                                                        <Setter Property="Text" Value="Đã duyệt"/>
+                                                                        <Setter Property="Text" Value="Đã xuất kho"/>
                                                                         <Setter Property="Foreground" Value="#16A34A"/>
                                                                     </DataTrigger>
                                                                     <DataTrigger Binding="{Binding TrangThai}" Value="3">
@@ -684,7 +674,7 @@
         <!-- ========== MANAGER CREATE DIALOG ========== -->
         <Grid Visibility="{Binding IsDialogOpen, Converter={StaticResource BoolToVisibilityConverter}}" Background="#80000000">
             <!-- Manager Dialog -->
-            <Border Background="White" CornerRadius="20" Width="950" MaxHeight="700" VerticalAlignment="Center" HorizontalAlignment="Center" Padding="32"
+            <Border Background="White" CornerRadius="20" Width="1000" Height="680" VerticalAlignment="Center" HorizontalAlignment="Center" Padding="32"
                     Visibility="{Binding IsQuanLy, Converter={StaticResource BoolToVisibilityConverter}}">
                 <Grid>
                     <Grid.RowDefinitions>
@@ -694,7 +684,7 @@
                     </Grid.RowDefinitions>
 
                     <Grid Grid.Row="0" Margin="0,0,0,20">
-                        <TextBlock FontSize="26" FontWeight="Bold" Foreground="{StaticResource PrimaryBlue}" HorizontalAlignment="Center" Text="Tạo phiếu xuất mới"/>
+                        <TextBlock FontSize="26" FontWeight="Bold" Foreground="{StaticResource Gray800}" HorizontalAlignment="Center" Text="Tạo phiếu xuất mới"/>
                         <Button HorizontalAlignment="Right" Command="{Binding CancelDialogCommand}" Cursor="Hand">
                             <Button.Template>
                                 <ControlTemplate TargetType="Button">
@@ -714,52 +704,50 @@
 
                     <Grid Grid.Row="1">
                         <Grid.ColumnDefinitions>
-                            <ColumnDefinition Width="300"/>
+                            <ColumnDefinition Width="1.2*"/>
                             <ColumnDefinition Width="*"/>
                         </Grid.ColumnDefinitions>
 
-                        <Border Grid.Column="0" Background="{StaticResource Gray50}" CornerRadius="16" Padding="16" Margin="0,0,16,0">
+                        <Border Grid.Column="0" Background="{StaticResource LightBlue}" CornerRadius="20" Padding="20" Margin="0,0,16,0">
                             <Grid>
                                 <Grid.RowDefinitions>
                                     <RowDefinition Height="Auto"/>
                                     <RowDefinition Height="*"/>
                                 </Grid.RowDefinitions>
 
-                                <TextBlock Grid.Row="0" Text="Chọn nguyên liệu (có tồn kho)" FontSize="16" FontWeight="SemiBold" Foreground="{StaticResource Gray800}" Margin="0,0,0,16"/>
+                                <TextBlock Grid.Row="0" Text="Chọn nguyên liệu xuất" FontSize="16" FontWeight="SemiBold" Foreground="{StaticResource Gray800}" Margin="0,0,0,16"/>
 
                                 <ScrollViewer Grid.Row="1" VerticalScrollBarVisibility="Auto">
                                     <ItemsControl ItemsSource="{Binding NguyenLieus}">
+                                        <ItemsControl.ItemsPanel>
+                                            <ItemsPanelTemplate>
+                                                <WrapPanel/>
+                                            </ItemsPanelTemplate>
+                                        </ItemsControl.ItemsPanel>
                                         <ItemsControl.ItemTemplate>
                                             <DataTemplate>
                                                 <Button Command="{Binding DataContext.AddNguyenLieuCommand, RelativeSource={RelativeSource AncestorType=ItemsControl}}"
-                                                        CommandParameter="{Binding}" Margin="0,0,0,8" Cursor="Hand">
+                                                        CommandParameter="{Binding}" Margin="6" Cursor="Hand" Width="120">
                                                     <Button.Template>
                                                         <ControlTemplate TargetType="Button">
-                                                            <Border x:Name="border" Background="{StaticResource LightBlue}" CornerRadius="12" Padding="12">
-                                                                <Grid>
-                                                                    <Grid.ColumnDefinitions>
-                                                                        <ColumnDefinition Width="Auto"/>
-                                                                        <ColumnDefinition Width="*"/>
-                                                                    </Grid.ColumnDefinitions>
-                                                                    <Border CornerRadius="8" Width="50" Height="50" Margin="0,0,12,0" ClipToBounds="True">
-                                                                        <Border.Background>
-                                                                            <ImageBrush ImageSource="{Binding HinhAnh, Converter={StaticResource ImagePathConverter}}" Stretch="UniformToFill"/>
-                                                                        </Border.Background>
+                                                            <Border x:Name="border" Background="White" CornerRadius="12" Padding="0" ClipToBounds="True">
+                                                                <StackPanel>
+                                                                    <Border Height="70" Background="#F0F0F0" CornerRadius="12,12,0,0" ClipToBounds="True">
+                                                                        <Image Source="{Binding HinhAnh, Converter={StaticResource ImagePathConverter}}" Stretch="UniformToFill"/>
                                                                     </Border>
-                                                                    <StackPanel Grid.Column="1" VerticalAlignment="Center">
-                                                                        <TextBlock Text="{Binding TenNguyenLieu}" FontSize="13" FontWeight="Medium" Foreground="{StaticResource Gray800}" TextTrimming="CharacterEllipsis"/>
-                                                                        <TextBlock FontSize="11" Foreground="{StaticResource PrimaryBlue}" Margin="0,4,0,0">
+                                                                    <StackPanel Margin="6,6,6,8" HorizontalAlignment="Center">
+                                                                        <TextBlock Text="{Binding TenNguyenLieu}" FontSize="11" FontWeight="Medium" Foreground="{StaticResource Gray800}" 
+                                                                                   HorizontalAlignment="Center" TextTrimming="CharacterEllipsis" MaxWidth="100"/>
+                                                                        <TextBlock FontSize="10" Foreground="{StaticResource PrimaryBlue}" HorizontalAlignment="Center" Margin="0,2,0,0">
                                                                             <Run Text="Tồn: "/>
                                                                             <Run Text="{Binding TonKho.SoLuongTon, StringFormat=\{0:N0\}}"/>
-                                                                            <Run Text=" "/>
-                                                                            <Run Text="{Binding DonViTinh.TenDonVi}"/>
                                                                         </TextBlock>
                                                                     </StackPanel>
-                                                                </Grid>
+                                                                </StackPanel>
                                                             </Border>
                                                             <ControlTemplate.Triggers>
                                                                 <Trigger Property="IsMouseOver" Value="True">
-                                                                    <Setter TargetName="border" Property="Background" Value="#DCE0FF"/>
+                                                                    <Setter TargetName="border" Property="Background" Value="{StaticResource Gray50}"/>
                                                                 </Trigger>
                                                             </ControlTemplate.Triggers>
                                                         </ControlTemplate>
@@ -772,25 +760,25 @@
                             </Grid>
                         </Border>
 
-                        <Border Grid.Column="1" BorderBrush="{StaticResource Gray200}" BorderThickness="1" CornerRadius="12">
+                        <Border Grid.Column="1" Background="White" CornerRadius="16" BorderBrush="{StaticResource Gray200}" BorderThickness="1">
                             <Grid>
                                 <Grid.RowDefinitions>
                                     <RowDefinition Height="Auto"/>
                                     <RowDefinition Height="*"/>
                                 </Grid.RowDefinitions>
 
-                                <Border Background="{StaticResource Gray50}" CornerRadius="12,12,0,0">
-                                    <Grid>
+                                <Border Grid.Row="0" Background="{StaticResource Gray50}" CornerRadius="14,14,0,0">
+                                    <Grid Margin="8,12">
                                         <Grid.ColumnDefinitions>
-                                            <ColumnDefinition Width="2*"/>
+                                            <ColumnDefinition Width="1.2*"/>
+                                            <ColumnDefinition Width="1.2*"/>
                                             <ColumnDefinition Width="1*"/>
-                                            <ColumnDefinition Width="1*"/>
-                                            <ColumnDefinition Width="0.5*"/>
+                                            <ColumnDefinition Width="Auto"/>
                                         </Grid.ColumnDefinitions>
-                                        <TextBlock Grid.Column="0" Text="Tên nguyên liệu" Style="{StaticResource TableHeaderStyle}"/>
-                                        <TextBlock Grid.Column="1" Text="Số lượng xuất" Style="{StaticResource TableHeaderStyle}"/>
-                                        <TextBlock Grid.Column="2" Text="Đơn vị" Style="{StaticResource TableHeaderStyle}"/>
-                                        <TextBlock Grid.Column="3" Text="" Style="{StaticResource TableHeaderStyle}"/>
+                                        <TextBlock Grid.Column="0" Text="Tên nguyên liệu" FontSize="12" FontWeight="SemiBold" Foreground="{StaticResource Gray500}" HorizontalAlignment="Center"/>
+                                        <TextBlock Grid.Column="1" Text="Số lượng" FontSize="12" FontWeight="SemiBold" Foreground="{StaticResource Gray500}" HorizontalAlignment="Center"/>
+                                        <TextBlock Grid.Column="2" Text="Đơn vị" FontSize="12" FontWeight="SemiBold" Foreground="{StaticResource Gray500}" HorizontalAlignment="Center"/>
+                                        <TextBlock Grid.Column="3" Text="" FontSize="12" FontWeight="SemiBold" Foreground="{StaticResource Gray500}" HorizontalAlignment="Center" Width="40"/>
                                     </Grid>
                                 </Border>
 
@@ -798,28 +786,73 @@
                                     <ItemsControl ItemsSource="{Binding ChiTietForm}">
                                         <ItemsControl.ItemTemplate>
                                             <DataTemplate>
-                                                <Border BorderBrush="{StaticResource Gray100}" BorderThickness="0,0,0,1" Padding="8">
+                                                <Border BorderBrush="{StaticResource Gray100}" BorderThickness="0,0,0,1" Padding="8,12">
                                                     <Grid>
                                                         <Grid.ColumnDefinitions>
-                                                            <ColumnDefinition Width="2*"/>
+                                                            <ColumnDefinition Width="1.2*"/>
+                                                            <ColumnDefinition Width="1.2*"/>
                                                             <ColumnDefinition Width="1*"/>
-                                                            <ColumnDefinition Width="1*"/>
-                                                            <ColumnDefinition Width="0.5*"/>
+                                                            <ColumnDefinition Width="Auto"/>
                                                         </Grid.ColumnDefinitions>
 
-                                                        <TextBlock Grid.Column="0" Text="{Binding NguyenLieu.TenNguyenLieu}" Style="{StaticResource TableCellStyle}" TextAlignment="Left"/>
+                                                        <TextBlock Grid.Column="0" Text="{Binding NguyenLieu.TenNguyenLieu}" 
+                                                                   FontSize="12" Foreground="{StaticResource Gray800}" VerticalAlignment="Center" HorizontalAlignment="Center"/>
 
-                                                        <TextBox Grid.Column="1" Text="{Binding SoLuong, UpdateSourceTrigger=PropertyChanged}"
-                                                                 TextAlignment="Center" BorderThickness="1" BorderBrush="{StaticResource Gray200}" Padding="8" Margin="4" FontSize="13"/>
+                                                        <StackPanel Grid.Column="1" Orientation="Horizontal" HorizontalAlignment="Center" VerticalAlignment="Center">
+                                                            <Button Command="{Binding DataContext.DecreaseQuantityCommand, RelativeSource={RelativeSource AncestorType=ItemsControl}}"
+                                                                    CommandParameter="{Binding}" Cursor="Hand">
+                                                                <Button.Template>
+                                                                    <ControlTemplate TargetType="Button">
+                                                                        <Border x:Name="btnBorder" Background="{StaticResource Gray100}" CornerRadius="6" Width="28" Height="28"
+                                                                                BorderBrush="{StaticResource Gray200}" BorderThickness="1">
+                                                                            <TextBlock Text="&#xE738;" FontFamily="Segoe MDL2 Assets" FontSize="10" 
+                                                                                       HorizontalAlignment="Center" VerticalAlignment="Center" Foreground="{StaticResource Gray600}"/>
+                                                                        </Border>
+                                                                        <ControlTemplate.Triggers>
+                                                                            <Trigger Property="IsMouseOver" Value="True">
+                                                                                <Setter TargetName="btnBorder" Property="Background" Value="{StaticResource Gray200}"/>
+                                                                            </Trigger>
+                                                                        </ControlTemplate.Triggers>
+                                                                    </ControlTemplate>
+                                                                </Button.Template>
+                                                            </Button>
+                                                            <TextBox Text="{Binding SoLuong, UpdateSourceTrigger=PropertyChanged}"
+                                                                     Width="45" TextAlignment="Center" BorderThickness="0" Background="Transparent"
+                                                                     FontSize="14" FontWeight="SemiBold" VerticalContentAlignment="Center" Margin="4,0"/>
+                                                            <Button Command="{Binding DataContext.IncreaseQuantityCommand, RelativeSource={RelativeSource AncestorType=ItemsControl}}"
+                                                                    CommandParameter="{Binding}" Cursor="Hand">
+                                                                <Button.Template>
+                                                                    <ControlTemplate TargetType="Button">
+                                                                        <Border x:Name="btnBorder" Background="{StaticResource Gray100}" CornerRadius="6" Width="28" Height="28"
+                                                                                BorderBrush="{StaticResource Gray200}" BorderThickness="1">
+                                                                            <TextBlock Text="&#xE710;" FontFamily="Segoe MDL2 Assets" FontSize="10" 
+                                                                                       HorizontalAlignment="Center" VerticalAlignment="Center" Foreground="{StaticResource Gray600}"/>
+                                                                        </Border>
+                                                                        <ControlTemplate.Triggers>
+                                                                            <Trigger Property="IsMouseOver" Value="True">
+                                                                                <Setter TargetName="btnBorder" Property="Background" Value="{StaticResource Gray200}"/>
+                                                                            </Trigger>
+                                                                        </ControlTemplate.Triggers>
+                                                                    </ControlTemplate>
+                                                                </Button.Template>
+                                                            </Button>
+                                                        </StackPanel>
 
-                                                        <ComboBox Grid.Column="2" ItemsSource="{Binding DataContext.DonViTinhs, RelativeSource={RelativeSource AncestorType=ItemsControl}}"
-                                                                  SelectedItem="{Binding DonViTinh}" DisplayMemberPath="TenDonVi" FontSize="12" Margin="4"/>
+                                                        <ComboBox Grid.Column="2" 
+                                                                  ItemsSource="{Binding DonViOptions}" 
+                                                                  SelectedItem="{Binding SelectedDonVi}"
+                                                                  DisplayMemberPath="TenDonVi"
+                                                                  Style="{StaticResource PizzaComboBoxStyle}"
+                                                                  ItemContainerStyle="{StaticResource PizzaComboBoxItemStyle}"
+                                                                  FontSize="12" Height="32"
+                                                                  VerticalAlignment="Center" HorizontalAlignment="Center"
+                                                                  MinWidth="70"/>
 
                                                         <Button Grid.Column="3" Command="{Binding DataContext.RemoveChiTietCommand, RelativeSource={RelativeSource AncestorType=ItemsControl}}"
                                                                 CommandParameter="{Binding}" Cursor="Hand" HorizontalAlignment="Center">
                                                             <Button.Template>
                                                                 <ControlTemplate TargetType="Button">
-                                                                    <Border x:Name="border" Padding="8" CornerRadius="6">
+                                                                    <Border x:Name="border" Padding="6" CornerRadius="6">
                                                                         <TextBlock Text="&#xE74D;" FontFamily="Segoe MDL2 Assets" FontSize="14" Foreground="{StaticResource DangerRed}"/>
                                                                     </Border>
                                                                     <ControlTemplate.Triggers>
@@ -888,7 +921,7 @@
             </Border>
 
             <!-- Employee Dialog -->
-            <Border Background="White" CornerRadius="20" Width="1000" Height="650" VerticalAlignment="Center" HorizontalAlignment="Center" Padding="32"
+            <Border Background="White" CornerRadius="20" Width="1000" Height="680" VerticalAlignment="Center" HorizontalAlignment="Center" Padding="32"
                     Visibility="{Binding IsNhanVien, Converter={StaticResource BoolToVisibilityConverter}}">
                 <Grid>
                     <Grid.RowDefinitions>
@@ -897,8 +930,8 @@
                         <RowDefinition Height="Auto"/>
                     </Grid.RowDefinitions>
 
-                    <Grid Grid.Row="0" Margin="0,0,0,20">
-                        <TextBlock Text="Tạo phiếu xuất" FontSize="26" FontWeight="Bold" Foreground="{StaticResource PrimaryBlue}"/>
+                    <Grid Grid.Row="0" Margin="0,0,0,16">
+                        <TextBlock Text="Tạo phiếu xuất" FontSize="26" FontWeight="Bold" Foreground="{StaticResource Gray800}"/>
                         <Button HorizontalAlignment="Right" Command="{Binding CancelDialogCommand}" Cursor="Hand">
                             <Button.Template>
                                 <ControlTemplate TargetType="Button">
@@ -929,9 +962,7 @@
                                     <RowDefinition Height="*"/>
                                 </Grid.RowDefinitions>
 
-                                <Border Grid.Row="0" Background="White" CornerRadius="10" Padding="16,12" Margin="0,0,0,20">
-                                    <TextBlock Text="Chọn loại nguyên liệu" FontSize="14" Foreground="{StaticResource Gray500}" VerticalAlignment="Center"/>
-                                </Border>
+                                <TextBlock Grid.Row="0" Text="Chọn nguyên liệu xuất" FontSize="16" FontWeight="SemiBold" Foreground="{StaticResource Gray800}" Margin="0,0,0,16"/>
 
                                 <ScrollViewer Grid.Row="1" VerticalScrollBarVisibility="Auto">
                                     <ItemsControl ItemsSource="{Binding NguyenLieus}">
@@ -943,18 +974,22 @@
                                         <ItemsControl.ItemTemplate>
                                             <DataTemplate>
                                                 <Button Command="{Binding DataContext.AddNguyenLieuCommand, RelativeSource={RelativeSource AncestorType=ItemsControl}}"
-                                                        CommandParameter="{Binding}" Margin="6" Cursor="Hand" Width="150">
+                                                        CommandParameter="{Binding}" Margin="6" Cursor="Hand" Width="120">
                                                     <Button.Template>
                                                         <ControlTemplate TargetType="Button">
-                                                            <Border x:Name="border" Background="White" CornerRadius="12" Padding="8">
-                                                                <StackPanel HorizontalAlignment="Center">
-                                                                    <Border Width="80" Height="60" CornerRadius="8" ClipToBounds="True" Margin="0,0,0,8">
-                                                                        <Border.Background>
-                                                                            <ImageBrush ImageSource="{Binding HinhAnh, Converter={StaticResource ImagePathConverter}}" Stretch="UniformToFill"/>
-                                                                        </Border.Background>
+                                                            <Border x:Name="border" Background="White" CornerRadius="12" Padding="0" ClipToBounds="True">
+                                                                <StackPanel>
+                                                                    <Border Height="70" Background="#F0F0F0" CornerRadius="12,12,0,0" ClipToBounds="True">
+                                                                        <Image Source="{Binding HinhAnh, Converter={StaticResource ImagePathConverter}}" Stretch="UniformToFill"/>
                                                                     </Border>
-                                                                    <TextBlock Text="{Binding TenNguyenLieu}" FontSize="12" Foreground="{StaticResource Gray800}" 
-                                                                               HorizontalAlignment="Center" TextTrimming="CharacterEllipsis" MaxWidth="90"/>
+                                                                    <StackPanel Margin="6,6,6,8" HorizontalAlignment="Center">
+                                                                        <TextBlock Text="{Binding TenNguyenLieu}" FontSize="11" FontWeight="Medium" Foreground="{StaticResource Gray800}" 
+                                                                                   HorizontalAlignment="Center" TextTrimming="CharacterEllipsis" MaxWidth="100"/>
+                                                                        <TextBlock FontSize="10" Foreground="{StaticResource PrimaryBlue}" HorizontalAlignment="Center" Margin="0,2,0,0">
+                                                                            <Run Text="Tồn: "/>
+                                                                            <Run Text="{Binding TonKho.SoLuongTon, StringFormat=\{0:N0\}}"/>
+                                                                        </TextBlock>
+                                                                    </StackPanel>
                                                                 </StackPanel>
                                                             </Border>
                                                             <ControlTemplate.Triggers>
@@ -982,15 +1017,15 @@
                                 <Border Grid.Row="0" Background="{StaticResource Gray50}" CornerRadius="14,14,0,0">
                                     <Grid Margin="8,12">
                                         <Grid.ColumnDefinitions>
-                                            <ColumnDefinition Width="1.5*"/>
+                                            <ColumnDefinition Width="1.2*"/>
+                                            <ColumnDefinition Width="1.2*"/>
                                             <ColumnDefinition Width="1*"/>
-                                            <ColumnDefinition Width="1*"/>
-                                            <ColumnDefinition Width="0.6*"/>
+                                            <ColumnDefinition Width="Auto"/>
                                         </Grid.ColumnDefinitions>
-                                        <TextBlock Grid.Column="0" Text="Tên nguyên liệu" FontSize="13" FontWeight="SemiBold" Foreground="{StaticResource Gray500}" HorizontalAlignment="Center"/>
-                                        <TextBlock Grid.Column="1" Text="Số lượng" FontSize="13" FontWeight="SemiBold" Foreground="{StaticResource Gray500}" HorizontalAlignment="Center"/>
-                                        <TextBlock Grid.Column="2" Text="Đơn vị tính" FontSize="13" FontWeight="SemiBold" Foreground="{StaticResource Gray500}" HorizontalAlignment="Center"/>
-                                        <TextBlock Grid.Column="3" Text="Thao tác" FontSize="13" FontWeight="SemiBold" Foreground="{StaticResource Gray500}" HorizontalAlignment="Center"/>
+                                        <TextBlock Grid.Column="0" Text="Tên nguyên liệu" FontSize="12" FontWeight="SemiBold" Foreground="{StaticResource Gray500}" HorizontalAlignment="Center"/>
+                                        <TextBlock Grid.Column="1" Text="Số lượng" FontSize="12" FontWeight="SemiBold" Foreground="{StaticResource Gray500}" HorizontalAlignment="Center"/>
+                                        <TextBlock Grid.Column="2" Text="Đơn vị" FontSize="12" FontWeight="SemiBold" Foreground="{StaticResource Gray500}" HorizontalAlignment="Center"/>
+                                        <TextBlock Grid.Column="3" Text="" FontSize="12" FontWeight="SemiBold" Foreground="{StaticResource Gray500}" HorizontalAlignment="Center" Width="40"/>
                                     </Grid>
                                 </Border>
 
@@ -1001,31 +1036,64 @@
                                                 <Border BorderBrush="{StaticResource Gray100}" BorderThickness="0,0,0,1" Padding="8,12">
                                                     <Grid>
                                                         <Grid.ColumnDefinitions>
-                                                            <ColumnDefinition Width="1.5*"/>
+                                                            <ColumnDefinition Width="1.2*"/>
+                                                            <ColumnDefinition Width="1.2*"/>
                                                             <ColumnDefinition Width="1*"/>
-                                                            <ColumnDefinition Width="1*"/>
-                                                            <ColumnDefinition Width="0.6*"/>
+                                                            <ColumnDefinition Width="Auto"/>
                                                         </Grid.ColumnDefinitions>
 
                                                         <TextBlock Grid.Column="0" Text="{Binding NguyenLieu.TenNguyenLieu}" 
-                                                                   FontSize="13" Foreground="{StaticResource Gray800}" VerticalAlignment="Center" HorizontalAlignment="Center"/>
+                                                                   FontSize="12" Foreground="{StaticResource Gray800}" VerticalAlignment="Center" HorizontalAlignment="Center"/>
 
                                                         <StackPanel Grid.Column="1" Orientation="Horizontal" HorizontalAlignment="Center" VerticalAlignment="Center">
-                                                            <Button Content="-" FontSize="16" FontWeight="Bold" Width="28" Height="28"
-                                                                    Background="Transparent" BorderThickness="0" Cursor="Hand"
-                                                                    Command="{Binding DataContext.DecreaseQuantityCommand, RelativeSource={RelativeSource AncestorType=ItemsControl}}"
-                                                                    CommandParameter="{Binding}"/>
+                                                            <Button Command="{Binding DataContext.DecreaseQuantityCommand, RelativeSource={RelativeSource AncestorType=ItemsControl}}"
+                                                                    CommandParameter="{Binding}" Cursor="Hand">
+                                                                <Button.Template>
+                                                                    <ControlTemplate TargetType="Button">
+                                                                        <Border x:Name="btnBorder" Background="{StaticResource Gray100}" CornerRadius="6" Width="28" Height="28"
+                                                                                BorderBrush="{StaticResource Gray200}" BorderThickness="1">
+                                                                            <TextBlock Text="&#xE738;" FontFamily="Segoe MDL2 Assets" FontSize="10" 
+                                                                                       HorizontalAlignment="Center" VerticalAlignment="Center" Foreground="{StaticResource Gray600}"/>
+                                                                        </Border>
+                                                                        <ControlTemplate.Triggers>
+                                                                            <Trigger Property="IsMouseOver" Value="True">
+                                                                                <Setter TargetName="btnBorder" Property="Background" Value="{StaticResource Gray200}"/>
+                                                                            </Trigger>
+                                                                        </ControlTemplate.Triggers>
+                                                                    </ControlTemplate>
+                                                                </Button.Template>
+                                                            </Button>
                                                             <TextBox Text="{Binding SoLuong, UpdateSourceTrigger=PropertyChanged}"
-                                                                     Width="40" TextAlignment="Center" BorderThickness="0"
-                                                                     FontSize="14" VerticalContentAlignment="Center"/>
-                                                            <Button Content="+" FontSize="16" FontWeight="Bold" Width="28" Height="28"
-                                                                    Background="Transparent" BorderThickness="0" Cursor="Hand"
-                                                                    Command="{Binding DataContext.IncreaseQuantityCommand, RelativeSource={RelativeSource AncestorType=ItemsControl}}"
-                                                                    CommandParameter="{Binding}"/>
+                                                                     Width="45" TextAlignment="Center" BorderThickness="0" Background="Transparent"
+                                                                     FontSize="14" FontWeight="SemiBold" VerticalContentAlignment="Center" Margin="4,0"/>
+                                                            <Button Command="{Binding DataContext.IncreaseQuantityCommand, RelativeSource={RelativeSource AncestorType=ItemsControl}}"
+                                                                    CommandParameter="{Binding}" Cursor="Hand">
+                                                                <Button.Template>
+                                                                    <ControlTemplate TargetType="Button">
+                                                                        <Border x:Name="btnBorder" Background="{StaticResource Gray100}" CornerRadius="6" Width="28" Height="28"
+                                                                                BorderBrush="{StaticResource Gray200}" BorderThickness="1">
+                                                                            <TextBlock Text="&#xE710;" FontFamily="Segoe MDL2 Assets" FontSize="10" 
+                                                                                       HorizontalAlignment="Center" VerticalAlignment="Center" Foreground="{StaticResource Gray600}"/>
+                                                                        </Border>
+                                                                        <ControlTemplate.Triggers>
+                                                                            <Trigger Property="IsMouseOver" Value="True">
+                                                                                <Setter TargetName="btnBorder" Property="Background" Value="{StaticResource Gray200}"/>
+                                                                            </Trigger>
+                                                                        </ControlTemplate.Triggers>
+                                                                    </ControlTemplate>
+                                                                </Button.Template>
+                                                            </Button>
                                                         </StackPanel>
 
-                                                        <TextBlock Grid.Column="2" Text="{Binding DonViTinh.TenDonVi}" FontSize="13" Foreground="{StaticResource Gray800}" 
-                                                                   VerticalAlignment="Center" HorizontalAlignment="Center"/>
+                                                        <ComboBox Grid.Column="2" 
+                                                                  ItemsSource="{Binding DonViOptions}" 
+                                                                  SelectedItem="{Binding SelectedDonVi}"
+                                                                  DisplayMemberPath="TenDonVi"
+                                                                  Style="{StaticResource PizzaComboBoxStyle}"
+                                                                  ItemContainerStyle="{StaticResource PizzaComboBoxItemStyle}"
+                                                                  FontSize="12" Height="32"
+                                                                  VerticalAlignment="Center" HorizontalAlignment="Center"
+                                                                  MinWidth="70"/>
 
                                                         <Button Grid.Column="3" Command="{Binding DataContext.RemoveChiTietCommand, RelativeSource={RelativeSource AncestorType=ItemsControl}}"
                                                                 CommandParameter="{Binding}" Cursor="Hand" HorizontalAlignment="Center">
@@ -1154,7 +1222,7 @@
                                                     <Setter Property="Foreground" Value="#92400E"/>
                                                     <Style.Triggers>
                                                         <DataTrigger Binding="{Binding SelectedPhieuXuat.TrangThai}" Value="2">
-                                                            <Setter Property="Text" Value="Đã duyệt"/>
+                                                            <Setter Property="Text" Value="Đã xuất kho"/>
                                                             <Setter Property="Foreground" Value="#16A34A"/>
                                                         </DataTrigger>
                                                         <DataTrigger Binding="{Binding SelectedPhieuXuat.TrangThai}" Value="3">

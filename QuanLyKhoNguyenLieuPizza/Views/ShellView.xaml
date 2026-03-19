@@ -1,4 +1,4 @@
-﻿<?xml version="1.0" encoding="utf-8"?>
+<?xml version="1.0" encoding="utf-8"?>
 <UserControl x:Class="QuanLyKhoNguyenLieuPizza.Views.ShellView"
          xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
          xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
@@ -7,6 +7,7 @@
          xmlns:vm="clr-namespace:QuanLyKhoNguyenLieuPizza.ViewModels"
          xmlns:views="clr-namespace:QuanLyKhoNguyenLieuPizza.Views"
          xmlns:converters="clr-namespace:QuanLyKhoNguyenLieuPizza.Converters"
+         xmlns:ui="http://schemas.lepo.co/wpfui/2022/xaml"
          mc:Ignorable="d" 
          d:DesignHeight="700" d:DesignWidth="1200"
          Background="{StaticResource SoftWhiteBrush}">
@@ -135,20 +136,15 @@
     
     <Grid>
         <Grid.ColumnDefinitions>
-            <ColumnDefinition Width="260"/>
+            <ColumnDefinition Width="250"/>
             <ColumnDefinition Width="*"/>
         </Grid.ColumnDefinitions>
 
         <!-- Sidebar - Dark Modern Style with Pizza Branding -->
-        <Border Grid.Column="0" CornerRadius="0,24,24,0">
-            <Border.Background>
-                <LinearGradientBrush StartPoint="0,0" EndPoint="0,1">
-                    <GradientStop Color="#1F2937" Offset="0"/>
-                    <GradientStop Color="#111827" Offset="1"/>
-                </LinearGradientBrush>
-            </Border.Background>
+        <Border Grid.Column="0" CornerRadius="0"
+                Background="{StaticResource SidebarGradientPremium}">
             <Border.Effect>
-                <DropShadowEffect BlurRadius="30" ShadowDepth="5" Direction="0" Color="#000000" Opacity="0.15"/>
+                <DropShadowEffect BlurRadius="40" ShadowDepth="6" Direction="0" Color="#000000" Opacity="0.20"/>
             </Border.Effect>
             
             <Grid>
@@ -159,7 +155,7 @@
                 </Grid.RowDefinitions>
 
                 <!-- Logo with Pizza Theme -->
-                <StackPanel Grid.Row="0" Margin="24,32,24,32">
+                <StackPanel Grid.Row="0" Margin="20,24,20,20">
                     <StackPanel Orientation="Horizontal">
                         <!-- Pizza Logo Icon -->
                         <Border Width="44" Height="44" CornerRadius="12">
@@ -170,8 +166,8 @@
                                 </LinearGradientBrush>
                             </Border.Background>
                             <Grid>
-                                <Ellipse Width="28" Height="28" Fill="#F1C40F" Opacity="0.3"/>
-                                <TextBlock Text="🍕" FontSize="22" HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                                <ui:SymbolIcon Symbol="FoodPizza24" FontSize="18" Foreground="White"
+                                           HorizontalAlignment="Center" VerticalAlignment="Center"/>
                             </Grid>
                         </Border>
                         <StackPanel VerticalAlignment="Center" Margin="14,0,0,0">
@@ -191,7 +187,13 @@
                 <!-- Menu Items -->
                 <ScrollViewer Grid.Row="1" VerticalScrollBarVisibility="Hidden">
                 <StackPanel Margin="0,0,0,0">
-                    <!-- Bao cao thong ke -->
+                    <!-- ══ TỔNG QUAN ══ -->
+                    <TextBlock Text="TỔNG QUAN" 
+                               FontSize="10" 
+                               FontWeight="SemiBold" 
+                               Foreground="#64748B" 
+                               Margin="24,0,0,8" 
+                               FontFamily="Segoe UI Variable, Segoe UI, Arial"/>
                     <Button Command="{Binding NavigateCommand}"
                             CommandParameter="BaoCaoThongKe"
                             Visibility="{Binding CanViewBaoCaoThongKe, Converter={StaticResource BoolToVisibilityConverter}}">
@@ -226,13 +228,21 @@
                             </Style>
                         </Button.Style>
                         <StackPanel Orientation="Horizontal">
-                            <Border Width="32" Height="32" CornerRadius="8" Background="#374151" Margin="0,0,12,0">
-                                <TextBlock Text="📊" FontSize="14" HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                            <Border Width="30" Height="30" CornerRadius="8" Background="#374151" Margin="0,0,10,0">
+                                <ui:SymbolIcon Symbol="DataBarVertical24" FontSize="14" Foreground="#9CA3AF" HorizontalAlignment="Center" VerticalAlignment="Center"/>
                             </Border>
                             <TextBlock Text="Báo cáo thống kê" VerticalAlignment="Center"/>
                         </StackPanel>
                     </Button>
                     
+                    <!-- ══ QUẢN LÝ KHO ══ -->
+                    <TextBlock Text="QUẢN LÝ KHO" 
+                               FontSize="10" 
+                               FontWeight="SemiBold" 
+                               Foreground="#64748B" 
+                               Margin="24,16,0,8" 
+                               FontFamily="Segoe UI Variable, Segoe UI, Arial"/>
+
                     <!-- Ton kho -->
                     <Button Command="{Binding NavigateCommand}"
                             CommandParameter="TonKho"
@@ -268,8 +278,8 @@
                             </Style>
                         </Button.Style>
                         <StackPanel Orientation="Horizontal">
-                            <Border Width="32" Height="32" CornerRadius="8" Background="#374151" Margin="0,0,12,0">
-                                <TextBlock Text="📦" FontSize="14" HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                            <Border Width="30" Height="30" CornerRadius="8" Background="#374151" Margin="0,0,10,0">
+                                <ui:SymbolIcon Symbol="Archive24" FontSize="14" Foreground="#9CA3AF" HorizontalAlignment="Center" VerticalAlignment="Center"/>
                             </Border>
                             <TextBlock Text="Tồn kho" VerticalAlignment="Center"/>
                         </StackPanel>
@@ -310,8 +320,8 @@
                             </Style>
                         </Button.Style>
                         <StackPanel Orientation="Horizontal">
-                            <Border Width="32" Height="32" CornerRadius="8" Background="#374151" Margin="0,0,12,0">
-                                <TextBlock Text="📥" FontSize="14" HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                            <Border Width="30" Height="30" CornerRadius="8" Background="#374151" Margin="0,0,10,0">
+                                <ui:SymbolIcon Symbol="ArrowDownload24" FontSize="14" Foreground="#9CA3AF" HorizontalAlignment="Center" VerticalAlignment="Center"/>
                             </Border>
                             <TextBlock Text="Quản lý phiếu nhập" VerticalAlignment="Center"/>
                         </StackPanel>
@@ -352,8 +362,8 @@
                             </Style>
                         </Button.Style>
                         <StackPanel Orientation="Horizontal">
-                            <Border Width="32" Height="32" CornerRadius="8" Background="#374151" Margin="0,0,12,0">
-                                <TextBlock Text="📤" FontSize="14" HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                            <Border Width="30" Height="30" CornerRadius="8" Background="#374151" Margin="0,0,10,0">
+                                <ui:SymbolIcon Symbol="ArrowUpload24" FontSize="14" Foreground="#9CA3AF" HorizontalAlignment="Center" VerticalAlignment="Center"/>
                             </Border>
                             <TextBlock Text="Quản lý phiếu xuất" VerticalAlignment="Center"/>
                         </StackPanel>
@@ -394,8 +404,8 @@
                             </Style>
                         </Button.Style>
                         <StackPanel Orientation="Horizontal">
-                            <Border Width="32" Height="32" CornerRadius="8" Background="#374151" Margin="0,0,12,0">
-                                <TextBlock Text="🍕" FontSize="14" HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                            <Border Width="30" Height="30" CornerRadius="8" Background="#374151" Margin="0,0,10,0">
+                                <ui:SymbolIcon Symbol="Food24" FontSize="14" Foreground="#9CA3AF" HorizontalAlignment="Center" VerticalAlignment="Center"/>
                             </Border>
                             <TextBlock Text="Quản lý nguyên liệu" VerticalAlignment="Center"/>
                         </StackPanel>
@@ -436,12 +446,20 @@
                             </Style>
                         </Button.Style>
                         <StackPanel Orientation="Horizontal">
-                            <Border Width="32" Height="32" CornerRadius="8" Background="#374151" Margin="0,0,12,0">
-                                <TextBlock Text="🍕" FontSize="14" HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                            <Border Width="30" Height="30" CornerRadius="8" Background="#374151" Margin="0,0,10,0">
+                                <ui:SymbolIcon Symbol="Food24" FontSize="14" Foreground="#9CA3AF" HorizontalAlignment="Center" VerticalAlignment="Center"/>
                             </Border>
                             <TextBlock Text="Quản lý món ăn" VerticalAlignment="Center"/>
                         </StackPanel>
                     </Button>
+
+                    <!-- ══ HỆ THỐNG ══ -->
+                    <TextBlock Text="HỆ THỐNG" 
+                               FontSize="10" 
+                               FontWeight="SemiBold" 
+                               Foreground="#64748B" 
+                               Margin="24,16,0,8" 
+                               FontFamily="Segoe UI Variable, Segoe UI, Arial"/>
 
                     <!-- Quan ly nha cung cap -->
                     <Button Command="{Binding NavigateCommand}"
@@ -478,8 +496,8 @@
                             </Style>
                         </Button.Style>
                         <StackPanel Orientation="Horizontal">
-                            <Border Width="32" Height="32" CornerRadius="8" Background="#374151" Margin="0,0,12,0">
-                                <TextBlock Text="🏢" FontSize="14" HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                            <Border Width="30" Height="30" CornerRadius="8" Background="#374151" Margin="0,0,10,0">
+                                <ui:SymbolIcon Symbol="Building24" FontSize="14" Foreground="#9CA3AF" HorizontalAlignment="Center" VerticalAlignment="Center"/>
                             </Border>
                             <TextBlock Text="Quản lý nhà cung cấp" VerticalAlignment="Center"/>
                         </StackPanel>
@@ -520,12 +538,20 @@
                             </Style>
                         </Button.Style>
                         <StackPanel Orientation="Horizontal">
-                            <Border Width="32" Height="32" CornerRadius="8" Background="#374151" Margin="0,0,12,0">
-                                <TextBlock Text="👥" FontSize="14" HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                            <Border Width="30" Height="30" CornerRadius="8" Background="#374151" Margin="0,0,10,0">
+                                <ui:SymbolIcon Symbol="People24" FontSize="14" Foreground="#9CA3AF" HorizontalAlignment="Center" VerticalAlignment="Center"/>
                             </Border>
                             <TextBlock Text="Quản lý nhân viên" VerticalAlignment="Center"/>
                         </StackPanel>
                     </Button>
+
+                    <!-- ══ BÁN HÀNG ══ -->
+                    <TextBlock Text="BÁN HÀNG" 
+                               FontSize="10" 
+                               FontWeight="SemiBold" 
+                               Foreground="#64748B" 
+                               Margin="24,16,0,8" 
+                               FontFamily="Segoe UI Variable, Segoe UI, Arial"/>
 
                     <!-- Don hang -->
                     <Button Command="{Binding NavigateCommand}"
@@ -562,8 +588,8 @@
                             </Style>
                         </Button.Style>
                         <StackPanel Orientation="Horizontal">
-                            <Border Width="32" Height="32" CornerRadius="8" Background="#374151" Margin="0,0,12,0">
-                                <TextBlock Text="📋" FontSize="14" HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                            <Border Width="30" Height="30" CornerRadius="8" Background="#374151" Margin="0,0,10,0">
+                                <ui:SymbolIcon Symbol="Document24" FontSize="14" Foreground="#9CA3AF" HorizontalAlignment="Center" VerticalAlignment="Center"/>
                             </Border>
                             <TextBlock Text="Quản lý đơn hàng" VerticalAlignment="Center"/>
                         </StackPanel>
@@ -604,8 +630,8 @@
                             </Style>
                         </Button.Style>
                         <StackPanel Orientation="Horizontal">
-                            <Border Width="32" Height="32" CornerRadius="8" Background="#374151" Margin="0,0,12,0">
-                                <TextBlock Text="🛒" FontSize="14" HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                            <Border Width="30" Height="30" CornerRadius="8" Background="#374151" Margin="0,0,10,0">
+                                <ui:SymbolIcon Symbol="Cart24" FontSize="14" Foreground="#9CA3AF" HorizontalAlignment="Center" VerticalAlignment="Center"/>
                             </Border>
                             <TextBlock Text="Bán hàng" VerticalAlignment="Center"/>
                         </StackPanel>
@@ -639,7 +665,9 @@
                                                         <GradientStop Color="#E74C3C" Offset="1"/>
                                                     </LinearGradientBrush>
                                                 </Border.Background>
-                                                <TextBlock Text="👤" FontSize="20" HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                                                <ui:SymbolIcon Symbol="Person24" FontSize="16" Foreground="White"
+                                                           HorizontalAlignment="Center" 
+                                                           VerticalAlignment="Center"/>
                                             </Border>
                                             
                                             <!-- Avatar - Image from database -->

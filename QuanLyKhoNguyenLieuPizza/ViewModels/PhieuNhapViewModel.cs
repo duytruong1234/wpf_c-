@@ -1,16 +1,18 @@
-﻿using System.Collections.ObjectModel;
+using System.Collections.ObjectModel;
 using System.Windows.Input;
 using QuanLyKhoNguyenLieuPizza.Models;
 using QuanLyKhoNguyenLieuPizza.Services;
+using QuanLyKhoNguyenLieuPizza.Core.Interfaces;
 
 namespace QuanLyKhoNguyenLieuPizza.ViewModels;
 
 public class PhieuNhapViewModel : BaseViewModel
 {
-    private readonly DatabaseService _databaseService;
+    // ⚡ Sử dụng interface thay vì concrete class — dùng chung singleton từ ServiceLocator
+    private readonly IDatabaseService _databaseService;
 
-    #region Properties
-    // Role-based properties
+    #region Thuộc tính
+    // Thuộc tính theo vai trò
     private bool _isNhanVienKho;
     public bool IsNhanVienKho
     {
@@ -31,8 +33,18 @@ public class PhieuNhapViewModel : BaseViewModel
     public ObservableCollection<PhieuNhap> PhieuNhaps
     {
         get => _phieuNhaps;
-        set => SetProperty(ref _phieuNhaps, value);
+        set
+        {
+            if (SetProperty(ref _phieuNhaps, value))
+            {
+                OnPropertyChanged(nameof(CountChoDuyet));
+                OnPropertyChanged(nameof(CountDaDuyet));
+            }
+        }
     }
+
+    public int CountChoDuyet => PhieuNhaps?.Count(p => p.TrangThai == 1) ?? 0;
+    public int CountDaDuyet => PhieuNhaps?.Count(p => p.TrangThai == 2) ?? 0;
 
     private PhieuNhap? _selectedPhieuNhap;
     public PhieuNhap? SelectedPhieuNhap
@@ -43,6 +55,7 @@ public class PhieuNhapViewModel : BaseViewModel
             if (SetProperty(ref _selectedPhieuNhap, value))
             {
                 OnPropertyChanged(nameof(CanEditDelete));
+                OnPropertyChanged(nameof(CanApprove));
             }
         }
     }
@@ -82,16 +95,18 @@ public class PhieuNhapViewModel : BaseViewModel
         set => SetProperty(ref _donViTinhs, value);
     }
 
-    // Filter properties
+    // Thuộc tính lọc
     private string _searchText = string.Empty;
     public string SearchText
     {
         get => _searchText;
         set
         {
-            if (SetProperty(ref _searchText, value))
+            if (SetProperty(ref _searchText, value) && !IsBatchUpdating)
             {
-                _ = LoadPhieuNhapsAsync();
+                // ⚡ Debounce: chờ 300ms sau lần gõ cuối mới gọi DB
+                // "pizza" = 1 DB call thay vì 5 ("p","pi","piz","pizz","pizza")
+                _ = DebounceAsync(LoadPhieuNhapsAsync);
             }
         }
     }
@@ -102,7 +117,7 @@ public class PhieuNhapViewModel : BaseViewModel
         get => _selectedNhanVienFilter;
         set
         {
-            if (SetProperty(ref _selectedNhanVienFilter, value))
+            if (SetProperty(ref _selectedNhanVienFilter, value) && !IsBatchUpdating)
             {
                 _ = LoadPhieuNhapsAsync();
             }
@@ -115,7 +130,7 @@ public class PhieuNhapViewModel : BaseViewModel
         get => _selectedNhaCungCapFilter;
         set
         {
-            if (SetProperty(ref _selectedNhaCungCapFilter, value))
+            if (SetProperty(ref _selectedNhaCungCapFilter, value) && !IsBatchUpdating)
             {
                 _ = LoadPhieuNhapsAsync();
             }
@@ -128,7 +143,7 @@ public class PhieuNhapViewModel : BaseViewModel
         get => _tuNgay;
         set
         {
-            if (SetProperty(ref _tuNgay, value))
+            if (SetProperty(ref _tuNgay, value) && !IsBatchUpdating)
             {
                 _ = LoadPhieuNhapsAsync();
             }
@@ -141,7 +156,7 @@ public class PhieuNhapViewModel : BaseViewModel
         get => _denNgay;
         set
         {
-            if (SetProperty(ref _denNgay, value))
+            if (SetProperty(ref _denNgay, value) && !IsBatchUpdating)
             {
                 _ = LoadPhieuNhapsAsync();
             }
@@ -161,6 +176,46 @@ public class PhieuNhapViewModel : BaseViewModel
         }
     }
 
+    // Lọc trạng thái
+    private bool _filterChoDuyet = true;
+    public bool FilterChoDuyet
+    {
+        get => _filterChoDuyet;
+        set
+        {
+            if (SetProperty(ref _filterChoDuyet, value) && !IsBatchUpdating)
+            {
+                _ = LoadPhieuNhapsAsync();
+            }
+        }
+    }
+
+    private bool _filterDaDuyet = true;
+    public bool FilterDaDuyet
+    {
+        get => _filterDaDuyet;
+        set
+        {
+            if (SetProperty(ref _filterDaDuyet, value) && !IsBatchUpdating)
+            {
+                _ = LoadPhieuNhapsAsync();
+            }
+        }
+    }
+
+    private bool _filterDaHuy;
+    public bool FilterDaHuy
+    {
+        get => _filterDaHuy;
+        set
+        {
+            if (SetProperty(ref _filterDaHuy, value) && !IsBatchUpdating)
+            {
+                _ = LoadPhieuNhapsAsync();
+            }
+        }
+    }
+
     private decimal _tongTien;
     public decimal TongTien
     {
@@ -168,7 +223,28 @@ public class PhieuNhapViewModel : BaseViewModel
         set => SetProperty(ref _tongTien, value);
     }
 
-    // Dialog properties
+    private int _soPhieuChoDuyet;
+    public int SoPhieuChoDuyet
+    {
+        get => _soPhieuChoDuyet;
+        set => SetProperty(ref _soPhieuChoDuyet, value);
+    }
+
+    private int _soPhieuDaDuyet;
+    public int SoPhieuDaDuyet
+    {
+        get => _soPhieuDaDuyet;
+        set => SetProperty(ref _soPhieuDaDuyet, value);
+    }
+
+    private int _soPhieuDaHuy;
+    public int SoPhieuDaHuy
+    {
+        get => _soPhieuDaHuy;
+        set => SetProperty(ref _soPhieuDaHuy, value);
+    }
+
+    // Thuộc tính hộp thoại
     private bool _isDialogOpen;
     public bool IsDialogOpen
     {
@@ -190,7 +266,7 @@ public class PhieuNhapViewModel : BaseViewModel
         set => SetProperty(ref _isCreateMode, value);
     }
 
-    // Form properties for creating/editing
+    // Thuộc tính form tạo/sửa
     private NhaCungCap? _selectedNhaCungCapForm;
     public NhaCungCap? SelectedNhaCungCapForm
     {
@@ -232,8 +308,13 @@ public class PhieuNhapViewModel : BaseViewModel
         set => SetProperty(ref _isLoading, value);
     }
 
+    // Chỉ sửa/xóa phiếu Chờ duyệt và trong ngày
     public bool CanEditDelete => SelectedPhieuNhap != null && 
+                                  SelectedPhieuNhap.TrangThai == 1 &&
                                   SelectedPhieuNhap.NgayNhap.Date == DateTime.Today;
+
+    // Quản lý mới được duyệt phiếu Chờ duyệt
+    public bool CanApprove => SelectedPhieuNhap != null && SelectedPhieuNhap.TrangThai == 1 && IsQuanLy;
 
     public List<string> ThoiGianOptions { get; } = new()
     {
@@ -245,12 +326,14 @@ public class PhieuNhapViewModel : BaseViewModel
     };
     #endregion
 
-    #region Commands
+    #region Lệnh
     public ICommand LoadDataCommand { get; }
     public ICommand CreatePhieuNhapCommand { get; }
     public ICommand ViewDetailCommand { get; }
     public ICommand EditPhieuNhapCommand { get; }
     public ICommand DeletePhieuNhapCommand { get; }
+    public ICommand ApprovePhieuNhapCommand { get; }
+    public ICommand CancelPhieuNhapCommand { get; }
     public ICommand SavePhieuNhapCommand { get; }
     public ICommand CancelDialogCommand { get; }
     public ICommand CloseDetailDialogCommand { get; }
@@ -264,31 +347,42 @@ public class PhieuNhapViewModel : BaseViewModel
 
     public PhieuNhapViewModel()
     {
-        _databaseService = new DatabaseService();
+        // ⚡ Dùng ServiceLocator thay vì new DatabaseService() — dùng chung singleton
+        try
+        {
+            _databaseService = ServiceLocator.Instance.GetService<IDatabaseService>();
+        }
+        catch
+        {
+            _databaseService = new DatabaseService();
+        }
 
-        // Detect if current user is warehouse employee
+        // Phát hiện người dùng hiện tại là nhân viên kho
         var currentUser = CurrentUserSession.Instance.CurrentUser;
         var chucVuId = currentUser?.NhanVien?.ChucVuID ?? 0;
-        IsNhanVienKho = chucVuId == 4; // 4: Nhan vien kho
-        CurrentUserName = currentUser?.NhanVien?.HoTen ?? "Nhan vien";
+        IsNhanVienKho = chucVuId == 4; // 4: Nhân viên kho
+        CurrentUserName = currentUser?.NhanVien?.HoTen ?? "Nhân viên";
 
-        LoadDataCommand = new RelayCommand(async _ => await LoadDataAsync());
+        // ⚡ Dùng AsyncRelayCommand cho các lệnh async — an toàn hơn async void
+        LoadDataCommand = new AsyncRelayCommand(async _ => await LoadDataAsync());
         CreatePhieuNhapCommand = new RelayCommand(_ => OpenCreateDialog());
-        ViewDetailCommand = new RelayCommand(async p => await ViewDetailAsync(p));
-        EditPhieuNhapCommand = new RelayCommand(async p => await EditPhieuNhapAsync(p));
-        DeletePhieuNhapCommand = new RelayCommand(async p => await DeletePhieuNhapAsync(p));
-        SavePhieuNhapCommand = new RelayCommand(async _ => await SavePhieuNhapAsync());
+        ViewDetailCommand = new AsyncRelayCommand(async p => await ViewDetailAsync(p));
+        EditPhieuNhapCommand = new AsyncRelayCommand(async p => await EditPhieuNhapAsync(p));
+        DeletePhieuNhapCommand = new AsyncRelayCommand(async p => await DeletePhieuNhapAsync(p));
+        ApprovePhieuNhapCommand = new AsyncRelayCommand(async _ => await ApprovePhieuNhapAsync());
+        CancelPhieuNhapCommand = new AsyncRelayCommand(async _ => await CancelPhieuNhapAsync());
+        SavePhieuNhapCommand = new AsyncRelayCommand(async _ => await SavePhieuNhapAsync());
         CancelDialogCommand = new RelayCommand(_ => CloseDialog());
         CloseDetailDialogCommand = new RelayCommand(_ => IsDetailDialogOpen = false);
         AddNguyenLieuCommand = new RelayCommand(p => AddNguyenLieuToForm(p));
         RemoveChiTietCommand = new RelayCommand(p => RemoveChiTietFromForm(p));
         ClearFilterCommand = new RelayCommand(_ => ClearFilter());
-        PrintPhieuNhapCommand = new RelayCommand(async p => await PrintPhieuNhapAsync(p));
+        PrintPhieuNhapCommand = new AsyncRelayCommand(async p => await PrintPhieuNhapAsync(p));
         IncreaseQuantityCommand = new RelayCommand(p => IncreaseQuantity(p));
         DecreaseQuantityCommand = new RelayCommand(p => DecreaseQuantity(p));
 
-        // Load data on initialization
-        _ = LoadDataAsync();
+        // ⚡ SafeInitializeAsync thay vì fire-and-forget
+        SafeInitializeAsync(LoadDataAsync);
     }
 
     private void IncreaseQuantity(object? parameter)
@@ -309,14 +403,19 @@ public class PhieuNhapViewModel : BaseViewModel
         }
     }
 
-    #region Methods
+    #region Phương thức
     private async Task LoadDataAsync()
     {
         IsLoading = true;
         try
         {
             var nhaCungCaps = await _databaseService.GetNhaCungCapsAsync();
-            NhaCungCaps = new ObservableCollection<NhaCungCap>(nhaCungCaps);
+            var allNhaCungCaps = new List<NhaCungCap>
+            {
+                new NhaCungCap { NhaCungCapID = 0, TenNCC = "Tất cả" }
+            };
+            allNhaCungCaps.AddRange(nhaCungCaps);
+            NhaCungCaps = new ObservableCollection<NhaCungCap>(allNhaCungCaps);
 
             var nhanViens = await _databaseService.GetNhanViensAsync();
             NhanViens = new ObservableCollection<NhanVien>(nhanViens);
@@ -340,14 +439,25 @@ public class PhieuNhapViewModel : BaseViewModel
     {
         try
         {
+            var trangThaiFilter = new List<byte>();
+            if (FilterChoDuyet) trangThaiFilter.Add(1);
+            if (FilterDaDuyet) trangThaiFilter.Add(2);
+            if (FilterDaHuy) trangThaiFilter.Add(3);
+
             var phieuNhaps = await _databaseService.GetPhieuNhapsAsync(
                 string.IsNullOrWhiteSpace(SearchText) ? null : SearchText,
                 SelectedNhanVienFilter?.NhanVienID,
                 SelectedNhaCungCapFilter?.NhaCungCapID,
                 TuNgay,
-                DenNgay);
+                DenNgay,
+                trangThaiFilter.Any() ? trangThaiFilter : null);
 
             PhieuNhaps = new ObservableCollection<PhieuNhap>(phieuNhaps);
+
+            // Đếm số phiếu theo trạng thái
+            SoPhieuChoDuyet = phieuNhaps.Count(p => p.TrangThai == 1);
+            SoPhieuDaDuyet = phieuNhaps.Count(p => p.TrangThai == 2);
+            SoPhieuDaHuy = phieuNhaps.Count(p => p.TrangThai == 3);
 
             TongTien = await _databaseService.GetTotalTongTienPhieuNhapAsync(
                 SelectedNhanVienFilter?.NhanVienID,
@@ -392,21 +502,39 @@ public class PhieuNhapViewModel : BaseViewModel
 
     private void ClearFilter()
     {
-        SearchText = string.Empty;
-        SelectedNhanVienFilter = null;
-        SelectedNhaCungCapFilter = null;
-        SelectedThoiGian = string.Empty;
-        TuNgay = null;
-        DenNgay = null;
+        // ⚡ Batch guard: thay đổi 7 property mà chỉ reload DB 1 lần cuối
+        // Trước đây: 8 DB calls (mỗi setter gọi LoadPhieuNhapsAsync)
+        // Bây giờ: 1 DB call duy nhất
+        IsBatchUpdating = true;
+        try
+        {
+            SearchText = string.Empty;
+            SelectedNhanVienFilter = null;
+            SelectedNhaCungCapFilter = null;
+            SelectedThoiGian = string.Empty;
+            TuNgay = null;
+            DenNgay = null;
+            FilterChoDuyet = true;
+            FilterDaDuyet = true;
+            FilterDaHuy = false;
+        }
+        finally
+        {
+            IsBatchUpdating = false;
+        }
+        
+        // Gọi reload 1 lần duy nhất
+        _ = LoadPhieuNhapsAsync();
     }
 
     private void OpenCreateDialog()
     {
         IsCreateMode = true;
-        SelectedNhaCungCapForm = null;
         ChiTietForm = new ObservableCollection<CT_PhieuNhap>();
         TongTienForm = 0;
         NguyenLieusOfNCC = new ObservableCollection<NguyenLieu>();
+        // Auto-select "Tất cả" to show all materials by default
+        SelectedNhaCungCapForm = NhaCungCaps.FirstOrDefault(n => n.NhaCungCapID == 0);
         IsDialogOpen = true;
     }
 
@@ -420,7 +548,16 @@ public class PhieuNhapViewModel : BaseViewModel
 
         try
         {
-            var nguyenLieus = await _databaseService.GetNguyenLieusByNhaCungCapAsync(SelectedNhaCungCapForm.NhaCungCapID);
+            List<NguyenLieu> nguyenLieus;
+            if (SelectedNhaCungCapForm.NhaCungCapID == 0)
+            {
+                // "Tất cả" selected - load all NguyenLieu with prices
+                nguyenLieus = await _databaseService.GetAllNguyenLieusWithPriceAsync();
+            }
+            else
+            {
+                nguyenLieus = await _databaseService.GetNguyenLieusByNhaCungCapAsync(SelectedNhaCungCapForm.NhaCungCapID);
+            }
             NguyenLieusOfNCC = new ObservableCollection<NguyenLieu>(nguyenLieus);
         }
         catch (Exception ex)
@@ -433,7 +570,7 @@ public class PhieuNhapViewModel : BaseViewModel
     {
         if (parameter is NguyenLieu nguyenLieu)
         {
-            // Check if already exists
+            // Kiểm tra đã tồn tại chưa
             if (ChiTietForm.Any(ct => ct.NguyenLieuID == nguyenLieu.NguyenLieuID))
             {
                 return;
@@ -499,6 +636,8 @@ public class PhieuNhapViewModel : BaseViewModel
             SelectedPhieuNhap = await _databaseService.GetPhieuNhapByIdAsync(phieuNhapId);
             var chiTiets = await _databaseService.GetChiTietPhieuNhapAsync(phieuNhapId);
             ChiTietPhieuNhaps = new ObservableCollection<CT_PhieuNhap>(chiTiets);
+            OnPropertyChanged(nameof(CanApprove));
+            OnPropertyChanged(nameof(CanEditDelete));
             IsDetailDialogOpen = true;
         }
         catch (Exception ex)
@@ -513,7 +652,7 @@ public class PhieuNhapViewModel : BaseViewModel
 
         IsCreateMode = false;
         
-        // Load data for editing
+        // Tải dữ liệu để chỉnh sửa
         SelectedNhaCungCapForm = NhaCungCaps.FirstOrDefault(n => n.NhaCungCapID == SelectedPhieuNhap.NhaCungCapID);
         
         await LoadNguyenLieusByNhaCungCapAsync();
@@ -546,6 +685,52 @@ public class PhieuNhapViewModel : BaseViewModel
         }
     }
 
+    private async Task ApprovePhieuNhapAsync()
+    {
+        if (SelectedPhieuNhap == null || !CanApprove) return;
+
+        try
+        {
+            var currentUser = CurrentUserSession.Instance.CurrentUser;
+            if (currentUser?.NhanVienID == null) return;
+
+            var result = await _databaseService.ApprovePhieuNhapAsync(
+                SelectedPhieuNhap.PhieuNhapID, 
+                currentUser.NhanVienID.Value);
+                
+            if (result)
+            {
+                await LoadPhieuNhapsAsync();
+                IsDetailDialogOpen = false;
+                SelectedPhieuNhap = null;
+            }
+        }
+        catch (Exception ex)
+        {
+            System.Diagnostics.Debug.WriteLine($"Error approving PhieuNhap: {ex.Message}");
+        }
+    }
+
+    private async Task CancelPhieuNhapAsync()
+    {
+        if (SelectedPhieuNhap == null || SelectedPhieuNhap.TrangThai != 1) return;
+
+        try
+        {
+            var result = await _databaseService.CancelPhieuNhapAsync(SelectedPhieuNhap.PhieuNhapID);
+            if (result)
+            {
+                await LoadPhieuNhapsAsync();
+                IsDetailDialogOpen = false;
+                SelectedPhieuNhap = null;
+            }
+        }
+        catch (Exception ex)
+        {
+            System.Diagnostics.Debug.WriteLine($"Error canceling PhieuNhap: {ex.Message}");
+        }
+    }
+
     private async Task SavePhieuNhapAsync()
     {
         if (SelectedNhaCungCapForm == null || !ChiTietForm.Any())
@@ -563,7 +748,7 @@ public class PhieuNhapViewModel : BaseViewModel
                 NhaCungCapID = SelectedNhaCungCapForm.NhaCungCapID,
                 NgayNhap = DateTime.Now,
                 TongTien = TongTienForm,
-                TrangThai = 1
+                TrangThai = 1 // Chờ duyệt
             };
 
             if (IsCreateMode)
@@ -595,6 +780,39 @@ public class PhieuNhapViewModel : BaseViewModel
         TongTienForm = 0;
     }
 
+    public string GetTrangThaiText(byte trangThai)
+    {
+        return trangThai switch
+        {
+            1 => "Chờ duyệt",
+            2 => "Đã duyệt",
+            3 => "Đã hủy",
+            _ => "Không xác định"
+        };
+    }
+
+    public string GetTrangThaiColor(byte trangThai)
+    {
+        return trangThai switch
+        {
+            1 => "#FEF3CD", // Cảnh báo - Chờ duyệt
+            2 => "#D1FAE5", // Thành công - Đã duyệt
+            3 => "#FEE2E2", // Nguy hiểm - Đã hủy
+            _ => "#F1F5F9"
+        };
+    }
+
+    public string GetTrangThaiForeground(byte trangThai)
+    {
+        return trangThai switch
+        {
+            1 => "#92400E",
+            2 => "#059669",
+            3 => "#DC2626",
+            _ => "#64748B"
+        };
+    }
+
     private async Task PrintPhieuNhapAsync(object? parameter)
     {
         PhieuNhap? phieuNhap = null;
@@ -612,7 +830,7 @@ public class PhieuNhapViewModel : BaseViewModel
 
         try
         {
-            // Load chi tiết nếu chưa có
+            // Tải chi tiết nếu chưa có
             var chiTiets = await _databaseService.GetChiTietPhieuNhapAsync(phieuNhap.PhieuNhapID);
             
             // Gọi PrintService

@@ -1,10 +1,10 @@
-﻿using Microsoft.Data.SqlClient;
+using Microsoft.Data.SqlClient;
 using QuanLyKhoNguyenLieuPizza.Services;
 
 namespace QuanLyKhoNguyenLieuPizza.Utilities;
 
 /// <summary>
-/// Test connection to SQL Server
+/// Kiểm tra kết nối đến SQL Server
 /// </summary>
 public static class DatabaseConnectionTester
 {
@@ -19,7 +19,7 @@ public static class DatabaseConnectionTester
             using var conn = new SqlConnection(connectionString);
             await conn.OpenAsync();
             
-            // Test simple query
+            // Kiểm tra truy vấn đơn giản
             using var cmd = new SqlCommand("SELECT @@VERSION", conn);
             var version = await cmd.ExecuteScalarAsync();
             
@@ -29,10 +29,10 @@ public static class DatabaseConnectionTester
         {
             var errorMsg = sqlEx.Number switch
             {
-                -1 => "Cannot connect to SQL Server. Check if SQL Server is running.",
-                -2 => "Connection timeout. SQL Server may be down or unreachable.",
-                18456 => "Login failed. Check username and password.",
-                4060 => "Database does not exist. Create the database first.",
+                -1 => "Không thể kết nối đến SQL Server. Kiểm tra xem SQL Server có đang chạy không.",
+                -2 => "Hết thời gian kết nối. SQL Server có thể đã tắt hoặc không thể truy cập.",
+                18456 => "Đăng nhập thất bại. Kiểm tra tên người dùng và mật khẩu.",
+                4060 => "Cơ sở dữ liệu không tồn tại. Tạo cơ sở dữ liệu trước.",
                 _ => $"SQL Error {sqlEx.Number}: {sqlEx.Message}"
             };
             

@@ -1,4 +1,4 @@
-﻿using System.Net;
+using System.Net;
 using System.Net.Mail;
 using System.Security.Cryptography;
 using QuanLyKhoNguyenLieuPizza.Core.Interfaces;
@@ -7,7 +7,7 @@ namespace QuanLyKhoNguyenLieuPizza.Services;
 
 public class EmailService : IEmailService
 {
-    // SMTP Configuration
+    // Cấu hình SMTP
     private readonly string _smtpHost = "smtp.gmail.com";
     private readonly int _smtpPort = 587;
     private readonly string _senderEmail = "truongnguyen1714@gmail.com"; 

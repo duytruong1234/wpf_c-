@@ -1,14 +1,19 @@
-﻿<Application x:Class="QuanLyKhoNguyenLieuPizza.App"
+<Application x:Class="QuanLyKhoNguyenLieuPizza.App"
          xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
          xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
          xmlns:local="clr-namespace:QuanLyKhoNguyenLieuPizza"
          xmlns:converters="clr-namespace:QuanLyKhoNguyenLieuPizza.Converters"
          xmlns:vm="clr-namespace:QuanLyKhoNguyenLieuPizza.ViewModels"
          xmlns:views="clr-namespace:QuanLyKhoNguyenLieuPizza.Views"
+         xmlns:ui="http://schemas.lepo.co/wpfui/2022/xaml"
          ShutdownMode="OnExplicitShutdown">
 <Application.Resources>
     <ResourceDictionary>
         <ResourceDictionary.MergedDictionaries>
+            <!-- WPF UI Fluent Theme -->
+            <ui:ThemesDictionary Theme="Light" />
+            <ui:ControlsDictionary />
+            <!-- Custom Pizza Theme (overrides Fluent defaults) -->
             <ResourceDictionary Source="Themes/PizzaTheme.xaml"/>
         </ResourceDictionary.MergedDictionaries>
             
@@ -24,266 +29,272 @@
         <converters:ValueToPercentageConverter x:Key="ValueToPercentageConverter"/>
         <converters:ValueToBarHeightConverter x:Key="ValueToBarHeightConverter"/>
         <converters:DonutChartPathConverter x:Key="DonutChartPathConverter"/>
+        <converters:InverseBoolToVisibilityConverter x:Key="InverseBoolToVisibilityConverter"/>
 
-            <!-- Colors - Pizza Theme -->
-            <Color x:Key="PrimaryColorValue">#E85D04</Color>
-            <Color x:Key="PrimaryDarkColorValue">#DC2F02</Color>
-            <Color x:Key="SecondaryColorValue">#F48C06</Color>
-            <Color x:Key="SuccessColorValue">#10B981</Color>
-            <Color x:Key="WarningColorValue">#FFBA08</Color>
-            <Color x:Key="DangerColorValue">#D00000</Color>
-            
-            <SolidColorBrush x:Key="PrimaryColor" Color="{StaticResource PrimaryColorValue}"/>
-            <SolidColorBrush x:Key="PrimaryDarkColor" Color="{StaticResource PrimaryDarkColorValue}"/>
-            <SolidColorBrush x:Key="SecondaryColor" Color="{StaticResource SecondaryColorValue}"/>
-            <SolidColorBrush x:Key="SuccessColor" Color="{StaticResource SuccessColorValue}"/>
-            <SolidColorBrush x:Key="WarningColor" Color="{StaticResource WarningColorValue}"/>
-            <SolidColorBrush x:Key="DangerColor" Color="{StaticResource DangerColorValue}"/>
-            
-            <SolidColorBrush x:Key="TextPrimary" Color="#1E293B"/>
-            <SolidColorBrush x:Key="TextSecondary" Color="#64748B"/>
-            <SolidColorBrush x:Key="BorderColor" Color="#E2E8F0"/>
-            <SolidColorBrush x:Key="BackgroundColor" Color="#F8FAFC"/>
+        <!-- ==================== COMPATIBILITY ALIASES ==================== -->
+        <!-- Keep old resource keys working to avoid breaking existing bindings -->
+        <Color x:Key="PrimaryColorValue">#E85D04</Color>
+        <Color x:Key="PrimaryDarkColorValue">#DC2F02</Color>
+        <Color x:Key="SecondaryColorValue">#F48C06</Color>
+        <Color x:Key="SuccessColorValue">#10B981</Color>
+        <Color x:Key="WarningColorValue">#FFBA08</Color>
+        <Color x:Key="DangerColorValue">#D00000</Color>
+        
+        <SolidColorBrush x:Key="PrimaryColor" Color="{StaticResource PrimaryColorValue}"/>
+        <SolidColorBrush x:Key="PrimaryDarkColor" Color="{StaticResource PrimaryDarkColorValue}"/>
+        <SolidColorBrush x:Key="SecondaryColor" Color="{StaticResource SecondaryColorValue}"/>
+        <SolidColorBrush x:Key="SuccessColor" Color="{StaticResource SuccessColorValue}"/>
+        <SolidColorBrush x:Key="WarningColor" Color="{StaticResource WarningColorValue}"/>
+        <SolidColorBrush x:Key="DangerColor" Color="{StaticResource DangerColorValue}"/>
+        
+        <SolidColorBrush x:Key="TextPrimary" Color="#1E293B"/>
+        <SolidColorBrush x:Key="TextSecondary" Color="#64748B"/>
+        <SolidColorBrush x:Key="BorderColor" Color="#E2E8F0"/>
+        <SolidColorBrush x:Key="BackgroundColor" Color="#F8FAFC"/>
 
-            <!-- Gradients - Pizza Theme -->
-            <LinearGradientBrush x:Key="PrimaryGradient" StartPoint="0,0" EndPoint="1,1">
-                <GradientStop Color="#E85D04" Offset="0"/>
-                <GradientStop Color="#F48C06" Offset="1"/>
-            </LinearGradientBrush>
-            
-            <LinearGradientBrush x:Key="SecondaryGradient" StartPoint="0,0" EndPoint="1,1">
-                <GradientStop Color="#F48C06" Offset="0"/>
-                <GradientStop Color="#FFBA08" Offset="1"/>
-            </LinearGradientBrush>
-            
-            <LinearGradientBrush x:Key="SuccessGradient" StartPoint="0,0" EndPoint="1,1">
-                <GradientStop Color="#10B981" Offset="0"/>
-                <GradientStop Color="#34D399" Offset="1"/>
-            </LinearGradientBrush>
-            
-            <LinearGradientBrush x:Key="WarningGradient" StartPoint="0,0" EndPoint="1,1">
-                <GradientStop Color="#FFBA08" Offset="0"/>
-                <GradientStop Color="#FAA307" Offset="1"/>
-            </LinearGradientBrush>
+        <!-- Gradients -->
+        <LinearGradientBrush x:Key="PrimaryGradient" StartPoint="0,0" EndPoint="1,1">
+            <GradientStop Color="#E85D04" Offset="0"/>
+            <GradientStop Color="#F48C06" Offset="1"/>
+        </LinearGradientBrush>
+        
+        <LinearGradientBrush x:Key="SecondaryGradient" StartPoint="0,0" EndPoint="1,1">
+            <GradientStop Color="#F48C06" Offset="0"/>
+            <GradientStop Color="#FFBA08" Offset="1"/>
+        </LinearGradientBrush>
+        
+        <LinearGradientBrush x:Key="SuccessGradient" StartPoint="0,0" EndPoint="1,1">
+            <GradientStop Color="#10B981" Offset="0"/>
+            <GradientStop Color="#34D399" Offset="1"/>
+        </LinearGradientBrush>
+        
+        <LinearGradientBrush x:Key="WarningGradient" StartPoint="0,0" EndPoint="1,1">
+            <GradientStop Color="#FFBA08" Offset="0"/>
+            <GradientStop Color="#FAA307" Offset="1"/>
+        </LinearGradientBrush>
 
-            <!-- Shadow Effect -->
-            <DropShadowEffect x:Key="CardShadow" 
-                              BlurRadius="40" 
-                              ShadowDepth="8" 
-                              Direction="270" 
-                              Color="#1E293B" 
-                              Opacity="0.1"/>
+        <!-- Shadow Effect -->
+        <DropShadowEffect x:Key="CardShadow" 
+                          BlurRadius="40" ShadowDepth="8" Direction="270" 
+                          Color="#1E293B" Opacity="0.1"/>
 
-            <!-- Label Style -->
-            <Style x:Key="LabelStyle" TargetType="TextBlock">
-                <Setter Property="FontSize" Value="13"/>
-                <Setter Property="FontWeight" Value="Medium"/>
-                <Setter Property="Foreground" Value="{StaticResource TextSecondary}"/>
-            </Style>
+        <!-- ==================== TEXT & INPUT STYLES ==================== -->
+        <Style x:Key="LabelStyle" TargetType="TextBlock">
+            <Setter Property="FontSize" Value="13"/>
+            <Setter Property="FontWeight" Value="Medium"/>
+            <Setter Property="FontFamily" Value="Segoe UI Variable, Segoe UI, Arial"/>
+            <Setter Property="Foreground" Value="{StaticResource TextSecondary}"/>
+        </Style>
 
-            <!-- Placeholder Style -->
-            <Style x:Key="PlaceholderStyle" TargetType="TextBlock">
-                <Setter Property="FontSize" Value="14"/>
-                <Setter Property="Foreground" Value="#94A3B8"/>
-                <Setter Property="VerticalAlignment" Value="Center"/>
-                <Setter Property="Margin" Value="16,0,0,0"/>
-                <Setter Property="IsHitTestVisible" Value="False"/>
-            </Style>
+        <Style x:Key="PlaceholderStyle" TargetType="TextBlock">
+            <Setter Property="FontSize" Value="14"/>
+            <Setter Property="FontFamily" Value="Segoe UI Variable, Segoe UI, Arial"/>
+            <Setter Property="Foreground" Value="#94A3B8"/>
+            <Setter Property="VerticalAlignment" Value="Center"/>
+            <Setter Property="Margin" Value="16,0,0,0"/>
+            <Setter Property="IsHitTestVisible" Value="False"/>
+        </Style>
 
-            <!-- Input Border Style -->
-            <Style x:Key="InputBorderStyle" TargetType="Border">
-                <Setter Property="Background" Value="White"/>
-                <Setter Property="BorderBrush" Value="{StaticResource BorderColor}"/>
-                <Setter Property="BorderThickness" Value="1.5"/>
-                <Setter Property="CornerRadius" Value="12"/>
-                <Setter Property="Padding" Value="4"/>
-                <Style.Triggers>
-                    <Trigger Property="IsMouseOver" Value="True">
-                        <Setter Property="BorderBrush" Value="{StaticResource PrimaryColor}"/>
-                    </Trigger>
-                </Style.Triggers>
-            </Style>
+        <Style x:Key="InputBorderStyle" TargetType="Border">
+            <Setter Property="Background" Value="White"/>
+            <Setter Property="BorderBrush" Value="{StaticResource BorderColor}"/>
+            <Setter Property="BorderThickness" Value="1.5"/>
+            <Setter Property="CornerRadius" Value="12"/>
+            <Setter Property="Padding" Value="4"/>
+            <Style.Triggers>
+                <Trigger Property="IsMouseOver" Value="True">
+                    <Setter Property="BorderBrush" Value="{StaticResource PrimaryColor}"/>
+                </Trigger>
+                <Trigger Property="IsKeyboardFocusWithin" Value="True">
+                    <Setter Property="BorderBrush" Value="{StaticResource PrimaryBlue}"/>
+                    <Setter Property="Effect">
+                        <Setter.Value>
+                            <DropShadowEffect BlurRadius="12" ShadowDepth="0" 
+                                              Color="#5B6AFF" Opacity="0.15"/>
+                        </Setter.Value>
+                    </Setter>
+                </Trigger>
+            </Style.Triggers>
+        </Style>
 
-            <!-- Modern TextBox Style -->
-            <Style x:Key="ModernTextBoxStyle" TargetType="TextBox">
-                <Setter Property="Background" Value="Transparent"/>
-                <Setter Property="BorderThickness" Value="0"/>
-                <Setter Property="FontSize" Value="14"/>
-                <Setter Property="Padding" Value="12,14"/>
-                <Setter Property="Foreground" Value="{StaticResource TextPrimary}"/>
-                <Setter Property="CaretBrush" Value="{StaticResource PrimaryColor}"/>
-                <Setter Property="VerticalContentAlignment" Value="Center"/>
-            </Style>
+        <Style x:Key="ModernTextBoxStyle" TargetType="TextBox">
+            <Setter Property="Background" Value="Transparent"/>
+            <Setter Property="BorderThickness" Value="0"/>
+            <Setter Property="FontSize" Value="14"/>
+            <Setter Property="FontFamily" Value="Segoe UI Variable, Segoe UI, Arial"/>
+            <Setter Property="Padding" Value="12,14"/>
+            <Setter Property="Foreground" Value="{StaticResource TextPrimary}"/>
+            <Setter Property="CaretBrush" Value="{StaticResource PrimaryColor}"/>
+            <Setter Property="VerticalContentAlignment" Value="Center"/>
+        </Style>
 
-            <!-- Modern PasswordBox Style -->
-            <Style x:Key="ModernPasswordBoxStyle" TargetType="PasswordBox">
-                <Setter Property="Background" Value="Transparent"/>
-                <Setter Property="BorderThickness" Value="0"/>
-                <Setter Property="FontSize" Value="14"/>
-                <Setter Property="Padding" Value="12,14"/>
-                <Setter Property="Foreground" Value="{StaticResource TextPrimary}"/>
-                <Setter Property="CaretBrush" Value="{StaticResource PrimaryColor}"/>
-                <Setter Property="VerticalContentAlignment" Value="Center"/>
-            </Style>
+        <Style x:Key="ModernPasswordBoxStyle" TargetType="PasswordBox">
+            <Setter Property="Background" Value="Transparent"/>
+            <Setter Property="BorderThickness" Value="0"/>
+            <Setter Property="FontSize" Value="14"/>
+            <Setter Property="FontFamily" Value="Segoe UI Variable, Segoe UI, Arial"/>
+            <Setter Property="Padding" Value="12,14"/>
+            <Setter Property="Foreground" Value="{StaticResource TextPrimary}"/>
+            <Setter Property="CaretBrush" Value="{StaticResource PrimaryColor}"/>
+            <Setter Property="VerticalContentAlignment" Value="Center"/>
+        </Style>
 
-            <!-- Modern DatePicker Style -->
-            <Style x:Key="ModernDatePickerStyle" TargetType="DatePicker">
-                <Setter Property="Background" Value="Transparent"/>
-                <Setter Property="BorderThickness" Value="0"/>
-                <Setter Property="FontSize" Value="14"/>
-                <Setter Property="Padding" Value="8,10"/>
-                <Setter Property="Foreground" Value="{StaticResource TextPrimary}"/>
-            </Style>
+        <Style x:Key="ModernDatePickerStyle" TargetType="DatePicker">
+            <Setter Property="Background" Value="Transparent"/>
+            <Setter Property="BorderThickness" Value="0"/>
+            <Setter Property="FontSize" Value="14"/>
+            <Setter Property="FontFamily" Value="Segoe UI Variable, Segoe UI, Arial"/>
+            <Setter Property="Padding" Value="8,10"/>
+            <Setter Property="Foreground" Value="{StaticResource TextPrimary}"/>
+        </Style>
 
-            <!-- Modern ComboBox Style (based on PizzaComboBoxStyle for consistent look) -->
-            <Style x:Key="ModernComboBoxStyle" TargetType="ComboBox" BasedOn="{StaticResource PizzaComboBoxStyle}">
-                <Setter Property="FontFamily" Value="Tahoma"/>
-                <Setter Property="FontSize" Value="14"/>
-                <Setter Property="Padding" Value="8,10"/>
-                <Setter Property="Foreground" Value="{StaticResource TextPrimary}"/>
-            </Style>
+        <Style x:Key="ModernComboBoxStyle" TargetType="ComboBox" BasedOn="{StaticResource PizzaComboBoxStyle}">
+            <Setter Property="FontFamily" Value="Segoe UI Variable, Segoe UI, Arial"/>
+            <Setter Property="FontSize" Value="14"/>
+            <Setter Property="Padding" Value="8,10"/>
+            <Setter Property="Foreground" Value="{StaticResource TextPrimary}"/>
+        </Style>
 
-            <!-- Primary Button Style -->
-            <Style x:Key="PrimaryButtonStyle" TargetType="Button">
-                <Setter Property="Background" Value="{StaticResource PrimaryGradient}"/>
-                <Setter Property="Foreground" Value="White"/>
-                <Setter Property="FontSize" Value="15"/>
-                <Setter Property="FontWeight" Value="SemiBold"/>
-                <Setter Property="Padding" Value="24,16"/>
-                <Setter Property="BorderThickness" Value="0"/>
-                <Setter Property="Cursor" Value="Hand"/>
-                <Setter Property="Template">
-                    <Setter.Value>
-                        <ControlTemplate TargetType="Button">
-                            <Border x:Name="border" 
-                                    Background="{TemplateBinding Background}" 
-                                    CornerRadius="12"
-                                    Padding="{TemplateBinding Padding}">
-                                <ContentPresenter HorizontalAlignment="Center" 
-                                                  VerticalAlignment="Center"/>
-                            </Border>
-                            <ControlTemplate.Triggers>
-                                <Trigger Property="IsMouseOver" Value="True">
-                                    <Setter TargetName="border" Property="Opacity" Value="0.9"/>
-                                </Trigger>
-                                <Trigger Property="IsPressed" Value="True">
-                                    <Setter TargetName="border" Property="Opacity" Value="0.8"/>
-                                </Trigger>
-                                <Trigger Property="IsEnabled" Value="False">
-                                    <Setter TargetName="border" Property="Opacity" Value="0.5"/>
-                                </Trigger>
-                            </ControlTemplate.Triggers>
-                        </ControlTemplate>
-                    </Setter.Value>
-                </Setter>
-            </Style>
+        <!-- ==================== BUTTON STYLES ==================== -->
+        <Style x:Key="PrimaryButtonStyle" TargetType="Button">
+            <Setter Property="Background" Value="{StaticResource PrimaryGradient}"/>
+            <Setter Property="Foreground" Value="White"/>
+            <Setter Property="FontSize" Value="15"/>
+            <Setter Property="FontWeight" Value="SemiBold"/>
+            <Setter Property="FontFamily" Value="Segoe UI Variable, Segoe UI, Arial"/>
+            <Setter Property="Padding" Value="24,16"/>
+            <Setter Property="BorderThickness" Value="0"/>
+            <Setter Property="Cursor" Value="Hand"/>
+            <Setter Property="Template">
+                <Setter.Value>
+                    <ControlTemplate TargetType="Button">
+                        <Border x:Name="border" 
+                                Background="{TemplateBinding Background}" 
+                                CornerRadius="12"
+                                Padding="{TemplateBinding Padding}">
+                            <ContentPresenter HorizontalAlignment="Center" 
+                                              VerticalAlignment="Center"/>
+                        </Border>
+                        <ControlTemplate.Triggers>
+                            <Trigger Property="IsMouseOver" Value="True">
+                                <Setter TargetName="border" Property="Opacity" Value="0.9"/>
+                                <Setter TargetName="border" Property="RenderTransform">
+                                    <Setter.Value>
+                                        <TranslateTransform Y="-1"/>
+                                    </Setter.Value>
+                                </Setter>
+                            </Trigger>
+                            <Trigger Property="IsPressed" Value="True">
+                                <Setter TargetName="border" Property="Opacity" Value="0.8"/>
+                            </Trigger>
+                            <Trigger Property="IsEnabled" Value="False">
+                                <Setter TargetName="border" Property="Opacity" Value="0.5"/>
+                            </Trigger>
+                        </ControlTemplate.Triggers>
+                    </ControlTemplate>
+                </Setter.Value>
+            </Setter>
+        </Style>
 
-            <!-- Secondary Button Style -->
-            <Style x:Key="SecondaryButtonStyle" TargetType="Button" BasedOn="{StaticResource PrimaryButtonStyle}">
-                <Setter Property="Background" Value="{StaticResource SecondaryGradient}"/>
-            </Style>
+        <Style x:Key="SecondaryButtonStyle" TargetType="Button" BasedOn="{StaticResource PrimaryButtonStyle}">
+            <Setter Property="Background" Value="{StaticResource SecondaryGradient}"/>
+        </Style>
 
-            <!-- Success Button Style -->
-            <Style x:Key="SuccessButtonStyle" TargetType="Button" BasedOn="{StaticResource PrimaryButtonStyle}">
-                <Setter Property="Background" Value="{StaticResource SuccessGradient}"/>
-            </Style>
+        <Style x:Key="SuccessButtonStyle" TargetType="Button" BasedOn="{StaticResource PrimaryButtonStyle}">
+            <Setter Property="Background" Value="{StaticResource SuccessGradient}"/>
+        </Style>
 
-            <!-- Warning Button Style -->
-            <Style x:Key="WarningButtonStyle" TargetType="Button" BasedOn="{StaticResource PrimaryButtonStyle}">
-                <Setter Property="Background" Value="{StaticResource WarningGradient}"/>
-            </Style>
+        <Style x:Key="WarningButtonStyle" TargetType="Button" BasedOn="{StaticResource PrimaryButtonStyle}">
+            <Setter Property="Background" Value="{StaticResource WarningGradient}"/>
+        </Style>
 
-            <!-- Icon Button Style -->
-            <Style x:Key="IconButtonStyle" TargetType="Button">
-                <Setter Property="BorderThickness" Value="0"/>
-                <Setter Property="Cursor" Value="Hand"/>
-                <Setter Property="Template">
-                    <Setter.Value>
-                        <ControlTemplate TargetType="Button">
-                            <Border x:Name="border" 
-                                    Background="{TemplateBinding Background}" 
-                                    CornerRadius="18"
-                                    Width="{TemplateBinding Width}"
-                                    Height="{TemplateBinding Height}">
-                                <ContentPresenter HorizontalAlignment="Center" 
-                                                  VerticalAlignment="Center"/>
-                            </Border>
-                            <ControlTemplate.Triggers>
-                                <Trigger Property="IsMouseOver" Value="True">
-                                    <Setter TargetName="border" Property="Opacity" Value="0.8"/>
-                                </Trigger>
-                            </ControlTemplate.Triggers>
-                        </ControlTemplate>
-                    </Setter.Value>
-                </Setter>
-            </Style>
+        <Style x:Key="IconButtonStyle" TargetType="Button">
+            <Setter Property="BorderThickness" Value="0"/>
+            <Setter Property="Cursor" Value="Hand"/>
+            <Setter Property="Template">
+                <Setter.Value>
+                    <ControlTemplate TargetType="Button">
+                        <Border x:Name="border" 
+                                Background="{TemplateBinding Background}" 
+                                CornerRadius="18"
+                                Width="{TemplateBinding Width}"
+                                Height="{TemplateBinding Height}">
+                            <ContentPresenter HorizontalAlignment="Center" 
+                                              VerticalAlignment="Center"/>
+                        </Border>
+                        <ControlTemplate.Triggers>
+                            <Trigger Property="IsMouseOver" Value="True">
+                                <Setter TargetName="border" Property="Opacity" Value="0.8"/>
+                            </Trigger>
+                        </ControlTemplate.Triggers>
+                    </ControlTemplate>
+                </Setter.Value>
+            </Setter>
+        </Style>
 
+        <Style x:Key="SidebarButtonStyle" TargetType="Button">
+            <Setter Property="Background" Value="Transparent"/>
+            <Setter Property="Foreground" Value="#2D3748"/>
+            <Setter Property="FontSize" Value="14"/>
+            <Setter Property="FontFamily" Value="Segoe UI Variable, Segoe UI, Arial"/>
+            <Setter Property="Padding" Value="15,12"/>
+            <Setter Property="Margin" Value="0,5"/>
+            <Setter Property="HorizontalContentAlignment" Value="Left"/>
+            <Setter Property="Cursor" Value="Hand"/>
+            <Setter Property="Template">
+                <Setter.Value>
+                    <ControlTemplate TargetType="Button">
+                        <Border x:Name="border" 
+                                Background="{TemplateBinding Background}" 
+                                CornerRadius="10"
+                                Padding="{TemplateBinding Padding}">
+                            <ContentPresenter HorizontalAlignment="{TemplateBinding HorizontalContentAlignment}" 
+                                              VerticalAlignment="Center"/>
+                        </Border>
+                        <ControlTemplate.Triggers>
+                            <Trigger Property="IsMouseOver" Value="True">
+                                <Setter TargetName="border" Property="Background" Value="#FFFFFF30"/>
+                            </Trigger>
+                        </ControlTemplate.Triggers>
+                    </ControlTemplate>
+                </Setter.Value>
+            </Setter>
+        </Style>
 
-            <!-- DataTemplates for Views -->
-            <DataTemplate DataType="{x:Type vm:LoginViewModel}">
-                <views:LoginView/>
-            </DataTemplate>
-            <DataTemplate DataType="{x:Type vm:VerifyInfoViewModel}">
-                <views:VerifyInfoView/>
-            </DataTemplate>
-            <DataTemplate DataType="{x:Type vm:OTPViewModel}">
-                <views:OTPView/>
-            </DataTemplate>
-            <DataTemplate DataType="{x:Type vm:ChangePasswordViewModel}">
-                <views:ChangePasswordView/>
-            </DataTemplate>
-            <DataTemplate DataType="{x:Type vm:ShellViewModel}">
-                <views:ShellView/>
-            </DataTemplate>
-            <DataTemplate DataType="{x:Type vm:DashboardViewModel}">
-                <views:DashboardView/>
-            </DataTemplate>
-            <DataTemplate DataType="{x:Type vm:TonKhoViewModel}">
-                <views:TonKhoView/>
-            </DataTemplate>
-            <DataTemplate DataType="{x:Type vm:PhieuNhapViewModel}">
-                <views:PhieuNhapView/>
-            </DataTemplate>
-            <DataTemplate DataType="{x:Type vm:PhieuXuatViewModel}">
-                <views:PhieuXuatView/>
-            </DataTemplate>
-            <DataTemplate DataType="{x:Type vm:NhaCungCapViewModel}">
-                <views:NhaCungCapView/>
-            </DataTemplate>
-            <DataTemplate DataType="{x:Type vm:NhanVienViewModel}">
-                <views:NhanVienView/>
-            </DataTemplate>
-
-
-            <!-- Sidebar Button Style -->
-            <Style x:Key="SidebarButtonStyle" TargetType="Button">
-                <Setter Property="Background" Value="Transparent"/>
-                <Setter Property="Foreground" Value="#2D3748"/>
-                <Setter Property="FontSize" Value="14"/>
-                <Setter Property="Padding" Value="15,12"/>
-                <Setter Property="Margin" Value="0,5"/>
-                <Setter Property="HorizontalContentAlignment" Value="Left"/>
-                <Setter Property="Cursor" Value="Hand"/>
-                <Setter Property="Template">
-                    <Setter.Value>
-                        <ControlTemplate TargetType="Button">
-                            <Border x:Name="border" 
-                                    Background="{TemplateBinding Background}" 
-                                    CornerRadius="10"
-                                    Padding="{TemplateBinding Padding}">
-                                <ContentPresenter HorizontalAlignment="{TemplateBinding HorizontalContentAlignment}" 
-                                                  VerticalAlignment="Center"/>
-                            </Border>
-                            <ControlTemplate.Triggers>
-                                <Trigger Property="IsMouseOver" Value="True">
-                                    <Setter TargetName="border" Property="Background" Value="#FFFFFF30"/>
-                                </Trigger>
-                            </ControlTemplate.Triggers>
-                        </ControlTemplate>
-                    </Setter.Value>
-                </Setter>
-            </Style>
-        </ResourceDictionary>
-    </Application.Resources>
+        <!-- ==================== VIEW-MODEL TO VIEW MAPPINGS ==================== -->
+        <DataTemplate DataType="{x:Type vm:LoginViewModel}">
+            <views:LoginView/>
+        </DataTemplate>
+        <DataTemplate DataType="{x:Type vm:VerifyInfoViewModel}">
+            <views:VerifyInfoView/>
+        </DataTemplate>
+        <DataTemplate DataType="{x:Type vm:OTPViewModel}">
+            <views:OTPView/>
+        </DataTemplate>
+        <DataTemplate DataType="{x:Type vm:ChangePasswordViewModel}">
+            <views:ChangePasswordView/>
+        </DataTemplate>
+        <DataTemplate DataType="{x:Type vm:ShellViewModel}">
+            <views:ShellView/>
+        </DataTemplate>
+        <DataTemplate DataType="{x:Type vm:DashboardViewModel}">
+            <views:DashboardView/>
+        </DataTemplate>
+        <DataTemplate DataType="{x:Type vm:TonKhoViewModel}">
+            <views:TonKhoView/>
+        </DataTemplate>
+        <DataTemplate DataType="{x:Type vm:PhieuNhapViewModel}">
+            <views:PhieuNhapView/>
+        </DataTemplate>
+        <DataTemplate DataType="{x:Type vm:PhieuXuatViewModel}">
+            <views:PhieuXuatView/>
+        </DataTemplate>
+        <DataTemplate DataType="{x:Type vm:NhaCungCapViewModel}">
+            <views:NhaCungCapView/>
+        </DataTemplate>
+        <DataTemplate DataType="{x:Type vm:NhanVienViewModel}">
+            <views:NhanVienView/>
+        </DataTemplate>
+    </ResourceDictionary>
+</Application.Resources>
 </Application>
-

@@ -1,4 +1,4 @@
-﻿using System.Collections.ObjectModel;
+using System.Collections.ObjectModel;
 using System.Windows.Input;
 using QuanLyKhoNguyenLieuPizza.Models;
 using QuanLyKhoNguyenLieuPizza.Services;
@@ -22,12 +22,12 @@ public class LoaiNguyenLieuViewModel : BaseViewModel
     private ObservableCollection<LoaiNguyenLieuItemViewModel> _loaiNguyenLieus = new();
     private bool _isLoading;
     
-    // Add/Edit popup
+    // Popup thêm/sửa
     private bool _isAddEditPopupOpen;
     private bool _isEditing;
     private LoaiNguyenLieuItemViewModel? _selectedLoaiNguyenLieu;
     
-    // Form field
+    // Trường form
     private string _formTenLoai = string.Empty;
     
     public event Action? OnBack;

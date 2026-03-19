@@ -1,4 +1,4 @@
-﻿namespace QuanLyKhoNguyenLieuPizza.Models;
+namespace QuanLyKhoNguyenLieuPizza.Models;
 
 public class QuyDinh_Vien
 {
@@ -8,7 +8,7 @@ public class QuyDinh_Vien
     public double? SoLuongVien { get; set; }
     public int? DonViID { get; set; }
 
-    // Navigation properties
+    // Thuộc tính điều hướng
     public virtual DoanhMuc_De? DoanhMucDe { get; set; }
     public virtual DoanhMuc_Size? DoanhMucSize { get; set; }
     public virtual NguyenLieu? NguyenLieu { get; set; }

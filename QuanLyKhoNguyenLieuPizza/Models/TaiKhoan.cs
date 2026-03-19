@@ -1,4 +1,4 @@
-﻿namespace QuanLyKhoNguyenLieuPizza.Models;
+namespace QuanLyKhoNguyenLieuPizza.Models;
 
 public class TaiKhoan
 {
@@ -8,7 +8,7 @@ public class TaiKhoan
     public string Password { get; set; } = string.Empty;
     public bool TrangThai { get; set; } = true;
 
-    // Navigation property
+    // Thuộc tính điều hướng
     public virtual NhanVien? NhanVien { get; set; }
 }
 

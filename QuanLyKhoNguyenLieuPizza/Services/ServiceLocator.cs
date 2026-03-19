@@ -1,10 +1,10 @@
-﻿using QuanLyKhoNguyenLieuPizza.Core.Interfaces;
+using QuanLyKhoNguyenLieuPizza.Core.Interfaces;
 
 namespace QuanLyKhoNguyenLieuPizza.Services;
 
 /// <summary>
-/// Simple service locator for dependency resolution
-/// In production, consider using Microsoft.Extensions.DependencyInjection
+/// Bộ định vị dịch vụ đơn giản cho việc phân giải dependency
+/// Trong môi trường sản xuất, nên cân nhắc sử dụng Microsoft.Extensions.DependencyInjection
 /// </summary>
 public class ServiceLocator
 {
@@ -21,7 +21,7 @@ public class ServiceLocator
 
     private void RegisterDefaultServices()
     {
-        // Register services
+        // Đăng ký các dịch vụ
         RegisterSingleton<IDatabaseService>(new DatabaseService());
         RegisterSingleton<ConfigurationService>(ConfigurationService.Instance);
     }

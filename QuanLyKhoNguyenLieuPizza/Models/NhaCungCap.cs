@@ -1,4 +1,4 @@
-﻿namespace QuanLyKhoNguyenLieuPizza.Models;
+namespace QuanLyKhoNguyenLieuPizza.Models;
 
 public class NhaCungCap
 {
@@ -9,7 +9,7 @@ public class NhaCungCap
     public string? Email { get; set; }
     public bool TrangThai { get; set; } = true;
 
-    // Navigation properties
+    // Thuộc tính điều hướng
     public virtual ICollection<NguyenLieuNhaCungCap> NguyenLieuNhaCungCaps { get; set; } = new List<NguyenLieuNhaCungCap>();
     public virtual ICollection<PhieuNhap> PhieuNhaps { get; set; } = new List<PhieuNhap>();
 }

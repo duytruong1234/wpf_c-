@@ -1,4 +1,4 @@
-﻿namespace QuanLyKhoNguyenLieuPizza.Models;
+namespace QuanLyKhoNguyenLieuPizza.Models;
 
 public class TonKho
 {
@@ -7,7 +7,7 @@ public class TonKho
     public decimal SoLuongTon { get; set; } = 0;
     public DateTime NgayCapNhat { get; set; } = DateTime.Now;
 
-    // Navigation property
+    // Thuộc tính điều hướng
     public virtual NguyenLieu? NguyenLieu { get; set; }
 }
 

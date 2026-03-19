@@ -1,4 +1,4 @@
-﻿using System.Collections.ObjectModel;
+using System.Collections.ObjectModel;
 using System.Windows;
 using System.Windows.Input;
 using QuanLyKhoNguyenLieuPizza.Core.Commands;
@@ -36,20 +36,20 @@ public class BanHangViewModel : BaseViewModel
 {
     private readonly IDatabaseService _db;
 
-    // View states
+    // Trạng thái hiển thị
     private bool _isMainView = true;
     private bool _isOrderHistoryView;
     private bool _isOrderDetailOpen;
     private bool _isLoading;
     private bool _isSizeDeDialogOpen;
 
-    // Product list & cart
+    // Danh sách sản phẩm & giỏ hàng
     private ObservableCollection<HangHoa> _hangHoas = new();
     private List<HangHoa> _cachedActiveHangHoas = new();
     private ObservableCollection<CartItem> _cartItems = new();
     private ObservableCollection<PhieuBanHang> _phieuBanHangs = new();
 
-    // Size & De selection
+    // Lựa chọn Size & Đế
     private ObservableCollection<DoanhMuc_Size> _sizes = new();
     private ObservableCollection<DoanhMuc_De> _deBanhs = new();
     private ObservableCollection<GiaTheo_Size> _giaTheoSizes = new();
@@ -58,21 +58,22 @@ public class BanHangViewModel : BaseViewModel
     private DoanhMuc_De? _selectedDe;
     private HangHoa? _selectedHangHoa;
 
-    // Stats
+    // Thống kê
     private decimal _doanhThuHomNay;
     private int _tongDonHomNay;
 
-    // Order detail
+    // Chi tiết đơn hàng
     private PhieuBanHang? _selectedPhieuBan;
     private ObservableCollection<CT_PhieuBan> _selectedChiTiets = new();
 
-    // Filter
+    // Lọc
     private DateTime _filterFromDate = DateTime.Today;
     private DateTime _filterToDate = DateTime.Today;
     private string _searchText = string.Empty;
     private string _ghiChu = string.Empty;
+    private string _selectedPhuongThucTT = "Tiền mặt";
 
-    #region Properties
+    #region Thuộc tính
     public bool IsMainView { get => _isMainView; set { SetProperty(ref _isMainView, value); } }
     public bool IsOrderHistoryView { get => _isOrderHistoryView; set { SetProperty(ref _isOrderHistoryView, value); } }
     public bool IsOrderDetailOpen { get => _isOrderDetailOpen; set { SetProperty(ref _isOrderDetailOpen, value); } }
@@ -158,15 +159,18 @@ public class BanHangViewModel : BaseViewModel
         }
     }
     public string GhiChu { get => _ghiChu; set { SetProperty(ref _ghiChu, value); } }
+
+    public List<string> DanhSachPhuongThucTT { get; } = new() { "Tiền mặt", "Chuyển khoản" };
+    public string SelectedPhuongThucTT { get => _selectedPhuongThucTT; set { SetProperty(ref _selectedPhuongThucTT, value); } }
     #endregion
 
-    #region Commands
-    // Navigation
+    #region Lệnh
+    // Điều hướng
     public ICommand ShowPOSCommand { get; }
     public ICommand ShowOrderHistoryCommand { get; }
     public ICommand BackToMainCommand { get; }
 
-    // POS
+    // Bán hàng
     public ICommand SelectHangHoaCommand { get; }
     public ICommand ConfirmAddToCartCommand { get; }
     public ICommand CancelSizeDeDialogCommand { get; }
@@ -176,7 +180,7 @@ public class BanHangViewModel : BaseViewModel
     public ICommand CheckoutCommand { get; }
     public ICommand ClearCartCommand { get; }
 
-    // Orders
+    // Đơn hàng
     public ICommand ViewOrderDetailCommand { get; }
     public ICommand CloseOrderDetailCommand { get; }
     #endregion
@@ -185,12 +189,12 @@ public class BanHangViewModel : BaseViewModel
     {
         _db = ServiceLocator.Instance.GetService<IDatabaseService>();
 
-        // Navigation commands
+        // Lệnh điều hướng
         ShowPOSCommand = new RelayCommand(_ => NavigateTo("POS"));
         ShowOrderHistoryCommand = new AsyncRelayCommand(async _ => { NavigateTo("History"); await LoadPhieuBanHangsAsync(); });
         BackToMainCommand = new RelayCommand(_ => NavigateTo("POS"));
 
-        // POS commands
+        // Lệnh bán hàng
         SelectHangHoaCommand = new AsyncRelayCommand(ExecuteSelectHangHoaAsync);
         ConfirmAddToCartCommand = new RelayCommand(ExecuteConfirmAddToCart);
         CancelSizeDeDialogCommand = new RelayCommand(_ => IsSizeDeDialogOpen = false);
@@ -200,7 +204,7 @@ public class BanHangViewModel : BaseViewModel
         CheckoutCommand = new AsyncRelayCommand(ExecuteCheckoutAsync);
         ClearCartCommand = new RelayCommand(_ => { CartItems.Clear(); RefreshCartTotals(); });
 
-        // Orders
+        // Đơn hàng
         ViewOrderDetailCommand = new AsyncRelayCommand(ExecuteViewOrderDetailAsync);
         CloseOrderDetailCommand = new RelayCommand(_ => IsOrderDetailOpen = false);
 
@@ -222,7 +226,7 @@ public class BanHangViewModel : BaseViewModel
         }
     }
 
-    #region Navigation
+    #region Điều hướng
     private void NavigateTo(string view)
     {
         IsMainView = view == "POS";
@@ -230,7 +234,7 @@ public class BanHangViewModel : BaseViewModel
     }
     #endregion
 
-    #region Load Data
+    #region Tải dữ liệu
     private async Task LoadHangHoasAsync()
     {
         var hangHoas = await _db.GetHangHoasAsync();
@@ -282,17 +286,17 @@ public class BanHangViewModel : BaseViewModel
     }
     #endregion
 
-    #region Cart Operations
+    #region Thao tác giỏ hàng
     private async Task ExecuteSelectHangHoaAsync(object? parameter)
     {
         if (parameter is not HangHoa hangHoa) return;
         SelectedHangHoa = hangHoa;
 
-        // Load prices for this product
+        // Tải giá cho sản phẩm này
         var giaTheoSizes = await _db.GetGiaTheoSizeByHangHoaAsync(hangHoa.MaHangHoa);
         GiaTheoSizes = new ObservableCollection<GiaTheo_Size>(giaTheoSizes);
 
-        // Reset selection
+        // Đặt lại lựa chọn
         SelectedSize = Sizes.FirstOrDefault();
         SelectedDe = null;
 
@@ -303,11 +307,11 @@ public class BanHangViewModel : BaseViewModel
     {
         if (SelectedHangHoa == null || SelectedSize == null) return;
 
-        // Find price for selected size
+        // Tìm giá cho size đã chọn
         var giaSize = GiaTheoSizes.FirstOrDefault(g => g.SizeID == SelectedSize.SizeID);
         decimal giaBan = giaSize?.GiaBan ?? 0;
 
-        // Find additional price for selected crust
+        // Tìm giá bổ sung cho đế bánh đã chọn
         decimal giaThem = 0;
         if (SelectedDe != null)
         {
@@ -394,7 +398,8 @@ public class BanHangViewModel : BaseViewModel
                 NhanVienBanID = nhanVienId,
                 NgayBan = DateTime.Now,
                 TongTien = TongTienGioHang,
-                GhiChu = string.IsNullOrWhiteSpace(GhiChu) ? null : GhiChu.Trim()
+                GhiChu = string.IsNullOrWhiteSpace(GhiChu) ? null : GhiChu.Trim(),
+                PhuongThucTT = SelectedPhuongThucTT
             };
 
             var chiTiets = CartItems.Select(c => new CT_PhieuBan
@@ -413,6 +418,7 @@ public class BanHangViewModel : BaseViewModel
                     "Thành công", MessageBoxButton.OK, MessageBoxImage.Information);
                 CartItems.Clear();
                 GhiChu = string.Empty;
+                SelectedPhuongThucTT = "Tiền mặt";
                 RefreshCartTotals();
                 await LoadStatsAsync();
             }
@@ -432,7 +438,7 @@ public class BanHangViewModel : BaseViewModel
     }
     #endregion
 
-    #region Orders
+    #region Đơn hàng
     private async Task ExecuteViewOrderDetailAsync(object? parameter)
     {
         if (parameter is not PhieuBanHang pb) return;

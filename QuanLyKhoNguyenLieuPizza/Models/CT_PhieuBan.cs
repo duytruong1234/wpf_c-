@@ -1,4 +1,4 @@
-﻿namespace QuanLyKhoNguyenLieuPizza.Models;
+namespace QuanLyKhoNguyenLieuPizza.Models;
 
 public class CT_PhieuBan
 {
@@ -10,7 +10,7 @@ public class CT_PhieuBan
     public int? SoLuong { get; set; }
     public decimal? ThanhTien { get; set; }
 
-    // Navigation properties
+    // Thuộc tính điều hướng
     public virtual PhieuBanHang? PhieuBanHang { get; set; }
     public virtual HangHoa? HangHoa { get; set; }
     public virtual DoanhMuc_Size? DoanhMucSize { get; set; }
