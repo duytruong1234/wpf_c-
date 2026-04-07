@@ -1,4 +1,4 @@
-﻿using System.ComponentModel;
+using System.ComponentModel;
 using System.Windows;
 using System.Windows.Controls;
 using System.Windows.Media;
@@ -346,8 +346,10 @@ public partial class DashboardView : UserControl
     {
         StockStatusPanel.Children.Clear();
 
-        int total = vm.SoLuongTonKho;
+        int total = vm.TongSoNguyenLieu;
         if (total <= 0) total = 1;
+        
+        // Bình thường = Số lượng có trong kho (SoLuongTonKho) - Tồn kho thấp - Sắp hết hạn - Đã hết hạn
         int normal = Math.Max(vm.SoLuongTonKho - vm.SoLuongTonKhoThap - vm.SoLuongSapHetHan - vm.SoLuongHetHan, 0);
 
         var categories = new List<(string Label, int Value, string Color, string BgColor, string Icon)>
@@ -356,6 +358,7 @@ public partial class DashboardView : UserControl
             ("Tồn kho thấp", vm.SoLuongTonKhoThap, "#F59E0B", "#FFF7ED", "⚠"),
             ("Sắp hết hạn", vm.SoLuongSapHetHan, "#06B6D4", "#ECFEFF", "⏱"),
             ("Đã hết hạn", vm.SoLuongHetHan, "#EF4444", "#FEF2F2", "✕"),
+            ("Hết hàng", vm.SoLuongHetHang, "#64748b", "#f1f5f9", "✕")
         };
 
         // Tổng số ở trên cùng
@@ -363,13 +366,13 @@ public partial class DashboardView : UserControl
         var totalHeader = new Grid();
         var totalLabel = new TextBlock
         {
-            Text = "Tổng nguyên liệu",
+            Text = "Tổng lượng cung hệ thống",
             FontSize = 13,
             Foreground = new SolidColorBrush(System.Windows.Media.Color.FromRgb(0x64, 0x74, 0x8B)),
         };
         var totalValue = new TextBlock
         {
-            Text = vm.SoLuongTonKho.ToString(),
+            Text = vm.TongSoNguyenLieu.ToString(),
             FontSize = 28,
             FontWeight = FontWeights.Bold,
             Foreground = new SolidColorBrush(System.Windows.Media.Color.FromRgb(0x1E, 0x29, 0x3B)),
@@ -379,41 +382,23 @@ public partial class DashboardView : UserControl
         totalPanel.Children.Add(totalLabel);
         totalPanel.Children.Add(totalValue);
 
-        // Stacked bar tổng quan
-        var stackedBar = new Grid
+        // Thanh ngang trang trí (1 màu duy nhất)
+        var decorativeBar = new Border
         {
-            Height = 10,
+            Height = 8,
             Margin = new Thickness(0, 8, 0, 12),
-            ClipToBounds = true
+            Background = new SolidColorBrush(System.Windows.Media.Color.FromRgb(0x5B, 0x6A, 0xFF)),
+            CornerRadius = new CornerRadius(4),
+            Opacity = 0
         };
-        stackedBar.ColumnDefinitions.Clear();
-
-        foreach (var cat in categories)
+        
+        var anim = new DoubleAnimation(0, 1, TimeSpan.FromMilliseconds(500))
         {
-            if (cat.Value <= 0) continue;
-            double fraction = (double)cat.Value / total;
-            stackedBar.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(fraction, GridUnitType.Star) });
+            EasingFunction = new CubicEase { EasingMode = EasingMode.EaseOut }
+        };
+        decorativeBar.BeginAnimation(UIElement.OpacityProperty, anim);
 
-            var barSegment = new Border
-            {
-                Background = new SolidColorBrush((System.Windows.Media.Color)System.Windows.Media.ColorConverter.ConvertFromString(cat.Color)),
-                CornerRadius = new CornerRadius(5),
-                Margin = new Thickness(1, 0, 1, 0),
-                Opacity = 0
-            };
-            Grid.SetColumn(barSegment, stackedBar.ColumnDefinitions.Count - 1);
-            stackedBar.Children.Add(barSegment);
-
-            // Hiệu ứng động
-            var anim = new DoubleAnimation(0, 1, TimeSpan.FromMilliseconds(500))
-            {
-                BeginTime = TimeSpan.FromMilliseconds(stackedBar.ColumnDefinitions.Count * 150),
-                EasingFunction = new CubicEase { EasingMode = EasingMode.EaseOut }
-            };
-            barSegment.BeginAnimation(UIElement.OpacityProperty, anim);
-        }
-
-        totalPanel.Children.Add(stackedBar);
+        totalPanel.Children.Add(decorativeBar);
         StockStatusPanel.Children.Add(totalPanel);
 
         // Đường phân cách
@@ -427,7 +412,7 @@ public partial class DashboardView : UserControl
 
         // Từng category detail
         int delayIndex = 0;
-        string[] statusKeys = ["BinhThuong", "TonThap", "SapHetHan", "HetHan"];
+        string[] statusKeys = ["BinhThuong", "TonThap", "SapHetHan", "HetHan", "HetHang"];
         foreach (var cat in categories)
         {
             double pct = total > 0 ? (double)cat.Value / total * 100 : 0;

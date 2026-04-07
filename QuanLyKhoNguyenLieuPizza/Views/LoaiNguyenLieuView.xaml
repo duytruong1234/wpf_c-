@@ -1,4 +1,4 @@
-﻿<UserControl x:Class="QuanLyKhoNguyenLieuPizza.Views.LoaiNguyenLieuView"
+<UserControl x:Class="QuanLyKhoNguyenLieuPizza.Views.LoaiNguyenLieuView"
              xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
              xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
              xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006" 
@@ -197,12 +197,12 @@
                             <DataGridTemplateColumn Header="Thao tác" Width="150">
                                 <DataGridTemplateColumn.CellTemplate>
                                     <DataTemplate>
-                                        <StackPanel Orientation="Horizontal" HorizontalAlignment="Center">
-                                            <Button Command="{Binding EditCommand}" ToolTip="Chỉnh sửa" Cursor="Hand" Margin="0,0,6,0">
+                                        <StackPanel Orientation="Horizontal" HorizontalAlignment="Center" VerticalAlignment="Center">
+                                            <Button Command="{Binding EditCommand}" ToolTip="Chỉnh sửa" Cursor="Hand" Margin="0,0,6,0" VerticalAlignment="Center">
                                                 <Button.Template>
                                                     <ControlTemplate TargetType="Button">
                                                         <Border x:Name="btnBorder" Background="{StaticResource LightBlue}" CornerRadius="8" Width="32" Height="32">
-                                                            <ui:SymbolIcon Symbol="Save24" FontSize="16" Foreground="{StaticResource PrimaryBlue}" HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                                                            <TextBlock Text="&#xE70F;" FontFamily="Segoe MDL2 Assets" FontSize="14" Foreground="{StaticResource PrimaryBlue}" HorizontalAlignment="Center" VerticalAlignment="Center"/>
                                                         </Border>
                                                         <ControlTemplate.Triggers>
                                                             <Trigger Property="IsMouseOver" Value="True">
@@ -212,11 +212,11 @@
                                                     </ControlTemplate>
                                                 </Button.Template>
                                             </Button>
-                                            <Button Command="{Binding DeleteCommand}" ToolTip="Xóa" Cursor="Hand">
+                                            <Button Command="{Binding DeleteCommand}" ToolTip="Xóa" Cursor="Hand" VerticalAlignment="Center">
                                                 <Button.Template>
                                                     <ControlTemplate TargetType="Button">
                                                         <Border x:Name="btnBorder" Background="{StaticResource DangerRedLight}" CornerRadius="8" Width="32" Height="32">
-                                                            <ui:SymbolIcon Symbol="Delete24" FontSize="16" Foreground="{StaticResource DangerRed}" HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                                                            <TextBlock Text="&#xE74D;" FontFamily="Segoe MDL2 Assets" FontSize="14" Foreground="{StaticResource DangerRed}" HorizontalAlignment="Center" VerticalAlignment="Center"/>
                                                         </Border>
                                                         <ControlTemplate.Triggers>
                                                             <Trigger Property="IsMouseOver" Value="True">

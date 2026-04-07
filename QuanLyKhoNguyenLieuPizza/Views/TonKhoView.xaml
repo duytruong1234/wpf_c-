@@ -1,4 +1,4 @@
-﻿<?xml version="1.0" encoding="utf-8"?>
+<?xml version="1.0" encoding="utf-8"?>
 <UserControl x:Class="QuanLyKhoNguyenLieuPizza.Views.TonKhoView"
          xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
          xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
@@ -160,6 +160,10 @@
                 <ColumnDefinition Width="Auto"/>
                 <ColumnDefinition Width="12"/>
                 <ColumnDefinition Width="Auto"/>
+                <ColumnDefinition Width="12"/>
+                <ColumnDefinition Width="Auto"/>
+                <ColumnDefinition Width="12"/>
+                <ColumnDefinition Width="Auto"/>
             </Grid.ColumnDefinitions>
 
             <!-- Tiêu đề -->
@@ -189,8 +193,46 @@
                 </Button.Template>
             </Button>
 
+            <!-- Nút Thêm tồn kho (Phiếu Nhập) -->
+            <Button Grid.Column="3" Command="{Binding GoToPhieuNhapCommand}" Cursor="Hand" VerticalAlignment="Center">
+                <Button.Template>
+                    <ControlTemplate TargetType="Button">
+                        <Border x:Name="border" Background="#2ECC71" BorderBrush="#27AE60" BorderThickness="1" CornerRadius="10" Padding="16,12">
+                            <StackPanel Orientation="Horizontal">
+                                <ui:SymbolIcon Symbol="Add24" FontSize="14" Foreground="White" VerticalAlignment="Center" Margin="0,0,8,0"/>
+                                <TextBlock Text="Thêm tồn kho" FontSize="14" FontWeight="SemiBold" Foreground="White"/>
+                            </StackPanel>
+                        </Border>
+                        <ControlTemplate.Triggers>
+                            <Trigger Property="IsMouseOver" Value="True">
+                                <Setter TargetName="border" Property="Background" Value="#27AE60"/>
+                            </Trigger>
+                        </ControlTemplate.Triggers>
+                    </ControlTemplate>
+                </Button.Template>
+            </Button>
+
+            <!-- Nút Xuất kho (Phiếu Xuất) -->
+            <Button Grid.Column="5" Command="{Binding GoToPhieuXuatCommand}" Cursor="Hand" VerticalAlignment="Center">
+                <Button.Template>
+                    <ControlTemplate TargetType="Button">
+                        <Border x:Name="border" Background="#E74C3C" BorderBrush="#C0392B" BorderThickness="1" CornerRadius="10" Padding="16,12">
+                            <StackPanel Orientation="Horizontal">
+                                <ui:SymbolIcon Symbol="ArrowUpload24" FontSize="14" Foreground="White" VerticalAlignment="Center" Margin="0,0,8,0"/>
+                                <TextBlock Text="Xuất kho" FontSize="14" FontWeight="SemiBold" Foreground="White"/>
+                            </StackPanel>
+                        </Border>
+                        <ControlTemplate.Triggers>
+                            <Trigger Property="IsMouseOver" Value="True">
+                                <Setter TargetName="border" Property="Background" Value="#C0392B"/>
+                            </Trigger>
+                        </ControlTemplate.Triggers>
+                    </ControlTemplate>
+                </Button.Template>
+            </Button>
+
             <!-- Nút Hệ Số Quy Đổi -->
-            <Button Grid.Column="3" Command="{Binding OpenQuyDoiPopupCommand}" Cursor="Hand" VerticalAlignment="Center">
+            <Button Grid.Column="7" Command="{Binding OpenQuyDoiPopupCommand}" Cursor="Hand" VerticalAlignment="Center">
                 <Button.Template>
                     <ControlTemplate TargetType="Button">
                         <Border x:Name="border" Background="White" BorderBrush="{StaticResource Gray200}" BorderThickness="1" CornerRadius="10" Padding="16,12">
@@ -209,7 +251,7 @@
             </Button>
 
             <!-- Thống kê Tổng -->
-            <Border Grid.Column="5" Background="White" BorderBrush="{StaticResource Gray200}" BorderThickness="1" CornerRadius="16" Padding="16,12">
+            <Border Grid.Column="9" Background="White" BorderBrush="{StaticResource Gray200}" BorderThickness="1" CornerRadius="16" Padding="16,12">
                 <Border.Effect>
                     <DropShadowEffect BlurRadius="8" ShadowDepth="2" Direction="270" Color="#000000" Opacity="0.03"/>
                 </Border.Effect>
@@ -283,7 +325,7 @@
                                  Foreground="{StaticResource Gray800}"
                                  Text="{Binding SearchText, UpdateSourceTrigger=PropertyChanged}"/>
                         <TextBlock Grid.Column="1" 
-                                   Text="Tìm kiếm nguyên liệu..."
+                                   Text="Tìm kiếm tên hoặc mã nguyên liệu..."
                                    Foreground="{StaticResource Gray400}"
                                    FontSize="14"
                                    VerticalAlignment="Center"
@@ -841,13 +883,15 @@
                                                 Padding="16,12">
                                             <Grid>
                                                 <Grid.ColumnDefinitions>
+                                                    <ColumnDefinition Width="150"/>
                                                     <ColumnDefinition Width="*"/>
-                                                    <ColumnDefinition Width="*"/>
-                                                    <ColumnDefinition Width="*"/>
+                                                    <ColumnDefinition Width="100"/>
+                                                    <ColumnDefinition Width="50"/>
                                                 </Grid.ColumnDefinitions>
                                                 <TextBlock Grid.Column="0" Text="Đơn Vị" FontWeight="SemiBold" Foreground="{StaticResource Gray500}" FontSize="13" HorizontalAlignment="Center"/>
                                                 <TextBlock Grid.Column="1" Text="Hệ Số" FontWeight="SemiBold" Foreground="{StaticResource Gray500}" FontSize="13" HorizontalAlignment="Center"/>
                                                 <TextBlock Grid.Column="2" Text="Mặc Định" FontWeight="SemiBold" Foreground="{StaticResource Gray500}" FontSize="13" HorizontalAlignment="Center"/>
+                                                <TextBlock Grid.Column="3"/>
                                             </Grid>
                                         </Border>
 
@@ -859,9 +903,10 @@
                                                         <Border BorderBrush="{StaticResource Gray200}" BorderThickness="0,0,0,1" Padding="14,10">
                                                             <Grid>
                                                                 <Grid.ColumnDefinitions>
+                                                                    <ColumnDefinition Width="150"/>
                                                                     <ColumnDefinition Width="*"/>
-                                                                    <ColumnDefinition Width="*"/>
-                                                                    <ColumnDefinition Width="*"/>
+                                                                    <ColumnDefinition Width="100"/>
+                                                                    <ColumnDefinition Width="50"/>
                                                                 </Grid.ColumnDefinitions>
                                                                 <TextBlock Grid.Column="0" 
                                                                            Text="{Binding TenDonVi}" 
@@ -890,7 +935,20 @@
                                                                 
                                                                 <CheckBox Grid.Column="2" 
                                                                           IsChecked="{Binding LaDonViChuan}"
-                                                                          HorizontalAlignment="Center"/>
+                                                                          HorizontalAlignment="Center"
+                                                                          VerticalAlignment="Center"/>
+
+                                                                <!-- Delete button -->
+                                                                <Button Grid.Column="3" 
+                                                                        Command="{Binding DeleteCommand}"
+                                                                        CommandParameter="{Binding}"
+                                                                        Style="{StaticResource IconButton}" 
+                                                                        Visibility="{Binding LaDonViChuan, Converter={StaticResource InverseBoolToVisibilityConverter}}"
+                                                                        ToolTip="Xóa quy đổi"
+                                                                        HorizontalAlignment="Center"
+                                                                        VerticalAlignment="Center">
+                                                                    <ui:SymbolIcon Symbol="Delete24" Foreground="{StaticResource DangerRed}"/>
+                                                                </Button>
                                                             </Grid>
                                                         </Border>
                                                     </DataTemplate>

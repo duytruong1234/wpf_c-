@@ -1,4 +1,4 @@
-﻿using System.Text;
+using System.Text;
 using System.Globalization;
 using System.Linq;
 using Microsoft.Data.SqlClient;
@@ -1299,6 +1299,9 @@ public class DatabaseService : IDatabaseService
     #endregion
 
     #region Thống kê cho Dashboard
+    public async Task<int> GetTotalNguyenLieuCountAsync() =>
+        await ExecuteScalarValueAsync("SELECT COUNT(*) FROM NguyenLieu WHERE TrangThai = 1", 0);
+
     public async Task<int> GetTotalTonKhoCountAsync() =>
         await ExecuteScalarValueAsync("SELECT COUNT(*) FROM TonKho WHERE SoLuongTon > 0", 0);
 
@@ -1419,6 +1422,27 @@ public class DatabaseService : IDatabaseService
                 result.Add((reader.GetString(0), reader.GetDecimal(1), reader.GetString(2)));
         }
         catch (Exception ex) { System.Diagnostics.Debug.WriteLine($"Error GetNormalStockItems: {ex.Message}"); }
+        return result;
+    }
+    public async Task<List<(string TenNguyenLieu, decimal SoLuongTon, string DonVi)>> GetOutOfStockItemsAsync()
+    {
+        var result = new List<(string, decimal, string)>();
+        try
+        {
+            using var conn = GetConnection();
+            await conn.OpenAsync();
+            var sql = @"SELECT nl.TenNguyenLieu, ISNULL(tk.SoLuongTon, 0), ISNULL(dv.TenDonVi, '')
+                        FROM NguyenLieu nl
+                        LEFT JOIN TonKho tk ON nl.NguyenLieuID = tk.NguyenLieuID
+                        LEFT JOIN DonViTinh dv ON nl.DonViID = dv.DonViID
+                        WHERE (tk.TonKhoID IS NULL OR tk.SoLuongTon <= 0) AND nl.TrangThai = 1
+                        ORDER BY nl.TenNguyenLieu ASC";
+            using var cmd = new SqlCommand(sql, conn);
+            using var reader = await cmd.ExecuteReaderAsync();
+            while (await reader.ReadAsync())
+                result.Add((reader.GetString(0), reader.GetDecimal(1), reader.GetString(2)));
+        }
+        catch (Exception ex) { System.Diagnostics.Debug.WriteLine($"Error GetOutOfStockItems: {ex.Message}"); }
         return result;
     }
     #endregion
@@ -1992,17 +2016,20 @@ public class DatabaseService : IDatabaseService
         }
     }
 
-    public async Task<bool> CancelPhieuNhapAsync(int phieuNhapId)
+    public async Task<bool> CancelPhieuNhapAsync(int phieuNhapId, int nguoiHuyId)
     {
         try
         {
             using var conn = GetConnection();
             await conn.OpenAsync();
             
-            var sql = @"UPDATE PhieuNhap SET TrangThai = 3 WHERE PhieuNhapID = @PhieuNhapID AND TrangThai = 1";
+            var sql = @"UPDATE PhieuNhap 
+                        SET TrangThai = 3, NhanVienDuyetID = @NguoiHuyId, NgayDuyet = GETDATE()
+                        WHERE PhieuNhapID = @PhieuNhapID AND TrangThai = 1";
             
             using var cmd = new SqlCommand(sql, conn);
             cmd.Parameters.AddWithValue("@PhieuNhapID", phieuNhapId);
+            cmd.Parameters.AddWithValue("@NguoiHuyId", nguoiHuyId);
             
             var rows = await cmd.ExecuteNonQueryAsync();
             return rows > 0;
@@ -5414,7 +5441,19 @@ public class DatabaseService : IDatabaseService
         {
             using var conn = GetConnection();
             await conn.OpenAsync();
-            var sql = "SELECT ISNULL(SUM(TongTien), 0) FROM PhieuBanHang WHERE NgayBan >= @FromDate AND NgayBan <= @ToDate";
+            
+            // Tính doanh thu từ cả bảng DonHang (trạng thái Hoàn thành = 2) và PhieuBanHang
+            var sql = @"
+                SELECT ISNULL(SUM(DoanhThu), 0) FROM (
+                    SELECT ThanhToan AS DoanhThu 
+                    FROM DonHang 
+                    WHERE NgayTao >= @FromDate AND NgayTao < @ToDate AND TrangThai = 2
+                    UNION ALL
+                    SELECT TongTien AS DoanhThu 
+                    FROM PhieuBanHang 
+                    WHERE NgayBan >= @FromDate AND NgayBan < @ToDate
+                ) AS CombinedRevenue";
+            
             using var cmd = new SqlCommand(sql, conn);
             cmd.Parameters.AddWithValue("@FromDate", fromDate.Date);
             cmd.Parameters.AddWithValue("@ToDate", toDate.Date.AddDays(1));
@@ -5434,7 +5473,19 @@ public class DatabaseService : IDatabaseService
         {
             using var conn = GetConnection();
             await conn.OpenAsync();
-            var sql = "SELECT COUNT(*) FROM PhieuBanHang WHERE NgayBan >= @FromDate AND NgayBan <= @ToDate";
+            
+            // Đếm tổng số đơn từ cả bảng DonHang (trạng thái Hoàn thành = 2) và PhieuBanHang
+            var sql = @"
+                SELECT COUNT(*) FROM (
+                    SELECT DonHangID 
+                    FROM DonHang 
+                    WHERE NgayTao >= @FromDate AND NgayTao < @ToDate AND TrangThai = 2
+                    UNION ALL
+                    SELECT ROW_NUMBER() OVER (ORDER BY NgayBan) 
+                    FROM PhieuBanHang 
+                    WHERE NgayBan >= @FromDate AND NgayBan < @ToDate
+                ) AS CombinedOrders";
+            
             using var cmd = new SqlCommand(sql, conn);
             cmd.Parameters.AddWithValue("@FromDate", fromDate.Date);
             cmd.Parameters.AddWithValue("@ToDate", toDate.Date.AddDays(1));

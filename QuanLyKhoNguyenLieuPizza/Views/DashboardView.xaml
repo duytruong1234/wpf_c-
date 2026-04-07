@@ -1,4 +1,4 @@
-﻿<?xml version="1.0" encoding="utf-8"?>
+<?xml version="1.0" encoding="utf-8"?>
 <UserControl x:Class="QuanLyKhoNguyenLieuPizza.Views.DashboardView"
              xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
              xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
@@ -139,7 +139,7 @@
                                     <ui:SymbolIcon Symbol="Archive24" FontSize="14" Foreground="{StaticResource PrimaryBlue}" HorizontalAlignment="Center" VerticalAlignment="Center"/>
                                 </Border>
                             </Grid>
-                            <TextBlock Text="{Binding SoLuongTonKho}" FontSize="32" FontWeight="Bold" Foreground="{StaticResource Gray900}"/>
+                            <TextBlock Text="{Binding TongSoNguyenLieu}" FontSize="32" FontWeight="Bold" Foreground="{StaticResource Gray900}"/>
                             <Border Background="{StaticResource SuccessGreenLight}" CornerRadius="6" Padding="8,3" HorizontalAlignment="Left" Margin="0,6,0,0">
                                 <TextBlock Text="Đang tồn kho" FontSize="11" FontWeight="Medium" Foreground="{StaticResource SuccessGreen}"/>
                             </Border>
@@ -304,7 +304,7 @@
                     <Border Grid.Column="0" Background="#EEF2FF" BorderBrush="#C7D2FE" BorderThickness="1.5" MinHeight="110" Style="{StaticResource HoverCardStyle}" Padding="20">
                         <StackPanel>
                             <Grid Margin="0,0,0,12">
-                                <TextBlock Text="Doanh thu hôm nay" FontSize="12" Foreground="{StaticResource Gray500}"/>
+                                <TextBlock Text="Tổng doanh thu" FontSize="12" Foreground="{StaticResource Gray500}"/>
                                 <Border CornerRadius="8" Width="32" Height="32" HorizontalAlignment="Right">
                                     <Border.Background>
                                         <LinearGradientBrush StartPoint="0,0" EndPoint="1,1">
@@ -329,7 +329,7 @@
                     <Border Grid.Column="2" Background="#ECFDF5" BorderBrush="#A7F3D0" BorderThickness="1.5" MinHeight="110" Style="{StaticResource HoverCardStyle}" Padding="20">
                         <StackPanel>
                             <Grid Margin="0,0,0,12">
-                                <TextBlock Text="Doanh thu tháng" FontSize="12" Foreground="{StaticResource Gray500}"/>
+                                <TextBlock Text="Doanh thu bán hàng" FontSize="12" Foreground="{StaticResource Gray500}"/>
                                 <Border Background="{StaticResource SuccessGreenLight}" CornerRadius="8" Width="32" Height="32" HorizontalAlignment="Right">
                                     <ui:SymbolIcon Symbol="DataTrending24" FontSize="14" Foreground="{StaticResource SuccessGreen}" HorizontalAlignment="Center" VerticalAlignment="Center"/>
                                 </Border>
@@ -364,7 +364,7 @@
                     <Border Grid.Column="6" Background="#ECFDF5" BorderBrush="#A7F3D0" BorderThickness="1.5" MinHeight="110" Style="{StaticResource HoverCardStyle}" Padding="20">
                         <StackPanel>
                             <Grid Margin="0,0,0,12">
-                                <TextBlock Text="Lợi nhuận tháng" FontSize="12" Foreground="{StaticResource Gray500}"/>
+                                <TextBlock Text="Lợi nhuận ước tính" FontSize="12" Foreground="{StaticResource Gray500}"/>
                                 <Border CornerRadius="8" Width="32" Height="32" HorizontalAlignment="Right">
                                     <Border.Background>
                                         <LinearGradientBrush StartPoint="0,0" EndPoint="1,1">
@@ -416,7 +416,7 @@
                                 </Border>
                                 <StackPanel VerticalAlignment="Center">
                                     <TextBlock Text="Top Pizza bán chạy" FontSize="16" FontWeight="SemiBold" Foreground="{StaticResource Gray900}"/>
-                                    <TextBlock Text="Trong tháng này" FontSize="11" Foreground="{StaticResource Gray400}" Margin="0,2,0,0"/>
+                                    <TextBlock Text="Tất cả thời gian" FontSize="11" Foreground="{StaticResource Gray400}" Margin="0,2,0,0"/>
                                 </StackPanel>
                             </StackPanel>
 
@@ -564,5 +564,104 @@
                 <TextBlock Text="Đang tải dữ liệu..." FontSize="14" FontWeight="Medium" Foreground="{StaticResource Gray500}"/>
             </StackPanel>
         </Border>
+        <!-- Popup chi tiết Trạng thái Nguyên Liệu -->
+        <Border Background="#40000000" Visibility="{Binding IsStatusPopupOpen, Converter={StaticResource BoolToVisibilityConverter}}" Panel.ZIndex="100">
+            <Border Background="White" CornerRadius="16" Width="550" MaxHeight="600" VerticalAlignment="Center" HorizontalAlignment="Center">
+                <Border.Effect>
+                    <DropShadowEffect BlurRadius="32" ShadowDepth="4" Opacity="0.1" Color="Black"/>
+                </Border.Effect>
+                
+                <Grid>
+                    <Grid.RowDefinitions>
+                        <RowDefinition Height="Auto"/>
+                        <RowDefinition Height="1"/>
+                        <RowDefinition Height="*"/>
+                    </Grid.RowDefinitions>
+                    
+                    <!-- Header -->
+                    <Grid Grid.Row="0" Margin="24,20,24,20">
+                        <StackPanel Orientation="Horizontal">
+                            <Border Width="12" Height="12" CornerRadius="6" VerticalAlignment="Center" Margin="0,0,12,0" Background="{Binding StatusPopupColor}"/>
+                            <TextBlock Text="{Binding StatusPopupTitle}" FontSize="18" FontWeight="SemiBold" Foreground="{StaticResource Gray900}" VerticalAlignment="Center"/>
+                        </StackPanel>
+                        
+                        <Button HorizontalAlignment="Right" VerticalAlignment="Center" 
+                                Command="{Binding CloseStatusPopupCommand}" Background="Transparent" BorderThickness="0" Cursor="Hand" Padding="4">
+                             <ui:SymbolIcon Symbol="Dismiss24" FontSize="18" Foreground="{StaticResource Gray500}"/>
+                        </Button>
+                    </Grid>
+                    
+                    <!-- Divider -->
+                    <Border Grid.Row="1" Background="{StaticResource Gray200}"/>
+                    
+                    <!-- Content (List) -->
+                    <Grid Grid.Row="2" Margin="24,20,24,24">
+                        <Grid.RowDefinitions>
+                            <RowDefinition Height="Auto"/>
+                            <RowDefinition Height="*"/>
+                        </Grid.RowDefinitions>
+                        
+                        <!-- Header Bảng -->
+                        <Grid Grid.Row="0" Margin="12,0,24,12">
+                            <Grid.ColumnDefinitions>
+                                <ColumnDefinition Width="2*"/>
+                                <ColumnDefinition Width="*"/>
+                                <ColumnDefinition Width="*"/>
+                            </Grid.ColumnDefinitions>
+                            <TextBlock Grid.Column="0" Text="Tên nguyên liệu" FontSize="12" FontWeight="SemiBold" Foreground="{StaticResource Gray500}"/>
+                            <TextBlock Grid.Column="1" Text="Số lượng tồn" FontSize="12" FontWeight="SemiBold" Foreground="{StaticResource Gray500}" TextAlignment="Right"/>
+                            <TextBlock Grid.Column="2" Text="Hạn sử dụng" FontSize="12" FontWeight="SemiBold" Foreground="{StaticResource Gray500}" TextAlignment="Right"/>
+                        </Grid>
+                        
+                        <ScrollViewer Grid.Row="1" VerticalScrollBarVisibility="Auto" MaxHeight="380">
+                            <ItemsControl ItemsSource="{Binding StatusDetailItems}">
+                                <ItemsControl.ItemTemplate>
+                                    <DataTemplate>
+                                        <Border BorderBrush="{StaticResource Gray100}" BorderThickness="0,0,0,1" Padding="12,12">
+                                            <Grid>
+                                                <Grid.ColumnDefinitions>
+                                                    <ColumnDefinition Width="2*"/>
+                                                    <ColumnDefinition Width="*"/>
+                                                    <ColumnDefinition Width="*"/>
+                                                </Grid.ColumnDefinitions>
+                                                
+                                                <TextBlock Grid.Column="0" Text="{Binding TenNguyenLieu}" FontSize="13" FontWeight="Medium" Foreground="{StaticResource Gray800}" VerticalAlignment="Center" TextTrimming="CharacterEllipsis"/>
+                                                
+                                                <StackPanel Grid.Column="1" Orientation="Horizontal" HorizontalAlignment="Right" VerticalAlignment="Center">
+                                                    <TextBlock Text="{Binding SoLuongTon, StringFormat={}{0:G29}}" FontSize="13" Foreground="{StaticResource Gray800}" FontWeight="SemiBold" Margin="0,0,4,0"/>
+                                                    <TextBlock Text="{Binding DonVi}" FontSize="12" Foreground="{StaticResource Gray500}" VerticalAlignment="Bottom" Margin="0,0,0,1"/>
+                                                </StackPanel>
+                                                
+                                                <TextBlock Grid.Column="2" Text="{Binding HanSuDungText}" FontSize="12" Foreground="{StaticResource Gray500}" TextAlignment="Right" VerticalAlignment="Center"/>
+                                            </Grid>
+                                        </Border>
+                                    </DataTemplate>
+                                </ItemsControl.ItemTemplate>
+                                <!-- Nếu không có dữ liệu -->
+                                <ItemsControl.Style>
+                                    <Style TargetType="ItemsControl">
+                                        <Style.Triggers>
+                                            <DataTrigger Binding="{Binding StatusDetailItems.Count}" Value="0">
+                                                <Setter Property="Template">
+                                                    <Setter.Value>
+                                                        <ControlTemplate>
+                                                            <TextBlock Text="Không có nguyên liệu nào ở trạng thái này." 
+                                                                       Foreground="{StaticResource Gray500}" FontStyle="Italic" 
+                                                                       HorizontalAlignment="Center" Margin="0,40,0,40"/>
+                                                        </ControlTemplate>
+                                                    </Setter.Value>
+                                                </Setter>
+                                            </DataTrigger>
+                                        </Style.Triggers>
+                                    </Style>
+                                </ItemsControl.Style>
+                            </ItemsControl>
+                        </ScrollViewer>
+                    </Grid>
+                </Grid>
+            </Border>
+        </Border>
+
     </Grid>
 </UserControl>
+

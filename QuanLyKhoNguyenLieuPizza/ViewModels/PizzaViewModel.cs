@@ -1,4 +1,4 @@
-﻿using System.Collections.ObjectModel;
+using System.Collections.ObjectModel;
 using System.Windows.Input;
 using QuanLyKhoNguyenLieuPizza.Core.Interfaces;
 using QuanLyKhoNguyenLieuPizza.Models;
@@ -566,22 +566,32 @@ public class PizzaViewModel : BaseViewModel
 
     private async Task TogglePizzaStatusAsync(PizzaItemViewModel item)
     {
+        if (string.IsNullOrEmpty(item.MaPizza))
+            return;
+            
+        // Mở dialog xác nhận thay vì toggle trực tiếp
         StatusPizza = item;
         IsStatusDialogOpen = true;
     }
 
     private async Task ConfirmTogglePizzaStatusAsync()
     {
-        if (StatusPizza == null || string.IsNullOrEmpty(StatusPizza.MaPizza))
-            return;
+        if (StatusPizza == null || string.IsNullOrEmpty(StatusPizza.MaPizza)) return;
 
-        var newStatus = !StatusPizza.TrangThai;
-        var success = await _databaseService.TogglePizzaTrangThaiAsync(StatusPizza.MaPizza, newStatus);
-
-        if (success)
+        try
         {
-            IsStatusDialogOpen = false;
-            await LoadDataAsync();
+            var newStatus = !StatusPizza.TrangThai;
+            var success = await _databaseService.TogglePizzaTrangThaiAsync(StatusPizza.MaPizza, newStatus);
+            
+            if (success)
+            {
+                IsStatusDialogOpen = false;
+                await LoadDataAsync();
+            }
+        }
+        catch (Exception ex)
+        {
+            System.Diagnostics.Debug.WriteLine($"Error toggling pizza status: {ex.Message}");
         }
     }
 
@@ -591,7 +601,7 @@ public class PizzaViewModel : BaseViewModel
         {
             var openFileDialog = new Microsoft.Win32.OpenFileDialog
             {
-                Title = "Chọn hình ảnh pizza",
+                Title = "Chọn hình ảnh món ăn",
                 Filter = "Tệp hình ảnh (*.jpg, *.jpeg, *.png, *.gif, *.bmp, *.webp)|*.jpg;*.jpeg;*.png;*.gif;*.bmp;*.webp|Tất cả tệp (*.*)|*.*",
                 FilterIndex = 1,
                 RestoreDirectory = true

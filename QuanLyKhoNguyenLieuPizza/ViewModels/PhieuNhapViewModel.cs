@@ -1,4 +1,4 @@
-﻿using System.Collections.ObjectModel;
+using System.Collections.ObjectModel;
 using System.ComponentModel;
 using System.Windows.Input;
 using QuanLyKhoNguyenLieuPizza.Models;
@@ -73,6 +73,13 @@ public class PhieuNhapViewModel : BaseViewModel
     {
         get => _nhaCungCaps;
         set => SetProperty(ref _nhaCungCaps, value);
+    }
+
+    private ObservableCollection<NhaCungCap> _nhaCungCapsForm = new();
+    public ObservableCollection<NhaCungCap> NhaCungCapsForm
+    {
+        get => _nhaCungCapsForm;
+        set => SetProperty(ref _nhaCungCapsForm, value);
     }
 
     private ObservableCollection<NhanVien> _nhanViens = new();
@@ -539,6 +546,8 @@ public class PhieuNhapViewModel : BaseViewModel
         try
         {
             var nhaCungCaps = await _databaseService.GetNhaCungCapsAsync();
+            NhaCungCapsForm = new ObservableCollection<NhaCungCap>(nhaCungCaps);
+
             var allNhaCungCaps = new List<NhaCungCap>
             {
                 new NhaCungCap { NhaCungCapID = 0, TenNCC = "Tất cả" }
@@ -666,8 +675,8 @@ public class PhieuNhapViewModel : BaseViewModel
         ChiTietForm = new ObservableCollection<CT_PhieuNhap>();
         TongTienForm = 0;
         NguyenLieusOfNCC = new ObservableCollection<NguyenLieu>();
-        // Auto-select "Tất cả" to show all materials by default
-        SelectedNhaCungCapForm = NhaCungCaps.FirstOrDefault(n => n.NhaCungCapID == 0);
+        // Auto-select first real supplier so the screen isn't empty
+        SelectedNhaCungCapForm = NhaCungCapsForm.FirstOrDefault();
         IsDialogOpen = true;
     }
 
@@ -876,7 +885,13 @@ public class PhieuNhapViewModel : BaseViewModel
 
         try
         {
-            var result = await _databaseService.CancelPhieuNhapAsync(SelectedPhieuNhap.PhieuNhapID);
+            var currentUser = CurrentUserSession.Instance.CurrentUser;
+            if (currentUser?.NhanVienID == null) return;
+
+            var result = await _databaseService.CancelPhieuNhapAsync(
+                SelectedPhieuNhap.PhieuNhapID,
+                currentUser.NhanVienID.Value);
+                
             if (result)
             {
                 await LoadPhieuNhapsAsync();

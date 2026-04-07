@@ -1,4 +1,4 @@
-﻿<?xml version="1.0" encoding="utf-8"?>
+<?xml version="1.0" encoding="utf-8"?>
 <UserControl x:Class="QuanLyKhoNguyenLieuPizza.Views.DonHangView"
              xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
              xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
@@ -64,33 +64,63 @@
                         <ui:SymbolIcon Symbol="Cart24" FontSize="20" Foreground="White" HorizontalAlignment="Center" VerticalAlignment="Center"/>
                     </Border>
                     <StackPanel VerticalAlignment="Center">
-                        <TextBlock Text="Quản lý don hàng" FontSize="24" FontWeight="Bold" Foreground="{StaticResource Gray900}"/>
+                        <TextBlock Text="Quản lý đơn hàng" FontSize="24" FontWeight="Bold" Foreground="{StaticResource Gray900}"/>
                 <TextBlock Text="Theo dõi lịch sử đơn hàng và xử lý đơn sai sót" FontSize="13" 
                                    Foreground="{StaticResource Gray400}" Margin="0,4,0,0"/>
                     </StackPanel>
                 </StackPanel>
 
-                <Button Grid.Column="1" Command="{Binding RefreshCommand}" Cursor="Hand" VerticalAlignment="Center">
-                    <Button.Template>
-                        <ControlTemplate TargetType="Button">
-                            <Border x:Name="border" Background="White" BorderBrush="{StaticResource Gray200}" 
-                                    BorderThickness="1" CornerRadius="12" Width="44" Height="44">
-                                <Border.Effect>
-                                    <DropShadowEffect BlurRadius="8" ShadowDepth="1" Direction="270" Color="#000000" Opacity="0.04"/>
-                                </Border.Effect>
-                                <ui:SymbolIcon Symbol="ArrowSync24" FontSize="18" 
-                                           Foreground="{StaticResource Gray600}" 
-                                           HorizontalAlignment="Center" VerticalAlignment="Center"/>
-                            </Border>
-                            <ControlTemplate.Triggers>
-                                <Trigger Property="IsMouseOver" Value="True">
-                                    <Setter TargetName="border" Property="Background" Value="{StaticResource LightBlue}"/>
-                                    <Setter TargetName="border" Property="BorderBrush" Value="{StaticResource PrimaryBlue}"/>
-                                </Trigger>
-                            </ControlTemplate.Triggers>
-                        </ControlTemplate>
-                    </Button.Template>
-                </Button>
+                <StackPanel Grid.Column="1" Orientation="Horizontal" VerticalAlignment="Center">
+                    <!-- Nút Thêm đơn hàng mới -->
+                    <Button Command="{Binding NavigateToBanHangCommand}" Cursor="Hand" Margin="0,0,12,0">
+                        <Button.Template>
+                            <ControlTemplate TargetType="Button">
+                                <Border x:Name="addBorder" CornerRadius="12" Padding="18,10">
+                                    <Border.Background>
+                                        <LinearGradientBrush StartPoint="0,0" EndPoint="1,1">
+                                            <GradientStop Color="#5B6AFF" Offset="0"/>
+                                            <GradientStop Color="#818CF8" Offset="1"/>
+                                        </LinearGradientBrush>
+                                    </Border.Background>
+                                    <Border.Effect>
+                                        <DropShadowEffect BlurRadius="16" ShadowDepth="3" Direction="270" Color="#5B6AFF" Opacity="0.25"/>
+                                    </Border.Effect>
+                                    <StackPanel Orientation="Horizontal">
+                                        <ui:SymbolIcon Symbol="Add24" FontSize="16" Foreground="White" Margin="0,0,8,0" VerticalAlignment="Center"/>
+                                        <TextBlock Text="Thêm đơn hàng" FontSize="13" FontWeight="SemiBold" Foreground="White" VerticalAlignment="Center"/>
+                                    </StackPanel>
+                                </Border>
+                                <ControlTemplate.Triggers>
+                                    <Trigger Property="IsMouseOver" Value="True">
+                                        <Setter TargetName="addBorder" Property="Opacity" Value="0.9"/>
+                                    </Trigger>
+                                </ControlTemplate.Triggers>
+                            </ControlTemplate>
+                        </Button.Template>
+                    </Button>
+                    <!-- Nút Làm mới -->
+                    <Button Command="{Binding RefreshCommand}" Cursor="Hand">
+                        <Button.Template>
+                            <ControlTemplate TargetType="Button">
+                                <Border x:Name="border" Background="White" BorderBrush="{StaticResource Gray200}" 
+                                        BorderThickness="1" CornerRadius="12" Width="44" Height="44">
+                                    <Border.Effect>
+                                        <DropShadowEffect BlurRadius="8" ShadowDepth="1" Direction="270" Color="#000000" Opacity="0.04"/>
+                                    </Border.Effect>
+                                    <ui:SymbolIcon Symbol="ArrowSync24" FontSize="18" 
+                                               Foreground="{StaticResource Gray600}" 
+                                               HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                                </Border>
+                                <ControlTemplate.Triggers>
+                                    <Trigger Property="IsMouseOver" Value="True">
+                                        <Setter TargetName="border" Property="Background" Value="{StaticResource LightBlue}"/>
+                                        <Setter TargetName="border" Property="BorderBrush" Value="{StaticResource PrimaryBlue}"/>
+                                    </Trigger>
+                                </ControlTemplate.Triggers>
+                            </ControlTemplate>
+                        </Button.Template>
+                    </Button>
+                </StackPanel>
             </Grid>
 
             <!-- THẺ THỐNG KÊ -->
@@ -583,7 +613,7 @@
                                                 <ColumnDefinition Width="*"/>
                                                 <ColumnDefinition Width="*"/>
                                             </Grid.ColumnDefinitions>
-                                            <TextBlock Grid.Column="0" Text="PIZZA" FontSize="10" FontWeight="Bold" Foreground="{StaticResource Gray400}"/>
+                                            <TextBlock Grid.Column="0" Text="MÓN ĂN" FontSize="10" FontWeight="Bold" Foreground="{StaticResource Gray400}"/>
                                             <TextBlock Grid.Column="1" Text="SL" FontSize="10" FontWeight="Bold" Foreground="{StaticResource Gray400}" TextAlignment="Center"/>
                                             <TextBlock Grid.Column="2" Text="ĐƠN GIÁ" FontSize="10" FontWeight="Bold" Foreground="{StaticResource Gray400}" TextAlignment="Right"/>
                                             <TextBlock Grid.Column="3" Text="THÀNH TIỀN" FontSize="10" FontWeight="Bold" Foreground="{StaticResource Gray400}" TextAlignment="Right"/>

@@ -1,4 +1,4 @@
-﻿using System.Collections.ObjectModel;
+using System.Collections.ObjectModel;
 using System.Windows.Input;
 using QuanLyKhoNguyenLieuPizza.Core.Interfaces;
 using QuanLyKhoNguyenLieuPizza.Models;
@@ -39,10 +39,12 @@ public class DashboardViewModel : BaseViewModel
     private bool _isLoading;
 
     // Thống kê kho hàng
+    private int _tongSoNguyenLieu;
     private int _soLuongTonKho;
     private int _soLuongTonKhoThap;
     private int _soLuongSapHetHan;
     private int _soLuongHetHan;
+    private int _soLuongHetHang;
     private int _soLuongNhap;
     private int _soLuongXuat;
     private int _tonKho;
@@ -101,6 +103,12 @@ public class DashboardViewModel : BaseViewModel
         set => SetProperty(ref _isLoading, value);
     }
 
+    public int TongSoNguyenLieu
+    {
+        get => _tongSoNguyenLieu;
+        set => SetProperty(ref _tongSoNguyenLieu, value);
+    }
+
     public int SoLuongTonKho
     {
         get => _soLuongTonKho;
@@ -123,6 +131,12 @@ public class DashboardViewModel : BaseViewModel
     {
         get => _soLuongHetHan;
         set => SetProperty(ref _soLuongHetHan, value);
+    }
+
+    public int SoLuongHetHang
+    {
+        get => _soLuongHetHang;
+        set => SetProperty(ref _soLuongHetHang, value);
     }
 
     public int SoLuongNhap
@@ -200,7 +214,7 @@ public class DashboardViewModel : BaseViewModel
     }
 
     // Tổng nguyên liệu cho tính toán biểu đồ (mặc định là 10 nếu bằng 0)
-    public int TotalNguyenLieu => Math.Max(SoLuongTonKho, 10);
+    public int TotalNguyenLieu => Math.Max(TongSoNguyenLieu, 10);
 
     public ObservableCollection<NguyenLieu> NguyenLieus { get; } = [];
     public ObservableCollection<TopPizzaItem> TopPizzas { get; } = [];
@@ -290,19 +304,26 @@ public class DashboardViewModel : BaseViewModel
         {
             var today = DateTime.Today;
             var firstDayOfMonth = new DateTime(today.Year, today.Month, 1);
+            // Lấy dữ liệu từ tất cả thời gian để hiện tổng doanh thu
+            var allTimeStart = new DateTime(2020, 1, 1);
 
             // Đợt 1: Chạy tất cả truy vấn độc lập song song
+            var tongNguyenLieuTask = _databaseService.GetTotalNguyenLieuCountAsync();
             var tonKhoTask = _databaseService.GetTotalTonKhoCountAsync();
             var lowStockTask = _databaseService.GetLowStockCountAsync(20);
             var nearExpiryTask = _databaseService.GetNearExpiryCountAsync(7);
             var expiredTask = _databaseService.GetExpiredCountAsync();
             var doanhThuTodayTask = _databaseService.GetDoanhThuBanHangAsync(today, today);
             var tongDonTodayTask = _databaseService.GetTotalPhieuBanCountAsync(today, today);
+            // Doanh thu tháng: thử tháng này trước 
             var doanhThuMonthTask = _databaseService.GetDoanhThuBanHangAsync(firstDayOfMonth, today);
             var tongDonMonthTask = _databaseService.GetTotalPhieuBanCountAsync(firstDayOfMonth, today);
-            var loiNhuanTask = _databaseService.GetTotalLoiNhuanAsync(firstDayOfMonth, today);
-            var chiPhiTask = _databaseService.GetChiPhiNguyenLieuAsync(firstDayOfMonth, today);
-            var topPizzasTask = _databaseService.GetTopPizzasAsync(firstDayOfMonth, today, 5);
+            // Tổng doanh thu tất cả thời gian (fallback nếu tháng này = 0)
+            var doanhThuAllTimeTask = _databaseService.GetDoanhThuBanHangAsync(allTimeStart, today);
+            var tongDonAllTimeTask = _databaseService.GetTotalPhieuBanCountAsync(allTimeStart, today);
+            var loiNhuanTask = _databaseService.GetTotalLoiNhuanAsync(allTimeStart, today);
+            var chiPhiTask = _databaseService.GetChiPhiNguyenLieuAsync(allTimeStart, today);
+            var topPizzasTask = _databaseService.GetTopPizzasAsync(allTimeStart, today, 5);
             var recentOrdersTask = _databaseService.GetRecentDonHangsAsync(8);
 
             // Doanh thu 7 ngày gần nhất
@@ -316,21 +337,34 @@ public class DashboardViewModel : BaseViewModel
             }
 
             await Task.WhenAll(
-                tonKhoTask, lowStockTask, nearExpiryTask, expiredTask,
+                tongNguyenLieuTask, tonKhoTask, lowStockTask, nearExpiryTask, expiredTask,
                 doanhThuTodayTask, tongDonTodayTask, doanhThuMonthTask, tongDonMonthTask,
+                doanhThuAllTimeTask, tongDonAllTimeTask,
                 loiNhuanTask, chiPhiTask, topPizzasTask, recentOrdersTask);
 
             await Task.WhenAll(dailyRevenueTasks);
 
             // Gán kết quả
+            TongSoNguyenLieu = tongNguyenLieuTask.Result;
             SoLuongTonKho = tonKhoTask.Result;
             SoLuongTonKhoThap = lowStockTask.Result;
             SoLuongSapHetHan = nearExpiryTask.Result;
             SoLuongHetHan = expiredTask.Result;
-            DoanhThuHomNay = doanhThuTodayTask.Result;
-            TongDonHomNay = tongDonTodayTask.Result;
-            DoanhThuThang = doanhThuMonthTask.Result;
-            TongDonThang = tongDonMonthTask.Result;
+            
+            // Tính số lượng hết hàng
+            SoLuongHetHang = Math.Max(0, TongSoNguyenLieu - SoLuongTonKho);
+            
+            // Nếu tháng này chưa có doanh thu, hiện tổng doanh thu tất cả thời gian
+            var monthRevenue = doanhThuMonthTask.Result;
+            var monthOrders = tongDonMonthTask.Result;
+            DoanhThuHomNay = doanhThuTodayTask.Result > 0 
+                ? doanhThuTodayTask.Result 
+                : doanhThuAllTimeTask.Result;
+            TongDonHomNay = tongDonTodayTask.Result > 0 
+                ? tongDonTodayTask.Result 
+                : tongDonAllTimeTask.Result;
+            DoanhThuThang = monthRevenue > 0 ? monthRevenue : doanhThuAllTimeTask.Result;
+            TongDonThang = monthOrders > 0 ? monthOrders : tongDonAllTimeTask.Result;
             LoiNhuanThang = loiNhuanTask.Result;
             ChiPhiNguyenLieuThang = chiPhiTask.Result;
 
@@ -412,6 +446,14 @@ public class DashboardViewModel : BaseViewModel
                 var expiredItems = await _databaseService.GetExpiredItemsAsync();
                 foreach (var item in expiredItems)
                     StatusDetailItems.Add(new StockDetailItem { TenNguyenLieu = item.TenNguyenLieu, SoLuongTon = item.SoLuongTon, DonVi = item.DonVi, HanSuDung = item.HanSuDung });
+                break;
+                
+            case "HetHang":
+                StatusPopupTitle = "Nguyên liệu đã hết hàng";
+                StatusPopupColor = "#64748B";
+                var outOfStockItems = await _databaseService.GetOutOfStockItemsAsync();
+                foreach (var item in outOfStockItems)
+                    StatusDetailItems.Add(new StockDetailItem { TenNguyenLieu = item.TenNguyenLieu, SoLuongTon = item.SoLuongTon, DonVi = item.DonVi });
                 break;
         }
 

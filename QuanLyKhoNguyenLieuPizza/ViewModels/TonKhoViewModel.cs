@@ -1,4 +1,4 @@
-﻿using System.Collections.ObjectModel;
+using System.Collections.ObjectModel;
 using System.Windows.Input;
 using QuanLyKhoNguyenLieuPizza.Models;
 using QuanLyKhoNguyenLieuPizza.Services;
@@ -738,25 +738,59 @@ public class TonKhoViewModel : BaseViewModel
 
     private async Task ExecuteDeleteQuyDoiAsync(object? parameter)
     {
-        if (parameter is QuyDoiDonViItemViewModel quyDoi && quyDoi.QuyDoiID > 0)
+        if (parameter is QuyDoiDonViItemViewModel quyDoi)
         {
             try
             {
-                var success = await _databaseService.DeleteQuyDoiDonViAsync(quyDoi.QuyDoiID);
-                
-                if (success)
+                var result = System.Windows.MessageBox.Show(
+                    $"Bạn có chắc chắn muốn xóa hệ số quy đổi: {quyDoi.TenDonVi}?",
+                    "Xác nhận xóa",
+                    System.Windows.MessageBoxButton.YesNo,
+                    System.Windows.MessageBoxImage.Question);
+
+                if (result != System.Windows.MessageBoxResult.Yes)
+                {
+                    return;
+                }
+
+                if (quyDoi.QuyDoiID > 0)
+                {
+                    var success = await _databaseService.DeleteQuyDoiDonViAsync(quyDoi.QuyDoiID);
+                    
+                    if (success)
+                    {
+                        System.Windows.Application.Current.Dispatcher.Invoke(() =>
+                        {
+                            QuyDoiDonVis.Remove(quyDoi);
+                        });
+                        
+                        System.Diagnostics.Debug.WriteLine($"Successfully deleted quy doi: {quyDoi.TenDonVi}");
+                    }
+                    else
+                    {
+                        System.Windows.MessageBox.Show(
+                            "Không thể xóa hệ số quy đổi này từ cơ sở dữ liệu. Vui lòng thử lại!",
+                            "Lỗi",
+                            System.Windows.MessageBoxButton.OK,
+                            System.Windows.MessageBoxImage.Error);
+                    }
+                }
+                else
                 {
                     System.Windows.Application.Current.Dispatcher.Invoke(() =>
                     {
                         QuyDoiDonVis.Remove(quyDoi);
                     });
-                    
-                    System.Diagnostics.Debug.WriteLine($"Successfully deleted quy doi: {quyDoi.TenDonVi}");
                 }
             }
             catch (Exception ex)
             {
                 System.Diagnostics.Debug.WriteLine($"Error deleting quy doi: {ex.Message}");
+                System.Windows.MessageBox.Show(
+                    $"Đã xảy ra lỗi khi xóa: {ex.Message}",
+                    "Lỗi",
+                    System.Windows.MessageBoxButton.OK,
+                    System.Windows.MessageBoxImage.Error);
             }
         }
     }

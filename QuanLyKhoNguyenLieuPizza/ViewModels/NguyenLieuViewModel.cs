@@ -1,4 +1,4 @@
-﻿using System.Collections.ObjectModel;
+using System.Collections.ObjectModel;
 using System.Windows.Input;
 using QuanLyKhoNguyenLieuPizza.Models;
 using QuanLyKhoNguyenLieuPizza.Services;
@@ -311,13 +311,16 @@ public class NguyenLieuViewModel : BaseViewModel
         try
         {
             var loaiList = await _databaseService.GetLoaiNguyenLieusAsync();
-            LoaiNguyenLieus = new ObservableCollection<LoaiNguyenLieu>(loaiList);
+            LoaiNguyenLieus.Clear();
+            foreach(var l in loaiList) LoaiNguyenLieus.Add(l);
             
             var nccList = await _databaseService.GetNhaCungCapsAsync();
-            NhaCungCaps = new ObservableCollection<NhaCungCap>(nccList);
+            NhaCungCaps.Clear();
+            foreach(var n in nccList) NhaCungCaps.Add(n);
             
             var dvList = await _databaseService.GetDonViTinhsAsync();
-            DonViTinhs = new ObservableCollection<DonViTinh>(dvList);
+            DonViTinhs.Clear();
+            foreach(var d in dvList) DonViTinhs.Add(d);
             
             var nguyenLieuList = await _databaseService.GetAllNguyenLieusWithDetailsAsync();
             _nguyenLieus.Clear();
@@ -444,9 +447,8 @@ public class NguyenLieuViewModel : BaseViewModel
     
     private async Task SaveAsync()
     {
-        // Validate tất cả trường bắt buộc
-        if (string.IsNullOrWhiteSpace(FormMaNguyenLieu) ||
-            string.IsNullOrWhiteSpace(FormTenNguyenLieu) ||
+        // Validate tất cả trường bắt buộc (trừ mã và hình ảnh)
+        if (string.IsNullOrWhiteSpace(FormTenNguyenLieu) ||
             FormLoaiNguyenLieu == null ||
             FormDonViTinh == null ||
             FormNhaCungCap == null ||
@@ -546,7 +548,21 @@ public class NguyenLieuViewModel : BaseViewModel
         try
         {
             var loaiList = await _databaseService.GetLoaiNguyenLieusAsync();
-            LoaiNguyenLieus = new ObservableCollection<LoaiNguyenLieu>(loaiList);
+            
+            // Backup selection
+            var oldSelectedId = FormLoaiNguyenLieu?.LoaiNLID;
+            
+            LoaiNguyenLieus.Clear();
+            foreach (var loai in loaiList)
+            {
+                LoaiNguyenLieus.Add(loai);
+            }
+            
+            // Restore selection
+            if (oldSelectedId.HasValue)
+            {
+                FormLoaiNguyenLieu = LoaiNguyenLieus.FirstOrDefault(l => l.LoaiNLID == oldSelectedId.Value);
+            }
         }
         catch (Exception ex)
         {

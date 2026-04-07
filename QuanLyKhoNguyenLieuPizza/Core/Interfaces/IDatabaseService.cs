@@ -1,4 +1,4 @@
-﻿using QuanLyKhoNguyenLieuPizza.Models;
+using QuanLyKhoNguyenLieuPizza.Models;
 
 namespace QuanLyKhoNguyenLieuPizza.Core.Interfaces;
 
@@ -42,6 +42,7 @@ public interface IDatabaseService
     Task<bool> DeleteQuyDoiDonViAsync(int quyDoiId);
     
     // Thống kê cho Dashboard
+    Task<int> GetTotalNguyenLieuCountAsync();
     Task<int> GetTotalTonKhoCountAsync();
     Task<int> GetLowStockCountAsync(decimal threshold = 20);
     Task<int> GetNearExpiryCountAsync(int days = 7);
@@ -50,6 +51,7 @@ public interface IDatabaseService
     Task<List<(string TenNguyenLieu, decimal SoLuongTon, string DonVi, DateTime? HanSuDung)>> GetNearExpiryItemsAsync(int days = 7);
     Task<List<(string TenNguyenLieu, decimal SoLuongTon, string DonVi, DateTime? HanSuDung)>> GetExpiredItemsAsync();
     Task<List<(string TenNguyenLieu, decimal SoLuongTon, string DonVi)>> GetNormalStockItemsAsync(decimal lowThreshold = 20);
+    Task<List<(string TenNguyenLieu, decimal SoLuongTon, string DonVi)>> GetOutOfStockItemsAsync();
 
     // Quản lý người dùng
     Task<List<NhanVien>> GetNhanViensAsync();
@@ -127,7 +129,7 @@ public interface IDatabaseService
     Task<List<CT_PhieuNhap>> GetChiTietPhieuNhapAsync(int phieuNhapId);
     Task<bool> DeletePhieuNhapAsync(int phieuNhapId);
     Task<bool> ApprovePhieuNhapAsync(int phieuNhapId, int nguoiDuyetId);
-    Task<bool> CancelPhieuNhapAsync(int phieuNhapId);
+    Task<bool> CancelPhieuNhapAsync(int phieuNhapId, int nguoiHuyId);
     Task<string> GenerateMaPhieuNhapAsync();
     Task<int> SavePhieuNhapAsync(PhieuNhap phieuNhap, List<CT_PhieuNhap> chiTiets);
     Task<decimal> GetTotalTongTienPhieuNhapAsync(int? nhanVienId = null, int? nhaCungCapId = null, DateTime? tuNgay = null, DateTime? denNgay = null);
