@@ -1,4 +1,4 @@
-<?xml version="1.0" encoding="utf-8"?>
+﻿<?xml version="1.0" encoding="utf-8"?>
 <UserControl x:Class="QuanLyKhoNguyenLieuPizza.Views.NguyenLieuView"
              xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
              xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
@@ -20,13 +20,13 @@
         <converters:InverseBoolToVisibilityConverter x:Key="InverseBoolToVisibilityConverter"/>
         <converters:ImagePathConverter x:Key="ImagePathConverter"/>
         
-        <!-- Gradient for Popup Header -->
+        <!-- Gradient cho Tiêu đề Popup -->
         <LinearGradientBrush x:Key="HeaderGradient" StartPoint="0,0" EndPoint="1,0">
             <GradientStop Color="#5B6AFF" Offset="0"/>
             <GradientStop Color="#818CF8" Offset="1"/>
         </LinearGradientBrush>
 
-        <!-- Button Styles -->
+        <!-- Kiểu Nút -->
         <Style x:Key="PrimaryButton" TargetType="Button">
             <Setter Property="Background" Value="{StaticResource PrimaryBlue}"/>
             <Setter Property="Foreground" Value="White"/>
@@ -173,7 +173,7 @@
                     <RowDefinition Height="*"/>
                 </Grid.RowDefinitions>
 
-                <!-- Page Title + Search + Actions -->
+                <!-- Page Tiêu đề + Tìm kiếm + Actions -->
                 <Grid Grid.Row="0" Margin="0,0,0,20">
                     <Grid.ColumnDefinitions>
                         <ColumnDefinition Width="Auto"/>
@@ -192,7 +192,7 @@
                         </StackPanel>
                     </StackPanel>
 
-                    <!-- Search Box -->
+                    <!-- Hộp Tìm kiếm -->
                     <Border Grid.Column="1" 
                             Background="White"
                             BorderBrush="{StaticResource Gray200}"
@@ -226,7 +226,7 @@
                         </Grid>
                     </Border>
 
-                    <!-- Action Buttons -->
+                    <!-- Nút Hành động -->
                     <Button Grid.Column="2" Style="{StaticResource OutlineButton}"
                             Command="{Binding OpenLoaiNguyenLieuCommand}" Margin="0,0,12,0">
                         <StackPanel Orientation="Horizontal">
@@ -263,7 +263,7 @@
                     </Button>
                 </Grid>
 
-                <!-- Summary Stat Card -->
+                <!-- Thẻ Thống kê -->
                 <Grid Grid.Row="1" Margin="0,0,0,20">
                     <Grid.ColumnDefinitions>
                         <ColumnDefinition Width="*"/>
@@ -326,7 +326,7 @@
                             <RowDefinition Height="Auto"/>
                         </Grid.RowDefinitions>
 
-                        <!-- Filter Title -->
+                        <!-- Filter Tiêu đề -->
                         <StackPanel Grid.ColumnSpan="5" Orientation="Horizontal" Margin="0,0,0,14">
                             <ui:SymbolIcon Symbol="Filter24" FontSize="16" Foreground="{StaticResource Gray500}" VerticalAlignment="Center" Margin="0,0,8,0"/>
                             <TextBlock Text="Bộ lọc" FontSize="14" FontWeight="SemiBold" Foreground="{StaticResource Gray800}"/>
@@ -384,7 +384,7 @@
                     </Grid>
                 </Border>
 
-                <!-- Data Table -->
+                <!-- Bảng Dữ liệu -->
                 <Border Grid.Row="3" Style="{StaticResource CardStyle}" Padding="0">
                     <Grid>
                         <DataGrid ItemsSource="{Binding FilteredNguyenLieus}"
@@ -607,7 +607,7 @@
                             </DataGrid.Columns>
                         </DataGrid>
 
-                        <!-- Loading Overlay -->
+                        <!-- Màn hình Chờ -->
                         <Border Background="#80FFFFFF" 
                                 Visibility="{Binding IsLoading, Converter={StaticResource BoolToVisibilityConverter}}">
                             <StackPanel HorizontalAlignment="Center" VerticalAlignment="Center">
@@ -638,7 +638,7 @@
                             <RowDefinition Height="Auto"/>
                         </Grid.RowDefinitions>
 
-                        <!-- Header -->
+                        <!-- Tiêu đề -->
                         <Grid Grid.Row="0" Margin="0,0,0,20">
                             <TextBlock FontSize="24" FontWeight="Bold" Foreground="{StaticResource PrimaryBlue}" HorizontalAlignment="Center">
                                 <TextBlock.Style>
@@ -669,7 +669,7 @@
                             </Button>
                         </Grid>
 
-                        <!-- Form Content -->
+                        <!-- Nội dung Biểu mẫu -->
                         <ScrollViewer Grid.Row="1" VerticalScrollBarVisibility="Hidden">
                             <StackPanel>
                                 <!-- Mã nguyên liệu -->
@@ -764,7 +764,7 @@
                                                Margin="0,6,0,0"/>
                                 </Grid>
 
-                                <!-- Two column layout for dropdowns -->
+                                <!-- Bố cục 2 cột cho dropdown -->
                                 <Grid Margin="0,0,0,16">
                                     <Grid.ColumnDefinitions>
                                         <ColumnDefinition Width="*"/>

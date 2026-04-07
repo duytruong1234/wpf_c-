@@ -1,4 +1,4 @@
-using System.Windows.Input;
+﻿using System.Windows.Input;
 using QuanLyKhoNguyenLieuPizza.Services;
 
 namespace QuanLyKhoNguyenLieuPizza.ViewModels;
@@ -23,6 +23,8 @@ public class ShellViewModel : BaseViewModel
     private bool _canViewBanHang;
     private bool _canViewDonHang;
     private bool _canViewPizza;
+    private bool _canViewSaoLuu;
+    private bool _isSidebarVisible = true;
 
     // ⚡ LAZY LOADING: ViewModel chỉ được tạo khi user chuyển đến trang đó
     // Trước đây tạo 11 ViewModel cùng lúc → ~50 DB connections lúc khởi động
@@ -38,6 +40,7 @@ public class ShellViewModel : BaseViewModel
     private DonHangViewModel? _donHangViewModel;
     private PizzaViewModel? _pizzaViewModel;
     private ProfileViewModel? _profileViewModel;
+    private SaoLuuViewModel? _saoLuuViewModel;
 
     public object? CurrentContent
     {
@@ -138,6 +141,24 @@ public class ShellViewModel : BaseViewModel
         set => SetProperty(ref _canViewPizza, value);
     }
 
+    public bool CanViewSaoLuu
+    {
+        get => _canViewSaoLuu;
+        set => SetProperty(ref _canViewSaoLuu, value);
+    }
+
+    public bool IsSidebarVisible
+    {
+        get => _isSidebarVisible;
+        set => SetProperty(ref _isSidebarVisible, value);
+    }
+
+    // Computed properties: ẩn tiêu đề nhóm khi không có mục nào trong nhóm
+    public bool CanViewTongQuanSection => CanViewBaoCaoThongKe;
+    public bool CanViewQuanLyKhoSection => CanViewTonKho || CanViewPhieuNhap || CanViewPhieuXuat || CanViewNguyenLieu || CanViewPizza;
+    public bool CanViewHeThongSection => CanViewNhaCungCap || CanViewNhanVien || CanViewSaoLuu;
+    public bool CanViewBanHangSection => CanViewBanHang || CanViewDonHang;
+
     public bool IsProfileOpen
     {
         get => _isProfileOpen;
@@ -236,6 +257,8 @@ public class ShellViewModel : BaseViewModel
             CanViewBanHang = false;
             CanViewDonHang = true;
             CanViewPizza = true;
+            CanViewSaoLuu = true;
+            IsSidebarVisible = true;
         }
         else if (isNhanVienKho)
         {
@@ -250,6 +273,7 @@ public class ShellViewModel : BaseViewModel
             CanViewBanHang = false;
             CanViewDonHang = false;
             CanViewPizza = false;
+            IsSidebarVisible = false;
         }
         else if (isNhanVienBep)
         {
@@ -264,6 +288,7 @@ public class ShellViewModel : BaseViewModel
             CanViewBanHang = false;
             CanViewDonHang = false;
             CanViewPizza = false;
+            IsSidebarVisible = false;
         }
         else if (isNhanVienBanHang)
         {
@@ -278,6 +303,7 @@ public class ShellViewModel : BaseViewModel
             CanViewBanHang = true;
             CanViewDonHang = false;
             CanViewPizza = false;
+            IsSidebarVisible = false;
         }
         else
         {
@@ -293,6 +319,12 @@ public class ShellViewModel : BaseViewModel
             CanViewDonHang = false;
             CanViewPizza = false;
         }
+
+        // Thông báo cập nhật hiển thị tiêu đề nhóm
+        OnPropertyChanged(nameof(CanViewTongQuanSection));
+        OnPropertyChanged(nameof(CanViewQuanLyKhoSection));
+        OnPropertyChanged(nameof(CanViewHeThongSection));
+        OnPropertyChanged(nameof(CanViewBanHangSection));
     }
 
     private void NavigateToDefaultView()
@@ -360,17 +392,39 @@ public class ShellViewModel : BaseViewModel
         CurrentContent = menuItem switch
         {
             "BaoCaoThongKe" => _dashboardViewModel ??= new DashboardViewModel(),
-            "TonKho" => _tonKhoViewModel ??= new TonKhoViewModel(),
+            "TonKho" => CreateTonKhoViewModel(),
             "NguyenLieu" => _nguyenLieuViewModel ??= new NguyenLieuViewModel(),
             "PhieuNhap" => _phieuNhapViewModel ??= new PhieuNhapViewModel(),
             "PhieuXuat" => _phieuXuatViewModel ??= new PhieuXuatViewModel(),
             "NhaCungCap" => _nhaCungCapViewModel ??= new NhaCungCapViewModel(),
             "NhanVien" => _nhanVienViewModel ??= new NhanVienViewModel(),
             "BanHang" => _banHangViewModel ??= new BanHangViewModel(),
-            "DonHang" => _donHangViewModel ??= new DonHangViewModel(),
+            "DonHang" => CreateDonHangViewModel(),
             "Pizza" => _pizzaViewModel ??= new PizzaViewModel(),
+            "SaoLuu" => _saoLuuViewModel ??= new SaoLuuViewModel(),
             _ => _dashboardViewModel ??= new DashboardViewModel()
         };
+    }
+
+    private TonKhoViewModel CreateTonKhoViewModel()
+    {
+        if (_tonKhoViewModel == null)
+        {
+            _tonKhoViewModel = new TonKhoViewModel();
+            _tonKhoViewModel.OnNavigateToPhieuNhap += () => SelectedMenuItem = "PhieuNhap";
+            _tonKhoViewModel.OnNavigateToPhieuXuat += () => SelectedMenuItem = "PhieuXuat";
+        }
+        return _tonKhoViewModel;
+    }
+
+    private DonHangViewModel CreateDonHangViewModel()
+    {
+        if (_donHangViewModel == null)
+        {
+            _donHangViewModel = new DonHangViewModel();
+            _donHangViewModel.OnNavigateToBanHang += () => SelectedMenuItem = "BanHang";
+        }
+        return _donHangViewModel;
     }
 }
 

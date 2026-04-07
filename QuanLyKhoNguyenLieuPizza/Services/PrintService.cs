@@ -1,10 +1,17 @@
+﻿using System.Drawing;
+using System.Drawing.Imaging;
 using System.IO;
 using System.Printing;
 using System.Windows;
 using System.Windows.Controls;
 using System.Windows.Documents;
 using System.Windows.Media;
+using System.Windows.Media.Imaging;
+using QRCoder;
 using QuanLyKhoNguyenLieuPizza.Models;
+using Brushes = System.Windows.Media.Brushes;
+using FontFamily = System.Windows.Media.FontFamily;
+using Image = System.Windows.Controls.Image;
 
 namespace QuanLyKhoNguyenLieuPizza.Services;
 
@@ -319,7 +326,8 @@ public class PrintService
             if (printDialog.ShowDialog() == true)
             {
                 var document = CreateHoaDonBanHangDocument(donHang, chiTiets, printDialog.PrintableAreaWidth);
-                printDialog.PrintDocument(((IDocumentPaginatorSource)document).DocumentPaginator, $"HoaDon - {donHang.MaDonHang}");
+                var docTitle = donHang.MaDonHang == "TẠM TÍNH" ? "HoaDon - Tam Tinh" : $"HoaDon - {donHang.MaDonHang}";
+                printDialog.PrintDocument(((IDocumentPaginatorSource)document).DocumentPaginator, docTitle);
             }
         }
         catch (Exception ex)
@@ -335,7 +343,7 @@ public class PrintService
             PageWidth = pageWidth,
             PagePadding = new Thickness(50),
             ColumnWidth = double.MaxValue,
-            FontFamily = new FontFamily("Segoe UI"),
+            FontFamily = new FontFamily("Arial"),
             FontSize = 12
         };
 
@@ -460,6 +468,23 @@ public class PrintService
         totalPara.Inlines.Add(new Run($"{donHang.ThanhToan:N0} VNĐ") { FontWeight = FontWeights.Bold, FontSize = 16, Foreground = Brushes.Red });
         document.Blocks.Add(totalPara);
 
+        // Tiền khách đưa & Tiền thừa
+        if (donHang.TienKhachDua.HasValue && donHang.TienKhachDua.Value > 0)
+        {
+            var paymentDetailPara = new Paragraph
+            {
+                TextAlignment = TextAlignment.Right,
+                Margin = new Thickness(0, 5, 0, 0)
+            };
+            paymentDetailPara.Inlines.Add(new Run($"Tiền khách đưa: {donHang.TienKhachDua.Value:N0}đ\n") { FontSize = 13 });
+            var tienThua = donHang.TienKhachDua.Value - donHang.ThanhToan;
+            if (tienThua > 0)
+            {
+                paymentDetailPara.Inlines.Add(new Run($"Tiền thừa: {tienThua:N0}đ") { FontSize = 13, Foreground = Brushes.Green });
+            }
+            document.Blocks.Add(paymentDetailPara);
+        }
+
         // Lời cảm ơn
         var thanksPara = new Paragraph(new Run("Cảm ơn quý khách! Hẹn gặp lại!"))
         {
@@ -469,6 +494,86 @@ public class PrintService
             Margin = new Thickness(0, 30, 0, 10)
         };
         document.Blocks.Add(thanksPara);
+
+        // Mã QR cho chuyển khoản
+        if (donHang.PhuongThucTT != null && donHang.PhuongThucTT.Contains("Chuyển khoản", StringComparison.OrdinalIgnoreCase))
+        {
+            try
+            {
+                // Tạo VietQR data string
+                // Thông tin ngân hàng PizzaInn (Vietcombank mẫu)
+                string bankId = "970436"; // Vietcombank BIN
+                string accountNo = "1234567890"; // Số tài khoản
+                string accountName = "PIZZAINN";
+                string amount = ((int)donHang.ThanhToan).ToString();
+                string addInfo = $"TT {donHang.MaDonHang}";
+
+                // VietQR URL format (sử dụng VietQR API)
+                string qrContent = $"https://img.vietqr.io/image/{bankId}-{accountNo}-compact.png?amount={amount}&addInfo={Uri.EscapeDataString(addInfo)}&accountName={Uri.EscapeDataString(accountName)}";
+
+                // Tạo QR code chứa nội dung thanh toán
+                string qrData = $"Ngân hàng: Vietcombank\nSTK: {accountNo}\nTên: {accountName}\nSố tiền: {donHang.ThanhToan:N0} VNĐ\nNội dung: {addInfo}";
+
+                using var qrGenerator = new QRCodeGenerator();
+                using var qrCodeData = qrGenerator.CreateQrCode(qrData, QRCodeGenerator.ECCLevel.Q);
+                using var qrCode = new QRCode(qrCodeData);
+                using var qrBitmap = qrCode.GetGraphic(6);
+
+                // Convert Bitmap to BitmapSource
+                using var memory = new MemoryStream();
+                qrBitmap.Save(memory, ImageFormat.Png);
+                memory.Position = 0;
+
+                var bitmapImage = new BitmapImage();
+                bitmapImage.BeginInit();
+                bitmapImage.CacheOption = BitmapCacheOption.OnLoad;
+                bitmapImage.StreamSource = memory;
+                bitmapImage.EndInit();
+                bitmapImage.Freeze();
+
+                // Thêm section QR vào document
+                var qrSection = new Paragraph
+                {
+                    TextAlignment = TextAlignment.Center,
+                    Margin = new Thickness(0, 10, 0, 5)
+                };
+
+                var qrTitleRun = new Run("━━━ QUÉT MÃ ĐỂ CHUYỂN KHOẢN ━━━\n")
+                {
+                    FontSize = 11,
+                    Foreground = System.Windows.Media.Brushes.Gray
+                };
+                qrSection.Inlines.Add(qrTitleRun);
+
+                var qrImage = new Image
+                {
+                    Source = bitmapImage,
+                    Width = 180,
+                    Height = 180,
+                    Stretch = Stretch.Uniform
+                };
+
+                var qrContainer = new InlineUIContainer(qrImage);
+                qrSection.Inlines.Add(qrContainer);
+                document.Blocks.Add(qrSection);
+
+                // Thông tin tài khoản
+                var bankInfoPara = new Paragraph
+                {
+                    TextAlignment = TextAlignment.Center,
+                    Margin = new Thickness(0, 5, 0, 0)
+                };
+                bankInfoPara.Inlines.Add(new Run("Vietcombank - ") { FontSize = 11, FontWeight = FontWeights.Bold });
+                bankInfoPara.Inlines.Add(new Run(accountNo + "\n") { FontSize = 11 });
+                bankInfoPara.Inlines.Add(new Run(accountName + "\n") { FontSize = 11, FontWeight = FontWeights.Bold });
+                bankInfoPara.Inlines.Add(new Run($"Số tiền: {donHang.ThanhToan:N0} VNĐ") { FontSize = 11 });
+                document.Blocks.Add(bankInfoPara);
+            }
+            catch (Exception ex)
+            {
+                System.Diagnostics.Debug.WriteLine($"Error generating QR code: {ex.Message}");
+            }
+        }
 
         // Ngày in
         var printDatePara = new Paragraph(new Run($"Ngày in: {DateTime.Now:dd/MM/yyyy HH:mm}"))

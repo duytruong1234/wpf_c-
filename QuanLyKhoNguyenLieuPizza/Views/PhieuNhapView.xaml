@@ -1,4 +1,4 @@
-<UserControl x:Class="QuanLyKhoNguyenLieuPizza.Views.PhieuNhapView"
+﻿<UserControl x:Class="QuanLyKhoNguyenLieuPizza.Views.PhieuNhapView"
              xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
              xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
              xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006" 
@@ -20,7 +20,7 @@
         <converters:IntToVisibilityConverter x:Key="IntToVisibilityConverter"/>
         <converters:ImagePathConverter x:Key="ImagePathConverter"/>
 
-        <!-- MODERN COLOR PALETTE -->
+        <!-- BẢNG MÀU HIỆN ĐẠI -->
         <SolidColorBrush x:Key="PrimaryBlue" Color="#5B6AFF"/>
         <SolidColorBrush x:Key="DarkBlue" Color="#4A56D6"/>
         <SolidColorBrush x:Key="LightBlue" Color="#EEF0FF"/>
@@ -89,7 +89,7 @@
                 <RowDefinition Height="*"/>
             </Grid.RowDefinitions>
 
-            <!-- Page Title + Actions -->
+            <!-- Page Tiêu đề + Actions -->
             <Grid Grid.Row="0" Margin="0,0,0,20">
                 <Grid.ColumnDefinitions>
                     <ColumnDefinition Width="Auto"/>
@@ -161,7 +161,7 @@
                 </Button>
             </Grid>
 
-            <!-- Summary Stat Cards -->
+            <!-- Summary THẺ THỐNG KÊ -->
             <Grid Grid.Row="1" Margin="0,0,0,20">
                 <Grid.ColumnDefinitions>
                     <ColumnDefinition Width="*"/>
@@ -222,7 +222,7 @@
                         <RowDefinition Height="Auto"/>
                     </Grid.RowDefinitions>
 
-                    <!-- Filter Title -->
+                    <!-- Filter Tiêu đề -->
                     <StackPanel Grid.ColumnSpan="5" Orientation="Horizontal" Margin="0,0,0,14">
                         <TextBlock Text="&#xE71C;" FontFamily="Segoe MDL2 Assets" FontSize="14" Foreground="{StaticResource Gray500}" VerticalAlignment="Center" Margin="0,0,8,0"/>
                         <TextBlock Text="Bộ lọc" FontSize="14" FontWeight="SemiBold" Foreground="{StaticResource Gray800}"/>
@@ -278,7 +278,7 @@
                 </Grid>
             </Border>
 
-            <!-- Data Table -->
+            <!-- Bảng Dữ liệu -->
             <Border Grid.Row="3" Style="{StaticResource CardStyle}">
                 <Grid>
                     <Grid.RowDefinitions>
@@ -425,7 +425,7 @@
                 <RowDefinition Height="*"/>
             </Grid.RowDefinitions>
 
-            <!-- Employee Header -->
+            <!-- Employee Tiêu đề -->
             <Grid Grid.Row="0" Margin="0,0,0,20">
                 <Grid.ColumnDefinitions>
                     <ColumnDefinition Width="Auto"/>
@@ -1198,7 +1198,7 @@
             </Border>
         </Grid>
 
-        <!-- ========== DETAIL DIALOG (Shared) ========== -->
+        <!-- ========== DETAIL DIALOG ========== -->
         <Grid Visibility="{Binding IsDetailDialogOpen, Converter={StaticResource BoolToVisibilityConverter}}" Background="#80000000">
             <Border Background="White" CornerRadius="20" Width="850" MaxHeight="650" VerticalAlignment="Center" HorizontalAlignment="Center" Padding="32">
                 <Grid>
@@ -1430,7 +1430,7 @@
             </Border>
         </Grid>
 
-        <!-- Loading Overlay -->
+        <!-- Màn hình Chờ -->
         <Grid Visibility="{Binding IsLoading, Converter={StaticResource BoolToVisibilityConverter}}" Background="#80FFFFFF">
             <StackPanel HorizontalAlignment="Center" VerticalAlignment="Center">
                 <TextBlock Text="&#xE895;" FontFamily="Segoe MDL2 Assets" FontSize="36" HorizontalAlignment="Center" Foreground="{StaticResource PrimaryBlue}"/>

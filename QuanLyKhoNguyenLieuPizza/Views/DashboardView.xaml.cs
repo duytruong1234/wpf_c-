@@ -1,4 +1,4 @@
-using System.ComponentModel;
+﻿using System.ComponentModel;
 using System.Windows;
 using System.Windows.Controls;
 using System.Windows.Media;
@@ -270,7 +270,7 @@ public partial class DashboardView : UserControl
                 FontWeight = FontWeights.Medium,
             };
 
-            // Hover effects
+            // Hiệu ứng di chuột
             dot.MouseEnter += (s, e) =>
             {
                 dot.Width = 14;
@@ -290,7 +290,7 @@ public partial class DashboardView : UserControl
 
             RevenueChartCanvas.Children.Add(dot);
 
-            // Animate dots
+            // Hiệu ứng điểm chấm
             var dotAnim = new DoubleAnimation(0, 1, TimeSpan.FromMilliseconds(300))
             {
                 BeginTime = TimeSpan.FromMilliseconds(400 + i * 100),
@@ -298,7 +298,7 @@ public partial class DashboardView : UserControl
             };
             dot.BeginAnimation(UIElement.OpacityProperty, dotAnim);
 
-            // Value label above dot
+            // Nhãn giá trị phía trên điểm
             if (val > 0)
             {
                 var valueLabel = new TextBlock
@@ -341,7 +341,7 @@ public partial class DashboardView : UserControl
     }
     #endregion
 
-    #region Stock Status Chart (Custom WPF - Horizontal Bars)
+    #region Biểu đồ Trạng thái Kho (WPF Tùy chỉnh - Thanh ngang)
     private void UpdateStockStatusChart(DashboardViewModel vm)
     {
         StockStatusPanel.Children.Clear();
@@ -404,7 +404,7 @@ public partial class DashboardView : UserControl
             Grid.SetColumn(barSegment, stackedBar.ColumnDefinitions.Count - 1);
             stackedBar.Children.Add(barSegment);
 
-            // Animate
+            // Hiệu ứng động
             var anim = new DoubleAnimation(0, 1, TimeSpan.FromMilliseconds(500))
             {
                 BeginTime = TimeSpan.FromMilliseconds(stackedBar.ColumnDefinitions.Count * 150),
@@ -416,7 +416,7 @@ public partial class DashboardView : UserControl
         totalPanel.Children.Add(stackedBar);
         StockStatusPanel.Children.Add(totalPanel);
 
-        // Separator
+        // Đường phân cách
         var sep = new Border
         {
             Height = 1,
@@ -427,21 +427,53 @@ public partial class DashboardView : UserControl
 
         // Từng category detail
         int delayIndex = 0;
+        string[] statusKeys = ["BinhThuong", "TonThap", "SapHetHan", "HetHan"];
         foreach (var cat in categories)
         {
             double pct = total > 0 ? (double)cat.Value / total * 100 : 0;
+            var currentStatusKey = statusKeys[delayIndex];
 
-            var itemGrid = new Grid { Margin = new Thickness(0, 0, 0, 14) };
+            var itemGrid = new Grid
+            { 
+                Margin = new Thickness(0, 0, 0, 14),
+                Cursor = System.Windows.Input.Cursors.Hand
+            };
             itemGrid.RowDefinitions.Add(new RowDefinition { Height = GridLength.Auto });
             itemGrid.RowDefinitions.Add(new RowDefinition { Height = GridLength.Auto });
 
-            // Row 1: Icon + Label + Value + Percentage
+            // Viền bao bọc cho hiệu ứng hover và click
+            var clickBorder = new Border
+            {
+                Background = Brushes.Transparent,
+                CornerRadius = new CornerRadius(8),
+                Padding = new Thickness(6, 4, 6, 4),
+                Margin = new Thickness(-6, -4, -6, -4)
+            };
+            clickBorder.MouseEnter += (s, e) =>
+            {
+                clickBorder.Background = new SolidColorBrush(
+                    System.Windows.Media.Color.FromArgb(15,
+                        ((System.Windows.Media.Color)System.Windows.Media.ColorConverter.ConvertFromString(cat.Color)).R,
+                        ((System.Windows.Media.Color)System.Windows.Media.ColorConverter.ConvertFromString(cat.Color)).G,
+                        ((System.Windows.Media.Color)System.Windows.Media.ColorConverter.ConvertFromString(cat.Color)).B));
+            };
+            clickBorder.MouseLeave += (s, e) =>
+            {
+                clickBorder.Background = Brushes.Transparent;
+            };
+            clickBorder.MouseLeftButtonDown += (s, e) =>
+            {
+                if (DataContext is DashboardViewModel dashVm && dashVm.ShowStatusDetailCommand.CanExecute(currentStatusKey))
+                    dashVm.ShowStatusDetailCommand.Execute(currentStatusKey);
+            };
+
+            // Hàng 1: Icon + Nhãn + Giá trị + Phần trăm
             var infoGrid = new Grid();
             infoGrid.ColumnDefinitions.Add(new ColumnDefinition { Width = GridLength.Auto });
             infoGrid.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(1, GridUnitType.Star) });
             infoGrid.ColumnDefinitions.Add(new ColumnDefinition { Width = GridLength.Auto });
 
-            // Dot icon
+            // Icon chấm tròn
             var dotBorder = new Border
             {
                 Width = 10,
@@ -454,7 +486,7 @@ public partial class DashboardView : UserControl
             Grid.SetColumn(dotBorder, 0);
             infoGrid.Children.Add(dotBorder);
 
-            // Category label
+            // Nhãn danh mục
             var catLabel = new TextBlock
             {
                 Text = cat.Label,
@@ -466,7 +498,7 @@ public partial class DashboardView : UserControl
             Grid.SetColumn(catLabel, 1);
             infoGrid.Children.Add(catLabel);
 
-            // Value + percent
+            // Giá trị + phần trăm
             var valuePanel = new StackPanel { Orientation = Orientation.Horizontal, HorizontalAlignment = HorizontalAlignment.Right };
             valuePanel.Children.Add(new TextBlock
             {
@@ -489,7 +521,7 @@ public partial class DashboardView : UserControl
             Grid.SetRow(infoGrid, 0);
             itemGrid.Children.Add(infoGrid);
 
-            // Row 2: Progress bar
+            // Hàng 2: Thanh tiến trình
             var progressBg = new Border
             {
                 Height = 6,
@@ -545,7 +577,8 @@ public partial class DashboardView : UserControl
                 progressFill.BeginAnimation(FrameworkElement.WidthProperty, widthAnim);
             };
 
-            StockStatusPanel.Children.Add(itemGrid);
+            clickBorder.Child = itemGrid;
+            StockStatusPanel.Children.Add(clickBorder);
             delayIndex++;
         }
     }

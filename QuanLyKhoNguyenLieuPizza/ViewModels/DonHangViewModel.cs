@@ -1,4 +1,4 @@
-using System.Collections.ObjectModel;
+﻿using System.Collections.ObjectModel;
 using System.Windows;
 using System.Windows.Input;
 using QuanLyKhoNguyenLieuPizza.Core.Commands;
@@ -22,8 +22,9 @@ public class DonHangViewModel : BaseViewModel
     private DateTime? _denNgay;
     private bool _isLoading;
     private bool _isDetailOpen;
+    private bool _isDeleteDialogOpen;
+    private DonHang? _deletingDonHang;
     private int _tongDonHang;
-    private int _donHoanThanh;
     private decimal _tongDoanhThu;
     private string _topNhanVienName = "—";
     private decimal _topNhanVienDoanhThu;
@@ -110,16 +111,22 @@ public class DonHangViewModel : BaseViewModel
         set => SetProperty(ref _isDetailOpen, value);
     }
 
+    public bool IsDeleteDialogOpen
+    {
+        get => _isDeleteDialogOpen;
+        set => SetProperty(ref _isDeleteDialogOpen, value);
+    }
+
+    public DonHang? DeletingDonHang
+    {
+        get => _deletingDonHang;
+        set => SetProperty(ref _deletingDonHang, value);
+    }
+
     public int TongDonHang
     {
         get => _tongDonHang;
         set => SetProperty(ref _tongDonHang, value);
-    }
-
-    public int DonHoanThanh
-    {
-        get => _donHoanThanh;
-        set => SetProperty(ref _donHoanThanh, value);
     }
 
     public decimal TongDoanhThu
@@ -145,6 +152,12 @@ public class DonHangViewModel : BaseViewModel
     public ICommand CloseDetailCommand { get; }
     public ICommand ClearFilterCommand { get; }
     public ICommand PrintHoaDonCommand { get; }
+    public ICommand NavigateToBanHangCommand { get; }
+    public ICommand DeleteDonHangCommand { get; }
+    public ICommand ConfirmDeleteDonHangCommand { get; }
+    public ICommand CloseDeleteDialogCommand { get; }
+
+    public event Action? OnNavigateToBanHang;
 
     public DonHangViewModel()
     {
@@ -155,22 +168,16 @@ public class DonHangViewModel : BaseViewModel
         CloseDetailCommand = new RelayCommand(_ => IsDetailOpen = false);
         ClearFilterCommand = new RelayCommand(ExecuteClearFilter);
         PrintHoaDonCommand = new RelayCommand(_ => ExecutePrintHoaDon());
+        NavigateToBanHangCommand = new RelayCommand(_ => OnNavigateToBanHang?.Invoke());
+        DeleteDonHangCommand = new RelayCommand(ExecuteDeleteDonHang);
+        ConfirmDeleteDonHangCommand = new AsyncRelayCommand(async _ => await ConfirmDeleteDonHangAsync());
+        CloseDeleteDialogCommand = new RelayCommand(_ => IsDeleteDialogOpen = false);
 
         _ = InitializeAsync();
     }
 
     private async Task InitializeAsync()
     {
-        // Load NhanVien list for filter dropdown
-        try
-        {
-            var nhanViens = await _db.GetNhanViensAsync();
-            NhanViens = new ObservableCollection<NhanVien>(nhanViens.Where(nv => nv.TrangThai && nv.ChucVuID == 5));
-        }
-        catch (Exception ex)
-        {
-            System.Diagnostics.Debug.WriteLine($"Error loading NhanViens: {ex.Message}");
-        }
         await LoadDataAsync();
     }
 
@@ -203,7 +210,6 @@ public class DonHangViewModel : BaseViewModel
 
             // Tính thống kê từ danh sách đã lọc
             TongDonHang = filteredList.Count;
-            DonHoanThanh = filteredList.Count(d => d.TrangThai == 2);
             TongDoanhThu = filteredList.Sum(d => d.ThanhToan);
 
             // Tính nhân viên bán chạy nhất (từ tất cả đơn hàng, không bị ảnh hưởng bởi filter NV)
@@ -215,6 +221,16 @@ public class DonHangViewModel : BaseViewModel
                 .FirstOrDefault();
             TopNhanVienName = topNV?.HoTen ?? "—";
             TopNhanVienDoanhThu = topNV?.DoanhThu ?? 0;
+
+            // Cập nhật danh sách NV lọc từ đơn hàng thực tế (không chỉ NV có ChucVuID == 5)
+            var nvFromOrders = allOrders
+                .Where(d => d.NhanVien != null)
+                .Select(d => d.NhanVien!)
+                .GroupBy(nv => nv.NhanVienID)
+                .Select(g => g.First())
+                .OrderBy(nv => nv.HoTen)
+                .ToList();
+            NhanViens = new ObservableCollection<NhanVien>(nvFromOrders);
 
             DonHangs = new ObservableCollection<DonHang>(filteredList);
         }
@@ -239,7 +255,7 @@ public class DonHangViewModel : BaseViewModel
             }
             else if (!string.IsNullOrEmpty(donHang.MaDonHang))
             {
-                // PhieuBanHang-sourced record: load CT_PhieuBan and map to CT_DonHang
+                // Bản ghi từ PhieuBanHang: tải CT_PhieuBan và chuyển đổi sang CT_DonHang
                 var ctPhieuBans = await _db.GetChiTietPhieuBanAsync(donHang.MaDonHang);
                 var mapped = ctPhieuBans.Select(ct => new CT_DonHang
                 {
@@ -275,6 +291,39 @@ public class DonHangViewModel : BaseViewModel
         }
     }
 
+    private void ExecuteDeleteDonHang(object? parameter)
+    {
+        if (parameter is DonHang dh)
+        {
+            DeletingDonHang = dh;
+            IsDeleteDialogOpen = true;
+        }
+    }
+
+    private async Task ConfirmDeleteDonHangAsync()
+    {
+        if (DeletingDonHang == null) return;
+
+        try
+        {
+            bool success = await _db.DeleteDonHangAsync(DeletingDonHang);
+            if (success)
+            {
+                IsDeleteDialogOpen = false;
+                DeletingDonHang = null;
+                await LoadDataAsync();
+            }
+            else
+            {
+                MessageBox.Show("Không thể xóa đơn hàng. Vui lòng thử lại.", "Lỗi", MessageBoxButton.OK, MessageBoxImage.Error);
+            }
+        }
+        catch (Exception ex)
+        {
+            MessageBox.Show($"Lỗi khi xóa đơn hàng: {ex.Message}", "Lỗi", MessageBoxButton.OK, MessageBoxImage.Error);
+        }
+    }
+
     private void ExecuteClearFilter(object? parameter)
     {
         _searchText = string.Empty;
@@ -294,4 +343,3 @@ public class DonHangViewModel : BaseViewModel
         PrintService.PrintHoaDonBanHang(SelectedDonHang, ChiTietDonHangs);
     }
 }
-

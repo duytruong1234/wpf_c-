@@ -1,4 +1,4 @@
-namespace QuanLyKhoNguyenLieuPizza.Core.Interfaces;
+﻿namespace QuanLyKhoNguyenLieuPizza.Core.Interfaces;
 
 /// <summary>
 /// Interface repository generic cho các thao tác CRUD cơ bản

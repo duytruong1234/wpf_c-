@@ -1,4 +1,4 @@
-namespace QuanLyKhoNguyenLieuPizza.Models;
+﻿namespace QuanLyKhoNguyenLieuPizza.Models;
 
 public class Pizza
 {
@@ -11,6 +11,10 @@ public class Pizza
     public string? SizeID { get; set; }
     public decimal GiaBan { get; set; }
     public bool TrangThai { get; set; } = true;
+    public string? LoaiHangHoaID { get; set; }
+    public string? LoaiMonAn { get; set; }
+    public int? DonViID { get; set; }
+    public string? TenDonVi { get; set; }
 
     // Thuộc tính tính toán
     public decimal GiaVon { get; set; }

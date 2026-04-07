@@ -1,4 +1,4 @@
-using System.ComponentModel;
+﻿using System.ComponentModel;
 using System.Runtime.CompilerServices;
 
 namespace QuanLyKhoNguyenLieuPizza.ViewModels;
@@ -13,6 +13,8 @@ public abstract class BaseViewModel : INotifyPropertyChanged
         get => _isBusy;
         set => SetProperty(ref _isBusy, value);
     }
+
+    public virtual bool AnyDialogOpen => false;
 
     /// <summary>
     /// Cờ ngăn các setter property kích hoạt reload DB khi đang cập nhật hàng loạt.

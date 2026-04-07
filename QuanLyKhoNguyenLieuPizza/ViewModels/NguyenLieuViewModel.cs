@@ -1,4 +1,4 @@
-using System.Collections.ObjectModel;
+﻿using System.Collections.ObjectModel;
 using System.Windows.Input;
 using QuanLyKhoNguyenLieuPizza.Models;
 using QuanLyKhoNguyenLieuPizza.Services;
@@ -62,6 +62,10 @@ public class NguyenLieuViewModel : BaseViewModel
     
     // Quản lý loại nguyên liệu
     private bool _isLoaiNguyenLieuViewVisible;
+
+    // Hộp thoại trạng thái
+    private bool _isStatusDialogOpen;
+    private NguyenLieuItemViewModel? _statusNguyenLieu;
     
     public ObservableCollection<NguyenLieuItemViewModel> FilteredNguyenLieus
     {
@@ -243,6 +247,19 @@ public class NguyenLieuViewModel : BaseViewModel
         get => _isLoaiNguyenLieuViewVisible;
         set => SetProperty(ref _isLoaiNguyenLieuViewVisible, value);
     }
+
+    // Thuộc tính hộp thoại trạng thái
+    public bool IsStatusDialogOpen
+    {
+        get => _isStatusDialogOpen;
+        set => SetProperty(ref _isStatusDialogOpen, value);
+    }
+
+    public NguyenLieuItemViewModel? StatusNguyenLieu
+    {
+        get => _statusNguyenLieu;
+        set => SetProperty(ref _statusNguyenLieu, value);
+    }
     
     // Lệnh
     public ICommand LoadDataCommand { get; }
@@ -253,6 +270,8 @@ public class NguyenLieuViewModel : BaseViewModel
     public ICommand BackFromLoaiNguyenLieuCommand { get; }
     public ICommand ClearFiltersCommand { get; }
     public ICommand BrowseImageCommand { get; }
+    public ICommand CloseStatusDialogCommand { get; }
+    public ICommand ConfirmToggleStatusCommand { get; }
     
     // LoaiNguyenLieu ViewModel
     public LoaiNguyenLieuViewModel LoaiNguyenLieuVM { get; }
@@ -262,7 +281,12 @@ public class NguyenLieuViewModel : BaseViewModel
         _databaseService = ServiceLocator.Instance.GetService<IDatabaseService>();
         
         LoaiNguyenLieuVM = new LoaiNguyenLieuViewModel();
-        LoaiNguyenLieuVM.OnBack += () => IsLoaiNguyenLieuViewVisible = false;
+        LoaiNguyenLieuVM.OnBack += () =>
+        {
+            IsLoaiNguyenLieuViewVisible = false;
+            SafeInitializeAsync(ReloadLoaiNguyenLieusAsync);
+        };
+        LoaiNguyenLieuVM.OnDataChanged += () => SafeInitializeAsync(ReloadLoaiNguyenLieusAsync);
         
         // ⚡ AsyncRelayCommand thay vì async void trong RelayCommand
         LoadDataCommand = new AsyncRelayCommand(async _ => await LoadDataAsync());
@@ -273,6 +297,8 @@ public class NguyenLieuViewModel : BaseViewModel
         BackFromLoaiNguyenLieuCommand = new RelayCommand(_ => IsLoaiNguyenLieuViewVisible = false);
         ClearFiltersCommand = new RelayCommand(_ => ClearFilters());
         BrowseImageCommand = new RelayCommand(_ => BrowseImage());
+        CloseStatusDialogCommand = new RelayCommand(_ => IsStatusDialogOpen = false);
+        ConfirmToggleStatusCommand = new RelayCommand(async _ => await ConfirmToggleStatusAsync());
         
         // ⚡ SafeInitializeAsync thay vì fire-and-forget
         SafeInitializeAsync(LoadDataAsync);
@@ -311,7 +337,7 @@ public class NguyenLieuViewModel : BaseViewModel
                     GiaNhap = nl.NguyenLieuNhaCungCaps?.FirstOrDefault()?.GiaNhap ?? 0
                 };
                 item.EditCommand = new RelayCommand(p => EditNguyenLieu(item));
-                item.DeleteCommand = new RelayCommand(async p => await DeleteNguyenLieuAsync(item));
+                item.DeleteCommand = new RelayCommand(p => OpenStatusDialog(item));
                 _nguyenLieus.Add(item);
             }
             
@@ -418,8 +444,31 @@ public class NguyenLieuViewModel : BaseViewModel
     
     private async Task SaveAsync()
     {
-        if (string.IsNullOrWhiteSpace(FormTenNguyenLieu))
+        // Validate tất cả trường bắt buộc
+        if (string.IsNullOrWhiteSpace(FormMaNguyenLieu) ||
+            string.IsNullOrWhiteSpace(FormTenNguyenLieu) ||
+            FormLoaiNguyenLieu == null ||
+            FormDonViTinh == null ||
+            FormNhaCungCap == null ||
+            string.IsNullOrWhiteSpace(FormGiaNhap))
         {
+            System.Windows.MessageBox.Show(
+                "Vui lòng nhập đầy đủ các trường bắt buộc (*)",
+                "Thiếu thông tin",
+                System.Windows.MessageBoxButton.OK,
+                System.Windows.MessageBoxImage.Warning);
+            return;
+        }
+        
+        // Parse giá nhập
+        var giaNhapText = FormGiaNhap.Replace(",", "").Replace(".", "").Trim();
+        if (!decimal.TryParse(giaNhapText, out decimal giaNhap))
+        {
+            System.Windows.MessageBox.Show(
+                "Giá nhập không hợp lệ",
+                "Lỗi",
+                System.Windows.MessageBoxButton.OK,
+                System.Windows.MessageBoxImage.Warning);
             return;
         }
         
@@ -438,6 +487,15 @@ public class NguyenLieuViewModel : BaseViewModel
         
         if (success)
         {
+            // Lưu quan hệ NguyenLieu - NhaCungCap
+            if (FormNhaCungCap != null)
+            {
+                await _databaseService.UpsertNguyenLieuNhaCungCapAsync(
+                    nguyenLieu.NguyenLieuID, 
+                    FormNhaCungCap.NhaCungCapID, 
+                    giaNhap);
+            }
+            
             ClosePopup();
             await LoadDataAsync();
         }
@@ -450,6 +508,49 @@ public class NguyenLieuViewModel : BaseViewModel
         if (success)
         {
             await LoadDataAsync();
+        }
+    }
+
+    private void OpenStatusDialog(NguyenLieuItemViewModel item)
+    {
+        StatusNguyenLieu = item;
+        IsStatusDialogOpen = true;
+    }
+
+    private async Task ConfirmToggleStatusAsync()
+    {
+        if (StatusNguyenLieu == null) return;
+
+        try
+        {
+            var newStatus = !StatusNguyenLieu.TrangThai;
+            var nl = new NguyenLieu
+            {
+                NguyenLieuID = StatusNguyenLieu.NguyenLieuID,
+                MaNguyenLieu = StatusNguyenLieu.MaNguyenLieu,
+                TenNguyenLieu = StatusNguyenLieu.TenNguyenLieu,
+                TrangThai = newStatus
+            };
+            await _databaseService.SaveNguyenLieuAsync(nl);
+            IsStatusDialogOpen = false;
+            await LoadDataAsync();
+        }
+        catch (Exception ex)
+        {
+            System.Diagnostics.Debug.WriteLine($"Error toggling status: {ex.Message}");
+        }
+    }
+    
+    private async Task ReloadLoaiNguyenLieusAsync()
+    {
+        try
+        {
+            var loaiList = await _databaseService.GetLoaiNguyenLieusAsync();
+            LoaiNguyenLieus = new ObservableCollection<LoaiNguyenLieu>(loaiList);
+        }
+        catch (Exception ex)
+        {
+            System.Diagnostics.Debug.WriteLine($"Error reloading LoaiNguyenLieu: {ex.Message}");
         }
     }
     
@@ -466,7 +567,7 @@ public class NguyenLieuViewModel : BaseViewModel
             var openFileDialog = new Microsoft.Win32.OpenFileDialog
             {
                 Title = "Chọn hình ảnh nguyên liệu",
-                Filter = "Image files (*.jpg, *.jpeg, *.png, *.gif, *.bmp)|*.jpg;*.jpeg;*.png;*.gif;*.bmp|All files (*.*)|*.*",
+                Filter = "Tệp hình ảnh (*.jpg, *.jpeg, *.png, *.gif, *.bmp)|*.jpg;*.jpeg;*.png;*.gif;*.bmp|Tất cả tệp (*.*)|*.*",
                 FilterIndex = 1,
                 RestoreDirectory = true
             };

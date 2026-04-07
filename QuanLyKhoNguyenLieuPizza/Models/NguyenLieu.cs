@@ -1,3 +1,5 @@
+﻿using System.Linq;
+
 namespace QuanLyKhoNguyenLieuPizza.Models;
 
 public class NguyenLieu
@@ -18,5 +20,10 @@ public class NguyenLieu
     public virtual ICollection<QuyDoiDonVi> QuyDoiDonVis { get; set; } = new List<QuyDoiDonVi>();
     public virtual ICollection<CT_PhieuNhap> CT_PhieuNhaps { get; set; } = new List<CT_PhieuNhap>();
     public virtual ICollection<CT_PhieuXuat> CT_PhieuXuats { get; set; } = new List<CT_PhieuXuat>();
+
+    // Computed property cho binding XAML
+    public decimal GiaNhap => NguyenLieuNhaCungCaps?.FirstOrDefault()?.GiaNhap ?? 0;
+    public int? NhaCungCapMacDinhID => NguyenLieuNhaCungCaps?.FirstOrDefault()?.NhaCungCapID;
+    public string TenNhaCungCapMacDinh => NguyenLieuNhaCungCaps?.FirstOrDefault()?.NhaCungCap?.TenNCC ?? string.Empty;
 }
 

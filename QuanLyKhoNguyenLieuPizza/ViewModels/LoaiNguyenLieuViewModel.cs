@@ -1,4 +1,4 @@
-using System.Collections.ObjectModel;
+﻿using System.Collections.ObjectModel;
 using System.Windows.Input;
 using QuanLyKhoNguyenLieuPizza.Models;
 using QuanLyKhoNguyenLieuPizza.Services;
@@ -31,6 +31,7 @@ public class LoaiNguyenLieuViewModel : BaseViewModel
     private string _formTenLoai = string.Empty;
     
     public event Action? OnBack;
+    public event Action? OnDataChanged;
     
     public ObservableCollection<LoaiNguyenLieuItemViewModel> LoaiNguyenLieus
     {
@@ -68,7 +69,7 @@ public class LoaiNguyenLieuViewModel : BaseViewModel
         set => SetProperty(ref _formTenLoai, value);
     }
     
-    // Commands
+    // Lệnh
     public ICommand LoadDataCommand { get; }
     public ICommand OpenAddPopupCommand { get; }
     public ICommand ClosePopupCommand { get; }
@@ -160,6 +161,7 @@ public class LoaiNguyenLieuViewModel : BaseViewModel
         {
             ClosePopup();
             await LoadDataAsync();
+            OnDataChanged?.Invoke();
         }
     }
     
@@ -170,6 +172,7 @@ public class LoaiNguyenLieuViewModel : BaseViewModel
         if (success)
         {
             await LoadDataAsync();
+            OnDataChanged?.Invoke();
         }
     }
 }

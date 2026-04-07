@@ -1,4 +1,4 @@
-using System.Collections.ObjectModel;
+﻿using System.Collections.ObjectModel;
 using System.IO;
 using System.Windows.Input;
 using Microsoft.Win32;
@@ -165,11 +165,32 @@ public class NhanVienViewModel : BaseViewModel
         set => SetProperty(ref _formNgaySinh, value);
     }
 
-    private string _formDiaChi = string.Empty;
-    public string FormDiaChi
+    private string _formTinhTP = string.Empty;
+    public string FormTinhTP
     {
-        get => _formDiaChi;
-        set => SetProperty(ref _formDiaChi, value);
+        get => _formTinhTP;
+        set => SetProperty(ref _formTinhTP, value);
+    }
+
+    private string _formPhuongXa = string.Empty;
+    public string FormPhuongXa
+    {
+        get => _formPhuongXa;
+        set => SetProperty(ref _formPhuongXa, value);
+    }
+
+    private string _formThonXom = string.Empty;
+    public string FormThonXom
+    {
+        get => _formThonXom;
+        set => SetProperty(ref _formThonXom, value);
+    }
+
+    private string _formDiaChiChiTiet = string.Empty;
+    public string FormDiaChiChiTiet
+    {
+        get => _formDiaChiChiTiet;
+        set => SetProperty(ref _formDiaChiChiTiet, value);
     }
 
     private string _formSDT = string.Empty;
@@ -257,6 +278,13 @@ public class NhanVienViewModel : BaseViewModel
         get => _isLoading;
         set => SetProperty(ref _isLoading, value);
     }
+
+    private bool _isStatusDialogOpen;
+    public bool IsStatusDialogOpen
+    {
+        get => _isStatusDialogOpen;
+        set => SetProperty(ref _isStatusDialogOpen, value);
+    }
     #endregion
 
     #region Lệnh
@@ -268,7 +296,7 @@ public class NhanVienViewModel : BaseViewModel
     public ICommand SaveNhanVienCommand { get; }
     public ICommand CancelDialogCommand { get; }
     
-    // ChucVu commands
+    // Lệnh chức vụ
     public ICommand OpenChucVuViewCommand { get; }
     public ICommand BackToMainViewCommand { get; }
     public ICommand CreateChucVuCommand { get; }
@@ -288,6 +316,10 @@ public class NhanVienViewModel : BaseViewModel
     
     // Lệnh hình ảnh
     public ICommand SelectImageCommand { get; }
+
+    // Status dialog commands
+    public ICommand CloseStatusDialogCommand { get; }
+    public ICommand ConfirmToggleStatusCommand { get; }
     #endregion
 
     public NhanVienViewModel()
@@ -310,7 +342,7 @@ public class NhanVienViewModel : BaseViewModel
         SaveChucVuCommand = new RelayCommand(async _ => await SaveChucVuAsync());
         CancelChucVuDialogCommand = new RelayCommand(_ => CloseChucVuDialog());
         
-        OpenAccountDialogCommand = new RelayCommand(p => OpenAccountDialog(p));
+        OpenAccountDialogCommand = new RelayCommand(async p => await OpenAccountDialogAsync(p));
         SaveAccountCommand = new RelayCommand(async _ => await SaveAccountAsync());
         CancelAccountDialogCommand = new RelayCommand(_ => CloseAccountDialog());
         
@@ -318,6 +350,9 @@ public class NhanVienViewModel : BaseViewModel
         ClearFilterCommand = new RelayCommand(_ => ClearFilter());
         
         SelectImageCommand = new RelayCommand(_ => SelectImage());
+
+        CloseStatusDialogCommand = new RelayCommand(_ => IsStatusDialogOpen = false);
+        ConfirmToggleStatusCommand = new RelayCommand(async _ => await ConfirmToggleStatusAsync());
 
         _ = LoadDataAsync();
     }
@@ -328,7 +363,7 @@ public class NhanVienViewModel : BaseViewModel
         var openFileDialog = new OpenFileDialog
         {
             Title = "Chọn hình ảnh",
-            Filter = "Image files (*.png;*.jpg;*.jpeg;*.gif;*.bmp)|*.png;*.jpg;*.jpeg;*.gif;*.bmp|All files (*.*)|*.*",
+            Filter = "Tệp hình ảnh (*.png;*.jpg;*.jpeg;*.gif;*.bmp)|*.png;*.jpg;*.jpeg;*.gif;*.bmp|Tất cả tệp (*.*)|*.*",
             FilterIndex = 1
         };
 
@@ -450,7 +485,10 @@ public class NhanVienViewModel : BaseViewModel
         IsCreateMode = true;
         FormHoTen = string.Empty;
         FormNgaySinh = null;
-        FormDiaChi = string.Empty;
+        FormTinhTP = string.Empty;
+        FormPhuongXa = string.Empty;
+        FormThonXom = string.Empty;
+        FormDiaChiChiTiet = string.Empty;
         FormSDT = string.Empty;
         FormEmail = string.Empty;
         FormChucVu = null;
@@ -467,7 +505,18 @@ public class NhanVienViewModel : BaseViewModel
             IsCreateMode = false;
             FormHoTen = nv.HoTen;
             FormNgaySinh = nv.NgaySinh;
-            FormDiaChi = nv.DiaChi ?? string.Empty;
+            FormTinhTP = string.Empty;
+            FormPhuongXa = string.Empty;
+            FormThonXom = string.Empty;
+            FormDiaChiChiTiet = string.Empty;
+            if (!string.IsNullOrWhiteSpace(nv.DiaChi))
+            {
+                var parts = nv.DiaChi.Split(new[] { ", " }, StringSplitOptions.RemoveEmptyEntries);
+                if (parts.Length > 0) FormDiaChiChiTiet = parts[0];
+                if (parts.Length > 1) FormThonXom = parts[1];
+                if (parts.Length > 2) FormPhuongXa = parts[2];
+                if (parts.Length > 3) FormTinhTP = string.Join(", ", parts.Skip(3));
+            }
             FormSDT = nv.SDT ?? string.Empty;
             FormEmail = nv.Email ?? string.Empty;
             FormChucVu = ChucVus.FirstOrDefault(cv => cv.ChucVuID == nv.ChucVuID);
@@ -481,7 +530,38 @@ public class NhanVienViewModel : BaseViewModel
     {
         if (string.IsNullOrWhiteSpace(FormHoTen))
         {
+            System.Windows.MessageBox.Show("Vui lòng nhập họ tên nhân viên.", "Lỗi", System.Windows.MessageBoxButton.OK, System.Windows.MessageBoxImage.Warning);
             return;
+        }
+
+        if (FormNgaySinh.HasValue && FormNgaySinh.Value.AddYears(16) > DateTime.Today)
+        {
+            System.Windows.MessageBox.Show("Nhân viên phải từ đủ 16 tuổi trở lên.", "Lỗi", System.Windows.MessageBoxButton.OK, System.Windows.MessageBoxImage.Warning);
+            return;
+        }
+
+        if (!string.IsNullOrWhiteSpace(FormSDT))
+        {
+            var sdt = FormSDT.Trim();
+            if (sdt.Length != 10 || !sdt.StartsWith("0") || !sdt.All(char.IsDigit))
+            {
+                System.Windows.MessageBox.Show("Số điện thoại phải có 10 chữ số và bắt đầu bằng 0.", "Lỗi", System.Windows.MessageBoxButton.OK, System.Windows.MessageBoxImage.Warning);
+                return;
+            }
+        }
+
+        if (!string.IsNullOrWhiteSpace(FormEmail))
+        {
+            try
+            {
+                var addr = new System.Net.Mail.MailAddress(FormEmail.Trim());
+                if (addr.Address != FormEmail.Trim()) throw new Exception();
+            }
+            catch
+            {
+                System.Windows.MessageBox.Show("Email không đúng định dạng. VD: abc@gmail.com", "Lỗi", System.Windows.MessageBoxButton.OK, System.Windows.MessageBoxImage.Warning);
+                return;
+            }
         }
 
         try
@@ -490,7 +570,7 @@ public class NhanVienViewModel : BaseViewModel
             {
                 HoTen = FormHoTen.Trim(),
                 NgaySinh = FormNgaySinh,
-                DiaChi = string.IsNullOrWhiteSpace(FormDiaChi) ? null : FormDiaChi.Trim(),
+                DiaChi = string.Join(", ", new[] { FormDiaChiChiTiet, FormThonXom, FormPhuongXa, FormTinhTP }.Where(x => !string.IsNullOrWhiteSpace(x)).Select(x => x.Trim())),
                 SDT = string.IsNullOrWhiteSpace(FormSDT) ? null : FormSDT.Trim(),
                 Email = string.IsNullOrWhiteSpace(FormEmail) ? null : FormEmail.Trim(),
                 ChucVuID = FormChucVu?.ChucVuID,
@@ -518,16 +598,25 @@ public class NhanVienViewModel : BaseViewModel
     {
         if (parameter is NhanVien nv)
         {
-            try
-            {
-                var newStatus = !nv.TrangThai;
-                await _databaseService.UpdateNhanVienTrangThaiAsync(nv.NhanVienID, newStatus);
-                await LoadNhanViensAsync();
-            }
-            catch (Exception ex)
-            {
-                System.Diagnostics.Debug.WriteLine($"Error toggling status: {ex.Message}");
-            }
+            SelectedNhanVien = nv;
+            IsStatusDialogOpen = true;
+        }
+    }
+
+    private async Task ConfirmToggleStatusAsync()
+    {
+        if (SelectedNhanVien == null) return;
+
+        try
+        {
+            var newStatus = !SelectedNhanVien.TrangThai;
+            await _databaseService.UpdateNhanVienTrangThaiAsync(SelectedNhanVien.NhanVienID, newStatus);
+            IsStatusDialogOpen = false;
+            await LoadNhanViensAsync();
+        }
+        catch (Exception ex)
+        {
+            System.Diagnostics.Debug.WriteLine($"Error toggling status: {ex.Message}");
         }
     }
 
@@ -645,13 +734,22 @@ public class NhanVienViewModel : BaseViewModel
     #endregion
 
     #region Quản lý Tài khoản
-    private void OpenAccountDialog(object? parameter)
+    private async Task OpenAccountDialogAsync(object? parameter)
     {
         if (parameter is NhanVien nv)
         {
             SelectedNhanVien = nv;
-            FormUsername = string.Empty;
-            FormPassword = string.Empty;
+            var taiKhoan = await _databaseService.GetTaiKhoanByNhanVienIDAsync(nv.NhanVienID);
+            if (taiKhoan != null)
+            {
+                FormUsername = taiKhoan.Username;
+                FormPassword = taiKhoan.Password;
+            }
+            else
+            {
+                FormUsername = string.Empty;
+                FormPassword = string.Empty;
+            }
             IsAccountDialogOpen = true;
         }
     }
@@ -692,4 +790,11 @@ public class NhanVienViewModel : BaseViewModel
     #endregion
     #endregion
 }
+
+
+
+
+
+
+
 

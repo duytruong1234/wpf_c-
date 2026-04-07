@@ -1,4 +1,4 @@
-using System.IO;
+﻿using System.IO;
 using System.Windows.Input;
 using System.Windows;
 using Microsoft.Win32;
@@ -66,7 +66,7 @@ public class ProfileViewModel : BaseViewModel
         var openFileDialog = new OpenFileDialog
         {
             Title = "Chọn ảnh đại diện",
-            Filter = "Image files (*.png;*.jpg;*.jpeg)|*.png;*.jpg;*.jpeg|All files (*.*)|*.*",
+            Filter = "Tệp hình ảnh (*.png;*.jpg;*.jpeg)|*.png;*.jpg;*.jpeg|Tất cả tệp (*.*)|*.*",
             FilterIndex = 1
         };
 

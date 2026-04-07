@@ -1,5 +1,6 @@
-using System.Text;
+﻿using System.Text;
 using System.Globalization;
+using System.Linq;
 using Microsoft.Data.SqlClient;
 using System.Data;
 using QuanLyKhoNguyenLieuPizza.Models;
@@ -23,6 +24,278 @@ public class DatabaseService : IDatabaseService
     }
 
     private SqlConnection GetConnection() => new SqlConnection(_connectionString);
+
+    private sealed class IngredientUnitContext
+    {
+        public int IngredientId { get; init; }
+        public string Name { get; init; } = string.Empty;
+        public int? StockUnitId { get; init; }
+        public string? StockUnitName { get; init; }
+        public Dictionary<int, decimal> UnitFactors { get; } = new();
+    }
+
+    private static SqlCommand CreateCommand(string sql, SqlConnection conn, SqlTransaction? transaction = null)
+    {
+        var cmd = conn.CreateCommand();
+        cmd.CommandText = sql;
+        if (transaction != null)
+            cmd.Transaction = transaction;
+        return cmd;
+    }
+
+    private static string NormalizeUnitToken(string? value)
+    {
+        if (string.IsNullOrWhiteSpace(value))
+            return string.Empty;
+
+        var normalized = value.Trim().Normalize(NormalizationForm.FormD);
+        var builder = new StringBuilder(normalized.Length);
+        foreach (var c in normalized)
+        {
+            if (CharUnicodeInfo.GetUnicodeCategory(c) != UnicodeCategory.NonSpacingMark)
+                builder.Append(char.ToLowerInvariant(c));
+        }
+
+        return builder.ToString().Normalize(NormalizationForm.FormC);
+    }
+
+    private static bool TryGetWeightFactorToKilogram(string? unitName, out decimal factor)
+    {
+        factor = NormalizeUnitToken(unitName) switch
+        {
+            "g" => 0.001m,
+            "kg" => 1m,
+            _ => 0m
+        };
+
+        return factor > 0;
+    }
+
+    private static bool TryGetVolumeFactorToLiter(string? unitName, out decimal factor)
+    {
+        factor = NormalizeUnitToken(unitName) switch
+        {
+            "ml" => 0.001m,
+            "l" => 1m,
+            "lit" => 1m,
+            _ => 0m
+        };
+
+        return factor > 0;
+    }
+
+    private static bool IsPackageLikeUnit(string? unitName)
+    {
+        return NormalizeUnitToken(unitName) switch
+        {
+            "bao" => true,
+            "thung" => true,
+            "hop" => true,
+            "goi" => true,
+            "cai" => true,
+            "can" => true,
+            _ => false
+        };
+    }
+
+    private async Task<string?> GetUnitNameAsync(
+        SqlConnection conn,
+        SqlTransaction? transaction,
+        int? unitId,
+        Dictionary<int, string> unitNameCache)
+    {
+        if (!unitId.HasValue)
+            return null;
+
+        if (unitNameCache.TryGetValue(unitId.Value, out var cached))
+            return cached;
+
+        const string sql = "SELECT TenDonVi FROM DonViTinh WHERE DonViID = @DonViID";
+        using var cmd = CreateCommand(sql, conn, transaction);
+        cmd.Parameters.AddWithValue("@DonViID", unitId.Value);
+        var result = await cmd.ExecuteScalarAsync();
+        var name = result?.ToString();
+
+        if (!string.IsNullOrWhiteSpace(name))
+            unitNameCache[unitId.Value] = name;
+
+        return name;
+    }
+
+    private async Task<IngredientUnitContext> GetIngredientUnitContextAsync(
+        SqlConnection conn,
+        SqlTransaction? transaction,
+        int ingredientId,
+        Dictionary<int, IngredientUnitContext> contextCache)
+    {
+        if (contextCache.TryGetValue(ingredientId, out var cached))
+            return cached;
+
+        const string ingredientSql = @"SELECT nl.NguyenLieuID, nl.TenNguyenLieu, nl.DonViID, dv.TenDonVi
+                                       FROM NguyenLieu nl
+                                       LEFT JOIN DonViTinh dv ON nl.DonViID = dv.DonViID
+                                       WHERE nl.NguyenLieuID = @NguyenLieuID";
+
+        IngredientUnitContext? context = null;
+        using (var cmd = CreateCommand(ingredientSql, conn, transaction))
+        {
+            cmd.Parameters.AddWithValue("@NguyenLieuID", ingredientId);
+            using var reader = await cmd.ExecuteReaderAsync();
+            if (await reader.ReadAsync())
+            {
+                context = new IngredientUnitContext
+                {
+                    IngredientId = reader.GetInt32(0),
+                    Name = reader.IsDBNull(1) ? $"ID {ingredientId}" : reader.GetString(1),
+                    StockUnitId = reader.IsDBNull(2) ? null : reader.GetInt32(2),
+                    StockUnitName = reader.IsDBNull(3) ? null : reader.GetString(3)
+                };
+            }
+        }
+
+        context ??= new IngredientUnitContext
+        {
+            IngredientId = ingredientId,
+            Name = $"ID {ingredientId}"
+        };
+
+        const string factorSql = @"SELECT DonViID, HeSo
+                                   FROM QuyDoiDonVi
+                                   WHERE NguyenLieuID = @NguyenLieuID";
+
+        using (var cmd = CreateCommand(factorSql, conn, transaction))
+        {
+            cmd.Parameters.AddWithValue("@NguyenLieuID", ingredientId);
+            using var reader = await cmd.ExecuteReaderAsync();
+            while (await reader.ReadAsync())
+            {
+                if (reader.IsDBNull(0))
+                    continue;
+
+                var unitId = reader.GetInt32(0);
+                var factor = reader.IsDBNull(1) ? 0m : reader.GetDecimal(1);
+                if (factor > 0)
+                    context.UnitFactors[unitId] = factor;
+            }
+        }
+
+        if (context.StockUnitId is int stockUnitId && !context.UnitFactors.ContainsKey(stockUnitId))
+            context.UnitFactors[stockUnitId] = 1m;
+
+        contextCache[ingredientId] = context;
+        return context;
+    }
+
+    private static bool TryConvertByConfiguredFactors(
+        IngredientUnitContext context,
+        int sourceUnitId,
+        decimal amount,
+        out decimal convertedAmount)
+    {
+        convertedAmount = 0m;
+
+        if (context.StockUnitId is not int stockUnitId)
+            return false;
+
+        if (!context.UnitFactors.TryGetValue(sourceUnitId, out var sourceFactor) || sourceFactor <= 0)
+            return false;
+
+        if (!context.UnitFactors.TryGetValue(stockUnitId, out var stockFactor) || stockFactor <= 0)
+            return false;
+
+        convertedAmount = amount * sourceFactor / stockFactor;
+        return true;
+    }
+
+    private static bool TryConvertByMetricUnits(
+        string? sourceUnitName,
+        string? stockUnitName,
+        decimal amount,
+        out decimal convertedAmount)
+    {
+        convertedAmount = 0m;
+
+        if (TryGetWeightFactorToKilogram(sourceUnitName, out var sourceWeight) &&
+            TryGetWeightFactorToKilogram(stockUnitName, out var stockWeight))
+        {
+            convertedAmount = amount * sourceWeight / stockWeight;
+            return true;
+        }
+
+        if (TryGetVolumeFactorToLiter(sourceUnitName, out var sourceVolume) &&
+            TryGetVolumeFactorToLiter(stockUnitName, out var stockVolume))
+        {
+            convertedAmount = amount * sourceVolume / stockVolume;
+            return true;
+        }
+
+        return false;
+    }
+
+    private static bool TryConvertByPackageFallback(
+        IngredientUnitContext context,
+        string? sourceUnitName,
+        decimal amount,
+        out decimal convertedAmount)
+    {
+        convertedAmount = 0m;
+
+        if (context.StockUnitId is not int stockUnitId)
+            return false;
+
+        if (!context.UnitFactors.TryGetValue(stockUnitId, out var stockFactor) || stockFactor <= 0)
+            return false;
+
+        if (!IsPackageLikeUnit(context.StockUnitName) && context.UnitFactors.Count == 0)
+            return false;
+
+        // Legacy data stores a few packaged ingredients by box/carton while recipes use grams/ml.
+        // When no explicit mapping exists, treat 1 standard package as 1kg/1L and scale by QuyDoiDonVi if present.
+        if (TryGetWeightFactorToKilogram(sourceUnitName, out var sourceWeight))
+        {
+            convertedAmount = amount * sourceWeight / stockFactor;
+            return true;
+        }
+
+        if (TryGetVolumeFactorToLiter(sourceUnitName, out var sourceVolume))
+        {
+            convertedAmount = amount * sourceVolume / stockFactor;
+            return true;
+        }
+
+        return false;
+    }
+
+    private async Task<decimal> ConvertAmountToStockUnitAsync(
+        SqlConnection conn,
+        SqlTransaction? transaction,
+        int ingredientId,
+        decimal amount,
+        int? sourceUnitId,
+        Dictionary<int, IngredientUnitContext> contextCache,
+        Dictionary<int, string> unitNameCache)
+    {
+        if (amount <= 0)
+            return 0m;
+
+        var context = await GetIngredientUnitContextAsync(conn, transaction, ingredientId, contextCache);
+
+        if (sourceUnitId == null || context.StockUnitId == null || sourceUnitId == context.StockUnitId)
+            return amount;
+
+        if (TryConvertByConfiguredFactors(context, sourceUnitId.Value, amount, out var convertedAmount))
+            return convertedAmount;
+
+        var sourceUnitName = await GetUnitNameAsync(conn, transaction, sourceUnitId, unitNameCache);
+        if (TryConvertByMetricUnits(sourceUnitName, context.StockUnitName, amount, out convertedAmount))
+            return convertedAmount;
+
+        if (TryConvertByPackageFallback(context, sourceUnitName, amount, out convertedAmount))
+            return convertedAmount;
+
+        throw new InvalidOperationException(
+            $"Chưa cấu hình quy đổi đơn vị cho nguyên liệu '{context.Name}' ({sourceUnitName ?? $"ID {sourceUnitId.Value}"} -> {context.StockUnitName ?? "đơn vị tồn kho"}).");
+    }
 
     #region Phương thức hỗ trợ
     /// <summary>
@@ -132,7 +405,7 @@ public class DatabaseService : IDatabaseService
                        FROM TaiKhoan tk
                        LEFT JOIN NhanVien nv ON tk.NhanVienID = nv.NhanVienID
                        LEFT JOIN ChucVu cv ON nv.ChucVuID = cv.ChucVuID
-                       WHERE tk.Username = @Username AND tk.Password = @Password AND tk.TrangThai = 1";
+                       WHERE tk.Username = @Username AND tk.Password = @Password AND tk.TrangThai = 1 AND (nv.TrangThai IS NULL OR nv.TrangThai = 1)";
             
             using var cmd = new SqlCommand(sql, conn);
             cmd.Parameters.AddWithValue("@Username", username);
@@ -494,6 +767,67 @@ public class DatabaseService : IDatabaseService
         }
         
         return result;
+    }
+
+    public async Task<bool> UpsertNguyenLieuNhaCungCapAsync(int nguyenLieuId, int nhaCungCapId, decimal giaNhap)
+    {
+        try
+        {
+            using var conn = GetConnection();
+            await conn.OpenAsync();
+            
+            // Delete existing relationships for this nguyenlieu first, then insert new one
+            var deleteSql = "DELETE FROM NguyenLieuNhaCungCap WHERE NguyenLieuID = @NguyenLieuID";
+            using var deleteCmd = new SqlCommand(deleteSql, conn);
+            deleteCmd.Parameters.AddWithValue("@NguyenLieuID", nguyenLieuId);
+            await deleteCmd.ExecuteNonQueryAsync();
+            
+            var insertSql = @"INSERT INTO NguyenLieuNhaCungCap (NguyenLieuID, NhaCungCapID, GiaNhap, NgayCapNhat)
+                             VALUES (@NguyenLieuID, @NhaCungCapID, @GiaNhap, GETDATE())";
+            using var insertCmd = new SqlCommand(insertSql, conn);
+            insertCmd.Parameters.AddWithValue("@NguyenLieuID", nguyenLieuId);
+            insertCmd.Parameters.AddWithValue("@NhaCungCapID", nhaCungCapId);
+            insertCmd.Parameters.AddWithValue("@GiaNhap", giaNhap);
+            await insertCmd.ExecuteNonQueryAsync();
+            
+            return true;
+        }
+        catch (Exception ex)
+        {
+            System.Diagnostics.Debug.WriteLine($"Error upserting NguyenLieuNhaCungCap: {ex.Message}");
+            return false;
+        }
+    }
+
+    public async Task<bool> AddNguyenLieuToNhaCungCapAsync(int nguyenLieuId, int nhaCungCapId, decimal giaNhap)
+    {
+        try
+        {
+            using var conn = GetConnection();
+            await conn.OpenAsync();
+            
+            var sql = @"MERGE NguyenLieuNhaCungCap AS target
+                        USING (SELECT @NguyenLieuID AS NguyenLieuID, @NhaCungCapID AS NhaCungCapID) AS source
+                        ON target.NguyenLieuID = source.NguyenLieuID AND target.NhaCungCapID = source.NhaCungCapID
+                        WHEN MATCHED THEN
+                            UPDATE SET GiaNhap = @GiaNhap, NgayCapNhat = GETDATE()
+                        WHEN NOT MATCHED THEN
+                            INSERT (NguyenLieuID, NhaCungCapID, GiaNhap, NgayCapNhat)
+                            VALUES (@NguyenLieuID, @NhaCungCapID, @GiaNhap, GETDATE());";
+
+            using var cmd = new SqlCommand(sql, conn);
+            cmd.Parameters.AddWithValue("@NguyenLieuID", nguyenLieuId);
+            cmd.Parameters.AddWithValue("@NhaCungCapID", nhaCungCapId);
+            cmd.Parameters.AddWithValue("@GiaNhap", giaNhap);
+            await cmd.ExecuteNonQueryAsync();
+            
+            return true;
+        }
+        catch (Exception ex)
+        {
+            System.Diagnostics.Debug.WriteLine($"Error adding NguyenLieu to NhaCungCap: {ex.Message}");
+            return false;
+        }
     }
     #endregion
 
@@ -990,6 +1324,103 @@ public class DatabaseService : IDatabaseService
               WHERE tk.SoLuongTon > 0 
               AND nl.HanSuDung IS NOT NULL 
               AND nl.HanSuDung <= GETDATE()", 0);
+
+    public async Task<List<(string TenNguyenLieu, decimal SoLuongTon, string DonVi)>> GetLowStockItemsAsync(decimal threshold = 20)
+    {
+        var result = new List<(string, decimal, string)>();
+        try
+        {
+            using var conn = GetConnection();
+            await conn.OpenAsync();
+            var sql = @"SELECT nl.TenNguyenLieu, tk.SoLuongTon, ISNULL(dv.TenDonVi, '')
+                        FROM TonKho tk
+                        INNER JOIN NguyenLieu nl ON tk.NguyenLieuID = nl.NguyenLieuID
+                        LEFT JOIN DonViTinh dv ON nl.DonViID = dv.DonViID
+                        WHERE tk.SoLuongTon > 0 AND tk.SoLuongTon < @Threshold
+                        ORDER BY tk.SoLuongTon ASC";
+            using var cmd = new SqlCommand(sql, conn);
+            cmd.Parameters.AddWithValue("@Threshold", threshold);
+            using var reader = await cmd.ExecuteReaderAsync();
+            while (await reader.ReadAsync())
+                result.Add((reader.GetString(0), reader.GetDecimal(1), reader.GetString(2)));
+        }
+        catch (Exception ex) { System.Diagnostics.Debug.WriteLine($"Error GetLowStockItems: {ex.Message}"); }
+        return result;
+    }
+
+    public async Task<List<(string TenNguyenLieu, decimal SoLuongTon, string DonVi, DateTime? HanSuDung)>> GetNearExpiryItemsAsync(int days = 7)
+    {
+        var result = new List<(string, decimal, string, DateTime?)>();
+        try
+        {
+            using var conn = GetConnection();
+            await conn.OpenAsync();
+            var sql = @"SELECT nl.TenNguyenLieu, tk.SoLuongTon, ISNULL(dv.TenDonVi, ''), nl.HanSuDung
+                        FROM TonKho tk
+                        INNER JOIN NguyenLieu nl ON tk.NguyenLieuID = nl.NguyenLieuID
+                        LEFT JOIN DonViTinh dv ON nl.DonViID = dv.DonViID
+                        WHERE tk.SoLuongTon > 0 
+                        AND nl.HanSuDung IS NOT NULL 
+                        AND nl.HanSuDung <= DATEADD(DAY, @Days, GETDATE())
+                        AND nl.HanSuDung > GETDATE()
+                        ORDER BY nl.HanSuDung ASC";
+            using var cmd = new SqlCommand(sql, conn);
+            cmd.Parameters.AddWithValue("@Days", days);
+            using var reader = await cmd.ExecuteReaderAsync();
+            while (await reader.ReadAsync())
+                result.Add((reader.GetString(0), reader.GetDecimal(1), reader.GetString(2), reader.IsDBNull(3) ? null : reader.GetDateTime(3)));
+        }
+        catch (Exception ex) { System.Diagnostics.Debug.WriteLine($"Error GetNearExpiryItems: {ex.Message}"); }
+        return result;
+    }
+
+    public async Task<List<(string TenNguyenLieu, decimal SoLuongTon, string DonVi, DateTime? HanSuDung)>> GetExpiredItemsAsync()
+    {
+        var result = new List<(string, decimal, string, DateTime?)>();
+        try
+        {
+            using var conn = GetConnection();
+            await conn.OpenAsync();
+            var sql = @"SELECT nl.TenNguyenLieu, tk.SoLuongTon, ISNULL(dv.TenDonVi, ''), nl.HanSuDung
+                        FROM TonKho tk
+                        INNER JOIN NguyenLieu nl ON tk.NguyenLieuID = nl.NguyenLieuID
+                        LEFT JOIN DonViTinh dv ON nl.DonViID = dv.DonViID
+                        WHERE tk.SoLuongTon > 0 
+                        AND nl.HanSuDung IS NOT NULL 
+                        AND nl.HanSuDung <= GETDATE()
+                        ORDER BY nl.HanSuDung ASC";
+            using var cmd = new SqlCommand(sql, conn);
+            using var reader = await cmd.ExecuteReaderAsync();
+            while (await reader.ReadAsync())
+                result.Add((reader.GetString(0), reader.GetDecimal(1), reader.GetString(2), reader.IsDBNull(3) ? null : reader.GetDateTime(3)));
+        }
+        catch (Exception ex) { System.Diagnostics.Debug.WriteLine($"Error GetExpiredItems: {ex.Message}"); }
+        return result;
+    }
+
+    public async Task<List<(string TenNguyenLieu, decimal SoLuongTon, string DonVi)>> GetNormalStockItemsAsync(decimal lowThreshold = 20)
+    {
+        var result = new List<(string, decimal, string)>();
+        try
+        {
+            using var conn = GetConnection();
+            await conn.OpenAsync();
+            var sql = @"SELECT nl.TenNguyenLieu, tk.SoLuongTon, ISNULL(dv.TenDonVi, '')
+                        FROM TonKho tk
+                        INNER JOIN NguyenLieu nl ON tk.NguyenLieuID = nl.NguyenLieuID
+                        LEFT JOIN DonViTinh dv ON nl.DonViID = dv.DonViID
+                        WHERE tk.SoLuongTon >= @Threshold
+                        AND (nl.HanSuDung IS NULL OR nl.HanSuDung > GETDATE())
+                        ORDER BY nl.TenNguyenLieu ASC";
+            using var cmd = new SqlCommand(sql, conn);
+            cmd.Parameters.AddWithValue("@Threshold", lowThreshold);
+            using var reader = await cmd.ExecuteReaderAsync();
+            while (await reader.ReadAsync())
+                result.Add((reader.GetString(0), reader.GetDecimal(1), reader.GetString(2)));
+        }
+        catch (Exception ex) { System.Diagnostics.Debug.WriteLine($"Error GetNormalStockItems: {ex.Message}"); }
+        return result;
+    }
     #endregion
 
     #region Phiếu Nhập
@@ -1129,10 +1560,12 @@ public class DatabaseService : IDatabaseService
             
             var sql = @"SELECT pn.PhieuNhapID, pn.MaPhieuNhap, pn.NhanVienNhapID, pn.NhaCungCapID,
                               pn.NgayNhap, pn.TongTien, pn.TrangThai,
-                              nv.HoTen as TenNhanVien, ncc.TenNCC, ncc.DiaChi
+                              nv.HoTen as TenNhanVien, ncc.TenNCC, ncc.DiaChi,
+                              pn.NhanVienDuyetID, pn.NgayDuyet, nvd.HoTen as TenNhanVienDuyet
                        FROM PhieuNhap pn
                        LEFT JOIN NhanVien nv ON pn.NhanVienNhapID = nv.NhanVienID
                        LEFT JOIN NhaCungCap ncc ON pn.NhaCungCapID = ncc.NhaCungCapID
+                       LEFT JOIN NhanVien nvd ON pn.NhanVienDuyetID = nvd.NhanVienID
                        WHERE pn.PhieuNhapID = @PhieuNhapID";
             
             using var cmd = new SqlCommand(sql, conn);
@@ -1150,7 +1583,9 @@ public class DatabaseService : IDatabaseService
                     NhaCungCapID = reader.IsDBNull(3) ? null : reader.GetInt32(3),
                     NgayNhap = reader.GetDateTime(4),
                     TongTien = reader.GetDecimal(5),
-                    TrangThai = reader.GetByte(6)
+                    TrangThai = reader.GetByte(6),
+                    NhanVienDuyetID = reader.IsDBNull(10) ? null : reader.GetInt32(10),
+                    NgayDuyet = reader.IsDBNull(11) ? null : reader.GetDateTime(11)
                 };
                 
                 if (!reader.IsDBNull(7))
@@ -1165,6 +1600,11 @@ public class DatabaseService : IDatabaseService
                         TenNCC = reader.GetString(8),
                         DiaChi = reader.IsDBNull(9) ? null : reader.GetString(9)
                     };
+                }
+                
+                if (!reader.IsDBNull(12))
+                {
+                    phieuNhap.NhanVienDuyet = new NhanVien { HoTen = reader.GetString(12) };
                 }
                 
                 return phieuNhap;
@@ -1248,9 +1688,10 @@ public class DatabaseService : IDatabaseService
             
             var sql = @"SELECT nl.NguyenLieuID, nl.MaNguyenLieu, nl.TenNguyenLieu, nl.HinhAnh,
                               nl.LoaiNLID, nl.DonViID, nl.TrangThai,
-                              dv.TenDonVi, nlncc.GiaNhap
+                              dv.TenDonVi, nlncc.NhaCungCapID, ncc.TenNCC, nlncc.GiaNhap
                        FROM NguyenLieu nl
                        INNER JOIN NguyenLieuNhaCungCap nlncc ON nl.NguyenLieuID = nlncc.NguyenLieuID
+                       INNER JOIN NhaCungCap ncc ON nlncc.NhaCungCapID = ncc.NhaCungCapID
                        LEFT JOIN DonViTinh dv ON nl.DonViID = dv.DonViID
                        WHERE nlncc.NhaCungCapID = @NhaCungCapID AND nl.TrangThai = 1";
             
@@ -1277,11 +1718,20 @@ public class DatabaseService : IDatabaseService
                     nl.DonViTinh = new DonViTinh { TenDonVi = reader.GetString(7) };
                 }
                 
-                if (!reader.IsDBNull(8))
+                if (!reader.IsDBNull(10))
                 {
                     nl.NguyenLieuNhaCungCaps = new List<NguyenLieuNhaCungCap>
                     {
-                        new NguyenLieuNhaCungCap { GiaNhap = reader.GetDecimal(8) }
+                        new NguyenLieuNhaCungCap
+                        {
+                            NhaCungCapID = reader.GetInt32(8),
+                            GiaNhap = reader.GetDecimal(10),
+                            NhaCungCap = new NhaCungCap
+                            {
+                                NhaCungCapID = reader.GetInt32(8),
+                                TenNCC = reader.IsDBNull(9) ? string.Empty : reader.GetString(9)
+                            }
+                        }
                     };
                 }
                 
@@ -1308,10 +1758,16 @@ public class DatabaseService : IDatabaseService
             var sql = @"SELECT nl.NguyenLieuID, nl.MaNguyenLieu, nl.TenNguyenLieu, nl.HinhAnh,
                               nl.LoaiNLID, nl.DonViID, nl.TrangThai,
                               dv.TenDonVi,
-                              (SELECT TOP 1 nlncc.GiaNhap FROM NguyenLieuNhaCungCap nlncc 
-                               WHERE nlncc.NguyenLieuID = nl.NguyenLieuID) AS GiaNhap
+                              pref.NhaCungCapID, pref.TenNCC, pref.GiaNhap
                        FROM NguyenLieu nl
                        LEFT JOIN DonViTinh dv ON nl.DonViID = dv.DonViID
+                       OUTER APPLY (
+                           SELECT TOP 1 nlncc.NhaCungCapID, ncc.TenNCC, nlncc.GiaNhap
+                           FROM NguyenLieuNhaCungCap nlncc
+                           LEFT JOIN NhaCungCap ncc ON nlncc.NhaCungCapID = ncc.NhaCungCapID
+                           WHERE nlncc.NguyenLieuID = nl.NguyenLieuID
+                           ORDER BY nlncc.NgayCapNhat DESC, nlncc.NhaCungCapID
+                       ) pref
                        WHERE nl.TrangThai = 1";
             
             using var cmd = new SqlCommand(sql, conn);
@@ -1335,11 +1791,20 @@ public class DatabaseService : IDatabaseService
                     nl.DonViTinh = new DonViTinh { TenDonVi = reader.GetString(7) };
                 }
                 
-                if (!reader.IsDBNull(8))
+                if (!reader.IsDBNull(10))
                 {
                     nl.NguyenLieuNhaCungCaps = new List<NguyenLieuNhaCungCap>
                     {
-                        new NguyenLieuNhaCungCap { GiaNhap = reader.GetDecimal(8) }
+                        new NguyenLieuNhaCungCap
+                        {
+                            NhaCungCapID = reader.GetInt32(8),
+                            GiaNhap = reader.GetDecimal(10),
+                            NhaCungCap = new NhaCungCap
+                            {
+                                NhaCungCapID = reader.GetInt32(8),
+                                TenNCC = reader.IsDBNull(9) ? string.Empty : reader.GetString(9)
+                            }
+                        }
                     };
                 }
                 
@@ -1600,7 +2065,7 @@ public class DatabaseService : IDatabaseService
             }
             reader.Close();
             
-            // Reverse TonKho
+            // Hoàn tác Tồn kho
             foreach (var ct in chiTiets)
             {
                 var updateSql = @"UPDATE TonKho 
@@ -2515,6 +2980,26 @@ public class DatabaseService : IDatabaseService
             return 0;
         }
     }
+
+    public async Task<bool> DeleteNguyenLieuFromNhaCungCapAsync(int nguyenLieuId, int nhaCungCapId)
+    {
+        try
+        {
+            using var conn = GetConnection();
+            await conn.OpenAsync();
+            var sql = "DELETE FROM NguyenLieuNhaCungCap WHERE NguyenLieuID = @NguyenLieuID AND NhaCungCapID = @NhaCungCapID";
+            using var cmd = new SqlCommand(sql, conn);
+            cmd.Parameters.AddWithValue("@NguyenLieuID", nguyenLieuId);
+            cmd.Parameters.AddWithValue("@NhaCungCapID", nhaCungCapId);
+            await cmd.ExecuteNonQueryAsync();
+            return true;
+        }
+        catch (Exception ex)
+        {
+            System.Diagnostics.Debug.WriteLine($"Error deleting NguyenLieu from NhaCungCap: {ex.Message}");
+            return false;
+        }
+    }
     #endregion
 
     #region Quản lý Chức Vụ
@@ -2857,6 +3342,36 @@ public class DatabaseService : IDatabaseService
         }
     }
 
+    public async Task<TaiKhoan?> GetTaiKhoanByNhanVienIDAsync(int nhanVienId)
+    {
+        try
+        {
+            using var conn = GetConnection();
+            await conn.OpenAsync();
+            var sql = "SELECT TaiKhoanID, NhanVienID, Username, Password, TrangThai FROM TaiKhoan WHERE NhanVienID = @NhanVienID";
+            using var cmd = new SqlCommand(sql, conn);
+            cmd.Parameters.AddWithValue("@NhanVienID", nhanVienId);
+            using var reader = await cmd.ExecuteReaderAsync();
+            if (await reader.ReadAsync())
+            {
+                return new TaiKhoan
+                {
+                    TaiKhoanID = reader.GetInt32(0),
+                    NhanVienID = reader.IsDBNull(1) ? null : reader.GetInt32(1),
+                    Username = reader.GetString(2),
+                    Password = reader.GetString(3),
+                    TrangThai = reader.GetBoolean(4)
+                };
+            }
+            return null;
+        }
+        catch (Exception ex)
+        {
+            System.Diagnostics.Debug.WriteLine($"Error getting TaiKhoan: {ex.Message}");
+            return null;
+        }
+    }
+
     public async Task<bool> CreateTaiKhoanForNhanVienAsync(int nhanVienId, string username, string password)
     {
         try
@@ -2864,19 +3379,21 @@ public class DatabaseService : IDatabaseService
             using var conn = GetConnection();
             await conn.OpenAsync();
             
-            // Kiểm tra nếu tài khoản đã tồn tại
             var checkSql = "SELECT COUNT(*) FROM TaiKhoan WHERE NhanVienID = @NhanVienID";
             using var checkCmd = new SqlCommand(checkSql, conn);
             checkCmd.Parameters.AddWithValue("@NhanVienID", nhanVienId);
             var count = Convert.ToInt32(await checkCmd.ExecuteScalarAsync());
             
+            string sql;
             if (count > 0)
             {
-                return false; // Account already exists
+                sql = @"UPDATE TaiKhoan SET Username = @Username, Password = @Password WHERE NhanVienID = @NhanVienID";
             }
-            
-            var sql = @"INSERT INTO TaiKhoan (NhanVienID, Username, Password, TrangThai)
-                       VALUES (@NhanVienID, @Username, @Password, 1)";
+            else
+            {
+                sql = @"INSERT INTO TaiKhoan (NhanVienID, Username, Password, TrangThai)
+                         VALUES (@NhanVienID, @Username, @Password, 1)";
+            }
             
             using var cmd = new SqlCommand(sql, conn);
             cmd.Parameters.AddWithValue("@NhanVienID", nhanVienId);
@@ -2946,6 +3463,31 @@ public class DatabaseService : IDatabaseService
     #endregion
 
     #region Pizza
+    public async Task<List<LoaiHangHoa>> GetLoaiHangHoasAsync()
+    {
+        var result = new List<LoaiHangHoa>();
+        try
+        {
+            using var conn = GetConnection();
+            await conn.OpenAsync();
+            using var cmd = new SqlCommand("SELECT LoaiHangHoaID, TenLoaiHangHoa FROM LoaiHangHoa", conn);
+            using var reader = await cmd.ExecuteReaderAsync();
+            while (await reader.ReadAsync())
+            {
+                result.Add(new LoaiHangHoa
+                {
+                    LoaiHangHoaID = reader.GetString(0),
+                    TenLoaiHangHoa = reader.IsDBNull(1) ? null : reader.GetString(1)
+                });
+            }
+        }
+        catch (Exception ex)
+        {
+            System.Diagnostics.Debug.WriteLine($"Error loading LoaiHangHoa: {ex.Message}");
+        }
+        return result;
+    }
+
     public async Task<List<Pizza>> GetPizzasAsync()
     {
         var result = new List<Pizza>();
@@ -2958,10 +3500,14 @@ public class DatabaseService : IDatabaseService
                                hh.HinhAnh, gts.SizeID,
                                ISNULL(ds.TenSize, gts.SizeID) AS KichThuoc,
                                ISNULL(gts.GiaBan, 0) AS GiaBan,
-                               ISNULL(hh.TinhTrang, 1) AS TinhTrang
+                               ISNULL(hh.TinhTrang, 1) AS TinhTrang,
+                               hh.LoaiHangHoaID, lhh.TenLoaiHangHoa,
+                               hh.DonViID, dvt.TenDonVi
                         FROM HangHoa hh
                         LEFT JOIN GiaTheo_Size gts ON hh.MaHangHoa = gts.MaHangHoa
-                        LEFT JOIN DoanhMuc_Size ds ON gts.SizeID = ds.SizeID";
+                        LEFT JOIN DoanhMuc_Size ds ON gts.SizeID = ds.SizeID
+                        LEFT JOIN LoaiHangHoa lhh ON hh.LoaiHangHoaID = lhh.LoaiHangHoaID
+                        LEFT JOIN DonViTinh dvt ON hh.DonViID = dvt.DonViID";
             using var cmd = new SqlCommand(sql, conn);
             using var reader = await cmd.ExecuteReaderAsync();
             while (await reader.ReadAsync())
@@ -2975,7 +3521,11 @@ public class DatabaseService : IDatabaseService
                     SizeID = reader.IsDBNull(3) ? null : reader.GetString(3),
                     KichThuoc = reader.IsDBNull(4) ? "M" : reader.GetString(4),
                     GiaBan = reader.GetDecimal(5),
-                    TrangThai = !reader.IsDBNull(6) && Convert.ToBoolean(reader.GetValue(6))
+                    TrangThai = !reader.IsDBNull(6) && Convert.ToBoolean(reader.GetValue(6)),
+                    LoaiHangHoaID = reader.IsDBNull(7) ? null : reader.GetString(7),
+                    LoaiMonAn = reader.IsDBNull(8) ? null : reader.GetString(8),
+                    DonViID = reader.IsDBNull(9) ? null : reader.GetInt32(9),
+                    TenDonVi = reader.IsDBNull(10) ? null : reader.GetString(10)
                 });
             }
         }
@@ -3010,24 +3560,28 @@ public class DatabaseService : IDatabaseService
 
             if (exists)
             {
-                // UPDATE HangHoa
+                // Cập nhật Hàng hóa
                 using var cmdHH = new SqlCommand(
-                    @"UPDATE HangHoa SET TenHangHoa=@Ten, HinhAnh=@Anh, TinhTrang=@TT WHERE MaHangHoa=@Ma", conn);
+                    @"UPDATE HangHoa SET TenHangHoa=@Ten, HinhAnh=@Anh, TinhTrang=@TT, LoaiHangHoaID=@Loai, DonViID=@DVT WHERE MaHangHoa=@Ma", conn);
                 cmdHH.Parameters.AddWithValue("@Ma", pizza.MaPizza);
                 cmdHH.Parameters.AddWithValue("@Ten", pizza.TenPizza);
                 cmdHH.Parameters.AddWithValue("@Anh", (object?)pizza.HinhAnh ?? DBNull.Value);
                 cmdHH.Parameters.AddWithValue("@TT", pizza.TrangThai);
+                cmdHH.Parameters.AddWithValue("@Loai", (object?)pizza.LoaiHangHoaID ?? DBNull.Value);
+                cmdHH.Parameters.AddWithValue("@DVT", (object?)pizza.DonViID ?? DBNull.Value);
                 await cmdHH.ExecuteNonQueryAsync();
             }
             else
             {
                 // INSERT HangHoa
                 using var cmdHH = new SqlCommand(
-                    @"INSERT INTO HangHoa (MaHangHoa, TenHangHoa, HinhAnh, TinhTrang) VALUES (@Ma, @Ten, @Anh, @TT)", conn);
+                    @"INSERT INTO HangHoa (MaHangHoa, TenHangHoa, HinhAnh, TinhTrang, LoaiHangHoaID, DonViID) VALUES (@Ma, @Ten, @Anh, @TT, @Loai, @DVT)", conn);
                 cmdHH.Parameters.AddWithValue("@Ma", pizza.MaPizza);
                 cmdHH.Parameters.AddWithValue("@Ten", pizza.TenPizza);
                 cmdHH.Parameters.AddWithValue("@Anh", (object?)pizza.HinhAnh ?? DBNull.Value);
                 cmdHH.Parameters.AddWithValue("@TT", pizza.TrangThai);
+                cmdHH.Parameters.AddWithValue("@Loai", (object?)pizza.LoaiHangHoaID ?? DBNull.Value);
+                cmdHH.Parameters.AddWithValue("@DVT", (object?)pizza.DonViID ?? DBNull.Value);
                 await cmdHH.ExecuteNonQueryAsync();
             }
 
@@ -3100,6 +3654,25 @@ public class DatabaseService : IDatabaseService
         catch (Exception ex)
         {
             System.Diagnostics.Debug.WriteLine($"Error deleting Pizza: {ex.Message}");
+            return false;
+        }
+    }
+    
+    public async Task<bool> TogglePizzaTrangThaiAsync(string maHangHoa, bool newStatus)
+    {
+        try
+        {
+            using var conn = GetConnection();
+            await conn.OpenAsync();
+            using var cmd = new SqlCommand("UPDATE HangHoa SET TinhTrang = @TT WHERE MaHangHoa = @Ma", conn);
+            cmd.Parameters.AddWithValue("@TT", newStatus);
+            cmd.Parameters.AddWithValue("@Ma", maHangHoa);
+            await cmd.ExecuteNonQueryAsync();
+            return true;
+        }
+        catch (Exception ex)
+        {
+            System.Diagnostics.Debug.WriteLine($"Error toggling Pizza status: {ex.Message}");
             return false;
         }
     }
@@ -3550,6 +4123,54 @@ public class DatabaseService : IDatabaseService
             return false;
         }
     }
+
+    public async Task<bool> DeleteDonHangAsync(DonHang donHang)
+    {
+        try
+        {
+            using var conn = GetConnection();
+            await conn.OpenAsync();
+            using var transaction = conn.BeginTransaction();
+            try
+            {
+                if (donHang.DonHangID > 0)
+                {
+                    // Xóa từ bảng DonHang (xóa CT_DonHang trước)
+                    using var delCt = new SqlCommand("DELETE FROM CT_DonHang WHERE DonHangID = @DonHangID", conn, transaction);
+                    delCt.Parameters.AddWithValue("@DonHangID", donHang.DonHangID);
+                    await delCt.ExecuteNonQueryAsync();
+
+                    using var delDh = new SqlCommand("DELETE FROM DonHang WHERE DonHangID = @DonHangID", conn, transaction);
+                    delDh.Parameters.AddWithValue("@DonHangID", donHang.DonHangID);
+                    await delDh.ExecuteNonQueryAsync();
+                }
+                else if (!string.IsNullOrEmpty(donHang.MaDonHang))
+                {
+                    // Xóa từ bảng PhieuBanHang (xóa CT trước)
+                    using var delCt = new SqlCommand("DELETE FROM CT_PhieuBan WHERE MaPhieuBan = @MaPhieu", conn, transaction);
+                    delCt.Parameters.AddWithValue("@MaPhieu", donHang.MaDonHang);
+                    await delCt.ExecuteNonQueryAsync();
+
+                    using var delPb = new SqlCommand("DELETE FROM PhieuBanHang WHERE MaPhieuBan = @MaPhieu", conn, transaction);
+                    delPb.Parameters.AddWithValue("@MaPhieu", donHang.MaDonHang);
+                    await delPb.ExecuteNonQueryAsync();
+                }
+
+                transaction.Commit();
+                return true;
+            }
+            catch
+            {
+                transaction.Rollback();
+                throw;
+            }
+        }
+        catch (Exception ex)
+        {
+            System.Diagnostics.Debug.WriteLine($"Error deleting DonHang: {ex.Message}");
+            return false;
+        }
+    }
     #endregion
 
     #region Thống kê bán hàng
@@ -3916,6 +4537,170 @@ public class DatabaseService : IDatabaseService
         }
         return null;
     }
+
+    public async Task<Dictionary<string, List<string>>> GetOutOfStockIngredientsByHangHoaAsync(IEnumerable<string> maHangHoas)
+    {
+        var result = new Dictionary<string, List<string>>(StringComparer.OrdinalIgnoreCase);
+        var maList = maHangHoas?
+            .Where(m => !string.IsNullOrWhiteSpace(m))
+            .Distinct(StringComparer.OrdinalIgnoreCase)
+            .ToList() ?? new List<string>();
+
+        if (maList.Count == 0)
+            return result;
+
+        try
+        {
+            using var conn = GetConnection();
+            await conn.OpenAsync();
+
+            var parameters = maList.Select((m, i) => new SqlParameter($"@Ma{i}", m)).ToArray();
+            var inClause = string.Join(",", parameters.Select(p => p.ParameterName));
+
+            var sql = $@"
+                SELECT req.MaHangHoa,
+                       req.NguyenLieuID,
+                       req.SoLuong,
+                       req.DonViID,
+                       req.TenNguyenLieu,
+                       req.SoLuongTon
+                FROM (
+                    -- Nguyên liệu nhân bánh
+                    SELECT gs.MaHangHoa,
+                           ctp.NguyenLieuID,
+                           CAST(ctp.SoLuong AS decimal(18,4)) AS SoLuong,
+                           ctp.DonViID,
+                           nl.TenNguyenLieu,
+                           ISNULL(tk.SoLuongTon, 0) AS SoLuongTon
+                    FROM GiaTheo_Size gs
+                    INNER JOIN CongThuc_Pizza ctp
+                        ON gs.MaHangHoa = ctp.MaHangHoa
+                       AND gs.SizeID = ctp.SizeID
+                    INNER JOIN NguyenLieu nl
+                        ON ctp.NguyenLieuID = nl.NguyenLieuID
+                    LEFT JOIN TonKho tk
+                        ON ctp.NguyenLieuID = tk.NguyenLieuID
+                    WHERE gs.MaHangHoa IN ({inClause})
+
+                    UNION ALL
+
+                    -- Nguyên liệu bột theo size + đế
+                    SELECT gs.MaHangHoa,
+                           botNl.NguyenLieuID,
+                           CAST(qb.TrongLuongBot AS decimal(18,4)) AS SoLuong,
+                           qb.DonViID,
+                           botNl.TenNguyenLieu,
+                           ISNULL(tk.SoLuongTon, 0) AS SoLuongTon
+                    FROM GiaTheo_Size gs
+                    INNER JOIN GiaTheo_De gtd
+                        ON gs.SizeID = gtd.SizeID
+                    INNER JOIN DoanhMuc_De dd
+                        ON gtd.MaDeBanh = dd.MaDeBanh
+                    INNER JOIN QuyDinh_Bot qb
+                        ON gs.SizeID = qb.SizeID
+                       AND dd.LoaiCotBanh = qb.LoaiCotBanh
+                    CROSS APPLY (
+                        SELECT TOP 1 nl.NguyenLieuID, nl.TenNguyenLieu
+                        FROM NguyenLieu nl
+                        WHERE nl.TenNguyenLieu LIKE N'%Bột mì%'
+                           OR nl.TenNguyenLieu LIKE N'%Bot mi%'
+                    ) botNl
+                    LEFT JOIN TonKho tk
+                        ON botNl.NguyenLieuID = tk.NguyenLieuID
+                    WHERE gs.MaHangHoa IN ({inClause})
+
+                    UNION ALL
+
+                    -- Nguyên liệu viền theo size + đế
+                    SELECT gs.MaHangHoa,
+                           qv.NguyenLieuID,
+                           CAST(qv.SoLuongVien AS decimal(18,4)) AS SoLuong,
+                           qv.DonViID,
+                           nl.TenNguyenLieu,
+                           ISNULL(tk.SoLuongTon, 0) AS SoLuongTon
+                    FROM GiaTheo_Size gs
+                    INNER JOIN GiaTheo_De gtd
+                        ON gs.SizeID = gtd.SizeID
+                    INNER JOIN QuyDinh_Vien qv
+                        ON gtd.MaDeBanh = qv.MaDeBanh
+                       AND gs.SizeID = qv.SizeID
+                    INNER JOIN NguyenLieu nl
+                        ON qv.NguyenLieuID = nl.NguyenLieuID
+                    LEFT JOIN TonKho tk
+                        ON qv.NguyenLieuID = tk.NguyenLieuID
+                    WHERE gs.MaHangHoa IN ({inClause})
+                ) req";
+
+            var rows = new List<(string MaHangHoa, int NguyenLieuId, decimal Required, int? DonViId, string TenNguyenLieu, decimal SoLuongTon)>();
+
+            using var cmd = CreateCommand(sql, conn);
+            cmd.Parameters.AddRange(parameters);
+
+            using (var reader = await cmd.ExecuteReaderAsync())
+            {
+                while (await reader.ReadAsync())
+                {
+                    rows.Add((
+                        reader.GetString(0),
+                        reader.GetInt32(1),
+                        reader.IsDBNull(2) ? 0m : reader.GetDecimal(2),
+                        reader.IsDBNull(3) ? null : reader.GetInt32(3),
+                        reader.IsDBNull(4) ? string.Empty : reader.GetString(4),
+                        reader.IsDBNull(5) ? 0m : reader.GetDecimal(5)));
+                }
+            }
+
+            var unitContextCache = new Dictionary<int, IngredientUnitContext>();
+            var unitNameCache = new Dictionary<int, string>();
+            var missingMap = new Dictionary<string, HashSet<string>>(StringComparer.OrdinalIgnoreCase);
+
+            foreach (var row in rows)
+            {
+                if (string.IsNullOrWhiteSpace(row.TenNguyenLieu))
+                    continue;
+
+                try
+                {
+                    var normalizedRequired = await ConvertAmountToStockUnitAsync(
+                        conn,
+                        null,
+                        row.NguyenLieuId,
+                        row.Required,
+                        row.DonViId,
+                        unitContextCache,
+                        unitNameCache);
+
+                    if (normalizedRequired > row.SoLuongTon)
+                    {
+                        if (!missingMap.TryGetValue(row.MaHangHoa, out var missingIngredients))
+                        {
+                            missingIngredients = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
+                            missingMap[row.MaHangHoa] = missingIngredients;
+                        }
+
+                        missingIngredients.Add(row.TenNguyenLieu);
+                    }
+                }
+                catch (Exception ex)
+                {
+                    System.Diagnostics.Debug.WriteLine($"Skip stock pre-check for '{row.TenNguyenLieu}': {ex.Message}");
+                }
+            }
+
+            foreach (var entry in missingMap)
+            {
+                result[entry.Key] = entry.Value
+                    .OrderBy(name => name, StringComparer.CurrentCultureIgnoreCase)
+                    .ToList();
+            }
+        }
+        catch (Exception ex)
+        {
+            System.Diagnostics.Debug.WriteLine($"Error getting out-of-stock ingredients: {ex.Message}");
+        }
+
+        return result;
+    }
     #endregion
 
     #region DoanhMuc_Size & DoanhMuc_De
@@ -4054,7 +4839,7 @@ public class DatabaseService : IDatabaseService
             using var conn = GetConnection();
             await conn.OpenAsync();
             var sql = @"SELECT pb.MaPhieuBan, pb.NhanVienBanID, pb.NgayBan, pb.TongTien,
-                              nv.HoTen, pb.GhiChu
+                              nv.HoTen, pb.GhiChu, pb.PhuongThucTT
                        FROM PhieuBanHang pb
                        LEFT JOIN NhanVien nv ON pb.NhanVienBanID = nv.NhanVienID
                        WHERE 1=1";
@@ -4079,7 +4864,8 @@ public class DatabaseService : IDatabaseService
                     NhanVienBanID = reader.IsDBNull(1) ? null : reader.GetInt32(1),
                     NgayBan = reader.IsDBNull(2) ? null : reader.GetDateTime(2),
                     TongTien = reader.IsDBNull(3) ? null : reader.GetDecimal(3),
-                    GhiChu = reader.IsDBNull(5) ? null : reader.GetString(5)
+                    GhiChu = reader.IsDBNull(5) ? null : reader.GetString(5),
+                    PhuongThucTT = reader.IsDBNull(6) ? null : reader.GetString(6)
                 };
                 if (!reader.IsDBNull(4))
                 {
@@ -4106,7 +4892,7 @@ public class DatabaseService : IDatabaseService
             using var conn = GetConnection();
             await conn.OpenAsync();
             var sql = @"SELECT pb.MaPhieuBan, pb.NhanVienBanID, pb.NgayBan, pb.TongTien,
-                              nv.HoTen, pb.GhiChu
+                              nv.HoTen, pb.GhiChu, pb.PhuongThucTT
                        FROM PhieuBanHang pb
                        LEFT JOIN NhanVien nv ON pb.NhanVienBanID = nv.NhanVienID
                        WHERE pb.MaPhieuBan = @MaPhieuBan";
@@ -4121,7 +4907,8 @@ public class DatabaseService : IDatabaseService
                     NhanVienBanID = reader.IsDBNull(1) ? null : reader.GetInt32(1),
                     NgayBan = reader.IsDBNull(2) ? null : reader.GetDateTime(2),
                     TongTien = reader.IsDBNull(3) ? null : reader.GetDecimal(3),
-                    GhiChu = reader.IsDBNull(5) ? null : reader.GetString(5)
+                    GhiChu = reader.IsDBNull(5) ? null : reader.GetString(5),
+                    PhuongThucTT = reader.IsDBNull(6) ? null : reader.GetString(6)
                 };
                 if (!reader.IsDBNull(4))
                 {
@@ -4214,6 +5001,39 @@ public class DatabaseService : IDatabaseService
         }
     }
 
+    public async Task<bool> DeletePhieuBanHangAsync(string maPhieuBan)
+    {
+        try
+        {
+            using var conn = GetConnection();
+            await conn.OpenAsync();
+            using var transaction = conn.BeginTransaction();
+            try
+            {
+                using var delCt = new SqlCommand("DELETE FROM CT_PhieuBan WHERE MaPhieuBan = @MaPhieu", conn, transaction);
+                delCt.Parameters.AddWithValue("@MaPhieu", maPhieuBan);
+                await delCt.ExecuteNonQueryAsync();
+
+                using var delPb = new SqlCommand("DELETE FROM PhieuBanHang WHERE MaPhieuBan = @MaPhieu", conn, transaction);
+                delPb.Parameters.AddWithValue("@MaPhieu", maPhieuBan);
+                await delPb.ExecuteNonQueryAsync();
+
+                transaction.Commit();
+                return true;
+            }
+            catch
+            {
+                transaction.Rollback();
+                throw;
+            }
+        }
+        catch (Exception ex)
+        {
+            System.Diagnostics.Debug.WriteLine($"Error deleting PhieuBanHang: {ex.Message}");
+            return false;
+        }
+    }
+
     public async Task<string> SavePhieuBanHangAsync(PhieuBanHang phieuBan, List<CT_PhieuBan> chiTiets)
     {
         using var conn = GetConnection();
@@ -4221,19 +5041,166 @@ public class DatabaseService : IDatabaseService
         using var transaction = conn.BeginTransaction();
         try
         {
-            // Thêm PhiếuBánHàng
+            // 1) Tính tổng nguyên liệu cần trừ cho toàn bộ đơn
+            var requiredMap = new Dictionary<int, decimal>();
+            var unitContextCache = new Dictionary<int, IngredientUnitContext>();
+            var unitNameCache = new Dictionary<int, string>();
+
+            void AddRequired(int nguyenLieuId, decimal amount)
+            {
+                if (amount <= 0) return;
+                if (requiredMap.ContainsKey(nguyenLieuId))
+                    requiredMap[nguyenLieuId] += amount;
+                else
+                    requiredMap[nguyenLieuId] = amount;
+            }
+
+            foreach (var ct in chiTiets)
+            {
+                if (ct.MaHangHoa == null || ct.SizeID == null) continue;
+                var soLuongMua = ct.SoLuong ?? 0;
+                if (soLuongMua <= 0) continue;
+
+                var ingredientMap = new Dictionary<int, decimal>();
+
+                // Bước 1: CongThuc_Pizza (nhân bánh)
+                var congThucs = await GetCongThucPizzaInternalAsync(conn, transaction, ct.MaHangHoa, ct.SizeID);
+                foreach (var recipe in congThucs)
+                {
+                    var amount = await ConvertAmountToStockUnitAsync(
+                        conn,
+                        transaction,
+                        recipe.NguyenLieuID,
+                        (decimal)(recipe.SoLuong ?? 0),
+                        recipe.DonViID,
+                        unitContextCache,
+                        unitNameCache);
+                    if (amount <= 0) continue;
+                    if (ingredientMap.ContainsKey(recipe.NguyenLieuID))
+                        ingredientMap[recipe.NguyenLieuID] += amount;
+                    else
+                        ingredientMap[recipe.NguyenLieuID] = amount;
+                }
+
+                // Bước 2: QuyDinh_Bot (bột mì) - lookup bằng SizeID + LoaiCotBanh từ DoanhMuc_De
+                if (!string.IsNullOrEmpty(ct.MaDeBanh))
+                {
+                    var botSql = @"SELECT qb.TrongLuongBot, qb.DonViID
+                                   FROM QuyDinh_Bot qb
+                                   INNER JOIN DoanhMuc_De dd ON qb.LoaiCotBanh = dd.LoaiCotBanh
+                                   WHERE qb.SizeID = @SizeID AND dd.MaDeBanh = @MaDeBanh";
+                    using var botCmd = CreateCommand(botSql, conn, transaction);
+                    botCmd.Parameters.AddWithValue("@SizeID", ct.SizeID);
+                    botCmd.Parameters.AddWithValue("@MaDeBanh", ct.MaDeBanh);
+                    using var botReader = await botCmd.ExecuteReaderAsync();
+                    if (await botReader.ReadAsync())
+                    {
+                        var trongLuongBot = botReader.IsDBNull(0) ? 0m : Convert.ToDecimal(botReader.GetDouble(0));
+                        int? donViBotId = botReader.IsDBNull(1) ? null : botReader.GetInt32(1);
+                        botReader.Close();
+                        if (trongLuongBot > 0)
+                        {
+                            // Tìm NguyenLieuID của bột mì (tên chứa "Bột" hoặc "bột mì")
+                            var findBotSql = "SELECT TOP 1 NguyenLieuID FROM NguyenLieu WHERE TenNguyenLieu LIKE N'%Bột mì%' OR TenNguyenLieu LIKE N'%Bot mi%'";
+                            using var findBotCmd = CreateCommand(findBotSql, conn, transaction);
+                            var botNlId = await findBotCmd.ExecuteScalarAsync();
+                            if (botNlId != null && botNlId != DBNull.Value)
+                            {
+                                var nlId = Convert.ToInt32(botNlId);
+                                var normalizedBotAmount = await ConvertAmountToStockUnitAsync(
+                                    conn,
+                                    transaction,
+                                    nlId,
+                                    trongLuongBot,
+                                    donViBotId,
+                                    unitContextCache,
+                                    unitNameCache);
+
+                                if (normalizedBotAmount > 0)
+                                {
+                                    if (ingredientMap.ContainsKey(nlId))
+                                        ingredientMap[nlId] += normalizedBotAmount;
+                                    else
+                                        ingredientMap[nlId] = normalizedBotAmount;
+                                }
+                            }
+                        }
+                    }
+                }
+
+                // Bước 3: QuyDinh_Vien (viền) - lookup bằng MaDeBanh + SizeID
+                if (!string.IsNullOrEmpty(ct.MaDeBanh))
+                {
+                    var vienSql = @"SELECT NguyenLieuID, SoLuongVien, DonViID FROM QuyDinh_Vien 
+                                    WHERE MaDeBanh = @MaDeBanh AND SizeID = @SizeID";
+                    var vienItems = new List<(int NguyenLieuId, decimal SoLuong, int? DonViId)>();
+                    using var vienCmd = CreateCommand(vienSql, conn, transaction);
+                    vienCmd.Parameters.AddWithValue("@MaDeBanh", ct.MaDeBanh);
+                    vienCmd.Parameters.AddWithValue("@SizeID", ct.SizeID);
+                    using (var vienReader = await vienCmd.ExecuteReaderAsync())
+                    {
+                        while (await vienReader.ReadAsync())
+                        {
+                            vienItems.Add((
+                                vienReader.GetInt32(0),
+                                vienReader.IsDBNull(1) ? 0m : Convert.ToDecimal(vienReader.GetDouble(1)),
+                                vienReader.IsDBNull(2) ? null : vienReader.GetInt32(2)));
+                        }
+                    }
+
+                    foreach (var vienItem in vienItems)
+                    {
+                        var soLuongVien = await ConvertAmountToStockUnitAsync(
+                            conn,
+                            transaction,
+                            vienItem.NguyenLieuId,
+                            vienItem.SoLuong,
+                            vienItem.DonViId,
+                            unitContextCache,
+                            unitNameCache);
+                        if (soLuongVien <= 0) continue;
+                        if (ingredientMap.ContainsKey(vienItem.NguyenLieuId))
+                            ingredientMap[vienItem.NguyenLieuId] += soLuongVien;
+                        else
+                            ingredientMap[vienItem.NguyenLieuId] = soLuongVien;
+                    }
+                }
+
+                // Gom tổng nguyên liệu theo số lượng mua
+                foreach (var (nguyenLieuId, amountPerPizza) in ingredientMap)
+                {
+                    var totalAmount = amountPerPizza * soLuongMua;
+                    AddRequired(nguyenLieuId, totalAmount);
+                }
+            }
+
+            // 2) Kiểm tra tồn kho trước khi lưu phiếu
+            if (requiredMap.Count > 0)
+            {
+                var insufficient = await GetInsufficientIngredientsAsync(conn, transaction, requiredMap);
+                if (insufficient.Count > 0)
+                {
+                    var message = "Không đủ nguyên liệu: " +
+                                  string.Join(", ", insufficient.Select(i => $"{i.Name} (còn {i.Available:N2})"));
+                    throw new Exception(message);
+                }
+            }
+
+            // 3) Lưu PhiếuBánHàng
             var sql = @"INSERT INTO PhieuBanHang (MaPhieuBan, NhanVienBanID, NgayBan, TongTien, PhuongThucTT, GhiChu)
                        VALUES (@MaPhieuBan, @NhanVienBanID, @NgayBan, @TongTien, @PhuongThucTT, @GhiChu)";
-            using var cmd = new SqlCommand(sql, conn, transaction);
-            cmd.Parameters.AddWithValue("@MaPhieuBan", phieuBan.MaPhieuBan);
-            cmd.Parameters.AddWithValue("@NhanVienBanID", phieuBan.NhanVienBanID ?? (object)DBNull.Value);
-            cmd.Parameters.AddWithValue("@NgayBan", phieuBan.NgayBan ?? (object)DateTime.Now);
-            cmd.Parameters.AddWithValue("@TongTien", phieuBan.TongTien ?? (object)DBNull.Value);
-            cmd.Parameters.AddWithValue("@PhuongThucTT", phieuBan.PhuongThucTT ?? "Tiền mặt");
-            cmd.Parameters.AddWithValue("@GhiChu", phieuBan.GhiChu ?? (object)DBNull.Value);
-            await cmd.ExecuteNonQueryAsync();
+            using (var cmd = new SqlCommand(sql, conn, transaction))
+            {
+                cmd.Parameters.AddWithValue("@MaPhieuBan", phieuBan.MaPhieuBan);
+                cmd.Parameters.AddWithValue("@NhanVienBanID", phieuBan.NhanVienBanID ?? (object)DBNull.Value);
+                cmd.Parameters.AddWithValue("@NgayBan", phieuBan.NgayBan ?? (object)DateTime.Now);
+                cmd.Parameters.AddWithValue("@TongTien", phieuBan.TongTien ?? (object)DBNull.Value);
+                cmd.Parameters.AddWithValue("@PhuongThucTT", phieuBan.PhuongThucTT ?? "Tiền mặt");
+                cmd.Parameters.AddWithValue("@GhiChu", phieuBan.GhiChu ?? (object)DBNull.Value);
+                await cmd.ExecuteNonQueryAsync();
+            }
 
-            // Thêm CT_PhiếuBán
+            // 4) Lưu CT_PhiếuBán
             foreach (var ct in chiTiets)
             {
                 var ctSql = @"INSERT INTO CT_PhieuBan (MaPhieuBan, MaHangHoa, SizeID, MaDeBanh, SoLuong, ThanhTien)
@@ -4248,92 +5215,19 @@ public class DatabaseService : IDatabaseService
                 await ctCmd.ExecuteNonQueryAsync();
             }
 
-            // Trừ nguyên liệu từ TồnKho dựa trên CongThuc_Pizza + QuyDinh_Bot + QuyDinh_Vien
-            foreach (var ct in chiTiets)
+            // 5) Trừ tồn kho theo tổng nguyên liệu
+            foreach (var kvp in requiredMap)
             {
-                if (ct.MaHangHoa == null || ct.SizeID == null) continue;
-                var soLuongMua = ct.SoLuong ?? 0;
-                if (soLuongMua <= 0) continue;
-
-                // Dictionary gom tất cả nguyên liệu: NguyenLieuID -> tổng lượng tiêu hao cho 1 bánh
-                var ingredientMap = new Dictionary<int, decimal>();
-
-                // Bước 1: CongThuc_Pizza (nhân bánh)
-                var congThucs = await GetCongThucPizzaInternalAsync(conn, transaction, ct.MaHangHoa, ct.SizeID);
-                foreach (var recipe in congThucs)
+                var deductSql = @"UPDATE TonKho 
+                                 SET SoLuongTon = SoLuongTon - @SoLuong, NgayCapNhat = GETDATE()
+                                 WHERE NguyenLieuID = @NguyenLieuID AND SoLuongTon >= @SoLuong";
+                using var deductCmd = new SqlCommand(deductSql, conn, transaction);
+                deductCmd.Parameters.AddWithValue("@SoLuong", kvp.Value);
+                deductCmd.Parameters.AddWithValue("@NguyenLieuID", kvp.Key);
+                var rows = await deductCmd.ExecuteNonQueryAsync();
+                if (rows == 0)
                 {
-                    var amount = (decimal)(recipe.SoLuong ?? 0);
-                    if (amount <= 0) continue;
-                    if (ingredientMap.ContainsKey(recipe.NguyenLieuID))
-                        ingredientMap[recipe.NguyenLieuID] += amount;
-                    else
-                        ingredientMap[recipe.NguyenLieuID] = amount;
-                }
-
-                // Bước 2: QuyDinh_Bot (bột mì) - lookup bằng SizeID + LoaiCotBanh từ DoanhMuc_De
-                if (!string.IsNullOrEmpty(ct.MaDeBanh))
-                {
-                    var botSql = @"SELECT qb.TrongLuongBot 
-                                   FROM QuyDinh_Bot qb
-                                   INNER JOIN DoanhMuc_De dd ON qb.LoaiCotBanh = dd.LoaiCotBanh
-                                   WHERE qb.SizeID = @SizeID AND dd.MaDeBanh = @MaDeBanh";
-                    using var botCmd = new SqlCommand(botSql, conn, transaction);
-                    botCmd.Parameters.AddWithValue("@SizeID", ct.SizeID);
-                    botCmd.Parameters.AddWithValue("@MaDeBanh", ct.MaDeBanh);
-                    var botResult = await botCmd.ExecuteScalarAsync();
-                    if (botResult != null && botResult != DBNull.Value)
-                    {
-                        var trongLuongBot = Convert.ToDecimal(botResult);
-                        if (trongLuongBot > 0)
-                        {
-                            // Tìm NguyenLieuID của bột mì (tên chứa "Bột" hoặc "bột mì")
-                            var findBotSql = "SELECT TOP 1 NguyenLieuID FROM NguyenLieu WHERE TenNguyenLieu LIKE N'%Bột mì%' OR TenNguyenLieu LIKE N'%Bot mi%'";
-                            using var findBotCmd = new SqlCommand(findBotSql, conn, transaction);
-                            var botNlId = await findBotCmd.ExecuteScalarAsync();
-                            if (botNlId != null && botNlId != DBNull.Value)
-                            {
-                                var nlId = Convert.ToInt32(botNlId);
-                                if (ingredientMap.ContainsKey(nlId))
-                                    ingredientMap[nlId] += trongLuongBot;
-                                else
-                                    ingredientMap[nlId] = trongLuongBot;
-                            }
-                        }
-                    }
-                }
-
-                // Bước 3: QuyDinh_Vien (viền) - lookup bằng MaDeBanh + SizeID
-                if (!string.IsNullOrEmpty(ct.MaDeBanh))
-                {
-                    var vienSql = @"SELECT NguyenLieuID, SoLuongVien FROM QuyDinh_Vien 
-                                    WHERE MaDeBanh = @MaDeBanh AND SizeID = @SizeID";
-                    using var vienCmd = new SqlCommand(vienSql, conn, transaction);
-                    vienCmd.Parameters.AddWithValue("@MaDeBanh", ct.MaDeBanh);
-                    vienCmd.Parameters.AddWithValue("@SizeID", ct.SizeID);
-                    using var vienReader = await vienCmd.ExecuteReaderAsync();
-                    while (await vienReader.ReadAsync())
-                    {
-                        var nlId = vienReader.GetInt32(0);
-                        var soLuongVien = vienReader.IsDBNull(1) ? 0m : Convert.ToDecimal(vienReader.GetDouble(1));
-                        if (soLuongVien <= 0) continue;
-                        if (ingredientMap.ContainsKey(nlId))
-                            ingredientMap[nlId] += soLuongVien;
-                        else
-                            ingredientMap[nlId] = soLuongVien;
-                    }
-                }
-
-                // Bước 4: Trừ tồn kho - nhân với số lượng mua
-                foreach (var (nguyenLieuId, amountPerPizza) in ingredientMap)
-                {
-                    var deductAmount = amountPerPizza * soLuongMua;
-                    if (deductAmount <= 0) continue;
-                    var deductSql = @"UPDATE TonKho SET SoLuongTon = SoLuongTon - @SoLuong, NgayCapNhat = GETDATE()
-                                     WHERE NguyenLieuID = @NguyenLieuID AND SoLuongTon >= @SoLuong";
-                    using var deductCmd = new SqlCommand(deductSql, conn, transaction);
-                    deductCmd.Parameters.AddWithValue("@SoLuong", deductAmount);
-                    deductCmd.Parameters.AddWithValue("@NguyenLieuID", nguyenLieuId);
-                    await deductCmd.ExecuteNonQueryAsync();
+                    throw new Exception($"Nguyên liệu không đủ tồn kho (ID {kvp.Key})");
                 }
             }
 
@@ -4346,6 +5240,54 @@ public class DatabaseService : IDatabaseService
             System.Diagnostics.Debug.WriteLine($"Error saving PhieuBanHang: {ex.Message}");
             throw;
         }
+    }
+
+    private async Task<List<(int Id, string Name, decimal Required, decimal Available)>> GetInsufficientIngredientsAsync(
+        SqlConnection conn,
+        SqlTransaction transaction,
+        Dictionary<int, decimal> requiredMap)
+    {
+        var result = new List<(int Id, string Name, decimal Required, decimal Available)>();
+        var ids = requiredMap.Keys.ToList();
+        if (ids.Count == 0)
+            return result;
+
+        var parameters = ids.Select((id, i) => new SqlParameter($"@Id{i}", id)).ToArray();
+        var inClause = string.Join(",", parameters.Select(p => p.ParameterName));
+
+        var sql = $@"SELECT nl.NguyenLieuID, nl.TenNguyenLieu, ISNULL(tk.SoLuongTon, 0) AS SoLuongTon
+                     FROM NguyenLieu nl
+                     LEFT JOIN TonKho tk ON nl.NguyenLieuID = tk.NguyenLieuID
+                     WHERE nl.NguyenLieuID IN ({inClause})";
+
+        var availableMap = new Dictionary<int, decimal>();
+        var nameMap = new Dictionary<int, string>();
+
+        using (var cmd = new SqlCommand(sql, conn, transaction))
+        {
+            cmd.Parameters.AddRange(parameters);
+            using var reader = await cmd.ExecuteReaderAsync();
+            while (await reader.ReadAsync())
+            {
+                var id = reader.GetInt32(0);
+                var name = reader.IsDBNull(1) ? $"ID {id}" : reader.GetString(1);
+                var available = reader.IsDBNull(2) ? 0m : reader.GetDecimal(2);
+                availableMap[id] = available;
+                nameMap[id] = name;
+            }
+        }
+
+        foreach (var kvp in requiredMap)
+        {
+            var available = availableMap.TryGetValue(kvp.Key, out var a) ? a : 0m;
+            if (available < kvp.Value)
+            {
+                var name = nameMap.TryGetValue(kvp.Key, out var n) ? n : $"ID {kvp.Key}";
+                result.Add((kvp.Key, name, kvp.Value, available));
+            }
+        }
+
+        return result;
     }
 
     private async Task<List<CongThuc_Pizza>> GetCongThucPizzaInternalAsync(SqlConnection conn, SqlTransaction transaction, string maHangHoa, string sizeId)
@@ -4412,6 +5354,57 @@ public class DatabaseService : IDatabaseService
         }
         return result;
     }
+
+    public async Task<bool> SaveCongThucPizzaAsync(CongThuc_Pizza congThuc)
+    {
+        try
+        {
+            using var conn = GetConnection();
+            await conn.OpenAsync();
+            var sql = @"MERGE CongThuc_Pizza AS target
+                        USING (SELECT @MaHangHoa AS MaHangHoa, @SizeID AS SizeID, @NguyenLieuID AS NguyenLieuID) AS source
+                        ON target.MaHangHoa = source.MaHangHoa AND target.SizeID = source.SizeID AND target.NguyenLieuID = source.NguyenLieuID
+                        WHEN MATCHED THEN
+                            UPDATE SET SoLuong = @SoLuong, DonViID = @DonViID
+                        WHEN NOT MATCHED THEN
+                            INSERT (MaHangHoa, SizeID, NguyenLieuID, SoLuong, DonViID)
+                            VALUES (@MaHangHoa, @SizeID, @NguyenLieuID, @SoLuong, @DonViID);";
+            using var cmd = new SqlCommand(sql, conn);
+            cmd.Parameters.AddWithValue("@MaHangHoa", congThuc.MaHangHoa);
+            cmd.Parameters.AddWithValue("@SizeID", congThuc.SizeID);
+            cmd.Parameters.AddWithValue("@NguyenLieuID", congThuc.NguyenLieuID);
+            cmd.Parameters.AddWithValue("@SoLuong", (object?)congThuc.SoLuong ?? DBNull.Value);
+            cmd.Parameters.AddWithValue("@DonViID", (object?)congThuc.DonViID ?? DBNull.Value);
+            await cmd.ExecuteNonQueryAsync();
+            return true;
+        }
+        catch (Exception ex)
+        {
+            System.Diagnostics.Debug.WriteLine($"Error saving CongThuc_Pizza: {ex.Message}");
+            return false;
+        }
+    }
+
+    public async Task<bool> DeleteCongThucPizzaAsync(string maHangHoa, string sizeId, int nguyenLieuId)
+    {
+        try
+        {
+            using var conn = GetConnection();
+            await conn.OpenAsync();
+            using var cmd = new SqlCommand(
+                "DELETE FROM CongThuc_Pizza WHERE MaHangHoa = @MaHangHoa AND SizeID = @SizeID AND NguyenLieuID = @NguyenLieuID", conn);
+            cmd.Parameters.AddWithValue("@MaHangHoa", maHangHoa);
+            cmd.Parameters.AddWithValue("@SizeID", sizeId);
+            cmd.Parameters.AddWithValue("@NguyenLieuID", nguyenLieuId);
+            await cmd.ExecuteNonQueryAsync();
+            return true;
+        }
+        catch (Exception ex)
+        {
+            System.Diagnostics.Debug.WriteLine($"Error deleting CongThuc_Pizza: {ex.Message}");
+            return false;
+        }
+    }
     #endregion
 
     #region Thống kê bán hàng (PhiếuBánHàng)
@@ -4455,4 +5448,5 @@ public class DatabaseService : IDatabaseService
     }
     #endregion
 }
+
 

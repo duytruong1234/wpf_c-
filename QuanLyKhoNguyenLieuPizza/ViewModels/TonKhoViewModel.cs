@@ -1,4 +1,4 @@
-using System.Collections.ObjectModel;
+﻿using System.Collections.ObjectModel;
 using System.Windows.Input;
 using QuanLyKhoNguyenLieuPizza.Models;
 using QuanLyKhoNguyenLieuPizza.Services;
@@ -241,8 +241,12 @@ public class TonKhoViewModel : BaseViewModel
     public ICommand SaveEditCommand { get; private set; } = null!;
     public ICommand EditQuyDoiCommand { get; private set; } = null!;
     public ICommand DeleteQuyDoiCommand { get; private set; } = null!;
+    public ICommand GoToPhieuNhapCommand { get; private set; } = null!;
+    public ICommand GoToPhieuXuatCommand { get; private set; } = null!;
 
     public event Action? OnBack;
+    public event Action? OnNavigateToPhieuNhap;
+    public event Action? OnNavigateToPhieuXuat;
 
     public TonKhoViewModel()
     {
@@ -309,6 +313,10 @@ public class TonKhoViewModel : BaseViewModel
         // Lệnh sửa/xóa quy đổi
         EditQuyDoiCommand = new RelayCommand(ExecuteEditQuyDoi);
         DeleteQuyDoiCommand = new RelayCommand(async param => await ExecuteDeleteQuyDoiAsync(param));
+        
+        // Lệnh chuyển trang
+        GoToPhieuNhapCommand = new RelayCommand(_ => OnNavigateToPhieuNhap?.Invoke());
+        GoToPhieuXuatCommand = new RelayCommand(_ => OnNavigateToPhieuXuat?.Invoke());
     }
 
     private void ApplyFilters()
@@ -319,7 +327,9 @@ public class TonKhoViewModel : BaseViewModel
         // Áp dụng bộ lọc tìm kiếm
         if (!string.IsNullOrWhiteSpace(SearchText))
         {
-            filtered = filtered.Where(x => x.TenNguyenLieu.Contains(SearchText, StringComparison.OrdinalIgnoreCase));
+            filtered = filtered.Where(x => 
+                x.TenNguyenLieu.Contains(SearchText, StringComparison.OrdinalIgnoreCase) ||
+                x.MaNguyenLieu.Contains(SearchText, StringComparison.OrdinalIgnoreCase));
         }
         
         // Áp dụng bộ lọc trạng thái
@@ -393,6 +403,7 @@ public class TonKhoViewModel : BaseViewModel
 
     private string GetMucDoTonKho(decimal soLuong)
     {
+        if (soLuong <= 0) return "Hết hàng";
         return soLuong < 20 ? "Thấp" : (soLuong < 50 ? "Trung bình" : "Cao");
     }
 

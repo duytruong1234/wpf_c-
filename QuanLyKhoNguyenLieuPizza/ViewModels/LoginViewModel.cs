@@ -1,4 +1,4 @@
-using System.Windows.Input;
+﻿using System.Windows.Input;
 using QuanLyKhoNguyenLieuPizza.Core.Commands;
 using QuanLyKhoNguyenLieuPizza.Core.Interfaces;
 using QuanLyKhoNguyenLieuPizza.Services;
@@ -9,6 +9,7 @@ namespace QuanLyKhoNguyenLieuPizza.ViewModels;
 public class LoginViewModel : BaseViewModel
 {
     private readonly IDatabaseService _databaseService;
+    private readonly UserPreferencesService _preferencesService;
     private string _username = string.Empty;
     private string _password = string.Empty;
     private string _errorMessage = string.Empty;
@@ -62,11 +63,40 @@ public class LoginViewModel : BaseViewModel
             _databaseService = new DatabaseService();
         }
         
+        _preferencesService = UserPreferencesService.Instance;
+        
         LoginCommand = new AsyncRelayCommand(ExecuteLoginAsync, CanExecuteLogin);
         ForgotPasswordCommand = new RelayCommand(ExecuteForgotPassword);
         
+        // Tải thông tin đăng nhập đã lưu (nếu có)
+        LoadSavedCredentials();
+        
         // Kiểm tra kết nối khi khởi động
         _ = TestConnectionAsync();
+    }
+
+    /// <summary>
+    /// Tải thông tin đăng nhập đã lưu từ lần trước
+    /// </summary>
+    private void LoadSavedCredentials()
+    {
+        try
+        {
+            var (rememberMe, savedUsername, savedPassword) = _preferencesService.LoadLoginCredentials();
+            
+            if (rememberMe && !string.IsNullOrEmpty(savedUsername))
+            {
+                Username = savedUsername;
+                Password = savedPassword;
+                RememberMe = true;
+                
+                System.Diagnostics.Debug.WriteLine($"Đã tải thông tin đăng nhập đã lưu cho: {savedUsername}");
+            }
+        }
+        catch (Exception ex)
+        {
+            System.Diagnostics.Debug.WriteLine($"Lỗi khi tải thông tin đăng nhập: {ex.Message}");
+        }
     }
 
     private async Task TestConnectionAsync()
@@ -100,6 +130,16 @@ public class LoginViewModel : BaseViewModel
             
             if (taiKhoan != null)
             {
+                // Xử lý ghi nhớ đăng nhập
+                if (RememberMe)
+                {
+                    _preferencesService.SaveLoginCredentials(Username, Password);
+                }
+                else
+                {
+                    _preferencesService.ClearLoginCredentials();
+                }
+                
                 CurrentUserSession.Instance.SetUser(taiKhoan);
                 OnLoginSuccess?.Invoke();
             }
@@ -125,9 +165,12 @@ public class LoginViewModel : BaseViewModel
 
     public void Reset()
     {
-        Password = string.Empty;
+        // Chỉ xóa password và error nếu KHÔNG ghi nhớ đăng nhập
+        if (!RememberMe)
+        {
+            Username = string.Empty;
+            Password = string.Empty;
+        }
         ErrorMessage = string.Empty;
     }
 }
-
-

@@ -1,4 +1,4 @@
-namespace QuanLyKhoNguyenLieuPizza.Core.Interfaces;
+﻿namespace QuanLyKhoNguyenLieuPizza.Core.Interfaces;
 
 /// <summary>
 /// Interface dịch vụ điều hướng để tách logic điều hướng khỏi ViewModels

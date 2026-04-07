@@ -1,4 +1,4 @@
-<?xml version="1.0" encoding="utf-8"?>
+﻿<?xml version="1.0" encoding="utf-8"?>
 <UserControl x:Class="QuanLyKhoNguyenLieuPizza.Views.BanHangView"
              xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
              xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
@@ -60,7 +60,7 @@
                 <RowDefinition Height="*"/>
             </Grid.RowDefinitions>
 
-            <!-- PAGE HEADER -->
+            <!-- TIÊU ĐỀ TRANG -->
             <StackPanel Grid.Row="0" Orientation="Horizontal" HorizontalAlignment="Left" VerticalAlignment="Center" Margin="0,0,0,20">
                 <Border Background="{StaticResource LightBlue}" CornerRadius="12" Width="44" Height="44" Margin="0,0,14,0">
                     <ui:SymbolIcon Symbol="Cart24" FontSize="20" Foreground="{StaticResource PrimaryBlue}" HorizontalAlignment="Center" VerticalAlignment="Center"/>
@@ -71,7 +71,7 @@
                 </StackPanel>
             </StackPanel>
 
-            <!-- STAT CARDS -->
+            <!-- THẺ THỐNG KÊ -->
             <Grid Grid.Row="1" Margin="0,0,0,20">
                 <Grid.ColumnDefinitions>
                     <ColumnDefinition Width="*"/>
@@ -105,7 +105,7 @@
                     </StackPanel>
                 </Border>
 
-                <!-- Order History Button -->
+                <!-- Order History Nút -->
                 <Button Grid.Column="4" Command="{Binding ShowOrderHistoryCommand}" Cursor="Hand" VerticalAlignment="Center">
                     <Button.Template>
                         <ControlTemplate TargetType="Button">
@@ -126,7 +126,7 @@
                 </Button>
             </Grid>
 
-            <!-- POS CONTENT: Menu + Cart -->
+            <!-- NỘI DUNG POS: Thực đơn + Giỏ hàng -->
             <Grid Grid.Row="2">
                 <Grid.ColumnDefinitions>
                     <ColumnDefinition Width="*"/>
@@ -134,7 +134,7 @@
                     <ColumnDefinition Width="380"/>
                 </Grid.ColumnDefinitions>
 
-                <!-- PRODUCT MENU -->
+                <!-- THỰC ĐƠN SẢN PHẨM -->
                 <Border Grid.Column="0" Style="{StaticResource CardStyle}" Padding="20">
                     <Grid>
                         <Grid.RowDefinitions>
@@ -143,7 +143,7 @@
                             <RowDefinition Height="*"/>
                         </Grid.RowDefinitions>
 
-                        <!-- Search -->
+                        <!-- Tìm kiếm -->
                         <Border Background="White" BorderBrush="{StaticResource Gray200}" BorderThickness="1" CornerRadius="10" Padding="12,10">
                             <Grid>
                                 <Grid.ColumnDefinitions>
@@ -188,7 +188,7 @@
                                                                 <RowDefinition Height="Auto"/>
                                                             </Grid.RowDefinitions>
 
-                                                            <!-- Product Image -->
+                                                            <!-- Product Hình ảnh -->
                                                             <Border Grid.Row="0" CornerRadius="14,14,0,0" Background="{StaticResource Gray100}" ClipToBounds="True">
                                                                 <Grid>
                                                                     <TextBlock Text="🍕" FontSize="40" HorizontalAlignment="Center" VerticalAlignment="Center"/>
@@ -218,7 +218,7 @@
                             </ItemsControl>
                         </ScrollViewer>
 
-                        <!-- Empty -->
+                        <!-- Trống -->
                         <StackPanel Grid.Row="2" HorizontalAlignment="Center" VerticalAlignment="Center"
                                     Visibility="{Binding HangHoas.Count, Converter={StaticResource IntToVisibilityConverter}}">
                             <TextBlock Text="🍕" FontSize="40" HorizontalAlignment="Center"/>
@@ -236,7 +236,7 @@
                             <RowDefinition Height="Auto"/>
                         </Grid.RowDefinitions>
 
-                        <!-- Cart Header -->
+                        <!-- Tiêu đề Giỏ hàng -->
                         <Border Grid.Row="0" Background="{StaticResource Gray50}" CornerRadius="16,16,0,0" Padding="20,16">
                             <Grid>
                                 <StackPanel Orientation="Horizontal">
@@ -274,7 +274,7 @@
                                                     <ColumnDefinition Width="Auto"/>
                                                 </Grid.ColumnDefinitions>
 
-                                                <!-- Product Image -->
+                                                <!-- Product Hình ảnh -->
                                                 <Border Width="48" Height="48" CornerRadius="10" Background="{StaticResource Gray100}" ClipToBounds="True" Margin="0,0,10,0" VerticalAlignment="Center">
                                                     <Grid>
                                                         <TextBlock Text="&#x1F355;" FontSize="22" HorizontalAlignment="Center" VerticalAlignment="Center"/>
@@ -349,12 +349,12 @@
                             </ItemsControl>
                         </ScrollViewer>
 
-                        <!-- Cart empty -->
+                        <!-- Giỏ hàng trống -->
                         <TextBlock Grid.Row="1" Text="Giỏ hàng trống" FontSize="14" Foreground="{StaticResource Gray300}"
                                    HorizontalAlignment="Center" VerticalAlignment="Center"
                                    Visibility="{Binding CartItems.Count, Converter={StaticResource IntToVisibilityConverter}}"/>
 
-                        <!-- Checkout Footer -->
+                        <!-- Checkout Chân trang -->
                         <Border Grid.Row="2" CornerRadius="0,0,16,16" Padding="20,16" BorderBrush="{StaticResource Gray200}" BorderThickness="0,1,0,0">
                             <StackPanel>
                                 <!-- Phương thức thanh toán -->
@@ -435,7 +435,7 @@
                 <RowDefinition Height="*"/>
             </Grid.RowDefinitions>
 
-            <!-- Header -->
+            <!-- Tiêu đề -->
             <Grid Grid.Row="0" Margin="0,0,0,20">
                 <Grid.ColumnDefinitions>
                     <ColumnDefinition Width="Auto"/>
@@ -477,7 +477,7 @@
                 </StackPanel>
             </Border>
 
-            <!-- Orders Table -->
+            <!-- Bảng Đơn hàng -->
             <Border Grid.Row="2" Style="{StaticResource CardStyle}" Padding="0">
                 <Grid>
                     <Grid.RowDefinitions>
@@ -530,7 +530,7 @@
                                             <TextBlock Grid.Column="2" Text="{Binding NhanVienBan.HoTen}" Style="{StaticResource TableCellStyle}"/>
                                             <TextBlock Grid.Column="3" Text="{Binding TongTien, StringFormat={}{0:N0} đ}" Style="{StaticResource TableCellStyle}" FontWeight="SemiBold" Foreground="{StaticResource PrimaryBlue}"/>
 
-                                            <!-- View Detail Button -->
+                                            <!-- View Detail Nút -->
                                             <Button Grid.Column="4" 
                                                     Command="{Binding DataContext.ViewOrderDetailCommand, RelativeSource={RelativeSource AncestorType=ItemsControl}}"
                                                     CommandParameter="{Binding}" ToolTip="Xem chi tiết" Cursor="Hand"
@@ -578,10 +578,10 @@
                         <RowDefinition Height="Auto"/>
                     </Grid.RowDefinitions>
 
-                    <!-- Header -->
+                    <!-- Tiêu đề -->
                     <Grid Grid.Row="0" Margin="0,0,0,24">
                         <StackPanel HorizontalAlignment="Center">
-                            <!-- Product Image -->
+                            <!-- Product Hình ảnh -->
                             <Border Width="80" Height="80" CornerRadius="14" Background="{StaticResource Gray100}" ClipToBounds="True" HorizontalAlignment="Center" Margin="0,0,0,12">
                                 <Grid>
                                     <TextBlock Text="&#x1F355;" FontSize="36" HorizontalAlignment="Center" VerticalAlignment="Center"/>
@@ -607,7 +607,7 @@
                         </Button>
                     </Grid>
 
-                    <!-- Form -->
+                    <!-- Biểu mẫu -->
                     <StackPanel Grid.Row="1" Margin="0,0,0,24">
                         <!-- Size -->
                         <TextBlock Text="Chọn Size *" FontSize="12" FontWeight="Medium" Foreground="{StaticResource Gray500}" Margin="0,0,0,6"/>
@@ -616,7 +616,7 @@
                                       DisplayMemberPath="TenSize" BorderThickness="0" Background="Transparent" FontSize="14" VerticalContentAlignment="Center"/>
                         </Border>
 
-                        <!-- De Banh -->
+                        <!-- Đế bánh -->
                         <TextBlock Text="Chọn Đế bánh (tùy chọn)" FontSize="12" FontWeight="Medium" Foreground="{StaticResource Gray500}" Margin="0,0,0,6"/>
                         <Border Background="White" BorderBrush="{StaticResource Gray200}" BorderThickness="1" CornerRadius="10" Padding="14,10" Margin="0,0,0,16">
                             <ComboBox ItemsSource="{Binding DeBanhs}" SelectedItem="{Binding SelectedDe}"
@@ -702,7 +702,7 @@
                         <RowDefinition Height="Auto"/>
                     </Grid.RowDefinitions>
 
-                    <!-- Header -->
+                    <!-- Tiêu đề -->
                     <Grid Grid.Row="0" Margin="0,0,0,20">
                         <StackPanel>
                             <TextBlock Text="Chi tiết đơn hàng" FontSize="22" FontWeight="Bold" Foreground="{StaticResource PrimaryBlue}" HorizontalAlignment="Center"/>
@@ -735,7 +735,7 @@
                                 <RowDefinition Height="*"/>
                             </Grid.RowDefinitions>
 
-                            <!-- Table Header -->
+                            <!-- Tiêu đề Bảng -->
                                     <Border Background="{StaticResource Gray50}" CornerRadius="8,8,0,0" Padding="0">
                                         <Grid>
                                             <Grid.ColumnDefinitions>
@@ -786,7 +786,7 @@
                         </Grid>
                     </ScrollViewer>
 
-                    <!-- Footer -->
+                    <!-- Chân trang -->
                     <StackPanel Grid.Row="2" Margin="0,16,0,0">
                         <!-- GhiChu display -->
                         <Border Background="{StaticResource Gray50}" CornerRadius="8" Padding="12,8" Margin="0,0,0,12"
@@ -805,7 +805,7 @@
             </Border>
         </Grid>
 
-        <!-- ═══════════════ LOADING OVERLAY ═══════════════ -->
+        <!-- ═══════════════ Màn hình Chờ ═══════════════ -->
         <Border Background="#80FFFFFF" Visibility="{Binding IsLoading, Converter={StaticResource BoolToVisibilityConverter}}">
             <StackPanel HorizontalAlignment="Center" VerticalAlignment="Center">
                 <ui:SymbolIcon Symbol="ArrowSync24" FontSize="36" HorizontalAlignment="Center" Foreground="{StaticResource PrimaryBlue}"/>

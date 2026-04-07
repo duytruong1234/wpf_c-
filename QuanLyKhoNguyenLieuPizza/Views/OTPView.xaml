@@ -1,4 +1,4 @@
-<?xml version="1.0" encoding="utf-8"?>
+﻿<?xml version="1.0" encoding="utf-8"?>
 <UserControl x:Class="QuanLyKhoNguyenLieuPizza.Views.OTPView"
              xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
              xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
@@ -26,7 +26,7 @@
             </DoubleAnimation>
         </Storyboard>
         
-        <!-- OTP Input Box Style with Glow -->
+        <!-- OTP Input Hộp Kiểu with Glow -->
         <Style x:Key="OTPBoxStyle" TargetType="TextBox">
             <Setter Property="Width" Value="52"/>
             <Setter Property="Height" Value="60"/>
@@ -96,7 +96,7 @@
             </Border.Triggers>
 
             <StackPanel>
-                <!-- Step Indicator -->
+                <!-- Chỉ báo Bước -->
                 <StackPanel Orientation="Horizontal" HorizontalAlignment="Center" Margin="0,0,0,16">
                     <Border Width="28" Height="28" CornerRadius="14" Background="#E2E8F0" Margin="0,0,4,0">
                         <TextBlock Text="1" FontSize="12" FontWeight="Bold" Foreground="#94A3B8" 
@@ -120,7 +120,7 @@
                     </Border>
                 </StackPanel>
 
-                <!-- Email Icon -->
+                <!-- Email Biểu tượng -->
                 <Viewbox Width="64" Height="64" Margin="0,0,0,14">
                     <Grid>
                         <Ellipse Width="70" Height="70">
@@ -139,7 +139,7 @@
                     </Grid>
                 </Viewbox>
                 
-                <!-- Header -->
+                <!-- Tiêu đề -->
                 <TextBlock Text="X&#x00E1;c th&#x1EF1;c OTP"
                            FontSize="24" 
                            FontWeight="Bold" 
@@ -163,7 +163,7 @@
                            Margin="0,0,0,20"
                            Text="{Binding Email}"/>
 
-                <!-- Error Message -->
+                <!-- Thông báo lỗi -->
                 <Border Background="#FEF2F2" 
                         CornerRadius="14" 
                         Padding="16,14"
@@ -229,7 +229,7 @@
                     </Grid>
                 </Border>
 
-                <!-- OTP Input Boxes -->
+                <!-- OTP Input Hộpes -->
                 <StackPanel Orientation="Horizontal" 
                             HorizontalAlignment="Center"
                             Margin="0,0,0,20">
@@ -275,7 +275,7 @@
                     </StackPanel>
                 </Border>
 
-                <!-- Verify Button (Gradient like Login) -->
+                <!-- Verify Nút -->
                 <Button Command="{Binding VerifyOTPCommand}"
                         HorizontalAlignment="Stretch"
                         FontSize="16"
@@ -374,7 +374,7 @@
                     </StackPanel>
                 </Border>
 
-                <!-- Back Button -->
+                <!-- Back Nút -->
                 <Button Content="&#x2190; Quay l&#x1EA1;i"
                         Background="Transparent"
                         Foreground="{StaticResource TextSecondary}"
@@ -408,7 +408,7 @@
             </StackPanel>
         </Border>
 
-        <!-- Loading Overlay -->
+        <!-- Màn hình Chờ -->
         <Border Background="#CCFFFFFF" CornerRadius="28"
                 Visibility="{Binding IsLoading, Converter={StaticResource BoolToVisibilityConverter}}">
             <StackPanel HorizontalAlignment="Center" VerticalAlignment="Center">

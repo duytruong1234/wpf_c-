@@ -1,3 +1,4 @@
+﻿using System.Collections.ObjectModel;
 using System.ComponentModel;
 using System.Runtime.CompilerServices;
 
@@ -27,7 +28,7 @@ public class CT_PhieuNhap : INotifyPropertyChanged
 
     public int? DonViID { get; set; }
 
-    private decimal _heSo;
+    private decimal _heSo = 1m;
     public decimal HeSo
     {
         get => _heSo;
@@ -72,6 +73,45 @@ public class CT_PhieuNhap : INotifyPropertyChanged
     }
 
     public DateTime? HSD { get; set; }
+
+    private ObservableCollection<QuyDoiDonVi> _donViNhapOptions = new();
+    public ObservableCollection<QuyDoiDonVi> DonViNhapOptions
+    {
+        get => _donViNhapOptions;
+        set
+        {
+            if (!ReferenceEquals(_donViNhapOptions, value))
+            {
+                _donViNhapOptions = value;
+                OnPropertyChanged();
+            }
+        }
+    }
+
+    private QuyDoiDonVi? _selectedDonViNhap;
+    public QuyDoiDonVi? SelectedDonViNhap
+    {
+        get => _selectedDonViNhap;
+        set
+        {
+            if (!ReferenceEquals(_selectedDonViNhap, value))
+            {
+                _selectedDonViNhap = value;
+
+                if (value != null)
+                {
+                    DonViID = value.DonViID;
+                    DonViTinh = value.DonViTinh;
+                    HeSo = value.HeSo <= 0 ? 1m : value.HeSo;
+                }
+
+                OnPropertyChanged();
+                OnPropertyChanged(nameof(TenDonViNhap));
+            }
+        }
+    }
+
+    public string TenDonViNhap => SelectedDonViNhap?.DonViTinh?.TenDonVi ?? DonViTinh?.TenDonVi ?? string.Empty;
 
     // Thuộc tính điều hướng
     public virtual PhieuNhap? PhieuNhap { get; set; }

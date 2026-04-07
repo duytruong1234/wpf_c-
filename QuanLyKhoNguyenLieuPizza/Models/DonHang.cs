@@ -1,4 +1,4 @@
-namespace QuanLyKhoNguyenLieuPizza.Models;
+﻿namespace QuanLyKhoNguyenLieuPizza.Models;
 
 public class DonHang
 {
@@ -12,6 +12,7 @@ public class DonHang
     public string PhuongThucTT { get; set; } = "Tiền mặt";
     public byte TrangThai { get; set; } = 1; // 1: Đang xử lý, 2: Hoàn thành, 3: Hủy
     public string? GhiChu { get; set; }
+    public decimal? TienKhachDua { get; set; }
 
     // Thuộc tính điều hướng
     public virtual NhanVien? NhanVien { get; set; }

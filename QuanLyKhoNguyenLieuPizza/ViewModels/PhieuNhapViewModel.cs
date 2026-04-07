@@ -1,4 +1,5 @@
-using System.Collections.ObjectModel;
+﻿using System.Collections.ObjectModel;
+using System.ComponentModel;
 using System.Windows.Input;
 using QuanLyKhoNguyenLieuPizza.Models;
 using QuanLyKhoNguyenLieuPizza.Services;
@@ -249,15 +250,29 @@ public class PhieuNhapViewModel : BaseViewModel
     public bool IsDialogOpen
     {
         get => _isDialogOpen;
-        set => SetProperty(ref _isDialogOpen, value);
+        set 
+        {
+            if (SetProperty(ref _isDialogOpen, value))
+            {
+                OnPropertyChanged(nameof(AnyDialogOpen));
+            }
+        }
     }
 
     private bool _isDetailDialogOpen;
     public bool IsDetailDialogOpen
     {
         get => _isDetailDialogOpen;
-        set => SetProperty(ref _isDetailDialogOpen, value);
+        set 
+        {
+            if (SetProperty(ref _isDetailDialogOpen, value))
+            {
+                OnPropertyChanged(nameof(AnyDialogOpen));
+            }
+        }
     }
+
+    public override bool AnyDialogOpen => IsDialogOpen || IsDetailDialogOpen;
 
     private bool _isCreateMode;
     public bool IsCreateMode
@@ -374,7 +389,7 @@ public class PhieuNhapViewModel : BaseViewModel
         SavePhieuNhapCommand = new AsyncRelayCommand(async _ => await SavePhieuNhapAsync());
         CancelDialogCommand = new RelayCommand(_ => CloseDialog());
         CloseDetailDialogCommand = new RelayCommand(_ => IsDetailDialogOpen = false);
-        AddNguyenLieuCommand = new RelayCommand(p => AddNguyenLieuToForm(p));
+        AddNguyenLieuCommand = new AsyncRelayCommand(async p => await AddNguyenLieuToFormAsync(p));
         RemoveChiTietCommand = new RelayCommand(p => RemoveChiTietFromForm(p));
         ClearFilterCommand = new RelayCommand(_ => ClearFilter());
         PrintPhieuNhapCommand = new AsyncRelayCommand(async p => await PrintPhieuNhapAsync(p));
@@ -400,6 +415,120 @@ public class PhieuNhapViewModel : BaseViewModel
         {
             chiTiet.SoLuong--;
             CalculateTongTienForm();
+        }
+    }
+
+    private DonViTinh? ResolveDonViTinh(int? donViId, DonViTinh? fallback = null)
+    {
+        if (fallback != null)
+            return fallback;
+
+        if (!donViId.HasValue)
+            return null;
+
+        return DonViTinhs.FirstOrDefault(d => d.DonViID == donViId.Value);
+    }
+
+    private ObservableCollection<QuyDoiDonVi> BuildDonViNhapOptions(
+        NguyenLieu nguyenLieu,
+        IEnumerable<QuyDoiDonVi> quyDois,
+        int? selectedDonViId = null,
+        decimal? selectedHeSo = null,
+        DonViTinh? selectedDonViTinh = null)
+    {
+        var options = new List<QuyDoiDonVi>();
+
+        void AddOption(int? donViId, decimal heSo, DonViTinh? donViTinh, bool laDonViChuan)
+        {
+            if (!donViId.HasValue || options.Any(o => o.DonViID == donViId.Value))
+                return;
+
+            options.Add(new QuyDoiDonVi
+            {
+                NguyenLieuID = nguyenLieu.NguyenLieuID,
+                DonViID = donViId,
+                HeSo = heSo <= 0 ? 1m : heSo,
+                LaDonViChuan = laDonViChuan,
+                DonViTinh = ResolveDonViTinh(donViId, donViTinh)
+            });
+        }
+
+        AddOption(
+            nguyenLieu.DonViID ?? selectedDonViId,
+            1m,
+            nguyenLieu.DonViTinh ?? selectedDonViTinh,
+            true);
+
+        foreach (var quyDoi in quyDois)
+        {
+            AddOption(quyDoi.DonViID, quyDoi.HeSo, quyDoi.DonViTinh, quyDoi.LaDonViChuan);
+        }
+
+        if (selectedDonViId.HasValue && !options.Any(o => o.DonViID == selectedDonViId.Value))
+        {
+            AddOption(selectedDonViId, selectedHeSo ?? 1m, selectedDonViTinh, false);
+        }
+
+        return new ObservableCollection<QuyDoiDonVi>(
+            options
+                .OrderByDescending(o => o.LaDonViChuan)
+                .ThenBy(o => o.DonViTinh?.TenDonVi ?? string.Empty));
+    }
+
+    private void RegisterChiTietFormItem(CT_PhieuNhap chiTiet)
+    {
+        chiTiet.PropertyChanged -= OnChiTietFormItemPropertyChanged;
+        chiTiet.PropertyChanged += OnChiTietFormItemPropertyChanged;
+    }
+
+    private void UnregisterChiTietFormItem(CT_PhieuNhap chiTiet)
+    {
+        chiTiet.PropertyChanged -= OnChiTietFormItemPropertyChanged;
+    }
+
+    private void OnChiTietFormItemPropertyChanged(object? sender, PropertyChangedEventArgs e)
+    {
+        if (e.PropertyName == nameof(CT_PhieuNhap.ThanhTien) ||
+            e.PropertyName == nameof(CT_PhieuNhap.SoLuong) ||
+            e.PropertyName == nameof(CT_PhieuNhap.DonGia) ||
+            e.PropertyName == nameof(CT_PhieuNhap.HeSo) ||
+            e.PropertyName == nameof(CT_PhieuNhap.SelectedDonViNhap))
+        {
+            CalculateTongTienForm();
+        }
+    }
+
+    private async Task InitializeChiTietFormItemAsync(CT_PhieuNhap chiTiet, NguyenLieu? sourceNguyenLieu = null)
+    {
+        if (!chiTiet.NguyenLieuID.HasValue)
+            return;
+
+        sourceNguyenLieu ??= chiTiet.NguyenLieu ?? new NguyenLieu { NguyenLieuID = chiTiet.NguyenLieuID.Value };
+        sourceNguyenLieu.DonViID ??= chiTiet.DonViID;
+        sourceNguyenLieu.DonViTinh ??= chiTiet.DonViTinh ?? ResolveDonViTinh(chiTiet.DonViID);
+
+        var quyDois = await _databaseService.GetQuyDoiDonVisAsync(chiTiet.NguyenLieuID.Value);
+        chiTiet.DonViNhapOptions = BuildDonViNhapOptions(
+            sourceNguyenLieu,
+            quyDois,
+            chiTiet.DonViID,
+            chiTiet.HeSo,
+            chiTiet.DonViTinh);
+
+        chiTiet.SelectedDonViNhap =
+            chiTiet.DonViNhapOptions.FirstOrDefault(o => o.DonViID == chiTiet.DonViID && o.HeSo == chiTiet.HeSo) ??
+            chiTiet.DonViNhapOptions.FirstOrDefault(o => o.DonViID == chiTiet.DonViID) ??
+            chiTiet.DonViNhapOptions.FirstOrDefault(o => o.LaDonViChuan) ??
+            chiTiet.DonViNhapOptions.FirstOrDefault();
+
+        RegisterChiTietFormItem(chiTiet);
+    }
+
+    private async Task PrepareChiTietFormAsync(IEnumerable<CT_PhieuNhap> chiTiets)
+    {
+        foreach (var chiTiet in chiTiets)
+        {
+            await InitializeChiTietFormItemAsync(chiTiet);
         }
     }
 
@@ -530,6 +659,10 @@ public class PhieuNhapViewModel : BaseViewModel
     private void OpenCreateDialog()
     {
         IsCreateMode = true;
+        foreach (var chiTiet in ChiTietForm)
+        {
+            UnregisterChiTietFormItem(chiTiet);
+        }
         ChiTietForm = new ObservableCollection<CT_PhieuNhap>();
         TongTienForm = 0;
         NguyenLieusOfNCC = new ObservableCollection<NguyenLieu>();
@@ -566,40 +699,60 @@ public class PhieuNhapViewModel : BaseViewModel
         }
     }
 
-    private void AddNguyenLieuToForm(object? parameter)
+    private async Task AddNguyenLieuToFormAsync(object? parameter)
     {
-        if (parameter is NguyenLieu nguyenLieu)
+        if (parameter is not NguyenLieu nguyenLieu)
+            return;
+
+        if (ChiTietForm.Any(ct => ct.NguyenLieuID == nguyenLieu.NguyenLieuID))
+            return;
+
+        var supplierLink = nguyenLieu.NguyenLieuNhaCungCaps?.FirstOrDefault();
+        if ((SelectedNhaCungCapForm == null || SelectedNhaCungCapForm.NhaCungCapID == 0) &&
+            supplierLink?.NhaCungCapID > 0)
         {
-            // Kiểm tra đã tồn tại chưa
-            if (ChiTietForm.Any(ct => ct.NguyenLieuID == nguyenLieu.NguyenLieuID))
+            var matchedSupplier = NhaCungCaps.FirstOrDefault(n => n.NhaCungCapID == supplierLink.NhaCungCapID);
+            if (matchedSupplier != null)
             {
-                return;
+                SelectedNhaCungCapForm = matchedSupplier;
             }
-
-            var giaNhap = nguyenLieu.NguyenLieuNhaCungCaps?.FirstOrDefault()?.GiaNhap ?? 0;
-
-            var chiTiet = new CT_PhieuNhap
-            {
-                NguyenLieuID = nguyenLieu.NguyenLieuID,
-                NguyenLieu = nguyenLieu,
-                SoLuong = 1,
-                DonViID = nguyenLieu.DonViID,
-                DonViTinh = nguyenLieu.DonViTinh,
-                HeSo = 1,
-                DonGia = giaNhap,
-                ThanhTien = giaNhap,
-                HSD = DateTime.Today.AddMonths(6)
-            };
-
-            ChiTietForm.Add(chiTiet);
-            CalculateTongTienForm();
         }
+
+        if (SelectedNhaCungCapForm == null || SelectedNhaCungCapForm.NhaCungCapID == 0)
+        {
+            System.Windows.MessageBox.Show(
+                "Nguyên liệu này chưa có nhà cung cấp mặc định. Vui lòng chọn nhà cung cấp trước khi thêm.",
+                "Cảnh báo",
+                System.Windows.MessageBoxButton.OK,
+                System.Windows.MessageBoxImage.Warning);
+            return;
+        }
+
+        var giaNhap = supplierLink?.GiaNhap ?? 0;
+
+        var chiTiet = new CT_PhieuNhap
+        {
+            NguyenLieuID = nguyenLieu.NguyenLieuID,
+            NguyenLieu = nguyenLieu,
+            SoLuong = 1,
+            DonViID = nguyenLieu.DonViID,
+            DonViTinh = nguyenLieu.DonViTinh ?? ResolveDonViTinh(nguyenLieu.DonViID),
+            HeSo = 1m,
+            DonGia = giaNhap,
+            ThanhTien = giaNhap,
+            HSD = DateTime.Today.AddMonths(6)
+        };
+
+        await InitializeChiTietFormItemAsync(chiTiet, nguyenLieu);
+        ChiTietForm.Add(chiTiet);
+        CalculateTongTienForm();
     }
 
     private void RemoveChiTietFromForm(object? parameter)
     {
         if (parameter is CT_PhieuNhap chiTiet)
         {
+            UnregisterChiTietFormItem(chiTiet);
             ChiTietForm.Remove(chiTiet);
             CalculateTongTienForm();
         }
@@ -607,7 +760,7 @@ public class PhieuNhapViewModel : BaseViewModel
 
     public void UpdateChiTietThanhTien(CT_PhieuNhap chiTiet)
     {
-        chiTiet.ThanhTien = chiTiet.SoLuong * chiTiet.DonGia;
+        chiTiet.ThanhTien = chiTiet.SoLuong * chiTiet.HeSo * chiTiet.DonGia;
         CalculateTongTienForm();
     }
 
@@ -657,7 +810,13 @@ public class PhieuNhapViewModel : BaseViewModel
         
         await LoadNguyenLieusByNhaCungCapAsync();
 
+        foreach (var chiTiet in ChiTietForm)
+        {
+            UnregisterChiTietFormItem(chiTiet);
+        }
+
         var chiTiets = await _databaseService.GetChiTietPhieuNhapAsync(SelectedPhieuNhap.PhieuNhapID);
+        await PrepareChiTietFormAsync(chiTiets);
         ChiTietForm = new ObservableCollection<CT_PhieuNhap>(chiTiets);
         
         CalculateTongTienForm();
@@ -733,8 +892,39 @@ public class PhieuNhapViewModel : BaseViewModel
 
     private async Task SavePhieuNhapAsync()
     {
-        if (SelectedNhaCungCapForm == null || !ChiTietForm.Any())
+        if (SelectedNhaCungCapForm == null || SelectedNhaCungCapForm.NhaCungCapID == 0)
         {
+            System.Windows.MessageBox.Show("Vui lòng chọn một Nhà cung cấp cụ thể (không chọn 'Tất cả')!", "Cảnh báo", System.Windows.MessageBoxButton.OK, System.Windows.MessageBoxImage.Warning);
+            return;
+        }
+
+        if (!ChiTietForm.Any())
+        {
+            System.Windows.MessageBox.Show("Vui lòng thêm ít nhất một nguyên liệu vào phiếu nhập!", "Cảnh báo", System.Windows.MessageBoxButton.OK, System.Windows.MessageBoxImage.Warning);
+            return;
+        }
+
+        if (ChiTietForm.Any(ct => !ct.DonViID.HasValue || ct.HeSo <= 0))
+        {
+            System.Windows.MessageBox.Show("Vui lòng chọn đơn vị nhập hợp lệ cho tất cả nguyên liệu.", "Cảnh báo", System.Windows.MessageBoxButton.OK, System.Windows.MessageBoxImage.Warning);
+            return;
+        }
+
+        var invalidSuppliers = ChiTietForm
+            .Where(ct => ct.NguyenLieu?.NhaCungCapMacDinhID.HasValue == true &&
+                         ct.NguyenLieu.NhaCungCapMacDinhID != SelectedNhaCungCapForm.NhaCungCapID)
+            .Select(ct => ct.NguyenLieu?.TenNguyenLieu)
+            .Where(name => !string.IsNullOrWhiteSpace(name))
+            .Distinct()
+            .ToList();
+
+        if (invalidSuppliers.Count > 0)
+        {
+            System.Windows.MessageBox.Show(
+                $"Các nguyên liệu sau không thuộc nhà cung cấp đang chọn: {string.Join(", ", invalidSuppliers)}",
+                "Cảnh báo",
+                System.Windows.MessageBoxButton.OK,
+                System.Windows.MessageBoxImage.Warning);
             return;
         }
 
@@ -769,6 +959,7 @@ public class PhieuNhapViewModel : BaseViewModel
         catch (Exception ex)
         {
             System.Diagnostics.Debug.WriteLine($"Error saving PhieuNhap: {ex.Message}");
+            System.Windows.MessageBox.Show($"Lỗi khi lưu phiếu nhập: {ex.Message}", "Lỗi", System.Windows.MessageBoxButton.OK, System.Windows.MessageBoxImage.Error);
         }
     }
 
@@ -776,7 +967,11 @@ public class PhieuNhapViewModel : BaseViewModel
     {
         IsDialogOpen = false;
         SelectedNhaCungCapForm = null;
-        ChiTietForm.Clear();
+        foreach (var chiTiet in ChiTietForm)
+        {
+            UnregisterChiTietFormItem(chiTiet);
+        }
+        ChiTietForm = new ObservableCollection<CT_PhieuNhap>();
         TongTienForm = 0;
     }
 
@@ -843,5 +1038,3 @@ public class PhieuNhapViewModel : BaseViewModel
     }
     #endregion
 }
-
-

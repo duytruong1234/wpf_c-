@@ -1,10 +1,22 @@
-using System.Collections.ObjectModel;
+﻿using System.Collections.ObjectModel;
 using System.Windows.Input;
 using QuanLyKhoNguyenLieuPizza.Core.Interfaces;
 using QuanLyKhoNguyenLieuPizza.Models;
 using QuanLyKhoNguyenLieuPizza.Services;
 
 namespace QuanLyKhoNguyenLieuPizza.ViewModels;
+
+// Item hiển thị trong popup chi tiết trạng thái
+public class StockDetailItem : BaseViewModel
+{
+    public string TenNguyenLieu { get; set; } = string.Empty;
+    public decimal SoLuongTon { get; set; }
+    public string DonVi { get; set; } = string.Empty;
+    public DateTime? HanSuDung { get; set; }
+    public bool HasExpiry => HanSuDung.HasValue;
+    public string HanSuDungText => HanSuDung?.ToString("dd/MM/yyyy") ?? "—";
+}
+
 
 public class TopPizzaItem : BaseViewModel
 {
@@ -42,6 +54,11 @@ public class DashboardViewModel : BaseViewModel
     private int _tongDonThang;
     private decimal _loiNhuanThang;
     private decimal _chiPhiNguyenLieuThang;
+
+    // Popup trạng thái nguyên liệu
+    private bool _isStatusPopupOpen;
+    private string _statusPopupTitle = string.Empty;
+    private string _statusPopupColor = "#5B6AFF";
 
     // Dữ liệu biểu đồ
     private double[] _dailyRevenueValues = [];
@@ -188,11 +205,32 @@ public class DashboardViewModel : BaseViewModel
     public ObservableCollection<NguyenLieu> NguyenLieus { get; } = [];
     public ObservableCollection<TopPizzaItem> TopPizzas { get; } = [];
     public ObservableCollection<DonHang> RecentDonHangs { get; } = [];
+    public ObservableCollection<StockDetailItem> StatusDetailItems { get; } = [];
+
+    public bool IsStatusPopupOpen
+    {
+        get => _isStatusPopupOpen;
+        set => SetProperty(ref _isStatusPopupOpen, value);
+    }
+
+    public string StatusPopupTitle
+    {
+        get => _statusPopupTitle;
+        set => SetProperty(ref _statusPopupTitle, value);
+    }
+
+    public string StatusPopupColor
+    {
+        get => _statusPopupColor;
+        set => SetProperty(ref _statusPopupColor, value);
+    }
 
     // Lệnh
     public ICommand NavigateCommand { get; }
     public ICommand LogoutCommand { get; }
     public ICommand RefreshCommand { get; }
+    public ICommand ShowStatusDetailCommand { get; }
+    public ICommand CloseStatusPopupCommand { get; }
 
     // Sự kiện cập nhật biểu đồ
     public event Action? OnDataLoaded;
@@ -211,8 +249,9 @@ public class DashboardViewModel : BaseViewModel
         
         NavigateCommand = new RelayCommand(ExecuteNavigate);
         LogoutCommand = new RelayCommand(_ => OnLogout?.Invoke());
-        // ⚡ AsyncRelayCommand thay vì async void
         RefreshCommand = new AsyncRelayCommand(async _ => await LoadDataAsync());
+        ShowStatusDetailCommand = new AsyncRelayCommand(async p => await LoadStatusDetailAsync(p));
+        CloseStatusPopupCommand = new RelayCommand(_ => IsStatusPopupOpen = false);
 
         // Tải tên người dùng hiện tại
         var currentUser = CurrentUserSession.Instance.CurrentUser;
@@ -229,6 +268,8 @@ public class DashboardViewModel : BaseViewModel
         NavigateCommand = new RelayCommand(ExecuteNavigate);
         LogoutCommand = new RelayCommand(_ => OnLogout?.Invoke());
         RefreshCommand = new AsyncRelayCommand(async _ => await LoadDataAsync());
+        ShowStatusDetailCommand = new AsyncRelayCommand(async p => await LoadStatusDetailAsync(p));
+        CloseStatusPopupCommand = new RelayCommand(_ => IsStatusPopupOpen = false);
 
         SafeInitializeAsync(LoadDataAsync);
     }
@@ -255,10 +296,10 @@ public class DashboardViewModel : BaseViewModel
             var lowStockTask = _databaseService.GetLowStockCountAsync(20);
             var nearExpiryTask = _databaseService.GetNearExpiryCountAsync(7);
             var expiredTask = _databaseService.GetExpiredCountAsync();
-            var doanhThuTodayTask = _databaseService.GetDoanhThuAsync(today, today);
-            var tongDonTodayTask = _databaseService.GetTotalDonHangCountAsync(today, today);
-            var doanhThuMonthTask = _databaseService.GetDoanhThuAsync(firstDayOfMonth, today);
-            var tongDonMonthTask = _databaseService.GetTotalDonHangCountAsync(firstDayOfMonth, today);
+            var doanhThuTodayTask = _databaseService.GetDoanhThuBanHangAsync(today, today);
+            var tongDonTodayTask = _databaseService.GetTotalPhieuBanCountAsync(today, today);
+            var doanhThuMonthTask = _databaseService.GetDoanhThuBanHangAsync(firstDayOfMonth, today);
+            var tongDonMonthTask = _databaseService.GetTotalPhieuBanCountAsync(firstDayOfMonth, today);
             var loiNhuanTask = _databaseService.GetTotalLoiNhuanAsync(firstDayOfMonth, today);
             var chiPhiTask = _databaseService.GetChiPhiNguyenLieuAsync(firstDayOfMonth, today);
             var topPizzasTask = _databaseService.GetTopPizzasAsync(firstDayOfMonth, today, 5);
@@ -270,7 +311,7 @@ public class DashboardViewModel : BaseViewModel
             for (int i = 6; i >= 0; i--)
             {
                 var date = today.AddDays(-i);
-                dailyRevenueTasks.Add(_databaseService.GetDoanhThuAsync(date, date));
+                dailyRevenueTasks.Add(_databaseService.GetDoanhThuBanHangAsync(date, date));
                 dailyLabels.Add(date.ToString("dd/MM"));
             }
 
@@ -331,5 +372,49 @@ public class DashboardViewModel : BaseViewModel
         {
             IsLoading = false;
         }
+    }
+
+    private async Task LoadStatusDetailAsync(object? parameter)
+    {
+        if (parameter is not string statusType) return;
+
+        StatusDetailItems.Clear();
+
+        switch (statusType)
+        {
+            case "BinhThuong":
+                StatusPopupTitle = "Nguyên liệu bình thường";
+                StatusPopupColor = "#5B6AFF";
+                var normalItems = await _databaseService.GetNormalStockItemsAsync(20);
+                foreach (var item in normalItems)
+                    StatusDetailItems.Add(new StockDetailItem { TenNguyenLieu = item.TenNguyenLieu, SoLuongTon = item.SoLuongTon, DonVi = item.DonVi });
+                break;
+
+            case "TonThap":
+                StatusPopupTitle = "Nguyên liệu tồn kho thấp";
+                StatusPopupColor = "#F59E0B";
+                var lowItems = await _databaseService.GetLowStockItemsAsync(20);
+                foreach (var item in lowItems)
+                    StatusDetailItems.Add(new StockDetailItem { TenNguyenLieu = item.TenNguyenLieu, SoLuongTon = item.SoLuongTon, DonVi = item.DonVi });
+                break;
+
+            case "SapHetHan":
+                StatusPopupTitle = "Nguyên liệu sắp hết hạn";
+                StatusPopupColor = "#06B6D4";
+                var nearExpiryItems = await _databaseService.GetNearExpiryItemsAsync(7);
+                foreach (var item in nearExpiryItems)
+                    StatusDetailItems.Add(new StockDetailItem { TenNguyenLieu = item.TenNguyenLieu, SoLuongTon = item.SoLuongTon, DonVi = item.DonVi, HanSuDung = item.HanSuDung });
+                break;
+
+            case "HetHan":
+                StatusPopupTitle = "Nguyên liệu đã hết hạn";
+                StatusPopupColor = "#EF4444";
+                var expiredItems = await _databaseService.GetExpiredItemsAsync();
+                foreach (var item in expiredItems)
+                    StatusDetailItems.Add(new StockDetailItem { TenNguyenLieu = item.TenNguyenLieu, SoLuongTon = item.SoLuongTon, DonVi = item.DonVi, HanSuDung = item.HanSuDung });
+                break;
+        }
+
+        IsStatusPopupOpen = true;
     }
 }

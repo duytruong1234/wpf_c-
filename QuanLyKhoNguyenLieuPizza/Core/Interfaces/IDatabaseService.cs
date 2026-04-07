@@ -1,4 +1,4 @@
-using QuanLyKhoNguyenLieuPizza.Models;
+﻿using QuanLyKhoNguyenLieuPizza.Models;
 
 namespace QuanLyKhoNguyenLieuPizza.Core.Interfaces;
 
@@ -19,6 +19,7 @@ public interface IDatabaseService
     Task<List<NhaCungCap>> GetNhaCungCapsAsync();
     Task<List<NhaCungCap>> GetNhaCungCapsByNguyenLieuAsync(int nguyenLieuId);
     Task<List<NguyenLieuNhaCungCap>> GetNguyenLieuNhaCungCapsAsync(int nguyenLieuId);
+    Task<bool> UpsertNguyenLieuNhaCungCapAsync(int nguyenLieuId, int nhaCungCapId, decimal giaNhap);
     
     // Nguyên Liệu
     Task<List<NguyenLieu>> GetNguyenLieusAsync(int? loaiNLID = null);
@@ -45,6 +46,10 @@ public interface IDatabaseService
     Task<int> GetLowStockCountAsync(decimal threshold = 20);
     Task<int> GetNearExpiryCountAsync(int days = 7);
     Task<int> GetExpiredCountAsync();
+    Task<List<(string TenNguyenLieu, decimal SoLuongTon, string DonVi)>> GetLowStockItemsAsync(decimal threshold = 20);
+    Task<List<(string TenNguyenLieu, decimal SoLuongTon, string DonVi, DateTime? HanSuDung)>> GetNearExpiryItemsAsync(int days = 7);
+    Task<List<(string TenNguyenLieu, decimal SoLuongTon, string DonVi, DateTime? HanSuDung)>> GetExpiredItemsAsync();
+    Task<List<(string TenNguyenLieu, decimal SoLuongTon, string DonVi)>> GetNormalStockItemsAsync(decimal lowThreshold = 20);
 
     // Quản lý người dùng
     Task<List<NhanVien>> GetNhanViensAsync();
@@ -58,6 +63,7 @@ public interface IDatabaseService
     Task<bool> SavePizzaAsync(Pizza pizza);
     Task<bool> DeletePizzaAsync(int pizzaId);
     Task<bool> DeletePizzaByMaAsync(string maHangHoa);
+    Task<bool> TogglePizzaTrangThaiAsync(string maHangHoa, bool newStatus);
 
     // Công Thức (Đơn)
     Task<List<CongThuc>> GetCongThucsAsync(int pizzaId);
@@ -72,6 +78,7 @@ public interface IDatabaseService
     Task<List<CT_DonHang>> GetDonHangChiTietsAsync(int donHangId);
     Task<int> SaveDonHangAsync(DonHang donHang, List<CT_DonHang> chiTiets);
     Task<bool> UpdateDonHangStatusAsync(int donHangId, byte trangThai);
+    Task<bool> DeleteDonHangAsync(DonHang donHang);
 
     // Thống kê bán hàng
     Task<decimal> GetDoanhThuAsync(DateTime fromDate, DateTime toDate);
@@ -84,10 +91,14 @@ public interface IDatabaseService
     // Hàng Hóa (Sản phẩm)
     Task<List<HangHoa>> GetHangHoasAsync();
     Task<HangHoa?> GetHangHoaByIdAsync(string maHangHoa);
+    Task<Dictionary<string, List<string>>> GetOutOfStockIngredientsByHangHoaAsync(IEnumerable<string> maHangHoas);
 
     // DoanhMuc_Size & DoanhMuc_De
     Task<List<DoanhMuc_Size>> GetDoanhMucSizesAsync();
     Task<List<DoanhMuc_De>> GetDoanhMucDesAsync();
+    
+    // Loại Hàng Hóa
+    Task<List<LoaiHangHoa>> GetLoaiHangHoasAsync();
 
     // GiaTheo_Size & GiaTheo_De
     Task<List<GiaTheo_Size>> GetGiaTheoSizeByHangHoaAsync(string maHangHoa);
@@ -99,9 +110,12 @@ public interface IDatabaseService
     Task<List<CT_PhieuBan>> GetChiTietPhieuBanAsync(string maPhieuBan);
     Task<string> SavePhieuBanHangAsync(PhieuBanHang phieuBan, List<CT_PhieuBan> chiTiets);
     Task<string> GenerateMaPhieuBanAsync();
+    Task<bool> DeletePhieuBanHangAsync(string maPhieuBan);
 
     // CongThuc_Pizza
     Task<List<CongThuc_Pizza>> GetCongThucPizzaAsync(string maHangHoa, string sizeId);
+    Task<bool> SaveCongThucPizzaAsync(CongThuc_Pizza congThuc);
+    Task<bool> DeleteCongThucPizzaAsync(string maHangHoa, string sizeId, int nguyenLieuId);
 
     // Thống kê bán hàng (PhiếuBánHàng)
     Task<decimal> GetDoanhThuBanHangAsync(DateTime fromDate, DateTime toDate);
@@ -120,5 +134,6 @@ public interface IDatabaseService
     Task<List<NguyenLieu>> GetAllNguyenLieusWithPriceAsync();
     Task<List<NguyenLieu>> GetNguyenLieusByNhaCungCapAsync(int nhaCungCapId);
 }
+
 
 

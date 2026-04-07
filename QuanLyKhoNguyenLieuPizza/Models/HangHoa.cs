@@ -1,4 +1,4 @@
-namespace QuanLyKhoNguyenLieuPizza.Models;
+﻿namespace QuanLyKhoNguyenLieuPizza.Models;
 
 public class HangHoa
 {
@@ -8,6 +8,10 @@ public class HangHoa
     public int? DonViID { get; set; }
     public string? LoaiHangHoaID { get; set; }
     public bool? TinhTrang { get; set; } = true;
+
+    // UI-only state for POS availability
+    public bool IsOutOfStock { get; set; }
+    public string OutOfStockNote { get; set; } = string.Empty;
 
     // Thuộc tính điều hướng
     public virtual DonViTinh? DonViTinh { get; set; }

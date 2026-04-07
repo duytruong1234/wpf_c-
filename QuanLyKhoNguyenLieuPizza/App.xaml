@@ -1,4 +1,4 @@
-<Application x:Class="QuanLyKhoNguyenLieuPizza.App"
+﻿<Application x:Class="QuanLyKhoNguyenLieuPizza.App"
          xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
          xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
          xmlns:local="clr-namespace:QuanLyKhoNguyenLieuPizza"
@@ -17,7 +17,7 @@
             <ResourceDictionary Source="Themes/PizzaTheme.xaml"/>
         </ResourceDictionary.MergedDictionaries>
             
-        <!-- Converters -->
+        <!-- Bộ chuyển đổi (Converters) -->
         <converters:StringToVisibilityConverter x:Key="StringToVisibilityConverter"/>
         <converters:StringLengthToVisibilityConverter x:Key="StringLengthToVisibilityConverter"/>
         <converters:IntToVisibilityConverter x:Key="IntToVisibilityConverter"/>
@@ -30,6 +30,7 @@
         <converters:ValueToBarHeightConverter x:Key="ValueToBarHeightConverter"/>
         <converters:DonutChartPathConverter x:Key="DonutChartPathConverter"/>
         <converters:InverseBoolToVisibilityConverter x:Key="InverseBoolToVisibilityConverter"/>
+        <converters:StringToBoolConverter x:Key="StringToBoolConverter"/>
 
         <!-- ==================== COMPATIBILITY ALIASES ==================== -->
         <!-- Keep old resource keys working to avoid breaking existing bindings -->

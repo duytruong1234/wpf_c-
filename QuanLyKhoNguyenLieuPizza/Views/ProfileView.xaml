@@ -1,4 +1,4 @@
-<?xml version="1.0" encoding="utf-8"?>
+﻿<?xml version="1.0" encoding="utf-8"?>
 <UserControl x:Class="QuanLyKhoNguyenLieuPizza.Views.ProfileView"
          xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
          xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
@@ -35,7 +35,7 @@
                 <RowDefinition Height="*"/>
             </Grid.RowDefinitions>
 
-            <!-- GRADIENT HEADER WITH AVATAR -->
+            <!-- GRADIENT Tiêu đề WITH AVATAR -->
             <Grid Grid.Row="0">
                 <!-- Gradient Background -->
                 <Border Background="{StaticResource HeaderGradient}" Height="160"/>
@@ -50,7 +50,7 @@
                          Margin="-20,-10,0,0"
                          IsHitTestVisible="False"/>
 
-                <!-- Close Button -->
+                <!-- Close Nút -->
                 <Button Command="{Binding CloseCommand}"
                         HorizontalAlignment="Right"
                         VerticalAlignment="Top"
@@ -73,7 +73,7 @@
                     </Button.Template>
                 </Button>
 
-                <!-- Avatar + Name overlay (positioned to overlap gradient) -->
+                <!-- Avatar + Name overlay -->
                 <StackPanel HorizontalAlignment="Center" VerticalAlignment="Top" Margin="0,32,0,0">
                     <!-- Avatar -->
                     <Grid HorizontalAlignment="Center" Margin="0,0,0,14">
@@ -81,7 +81,7 @@
                         <Border Width="108" Height="108" CornerRadius="54"
                                 Background="White" HorizontalAlignment="Center" VerticalAlignment="Center"/>
 
-                        <!-- Default icon (no avatar) -->
+                        <!-- Default icon -->
                         <Border Width="100" Height="100" CornerRadius="50" 
                                 Background="{StaticResource LightBlue}" 
                                 HorizontalAlignment="Center" VerticalAlignment="Center"
@@ -90,7 +90,7 @@
                             <ui:SymbolIcon Symbol="Person24" FontSize="44" Foreground="{StaticResource PrimaryBlue}" HorizontalAlignment="Center" VerticalAlignment="Center"/>
                         </Border>
 
-                        <!-- Avatar image -->
+                        <!-- Avatar Hình ảnh -->
                         <Border Width="100" Height="100" CornerRadius="50" 
                                 ClipToBounds="True"
                                 HorizontalAlignment="Center" VerticalAlignment="Center"
@@ -314,7 +314,7 @@
                         </Grid>
                     </Border>
 
-                    <!-- Action Buttons -->
+                    <!-- Nút Hành động -->
                     <Button Command="{Binding ChangePasswordCommand}" Cursor="Hand" Margin="0,0,0,10" HorizontalAlignment="Stretch" HorizontalContentAlignment="Stretch">
                         <Button.Template>
                             <ControlTemplate TargetType="Button">

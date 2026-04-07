@@ -1,5 +1,7 @@
-using System.Collections.ObjectModel;
+﻿using System.Collections.ObjectModel;
+using System.Text.RegularExpressions;
 using System.Windows.Input;
+using QuanLyKhoNguyenLieuPizza.Core.Interfaces;
 using QuanLyKhoNguyenLieuPizza.Models;
 using QuanLyKhoNguyenLieuPizza.Services;
 
@@ -135,18 +137,69 @@ public class NhaCungCapViewModel : BaseViewModel
         set => SetProperty(ref _formDiaChi, value);
     }
 
+    // Trường địa chỉ có cấu trúc
+    private string _formTinhTP = string.Empty;
+    public string FormTinhTP
+    {
+        get => _formTinhTP;
+        set => SetProperty(ref _formTinhTP, value);
+    }
+
+    private string _formPhuongXa = string.Empty;
+    public string FormPhuongXa
+    {
+        get => _formPhuongXa;
+        set => SetProperty(ref _formPhuongXa, value);
+    }
+
+    private string _formThonXom = string.Empty;
+    public string FormThonXom
+    {
+        get => _formThonXom;
+        set => SetProperty(ref _formThonXom, value);
+    }
+
+    private string _formDiaChiChiTiet = string.Empty;
+    public string FormDiaChiChiTiet
+    {
+        get => _formDiaChiChiTiet;
+        set => SetProperty(ref _formDiaChiChiTiet, value);
+    }
+
     private string _formSDT = string.Empty;
     public string FormSDT
     {
         get => _formSDT;
-        set => SetProperty(ref _formSDT, value);
+        set
+        {
+            if (SetProperty(ref _formSDT, value))
+                ErrorSDT = string.Empty;
+        }
     }
 
     private string _formEmail = string.Empty;
     public string FormEmail
     {
         get => _formEmail;
-        set => SetProperty(ref _formEmail, value);
+        set
+        {
+            if (SetProperty(ref _formEmail, value))
+                ErrorEmail = string.Empty;
+        }
+    }
+
+    private string _errorSDT = string.Empty;
+    public string ErrorSDT
+    {
+        get => _errorSDT;
+        set => SetProperty(ref _errorSDT, value);
+    }
+
+    private string _errorEmail = string.Empty;
+    public string ErrorEmail
+    {
+        get => _errorEmail;
+        set => SetProperty(ref _errorEmail, value);
     }
 
     private int _countDangHopTac;
@@ -169,6 +222,49 @@ public class NhaCungCapViewModel : BaseViewModel
         get => _isLoading;
         set => SetProperty(ref _isLoading, value);
     }
+
+    // Hộp thoại thêm NL vào NCC
+    private bool _isAddNLDialogOpen;
+    public bool IsAddNLDialogOpen
+    {
+        get => _isAddNLDialogOpen;
+        set => SetProperty(ref _isAddNLDialogOpen, value);
+    }
+
+    private ObservableCollection<NguyenLieu> _allNguyenLieus = new();
+    public ObservableCollection<NguyenLieu> AllNguyenLieus
+    {
+        get => _allNguyenLieus;
+        set => SetProperty(ref _allNguyenLieus, value);
+    }
+
+    private NguyenLieu? _selectedNguyenLieuToAdd;
+    public NguyenLieu? SelectedNguyenLieuToAdd
+    {
+        get => _selectedNguyenLieuToAdd;
+        set => SetProperty(ref _selectedNguyenLieuToAdd, value);
+    }
+
+    private string _formGiaNhap = string.Empty;
+    public string FormGiaNhap
+    {
+        get => _formGiaNhap;
+        set => SetProperty(ref _formGiaNhap, value);
+    }
+
+    private ObservableCollection<DonViTinh> _donViTinhs = new();
+    public ObservableCollection<DonViTinh> DonViTinhs
+    {
+        get => _donViTinhs;
+        set => SetProperty(ref _donViTinhs, value);
+    }
+
+    private DonViTinh? _formDonViNhap;
+    public DonViTinh? FormDonViNhap
+    {
+        get => _formDonViNhap;
+        set => SetProperty(ref _formDonViNhap, value);
+    }
     #endregion
 
     #region Lệnh
@@ -184,6 +280,12 @@ public class NhaCungCapViewModel : BaseViewModel
     public ICommand CloseDetailDialogCommand { get; }
     public ICommand CloseStatusDialogCommand { get; }
     public ICommand ClearFilterCommand { get; }
+    public ICommand OpenAddNLDialogCommand { get; }
+    public ICommand CloseAddNLDialogCommand { get; }
+    public ICommand SaveAddNLCommand { get; }
+    public ICommand DeleteNLFromNCCCommand { get; }
+    public ICommand ComposeDiaChiCommand { get; }
+    public ICommand ResetDiaChiCommand { get; }
     #endregion
 
     public NhaCungCapViewModel()
@@ -202,6 +304,12 @@ public class NhaCungCapViewModel : BaseViewModel
         CloseDetailDialogCommand = new RelayCommand(_ => IsDetailDialogOpen = false);
         CloseStatusDialogCommand = new RelayCommand(_ => IsStatusDialogOpen = false);
         ClearFilterCommand = new RelayCommand(_ => ClearFilter());
+        OpenAddNLDialogCommand = new RelayCommand(async _ => await OpenAddNLDialogAsync());
+        CloseAddNLDialogCommand = new RelayCommand(_ => IsAddNLDialogOpen = false);
+        SaveAddNLCommand = new RelayCommand(async _ => await SaveAddNLAsync());
+        DeleteNLFromNCCCommand = new RelayCommand(async p => await DeleteNLFromNCCAsync(p));
+        ComposeDiaChiCommand = new RelayCommand(_ => ComposeDiaChi());
+        ResetDiaChiCommand = new RelayCommand(_ => ResetDiaChi());
 
         // Tải dữ liệu khi khởi tạo
         _ = LoadDataAsync();
@@ -268,8 +376,14 @@ public class NhaCungCapViewModel : BaseViewModel
         IsCreateMode = true;
         FormTenNCC = string.Empty;
         FormDiaChi = string.Empty;
+        FormTinhTP = string.Empty;
+        FormPhuongXa = string.Empty;
+        FormThonXom = string.Empty;
+        FormDiaChiChiTiet = string.Empty;
         FormSDT = string.Empty;
         FormEmail = string.Empty;
+        ErrorSDT = string.Empty;
+        ErrorEmail = string.Empty;
         IsDialogOpen = true;
     }
 
@@ -283,8 +397,66 @@ public class NhaCungCapViewModel : BaseViewModel
             FormDiaChi = ncc.DiaChi ?? string.Empty;
             FormSDT = ncc.SDT ?? string.Empty;
             FormEmail = ncc.Email ?? string.Empty;
+
+            // Phân tích địa chỉ có cấu trúc từ Địa chỉ
+            ParseDiaChi(ncc.DiaChi);
+
             IsDialogOpen = true;
         }
+    }
+
+    private void ParseDiaChi(string? diaChi)
+    {
+        FormTinhTP = string.Empty;
+        FormPhuongXa = string.Empty;
+        FormThonXom = string.Empty;
+        FormDiaChiChiTiet = string.Empty;
+
+        if (string.IsNullOrWhiteSpace(diaChi)) return;
+
+        // Phân tích: "Số nhà/đường, Thôn/Xóm, Phường/Xã, Tỉnh/TP"
+        var parts = diaChi.Split(',').Select(p => p.Trim()).ToArray();
+        if (parts.Length >= 4)
+        {
+            FormDiaChiChiTiet = parts[0];
+            FormThonXom = parts[1];
+            FormPhuongXa = parts[2];
+            FormTinhTP = string.Join(", ", parts.Skip(3));
+        }
+        else if (parts.Length == 3)
+        {
+            FormDiaChiChiTiet = parts[0];
+            FormPhuongXa = parts[1];
+            FormTinhTP = parts[2];
+        }
+        else if (parts.Length == 2)
+        {
+            FormDiaChiChiTiet = parts[0];
+            FormTinhTP = parts[1];
+        }
+        else
+        {
+            FormDiaChiChiTiet = diaChi;
+        }
+    }
+
+    private void ComposeDiaChi()
+    {
+        var parts = new List<string>();
+        if (!string.IsNullOrWhiteSpace(FormDiaChiChiTiet)) parts.Add(FormDiaChiChiTiet.Trim());
+        if (!string.IsNullOrWhiteSpace(FormThonXom)) parts.Add(FormThonXom.Trim());
+        if (!string.IsNullOrWhiteSpace(FormPhuongXa)) parts.Add(FormPhuongXa.Trim());
+        if (!string.IsNullOrWhiteSpace(FormTinhTP)) parts.Add(FormTinhTP.Trim());
+        FormDiaChi = string.Join(", ", parts);
+    }
+
+    private void ResetDiaChi()
+    {
+        FormTinhTP = string.Empty;
+        FormPhuongXa = string.Empty;
+        FormThonXom = string.Empty;
+        FormDiaChiChiTiet = string.Empty;
+        FormDiaChi = string.Empty;
     }
 
     private void OpenStatusDialog(object? parameter)
@@ -325,9 +497,48 @@ public class NhaCungCapViewModel : BaseViewModel
         }
     }
 
+    private bool ValidateForm()
+    {
+        bool isValid = true;
+
+        // Kiểm tra SĐT
+        if (!string.IsNullOrWhiteSpace(FormSDT))
+        {
+            var sdt = FormSDT.Trim();
+            if (!Regex.IsMatch(sdt, @"^\d+$"))
+            {
+                ErrorSDT = "Số điện thoại chỉ được chứa chữ số";
+                isValid = false;
+            }
+            else if (sdt.Length < 10 || sdt.Length > 11)
+            {
+                ErrorSDT = "Số điện thoại phải có 10-11 chữ số";
+                isValid = false;
+            }
+        }
+
+        // Kiểm tra Email
+        if (!string.IsNullOrWhiteSpace(FormEmail))
+        {
+            var email = FormEmail.Trim();
+            if (!Regex.IsMatch(email, @"^[^@\s]+@[^@\s]+\.[^@\s]+$"))
+            {
+                ErrorEmail = "Email không đúng định dạng";
+                isValid = false;
+            }
+        }
+
+        return isValid;
+    }
+
     private async Task SaveNhaCungCapAsync()
     {
         if (string.IsNullOrWhiteSpace(FormTenNCC))
+        {
+            return;
+        }
+
+        if (!ValidateForm())
         {
             return;
         }
@@ -404,9 +615,87 @@ public class NhaCungCapViewModel : BaseViewModel
         IsDialogOpen = false;
         FormTenNCC = string.Empty;
         FormDiaChi = string.Empty;
+        FormTinhTP = string.Empty;
+        FormPhuongXa = string.Empty;
+        FormThonXom = string.Empty;
+        FormDiaChiChiTiet = string.Empty;
         FormSDT = string.Empty;
         FormEmail = string.Empty;
+        ErrorSDT = string.Empty;
+        ErrorEmail = string.Empty;
         SelectedNhaCungCap = null;
+    }
+
+    private async Task OpenAddNLDialogAsync()
+    {
+        try
+        {
+            var allNL = await _databaseService.GetNguyenLieusAsync();
+            AllNguyenLieus = new ObservableCollection<NguyenLieu>(allNL);
+
+            var dvtList = await _databaseService.GetDonViTinhsAsync();
+            DonViTinhs = new ObservableCollection<DonViTinh>(dvtList);
+
+            SelectedNguyenLieuToAdd = null;
+            FormGiaNhap = string.Empty;
+            FormDonViNhap = null;
+            IsAddNLDialogOpen = true;
+        }
+        catch (Exception ex)
+        {
+            System.Diagnostics.Debug.WriteLine($"Error loading NguyenLieus: {ex.Message}");
+        }
+    }
+
+    private async Task SaveAddNLAsync()
+    {
+        if (SelectedNhaCungCap == null || SelectedNguyenLieuToAdd == null)
+            return;
+
+        if (!decimal.TryParse(FormGiaNhap, out var giaNhap) || giaNhap < 0)
+            return;
+
+        try
+        {
+            var success = await _databaseService.AddNguyenLieuToNhaCungCapAsync(
+                SelectedNguyenLieuToAdd.NguyenLieuID,
+                SelectedNhaCungCap.NhaCungCapID,
+                giaNhap);
+
+            if (success)
+            {
+                IsAddNLDialogOpen = false;
+                // Tải lại danh sách chi tiết
+                var nguyenLieus = await _databaseService.GetNguyenLieusByNhaCungCapIdAsync(SelectedNhaCungCap.NhaCungCapID);
+                NguyenLieusOfNCC = new ObservableCollection<NguyenLieu>(nguyenLieus);
+            }
+        }
+        catch (Exception ex)
+        {
+            System.Diagnostics.Debug.WriteLine($"Error adding NL to NCC: {ex.Message}");
+        }
+    }
+
+    private async Task DeleteNLFromNCCAsync(object? parameter)
+    {
+        if (SelectedNhaCungCap == null) return;
+        if (parameter is not NguyenLieu nl) return;
+
+        try
+        {
+            var success = await _databaseService.DeleteNguyenLieuFromNhaCungCapAsync(
+                nl.NguyenLieuID, SelectedNhaCungCap.NhaCungCapID);
+
+            if (success)
+            {
+                var nguyenLieus = await _databaseService.GetNguyenLieusByNhaCungCapIdAsync(SelectedNhaCungCap.NhaCungCapID);
+                NguyenLieusOfNCC = new ObservableCollection<NguyenLieu>(nguyenLieus);
+            }
+        }
+        catch (Exception ex)
+        {
+            System.Diagnostics.Debug.WriteLine($"Error deleting NL from NCC: {ex.Message}");
+        }
     }
     #endregion
 }

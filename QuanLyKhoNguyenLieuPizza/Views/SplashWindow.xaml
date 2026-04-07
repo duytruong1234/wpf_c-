@@ -1,4 +1,4 @@
-<Window x:Class="QuanLyKhoNguyenLieuPizza.Views.SplashWindow"
+﻿<Window x:Class="QuanLyKhoNguyenLieuPizza.Views.SplashWindow"
         xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
         WindowStyle="None"
@@ -67,7 +67,7 @@
                              From="1" To="1.5" Duration="0:0:1.5"/>
         </Storyboard>
 
-        <!-- Title slide up -->
+        <!-- Tiêu đề slide up -->
         <Storyboard x:Key="SlideUpAnimation">
             <DoubleAnimation Storyboard.TargetName="ContentPanel"
                              Storyboard.TargetProperty="(UIElement.RenderTransform).(TranslateTransform.Y)"
@@ -145,7 +145,7 @@
                 </Border.Background>
             </Border>
 
-            <!-- Main content -->
+            <!-- Nội dung Chính -->
             <StackPanel x:Name="ContentPanel" VerticalAlignment="Center" HorizontalAlignment="Center">
                 <StackPanel.RenderTransform>
                     <TranslateTransform Y="30"/>

@@ -1,4 +1,4 @@
-using System.Collections.ObjectModel;
+﻿using System.Collections.ObjectModel;
 using System.Windows.Input;
 using QuanLyKhoNguyenLieuPizza.Models;
 using QuanLyKhoNguyenLieuPizza.Services;
@@ -9,8 +9,8 @@ public class PhieuXuatViewModel : BaseViewModel
 {
     private readonly DatabaseService _databaseService;
 
-    #region Properties
-    // Role-based properties
+    #region Thuộc tính
+    // Thuộc tính theo vai trò
     private bool _isNhanVien;
     public bool IsNhanVien
     {
@@ -114,7 +114,7 @@ public class PhieuXuatViewModel : BaseViewModel
         set => SetProperty(ref _soPhieuHomNay, value);
     }
 
-    // Filter properties
+    // Thuộc tính lọc
     private string _searchText = string.Empty;
     public string SearchText
     {
@@ -220,7 +220,7 @@ public class PhieuXuatViewModel : BaseViewModel
         }
     }
 
-    // Dialog properties
+    // Thuộc tính hộp thoại
     private bool _isDialogOpen;
     public bool IsDialogOpen
     {
@@ -242,7 +242,7 @@ public class PhieuXuatViewModel : BaseViewModel
         set => SetProperty(ref _isCreateMode, value);
     }
 
-    // Form properties
+    // Thuộc tính form
     private ObservableCollection<CT_PhieuXuat> _chiTietForm = new();
     public ObservableCollection<CT_PhieuXuat> ChiTietForm
     {
@@ -273,7 +273,7 @@ public class PhieuXuatViewModel : BaseViewModel
     };
     #endregion
 
-    #region Commands
+    #region Lệnh
     public ICommand LoadDataCommand { get; }
     public ICommand CreatePhieuXuatCommand { get; }
     public ICommand ViewDetailCommand { get; }
@@ -296,7 +296,7 @@ public class PhieuXuatViewModel : BaseViewModel
     {
         _databaseService = new DatabaseService();
 
-        // Detect if current user is employee (not manager)
+        // Nhận biết người dùng hiện tại là nhân viên (không phải quản lý)
         var currentUser = CurrentUserSession.Instance.CurrentUser;
         var chucVuId = currentUser?.NhanVien?.ChucVuID ?? 0;
         IsNhanVien = chucVuId == 3 || chucVuId == 4; // 3: Nhân viên bếp, 4: Nhân viên kho
@@ -319,7 +319,7 @@ public class PhieuXuatViewModel : BaseViewModel
         IncreaseQuantityCommand = new RelayCommand(p => IncreaseQuantity(p));
         DecreaseQuantityCommand = new RelayCommand(p => DecreaseQuantity(p));
 
-        // Load data on initialization
+        // Tải dữ liệu khi khởi tạo
         _ = LoadDataAsync();
     }
 
@@ -339,7 +339,7 @@ public class PhieuXuatViewModel : BaseViewModel
         }
     }
 
-    #region Methods
+    #region Phương thức
     private async Task LoadDataAsync()
     {
         IsLoading = true;
@@ -355,6 +355,7 @@ public class PhieuXuatViewModel : BaseViewModel
             NguyenLieus = new ObservableCollection<NguyenLieu>(nguyenLieus);
 
             await LoadPhieuXuatsAsync();
+
         }
         catch (Exception ex)
         {
@@ -381,6 +382,15 @@ public class PhieuXuatViewModel : BaseViewModel
                 TuNgay,
                 DenNgay,
                 trangThaiFilter.Any() ? trangThaiFilter : null);
+
+            if (IsNhanVien)
+            {
+                var currentUser = CurrentUserSession.Instance.CurrentUser;
+                if (currentUser != null && currentUser.NhanVienID.HasValue)
+                {
+                    phieuXuats = phieuXuats.Where(p => p.NhanVienYeuID == currentUser.NhanVienID.Value).ToList();
+                }
+            }
 
             PhieuXuats = new ObservableCollection<PhieuXuat>(phieuXuats);
 
@@ -441,7 +451,7 @@ public class PhieuXuatViewModel : BaseViewModel
         IsCreateMode = true;
         ChiTietForm = new ObservableCollection<CT_PhieuXuat>();
         
-        // Reload nguyen lieu with updated TonKho
+        // Tải lại nguyên liệu với tồn kho mới nhất
         var nguyenLieus = await _databaseService.GetNguyenLieusWithTonKhoAsync();
         NguyenLieus = new ObservableCollection<NguyenLieu>(nguyenLieus);
         
@@ -452,7 +462,7 @@ public class PhieuXuatViewModel : BaseViewModel
     {
         if (parameter is NguyenLieu nguyenLieu)
         {
-            // Check if already exists
+            // Kiểm tra nếu đã tồn tại
             if (ChiTietForm.Any(ct => ct.NguyenLieuID == nguyenLieu.NguyenLieuID))
             {
                 return;
@@ -467,14 +477,27 @@ public class PhieuXuatViewModel : BaseViewModel
                 TenDonVi = nguyenLieu.DonViTinh?.TenDonVi ?? "",
                 HeSo = 1
             };
-            donViOptions.Add(defaultOption);
 
             try
             {
                 var quyDois = await _databaseService.GetQuyDoiDonVisAsync(nguyenLieu.NguyenLieuID);
+                var donViXuat = quyDois.FirstOrDefault(q => q.LaDonViChuan);
+                
+                if (donViXuat != null)
+                {
+                    defaultOption = new DonViOption
+                    {
+                        DonViID = donViXuat.DonViID ?? 0,
+                        TenDonVi = donViXuat.DonViTinh?.TenDonVi ?? "",
+                        HeSo = donViXuat.HeSo
+                    };
+                }
+
+                donViOptions.Add(defaultOption);
+
                 foreach (var qd in quyDois)
                 {
-                    if (qd.DonViID == nguyenLieu.DonViID) continue;
+                    if (qd.DonViID == defaultOption.DonViID) continue;
                     donViOptions.Add(new DonViOption
                     {
                         DonViID = qd.DonViID ?? 0,
@@ -486,6 +509,7 @@ public class PhieuXuatViewModel : BaseViewModel
             catch (Exception ex)
             {
                 System.Diagnostics.Debug.WriteLine($"Error loading QuyDoiDonVi: {ex.Message}");
+                if (!donViOptions.Any()) donViOptions.Add(defaultOption);
             }
 
             var chiTiet = new CT_PhieuXuat
@@ -493,9 +517,9 @@ public class PhieuXuatViewModel : BaseViewModel
                 NguyenLieuID = nguyenLieu.NguyenLieuID,
                 NguyenLieu = nguyenLieu,
                 SoLuong = 1,
-                DonViID = nguyenLieu.DonViID,
-                DonViTinh = nguyenLieu.DonViTinh,
-                HeSo = 1,
+                DonViID = defaultOption.DonViID,
+                DonViTinh = new DonViTinh { DonViID = defaultOption.DonViID, TenDonVi = defaultOption.TenDonVi },
+                HeSo = defaultOption.HeSo,
                 DonViOptions = donViOptions
             };
             chiTiet.SelectedDonVi = defaultOption;
@@ -549,7 +573,7 @@ public class PhieuXuatViewModel : BaseViewModel
         var chiTiets = await _databaseService.GetChiTietPhieuXuatAsync(SelectedPhieuXuat.PhieuXuatID);
         ChiTietForm = new ObservableCollection<CT_PhieuXuat>(chiTiets);
         
-        // Reload nguyen lieu
+        // Tải lại nguyên liệu
         var nguyenLieus = await _databaseService.GetNguyenLieusWithTonKhoAsync();
         NguyenLieus = new ObservableCollection<NguyenLieu>(nguyenLieus);
         
@@ -684,9 +708,9 @@ public class PhieuXuatViewModel : BaseViewModel
     {
         return trangThai switch
         {
-            1 => "#FEF3CD", // Warning - Cho duyet
-            2 => "#D1FAE5", // Success - Da duyet
-            3 => "#FEE2E2", // Danger - Da huy
+            1 => "#FEF3CD", // Cảnh báo - Chờ duyệt
+            2 => "#D1FAE5", // Thành công - Đã duyệt
+            3 => "#FEE2E2", // Nguy hiểm - Đã hủy
             _ => "#F1F5F9"
         };
     }

@@ -1,4 +1,4 @@
-<?xml version="1.0" encoding="utf-8"?>
+﻿<?xml version="1.0" encoding="utf-8"?>
 <UserControl x:Class="QuanLyKhoNguyenLieuPizza.Views.NhaCungCapView"
              xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
              xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
@@ -20,7 +20,7 @@
         <converters:StringToVisibilityConverter x:Key="StringToVisibilityConverter"/>
         <converters:IntToVisibilityConverter x:Key="IntToVisibilityConverter"/>
 
-        <!-- MODERN COLOR PALETTE -->
+        <!-- BẢNG MÀU HIỆN ĐẠI -->
         <SolidColorBrush x:Key="PrimaryBlue" Color="#5B6AFF"/>
         <SolidColorBrush x:Key="DarkBlue" Color="#4A56D6"/>
         <SolidColorBrush x:Key="LightBlue" Color="#EEF0FF"/>
@@ -48,7 +48,7 @@
             </Setter>
         </Style>
 
-        <!-- Table Header Style -->
+        <!-- Kiểu Tiêu đề Bảng -->
         <Style x:Key="TableHeaderStyle" TargetType="TextBlock">
             <Setter Property="FontWeight" Value="SemiBold"/>
             <Setter Property="FontSize" Value="13"/>
@@ -57,7 +57,7 @@
             <Setter Property="TextAlignment" Value="Center"/>
         </Style>
 
-        <!-- Table Cell Style -->
+        <!-- Kiểu Ô Bảng -->
         <Style x:Key="TableCellStyle" TargetType="TextBlock">
             <Setter Property="FontSize" Value="13"/>
             <Setter Property="Foreground" Value="{StaticResource Gray800}"/>
@@ -76,14 +76,14 @@
                 <RowDefinition Height="*"/>
             </Grid.RowDefinitions>
 
-            <!-- PAGE HEADER -->
+            <!-- TIÊU ĐỀ TRANG -->
             <Grid Grid.Row="0" Margin="0,0,0,24">
                 <Grid.ColumnDefinitions>
                     <ColumnDefinition Width="*"/>
                     <ColumnDefinition Width="Auto"/>
                 </Grid.ColumnDefinitions>
 
-                <!-- Title -->
+                <!-- Tiêu đề -->
                 <StackPanel Grid.Column="0" Orientation="Horizontal" HorizontalAlignment="Left" VerticalAlignment="Center">
                     <Border Background="{StaticResource LightBlue}" CornerRadius="12" Width="44" Height="44" Margin="0,0,14,0">
                         <TextBlock Text="&#xE77B;" FontFamily="Segoe MDL2 Assets" FontSize="20" Foreground="{StaticResource PrimaryBlue}" HorizontalAlignment="Center" VerticalAlignment="Center"/>
@@ -94,7 +94,7 @@
                     </StackPanel>
                 </StackPanel>
 
-                <!-- Add Button -->
+                <!-- Nút Thêm -->
                 <Button Grid.Column="1" Command="{Binding CreateNhaCungCapCommand}" Cursor="Hand" VerticalAlignment="Center">
                     <Button.Template>
                         <ControlTemplate TargetType="Button">
@@ -123,7 +123,7 @@
                 </Button>
             </Grid>
 
-            <!-- STAT CARDS -->
+            <!-- THẺ THỐNG KÊ -->
             <Grid Grid.Row="1" Margin="0,0,0,20">
                 <Grid.ColumnDefinitions>
                     <ColumnDefinition Width="*"/>
@@ -133,7 +133,7 @@
                     <ColumnDefinition Width="*"/>
                 </Grid.ColumnDefinitions>
 
-                <!-- Total -->
+                <!-- Tổng số -->
                 <Border Grid.Column="0" Background="#EEF2FF" BorderBrush="#C7D2FE" BorderThickness="1.5" MinHeight="110" Style="{StaticResource CardStyle}" Padding="20">
                     <StackPanel>
                         <Grid Margin="0,0,0,12">
@@ -173,7 +173,7 @@
                 </Border>
             </Grid>
 
-            <!-- SEARCH & FILTERS -->
+            <!-- Tìm kiếm & FILTERS -->
             <Border Grid.Row="2" Style="{StaticResource CardStyle}" Padding="20" Margin="0,0,0,20">
                 <Grid>
                     <Grid.ColumnDefinitions>
@@ -182,7 +182,7 @@
                         <ColumnDefinition Width="Auto"/>
                     </Grid.ColumnDefinitions>
 
-                    <!-- Search Box -->
+                    <!-- Hộp Tìm kiếm -->
                     <Border Background="White" BorderBrush="{StaticResource Gray200}" BorderThickness="1" CornerRadius="10" Padding="12,10" Width="350">
                         <Grid>
                             <Grid.ColumnDefinitions>
@@ -232,7 +232,7 @@
                 </Grid>
             </Border>
 
-            <!-- DATA TABLE -->
+            <!-- Bảng Dữ liệu -->
             <Border Grid.Row="3" Style="{StaticResource CardStyle}" Padding="0">
                 <Grid>
                     <Grid.RowDefinitions>
@@ -240,7 +240,7 @@
                         <RowDefinition Height="*"/>
                     </Grid.RowDefinitions>
 
-                    <!-- Table Header -->
+                    <!-- Tiêu đề Bảng -->
                     <Border Grid.Row="0" Background="{StaticResource Gray50}" CornerRadius="16,16,0,0" BorderBrush="{StaticResource Gray200}" BorderThickness="0,0,0,1">
                         <Grid>
                             <Grid.ColumnDefinitions>
@@ -262,7 +262,7 @@
                         </Grid>
                     </Border>
 
-                    <!-- Table Content -->
+                    <!-- Bảng Nội dung -->
                     <ScrollViewer Grid.Row="1" VerticalScrollBarVisibility="Auto">
                         <ItemsControl ItemsSource="{Binding NhaCungCaps}">
                             <ItemsControl.ItemTemplate>
@@ -294,7 +294,7 @@
                                             <TextBlock Grid.Column="2" Text="{Binding SDT}" Style="{StaticResource TableCellStyle}"/>
                                             <TextBlock Grid.Column="3" Text="{Binding Email}" Style="{StaticResource TableCellStyle}" TextWrapping="Wrap" FontSize="12"/>
 
-                                            <!-- Status Badge -->
+                                            <!-- Thẻ Trạng thái -->
                                             <Border Grid.Column="4" HorizontalAlignment="Center" VerticalAlignment="Center"
                                                     CornerRadius="12" Padding="10,6">
                                                 <Border.Style>
@@ -323,7 +323,7 @@
                                                 </TextBlock>
                                             </Border>
 
-                                            <!-- View Detail Button -->
+                                            <!-- View Detail Nút -->
                                             <Button Grid.Column="5"
                                                     Command="{Binding DataContext.ViewDetailCommand, RelativeSource={RelativeSource AncestorType=ItemsControl}}"
                                                     CommandParameter="{Binding}"
@@ -345,7 +345,7 @@
                                                 </Button.Template>
                                             </Button>
 
-                                            <!-- Action Buttons -->
+                                            <!-- Nút Hành động -->
                                             <StackPanel Grid.Column="6" Orientation="Horizontal" HorizontalAlignment="Center" VerticalAlignment="Center">
                                                 <Button Command="{Binding DataContext.EditNhaCungCapCommand, RelativeSource={RelativeSource AncestorType=ItemsControl}}"
                                                         CommandParameter="{Binding}"
@@ -391,7 +391,7 @@
                         </ItemsControl>
                     </ScrollViewer>
 
-                    <!-- Empty State -->
+                    <!-- Trạng thái Trống -->
                     <StackPanel Grid.Row="1"
                                 HorizontalAlignment="Center"
                                 VerticalAlignment="Center"
@@ -424,7 +424,7 @@
                         <RowDefinition Height="Auto"/>
                     </Grid.RowDefinitions>
 
-                    <!-- Header -->
+                    <!-- Tiêu đề -->
                     <Grid Grid.Row="0" Margin="0,0,0,24">
                         <TextBlock FontSize="22" FontWeight="Bold" Foreground="#1E293B" HorizontalAlignment="Center">
                             <TextBlock.Style>
@@ -455,7 +455,7 @@
                         </Button>
                     </Grid>
 
-                    <!-- Form -->
+                    <!-- Biểu mẫu -->
                     <Grid Grid.Row="1" Margin="0,0,0,24">
                         <Grid.RowDefinitions>
                             <RowDefinition Height="Auto"/>
@@ -472,7 +472,7 @@
                             <ColumnDefinition Width="*"/>
                         </Grid.ColumnDefinitions>
 
-                        <!-- Tên nhà cung cấp (full width) -->
+                        <!-- Tên nhà cung cấp -->
                         <StackPanel Grid.Row="0" Grid.ColumnSpan="3">
                             <TextBlock Text="Tên nhà cung cấp" FontSize="12" FontWeight="Medium" Foreground="{StaticResource Gray500}" Margin="0,0,0,6"/>
                             <Border Background="White" BorderBrush="{StaticResource Gray200}" BorderThickness="1" CornerRadius="10" Padding="14,12">
@@ -499,7 +499,7 @@
                             </Border>
                         </StackPanel>
 
-                        <!-- Địa chỉ (full width) -->
+                        <!-- Địa chỉ -->
                         <StackPanel Grid.Row="4" Grid.ColumnSpan="3">
                             <TextBlock Text="Địa chỉ" FontSize="12" FontWeight="Medium" Foreground="{StaticResource Gray500}" Margin="0,0,0,6"/>
                             <Border Background="White" BorderBrush="{StaticResource Gray200}" BorderThickness="1" CornerRadius="10" Padding="14,12">
@@ -583,7 +583,7 @@
                         <RowDefinition Height="Auto"/>
                     </Grid.RowDefinitions>
 
-                    <!-- Header -->
+                    <!-- Tiêu đề -->
                     <Grid Grid.Row="0" Margin="0,0,0,24">
                         <TextBlock Text="Trạng thái hợp tác" FontSize="22" FontWeight="Bold" Foreground="#1E293B" HorizontalAlignment="Center"/>
                         <Button HorizontalAlignment="Right" Command="{Binding CloseStatusDialogCommand}" Cursor="Hand">
@@ -639,7 +639,7 @@
                         </Border>
                     </StackPanel>
 
-                    <!-- Toggle Button -->
+                    <!-- Nút Bật/Tắt -->
                     <Button Grid.Row="2"
                             Command="{Binding ToggleStatusCommand}"
                             Cursor="Hand"
@@ -701,7 +701,7 @@
                         <RowDefinition Height="*"/>
                     </Grid.RowDefinitions>
 
-                    <!-- Header -->
+                    <!-- Tiêu đề -->
                     <Grid Grid.Row="0" Margin="0,0,0,20">
                         <TextBlock FontSize="22" FontWeight="Bold" Foreground="#1E293B" HorizontalAlignment="Center">
                             <Run Text="Nguyên liệu cung cấp - "/>
@@ -744,7 +744,7 @@
                         </StackPanel>
                     </Border>
 
-                    <!-- Ingredient Table -->
+                    <!-- Ingredient Bảng -->
                     <Border Grid.Row="2" BorderBrush="{StaticResource Gray200}" BorderThickness="1" CornerRadius="12">
                         <Grid>
                             <Grid.RowDefinitions>
@@ -752,7 +752,7 @@
                                 <RowDefinition Height="*"/>
                             </Grid.RowDefinitions>
 
-                            <!-- Table Header -->
+                            <!-- Tiêu đề Bảng -->
                             <Border Background="{StaticResource Gray50}" CornerRadius="12,12,0,0" BorderBrush="{StaticResource Gray200}" BorderThickness="0,0,0,1">
                                 <Grid>
                                     <Grid.ColumnDefinitions>
@@ -795,7 +795,7 @@
                                 </ItemsControl>
                             </ScrollViewer>
 
-                            <!-- Empty state -->
+                            <!-- Trạng thái Trống -->
                             <StackPanel Grid.Row="1"
                                         HorizontalAlignment="Center"
                                         VerticalAlignment="Center"
@@ -809,7 +809,7 @@
             </Border>
         </Grid>
 
-        <!-- LOADING OVERLAY -->
+        <!-- Màn hình Chờ -->
         <Border Background="#80FFFFFF"
                 Visibility="{Binding IsLoading, Converter={StaticResource BoolToVisibilityConverter}}">
             <StackPanel HorizontalAlignment="Center" VerticalAlignment="Center">
