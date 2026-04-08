@@ -304,8 +304,8 @@ public class NguyenLieuViewModel : BaseViewModel
         ClearFiltersCommand = new RelayCommand(_ => ClearFilters());
         BrowseImageCommand = new RelayCommand(_ => BrowseImage());
         CloseStatusDialogCommand = new RelayCommand(_ => IsStatusDialogOpen = false);
-        ConfirmToggleStatusCommand = new RelayCommand(async _ => await ConfirmToggleStatusAsync());
-        OpenQuyDoiCommand = new RelayCommand(async _ => await QuyDoiVM.OpenAsync());
+        ConfirmToggleStatusCommand = new AsyncRelayCommand(async _ => await ConfirmToggleStatusAsync());
+        OpenQuyDoiCommand = new AsyncRelayCommand(async _ => await QuyDoiVM.OpenAsync());
         
         // ⚡ SafeInitializeAsync thay vì fire-and-forget
         SafeInitializeAsync(LoadDataAsync);

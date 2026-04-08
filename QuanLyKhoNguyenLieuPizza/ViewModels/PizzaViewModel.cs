@@ -325,44 +325,51 @@ public class PizzaViewModel : BaseViewModel
     #endregion
 
     #region Lệnh
-    public ICommand LoadDataCommand { get; }
-    public ICommand OpenAddPopupCommand { get; }
-    public ICommand ClosePopupCommand { get; }
-    public ICommand SaveCommand { get; }
-    public ICommand ClearFiltersCommand { get; }
-    public ICommand BrowseImageCommand { get; }
+    public ICommand LoadDataCommand { get; private set; }
+    public ICommand OpenAddPopupCommand { get; private set; }
+    public ICommand ClosePopupCommand { get; private set; }
+    public ICommand SaveCommand { get; private set; }
+    public ICommand ClearFiltersCommand { get; private set; }
+    public ICommand BrowseImageCommand { get; private set; }
 
     // Lệnh công thức
-    public ICommand CloseRecipePopupCommand { get; }
-    public ICommand SaveRecipeItemCommand { get; }
-    public ICommand CancelRecipeEditCommand { get; }
+    public ICommand CloseRecipePopupCommand { get; private set; }
+    public ICommand SaveRecipeItemCommand { get; private set; }
+    public ICommand CancelRecipeEditCommand { get; private set; }
 
     // Lệnh hộp thoại trạng thái
-    public ICommand CloseStatusDialogCommand { get; }
-    public ICommand ConfirmToggleStatusCommand { get; }
+    public ICommand CloseStatusDialogCommand { get; private set; }
+    public ICommand ConfirmToggleStatusCommand { get; private set; }
     #endregion
 
     public PizzaViewModel()
     {
         _databaseService = ServiceLocator.Instance.GetService<IDatabaseService>();
+        InitializeCommands();
+        SafeInitializeAsync(LoadDataAsync);
+    }
 
-        LoadDataCommand = new RelayCommand(async _ => await LoadDataAsync());
+    public PizzaViewModel(IDatabaseService databaseService)
+    {
+        _databaseService = databaseService;
+        InitializeCommands();
+        // Skip SafeInitializeAsync for tests unless specifically needed, or let test trigger it manually
+        // SafeInitializeAsync(LoadDataAsync);
+    }
+
+    private void InitializeCommands()
+    {
+        LoadDataCommand = new AsyncRelayCommand(async _ => await LoadDataAsync());
         OpenAddPopupCommand = new RelayCommand(_ => OpenAddPopup());
         ClosePopupCommand = new RelayCommand(_ => ClosePopup());
-        SaveCommand = new RelayCommand(async _ => await SaveAsync());
+        SaveCommand = new AsyncRelayCommand(async _ => await SaveAsync());
         ClearFiltersCommand = new RelayCommand(_ => ClearFilters());
         BrowseImageCommand = new RelayCommand(_ => BrowseImage());
-
-        // Lệnh công thức
         CloseRecipePopupCommand = new RelayCommand(_ => CloseRecipePopup());
-
-        // Lệnh hộp thoại trạng thái
         CloseStatusDialogCommand = new RelayCommand(_ => IsStatusDialogOpen = false);
-        ConfirmToggleStatusCommand = new RelayCommand(async _ => await ConfirmTogglePizzaStatusAsync());
-        SaveRecipeItemCommand = new RelayCommand(async _ => await SaveRecipeItemAsync());
+        ConfirmToggleStatusCommand = new AsyncRelayCommand(async _ => await ConfirmTogglePizzaStatusAsync());
+        SaveRecipeItemCommand = new AsyncRelayCommand(async _ => await SaveRecipeItemAsync());
         CancelRecipeEditCommand = new RelayCommand(_ => CancelRecipeEdit());
-
-        _ = LoadDataAsync();
     }
 
     private async Task LoadDataAsync()
@@ -408,9 +415,9 @@ public class PizzaViewModel : BaseViewModel
                     TenDonVi = p.TenDonVi
                 };
                 item.EditCommand = new RelayCommand(_ => EditPizza(item));
-                item.DeleteCommand = new RelayCommand(async _ => await DeletePizzaAsync(item));
-                item.ToggleStatusCommand = new RelayCommand(async _ => await TogglePizzaStatusAsync(item));
-                item.OpenRecipeCommand = new RelayCommand(async _ => await OpenRecipePopupAsync(item));
+                item.DeleteCommand = new AsyncRelayCommand(async _ => await DeletePizzaAsync(item));
+                item.ToggleStatusCommand = new AsyncRelayCommand(async _ => await TogglePizzaStatusAsync(item));
+                item.OpenRecipeCommand = new AsyncRelayCommand(async _ => await OpenRecipePopupAsync(item));
                 _pizzas.Add(item);
             }
 
@@ -675,7 +682,7 @@ public class PizzaViewModel : BaseViewModel
                 DonViID = ct.DonViID,
                 TenDonVi = ct.DonViTinh?.TenDonVi ?? ""
             };
-            vm.DeleteCommand = new RelayCommand(async _ => await DeleteRecipeItemAsync(vm));
+            vm.DeleteCommand = new AsyncRelayCommand(async _ => await DeleteRecipeItemAsync(vm));
             vm.EditCommand = new RelayCommand(_ => EditRecipeItem(vm));
             RecipeItems.Add(vm);
         }

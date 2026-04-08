@@ -168,10 +168,17 @@ public class BanHangViewModel : BaseViewModel
         set
         {
             if (SetProperty(ref _tienKhachDua, value))
+            {
                 OnPropertyChanged(nameof(TienThua));
+                OnPropertyChanged(nameof(IsTienKhachThieu));
+                OnPropertyChanged(nameof(ThongBaoTienKhachThieu));
+            }
         }
     }
     public decimal TienThua => Math.Max(0, (TienKhachDua ?? 0) - KhachCanTra);
+    
+    public bool IsTienKhachThieu => !IsChuyenKhoan && TienKhachDua.HasValue && TienKhachDua < KhachCanTra;
+    public string ThongBaoTienKhachThieu => IsTienKhachThieu ? $"Khách đưa thiếu {(KhachCanTra - (TienKhachDua ?? 0)):N0}đ" : "";
 
     public decimal DoanhThuHomNay { get => _doanhThuHomNay; set { SetProperty(ref _doanhThuHomNay, value); } }
     public int TongDonHomNay { get => _tongDonHomNay; set { SetProperty(ref _tongDonHomNay, value); } }
@@ -203,6 +210,8 @@ public class BanHangViewModel : BaseViewModel
             {
                 OnPropertyChanged(nameof(IsChuyenKhoan));
                 OnPropertyChanged(nameof(QrCodeUrl));
+                OnPropertyChanged(nameof(IsTienKhachThieu));
+                OnPropertyChanged(nameof(ThongBaoTienKhachThieu));
             }
         }
     }
@@ -488,6 +497,8 @@ public class BanHangViewModel : BaseViewModel
         OnPropertyChanged(nameof(KhachCanTra));
         OnPropertyChanged(nameof(TienThua));
         OnPropertyChanged(nameof(QrCodeUrl));
+        OnPropertyChanged(nameof(IsTienKhachThieu));
+        OnPropertyChanged(nameof(ThongBaoTienKhachThieu));
     }
 
     private void ExecutePrintTamTinh()
@@ -532,6 +543,15 @@ public class BanHangViewModel : BaseViewModel
             return;
         }
 
+        if (!IsChuyenKhoan)
+        {
+            if (TienKhachDua == null || TienKhachDua < KhachCanTra)
+            {
+                MessageBox.Show("Số tiền khách đưa không đủ để thanh toán!", "Cảnh báo", MessageBoxButton.OK, MessageBoxImage.Warning);
+                return;
+            }
+        }
+
         var result = MessageBox.Show(
             $"Xác nhận thanh toán đơn hàng?\nTổng tiền: {TongTienGioHang:N0} d",
             "Xác nhận thanh toán", MessageBoxButton.YesNo, MessageBoxImage.Question);
@@ -550,6 +570,8 @@ public class BanHangViewModel : BaseViewModel
                 NhanVienBanID = nhanVienId,
                 NgayBan = DateTime.Now,
                 TongTien = TongTienGioHang,
+                GiamGia = GiamGia ?? 0,
+                ThanhToan = KhachCanTra,
                 GhiChu = string.IsNullOrWhiteSpace(GhiChu) ? null : GhiChu.Trim(),
                 PhuongThucTT = SelectedPhuongThucTT
             };

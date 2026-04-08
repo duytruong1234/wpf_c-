@@ -85,39 +85,39 @@
                 </StackPanel>
 
                 <!-- Box Tổng đơn hôm nay -->
-                <Border Grid.Column="1" Background="#ECFDF5" BorderBrush="#A7F3D0" BorderThickness="1" CornerRadius="12" Padding="16,10" VerticalAlignment="Center">
+                <Border Grid.Column="1" Background="#ECFDF5" BorderBrush="#A7F3D0" BorderThickness="1" CornerRadius="12" Height="44" Padding="12,0" VerticalAlignment="Center">
                     <StackPanel Orientation="Horizontal" VerticalAlignment="Center">
-                        <Border Background="{StaticResource SuccessGreenLight}" CornerRadius="10" Width="38" Height="38" Margin="0,0,12,0">
-                            <ui:SymbolIcon Symbol="Cart24" FontSize="16" Foreground="{StaticResource SuccessGreen}" HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                        <Border Background="{StaticResource SuccessGreenLight}" CornerRadius="10" Width="30" Height="30" Margin="0,0,10,0">
+                            <ui:SymbolIcon Symbol="Cart24" FontSize="14" Foreground="{StaticResource SuccessGreen}" HorizontalAlignment="Center" VerticalAlignment="Center"/>
                         </Border>
-                        <StackPanel VerticalAlignment="Center">
-                            <TextBlock Text="Tổng đơn hôm nay" FontSize="12" Foreground="{StaticResource Gray500}"/>
-                            <TextBlock Text="{Binding TongDonHomNay}" FontSize="18" FontWeight="Bold" Foreground="#059669"/>
+                        <StackPanel VerticalAlignment="Center" Margin="0,2,0,0">
+                            <TextBlock Text="Tổng đơn hôm nay" FontSize="11" Foreground="{StaticResource Gray500}" Margin="0,0,0,1"/>
+                            <TextBlock Text="{Binding TongDonHomNay}" FontSize="15" FontWeight="Bold" Foreground="#059669"/>
                         </StackPanel>
                     </StackPanel>
                 </Border>
 
                 <!-- Box Doanh thu hôm nay -->
-                <Border Grid.Column="3" Background="#EEF2FF" BorderBrush="#C7D2FE" BorderThickness="1" CornerRadius="12" Padding="16,10" VerticalAlignment="Center">
+                <Border Grid.Column="3" Background="#EEF2FF" BorderBrush="#C7D2FE" BorderThickness="1" CornerRadius="12" Height="44" Padding="12,0" VerticalAlignment="Center">
                     <StackPanel Orientation="Horizontal" VerticalAlignment="Center">
-                        <Border Background="{StaticResource LightBlue}" CornerRadius="10" Width="38" Height="38" Margin="0,0,12,0">
-                            <ui:SymbolIcon Symbol="Wallet24" FontSize="16" Foreground="{StaticResource PrimaryBlue}" HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                        <Border Background="{StaticResource LightBlue}" CornerRadius="10" Width="30" Height="30" Margin="0,0,10,0">
+                            <ui:SymbolIcon Symbol="Wallet24" FontSize="14" Foreground="{StaticResource PrimaryBlue}" HorizontalAlignment="Center" VerticalAlignment="Center"/>
                         </Border>
-                        <StackPanel VerticalAlignment="Center">
-                            <TextBlock Text="Doanh thu hôm nay" FontSize="12" Foreground="{StaticResource Gray500}"/>
-                            <TextBlock Text="{Binding DoanhThuHomNay, StringFormat={}{0:N0} đ}" FontSize="18" FontWeight="Bold" Foreground="{StaticResource Gray900}"/>
+                        <StackPanel VerticalAlignment="Center" Margin="0,2,0,0">
+                            <TextBlock Text="Doanh thu hôm nay" FontSize="11" Foreground="{StaticResource Gray500}" Margin="0,0,0,1"/>
+                            <TextBlock Text="{Binding DoanhThuHomNay, StringFormat={}{0:N0} đ}" FontSize="15" FontWeight="Bold" Foreground="{StaticResource Gray900}"/>
                         </StackPanel>
                     </StackPanel>
                 </Border>
 
                 <!-- Order History Nút -->
-                <Button Grid.Column="5" Command="{Binding ShowOrderHistoryCommand}" Cursor="Hand" VerticalAlignment="Center">
+                <Button Grid.Column="5" Command="{Binding ShowOrderHistoryCommand}" Cursor="Hand" Height="44" VerticalAlignment="Center">
                     <Button.Template>
                         <ControlTemplate TargetType="Button">
-                            <Border x:Name="border" Background="White" BorderBrush="{StaticResource Gray200}" BorderThickness="1" CornerRadius="12" Padding="20,16">
-                                <StackPanel Orientation="Horizontal">
-                                    <ui:SymbolIcon Symbol="History24" FontSize="18" Foreground="{StaticResource Gray600}" VerticalAlignment="Center" Margin="0,0,8,0"/>
-                                    <TextBlock Text="Lịch sử đơn hàng" FontSize="15" FontWeight="SemiBold" Foreground="{StaticResource Gray600}"/>
+                            <Border x:Name="border" Background="White" BorderBrush="{StaticResource Gray200}" BorderThickness="1" CornerRadius="12" Padding="20,0">
+                                <StackPanel Orientation="Horizontal" VerticalAlignment="Center">
+                                    <ui:SymbolIcon Symbol="History24" FontSize="16" Foreground="{StaticResource Gray600}" VerticalAlignment="Center" Margin="0,0,8,0"/>
+                                    <TextBlock Text="Lịch sử đơn hàng" FontSize="14" FontWeight="SemiBold" Foreground="{StaticResource Gray600}" VerticalAlignment="Center"/>
                                 </StackPanel>
                             </Border>
                             <ControlTemplate.Triggers>
@@ -478,12 +478,19 @@
                                 <!-- Khu vực Thanh toán Tiền mặt (Hiện khi IsChuyenKhoan = False) -->
                                 <StackPanel Visibility="{Binding IsChuyenKhoan, Converter={StaticResource InverseBoolToVisibilityConverter}}">
                                     <!-- Khách thanh toán -->
-                                    <Grid Margin="0,0,0,12">
+                                    <Grid Margin="0,0,0,8">
                                         <TextBlock Text="Khách thanh toán" FontSize="14" Foreground="{StaticResource Gray600}" VerticalAlignment="Center"/>
                                         <Border Background="White" BorderBrush="{StaticResource Gray200}" BorderThickness="1" CornerRadius="8" Width="100" HorizontalAlignment="Right" Padding="8,6">
                                             <TextBox Text="{Binding TienKhachDua, UpdateSourceTrigger=PropertyChanged, TargetNullValue=''}" BorderThickness="0" Background="Transparent" FontSize="14" Foreground="{StaticResource Gray900}" TextAlignment="Right"/>
                                         </Border>
                                     </Grid>
+                                    
+                                    <!-- Cảnh báo tiền thiếu -->
+                                    <TextBlock Text="{Binding ThongBaoTienKhachThieu}" 
+                                               Visibility="{Binding IsTienKhachThieu, Converter={StaticResource BoolToVisibilityConverter}}" 
+                                               Foreground="{StaticResource DangerRed}" 
+                                               FontSize="13" FontWeight="SemiBold" 
+                                               HorizontalAlignment="Right" Margin="0,0,0,12"/>
                                     
                                     <!-- Tiền thừa -->
                                     <Grid Margin="0,0,0,16">
@@ -564,10 +571,9 @@
                                                         </LinearGradientBrush>
                                                     </Border.Background>
                                                     <StackPanel Orientation="Horizontal" HorizontalAlignment="Center">
-                                                        <TextBlock Text="&#xE8B0;" FontFamily="Segoe MDL2 Assets" FontSize="15" Foreground="White" Margin="0,0,6,0" VerticalAlignment="Center"/>
                                                         <!-- 2 trạng thái text tương ứng 2 phương thức -->
                                                         <TextBlock Text="Thanh toán" FontSize="13" FontWeight="Bold" Foreground="White" Visibility="{Binding IsChuyenKhoan, Converter={StaticResource InverseBoolToVisibilityConverter}}"/>
-                                                        <TextBlock Text="Đã C.Khoản" FontSize="13" FontWeight="Bold" Foreground="White" Visibility="{Binding IsChuyenKhoan, Converter={StaticResource BoolToVisibilityConverter}}"/>
+                                                        <TextBlock Text="Xác nhận đã chuyển khoản" FontSize="13" FontWeight="Bold" Foreground="White" Visibility="{Binding IsChuyenKhoan, Converter={StaticResource BoolToVisibilityConverter}}"/>
                                                     </StackPanel>
                                                 </Border>
                                                 <ControlTemplate.Triggers>
@@ -763,13 +769,13 @@
         </Grid>
 
         <!-- ═══════════════ SIZE / DE SELECTION DIALOG ═══════════════ -->
-        <Grid Visibility="{Binding IsSizeDeDialogOpen, Converter={StaticResource BoolToVisibilityConverter}}" Background="#80000000">
-            <Border Background="White" CornerRadius="20" Width="460"
-                    VerticalAlignment="Center" HorizontalAlignment="Center" Padding="32">
+        <Grid Visibility="{Binding IsSizeDeDialogOpen, Converter={StaticResource BoolToVisibilityConverter}}" Background="#B30F172A">
+            <Border Background="White" CornerRadius="18" Width="380"
+                    VerticalAlignment="Center" HorizontalAlignment="Center">
                 <Border.Effect>
-                    <DropShadowEffect BlurRadius="30" ShadowDepth="4" Direction="270" Color="#000000" Opacity="0.12"/>
+                    <DropShadowEffect BlurRadius="40" ShadowDepth="8" Direction="270" Color="#000000" Opacity="0.2"/>
                 </Border.Effect>
-                <Grid>
+                <Grid Margin="20,20,20,20">
                     <Grid.RowDefinitions>
                         <RowDefinition Height="Auto"/>
                         <RowDefinition Height="Auto"/>
@@ -777,27 +783,41 @@
                     </Grid.RowDefinitions>
 
                     <!-- Tiêu đề -->
-                    <Grid Grid.Row="0" Margin="0,0,0,24">
+                    <Grid Grid.Row="0" Margin="0,0,0,16">
                         <StackPanel HorizontalAlignment="Center">
-                            <!-- Product Hình ảnh -->
-                            <Border Width="80" Height="80" CornerRadius="14" Background="{StaticResource Gray100}" ClipToBounds="True" HorizontalAlignment="Center" Margin="0,0,0,12">
+                            <!-- Hình ảnh sản phẩm (Bo tròn hoàn hảo) -->
+                            <Border Width="64" Height="64" Background="Transparent" HorizontalAlignment="Center" Margin="0,0,0,12">
+                                <Border.Effect>
+                                    <DropShadowEffect BlurRadius="12" ShadowDepth="4" Direction="270" Color="#000000" Opacity="0.15"/>
+                                </Border.Effect>
                                 <Grid>
-                                    <TextBlock Text="&#x1F355;" FontSize="36" HorizontalAlignment="Center" VerticalAlignment="Center"/>
-                                    <Image Source="{Binding SelectedHangHoa.HinhAnh, Converter={StaticResource ImagePathConverter}}" Stretch="UniformToFill"/>
+                                    <Ellipse Fill="{StaticResource Gray50}" />
+                                    <!-- Hình ảnh gốc bo tròn qua ImageBrush -->
+                                    <Ellipse>
+                                        <Ellipse.Fill>
+                                            <ImageBrush ImageSource="{Binding SelectedHangHoa.HinhAnh, Converter={StaticResource ImagePathConverter}}" Stretch="UniformToFill"/>
+                                        </Ellipse.Fill>
+                                    </Ellipse>
                                 </Grid>
                             </Border>
-                            <TextBlock Text="Ch&#x1ECD;n Size &amp; &#x110;&#x1EBF;" FontSize="22" FontWeight="Bold" Foreground="{StaticResource PrimaryBlue}" HorizontalAlignment="Center"/>
-                            <TextBlock Text="{Binding SelectedHangHoa.TenHangHoa}" FontSize="14" Foreground="{StaticResource Gray500}" HorizontalAlignment="Center" Margin="0,4,0,0"/>
+
+                            <TextBlock Text="Chọn Size và Đế" FontSize="20" FontWeight="Black" Foreground="#1E293B" HorizontalAlignment="Center"/>
+                            <TextBlock Text="{Binding SelectedHangHoa.TenHangHoa}" FontSize="13" FontWeight="SemiBold" Foreground="#64748B" HorizontalAlignment="Center" Margin="0,2,0,0"/>
                         </StackPanel>
-                        <Button HorizontalAlignment="Right" Command="{Binding CancelSizeDeDialogCommand}" Cursor="Hand" VerticalAlignment="Top">
+                        
+                        <!-- Nút tắt -->
+                        <Button HorizontalAlignment="Right" Command="{Binding CancelSizeDeDialogCommand}" Cursor="Hand" VerticalAlignment="Top" Margin="0,-4,-4,0">
                             <Button.Template>
                                 <ControlTemplate TargetType="Button">
-                                    <Border x:Name="border" Background="{StaticResource Gray100}" CornerRadius="8" Width="32" Height="32">
-                                        <ui:SymbolIcon Symbol="Dismiss24" FontSize="14" Foreground="{StaticResource Gray500}" HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                                    <Border x:Name="border" Background="#F1F5F9" CornerRadius="14" Width="28" Height="28">
+                                        <ui:SymbolIcon Symbol="Dismiss24" FontSize="12" Foreground="#64748B" HorizontalAlignment="Center" VerticalAlignment="Center"/>
                                     </Border>
                                     <ControlTemplate.Triggers>
                                         <Trigger Property="IsMouseOver" Value="True">
-                                            <Setter TargetName="border" Property="Background" Value="{StaticResource Gray200}"/>
+                                            <Setter TargetName="border" Property="Background" Value="#E2E8F0"/>
+                                        </Trigger>
+                                        <Trigger Property="IsPressed" Value="True">
+                                            <Setter TargetName="border" Property="Background" Value="#CBD5E1"/>
                                         </Trigger>
                                     </ControlTemplate.Triggers>
                                 </ControlTemplate>
@@ -805,83 +825,121 @@
                         </Button>
                     </Grid>
 
-                    <!-- Biểu mẫu -->
-                    <StackPanel Grid.Row="1" Margin="0,0,0,24">
-                        <!-- Size -->
-                        <TextBlock Text="Chọn Size *" FontSize="12" FontWeight="Medium" Foreground="{StaticResource Gray500}" Margin="0,0,0,6"/>
-                        <Border Background="White" BorderBrush="{StaticResource Gray200}" BorderThickness="1" CornerRadius="10" Padding="14,10" Margin="0,0,0,16">
+                    <!-- Biểu mẫu chọn tuỳ chọn -->
+                    <StackPanel Grid.Row="1" Margin="0,0,0,20">
+                        <!-- Khối chọn Size -->
+                        <TextBlock Text="Cỡ Bánh *" FontSize="12" FontWeight="Bold" Foreground="#475569" Margin="4,0,0,4"/>
+                        <Border Background="#F8FAFC" BorderBrush="#E2E8F0" BorderThickness="1.5" CornerRadius="10" Padding="12,8" Margin="0,0,0,12">
                             <ComboBox ItemsSource="{Binding Sizes}" SelectedItem="{Binding SelectedSize}"
-                                      DisplayMemberPath="TenSize" BorderThickness="0" Background="Transparent" FontSize="14" VerticalContentAlignment="Center"/>
+                                      DisplayMemberPath="TenSize" BorderThickness="0" Background="Transparent" FontSize="14" FontWeight="SemiBold" Foreground="#0F172A" VerticalContentAlignment="Center"/>
                         </Border>
 
-                        <!-- Đế bánh -->
-                        <TextBlock Text="Chọn Đế bánh (tùy chọn)" FontSize="12" FontWeight="Medium" Foreground="{StaticResource Gray500}" Margin="0,0,0,6"/>
-                        <Border Background="White" BorderBrush="{StaticResource Gray200}" BorderThickness="1" CornerRadius="10" Padding="14,10" Margin="0,0,0,16">
+                        <!-- Khối chọn Đế bánh -->
+                        <TextBlock Text="Đế Bánh (tùy chọn)" FontSize="12" FontWeight="Bold" Foreground="#475569" Margin="4,0,0,4"/>
+                        <Border Background="#F8FAFC" BorderBrush="#E2E8F0" BorderThickness="1.5" CornerRadius="10" Padding="12,8" Margin="0,0,0,16">
                             <ComboBox ItemsSource="{Binding DeBanhs}" SelectedItem="{Binding SelectedDe}"
-                                      DisplayMemberPath="TenDeBanh" BorderThickness="0" Background="Transparent" FontSize="14" VerticalContentAlignment="Center"/>
+                                      DisplayMemberPath="TenDeBanh" BorderThickness="0" Background="Transparent" FontSize="14" FontWeight="SemiBold" Foreground="#0F172A" VerticalContentAlignment="Center"/>
                         </Border>
 
-                        <!-- Price Preview -->
-                        <Border Background="{StaticResource Gray50}" CornerRadius="12" Padding="16">
+                        <!-- Khối xem trước giá (Thẻ tổng kết) -->
+                        <Border Background="#EEF2FF" BorderBrush="#E0E7FF" BorderThickness="1" CornerRadius="12" Padding="16">
                             <StackPanel>
-                                <Grid Margin="0,0,0,4">
-                                    <TextBlock Text="Giá theo size:" FontSize="13" Foreground="{StaticResource Gray500}"/>
-                                    <TextBlock Text="{Binding PreviewGiaBanSize, StringFormat={}{0:N0} đ}" FontSize="13" FontWeight="SemiBold" Foreground="{StaticResource Gray800}" HorizontalAlignment="Right"/>
+                                <Grid Margin="0,0,0,6">
+                                    <TextBlock Text="Giá cỡ bánh:" FontSize="13" FontWeight="SemiBold" Foreground="#64748B"/>
+                                    <TextBlock Text="{Binding PreviewGiaBanSize, StringFormat={}{0:N0} đ}" FontSize="13" FontWeight="Bold" Foreground="#334155" HorizontalAlignment="Right"/>
                                 </Grid>
-                                <Grid Margin="0,0,0,4">
-                                    <TextBlock Text="Phụ thu đế:" FontSize="13" Foreground="{StaticResource Gray500}"/>
-                                    <TextBlock Text="{Binding PreviewGiaThem, StringFormat=+{0:N0} đ}" FontSize="13" FontWeight="SemiBold" Foreground="{StaticResource WarningOrange}" HorizontalAlignment="Right"/>
+                                <Grid Margin="0,0,0,10">
+                                    <TextBlock Text="Phụ phí đế bánh:" FontSize="13" FontWeight="SemiBold" Foreground="#64748B"/>
+                                    <TextBlock Text="{Binding PreviewGiaThem, StringFormat=+{0:N0} đ}" FontSize="13" FontWeight="Bold" Foreground="#F59E0B" HorizontalAlignment="Right"/>
                                 </Grid>
-                                <Border BorderBrush="{StaticResource Gray200}" BorderThickness="0,1,0,0" Padding="0,6,0,0" Margin="0,4,0,0">
+                                <Border BorderBrush="#C7D2FE" BorderThickness="0,1,0,0" Padding="0,10,0,0">
                                     <Grid>
-                                        <TextBlock Text="Tổng giá:" FontSize="14" FontWeight="Bold" Foreground="{StaticResource Gray800}"/>
-                                        <TextBlock Text="{Binding PreviewGia, StringFormat={}{0:N0} đ}" FontSize="16" FontWeight="Bold" Foreground="{StaticResource PrimaryBlue}" HorizontalAlignment="Right"/>
+                                        <TextBlock Text="Tổng thành tiền" FontSize="14" FontWeight="Black" Foreground="#1E293B" VerticalAlignment="Center"/>
+                                        <TextBlock Text="{Binding PreviewGia, StringFormat={}{0:N0} đ}" FontSize="20" FontWeight="Black" Foreground="#4F46E5" HorizontalAlignment="Right"/>
                                     </Grid>
                                 </Border>
                             </StackPanel>
                         </Border>
                     </StackPanel>
 
-                    <!-- Actions -->
-                    <StackPanel Grid.Row="2" Orientation="Horizontal" HorizontalAlignment="Right">
-                        <Button Command="{Binding CancelSizeDeDialogCommand}" Cursor="Hand" Margin="0,0,12,0">
+                    <!-- Nhóm nút Hành động (Hủy và Thêm) -->
+                    <Grid Grid.Row="2">
+                        <Grid.ColumnDefinitions>
+                            <ColumnDefinition Width="*"/>
+                            <ColumnDefinition Width="12"/>
+                            <ColumnDefinition Width="2.2*"/>
+                        </Grid.ColumnDefinitions>
+                        
+                        <!-- Nút Hủy -->
+                        <Button Grid.Column="0" Command="{Binding CancelSizeDeDialogCommand}" Cursor="Hand" HorizontalAlignment="Stretch">
                             <Button.Template>
                                 <ControlTemplate TargetType="Button">
-                                    <Border x:Name="border" Background="{StaticResource Gray100}" CornerRadius="10" Padding="32,14">
-                                        <TextBlock Text="Hủy" FontSize="14" FontWeight="SemiBold" Foreground="{StaticResource Gray600}"/>
+                                    <Border x:Name="border" Background="#F1F5F9" CornerRadius="12" Padding="0,12">
+                                        <TextBlock Text="Hủy" FontSize="14" FontWeight="Black" Foreground="#64748B" HorizontalAlignment="Center"/>
                                     </Border>
                                     <ControlTemplate.Triggers>
                                         <Trigger Property="IsMouseOver" Value="True">
-                                            <Setter TargetName="border" Property="Background" Value="{StaticResource Gray200}"/>
+                                            <Setter TargetName="border" Property="Background" Value="#E2E8F0"/>
+                                            <Setter TargetName="border" Property="RenderTransform">
+                                                <Setter.Value>
+                                                    <TranslateTransform Y="-1"/>
+                                                </Setter.Value>
+                                            </Setter>
+                                        </Trigger>
+                                        <Trigger Property="IsPressed" Value="True">
+                                            <Setter TargetName="border" Property="Background" Value="#CBD5E1"/>
+                                            <Setter TargetName="border" Property="RenderTransform">
+                                                <Setter.Value>
+                                                    <TranslateTransform Y="1"/>
+                                                </Setter.Value>
+                                            </Setter>
                                         </Trigger>
                                     </ControlTemplate.Triggers>
                                 </ControlTemplate>
                             </Button.Template>
                         </Button>
-                        <Button Command="{Binding ConfirmAddToCartCommand}" Cursor="Hand">
+                        
+                        <!-- Nút Thêm vào giỏ -->
+                        <Button Grid.Column="2" Command="{Binding ConfirmAddToCartCommand}" Cursor="Hand" HorizontalAlignment="Stretch">
                             <Button.Template>
                                 <ControlTemplate TargetType="Button">
-                                    <Border x:Name="border" CornerRadius="10" Padding="32,14">
+                                    <Border x:Name="border" CornerRadius="12" Padding="0,12">
                                         <Border.Background>
-                                            <LinearGradientBrush StartPoint="0,0" EndPoint="1,0">
-                                                <GradientStop Color="#5B6AFF" Offset="0"/>
-                                                <GradientStop Color="#818CF8" Offset="1"/>
+                                            <LinearGradientBrush StartPoint="0,0" EndPoint="1,1">
+                                                <GradientStop Color="#6366F1" Offset="0"/>
+                                                <GradientStop Color="#4338CA" Offset="1"/>
                                             </LinearGradientBrush>
                                         </Border.Background>
-                                        <StackPanel Orientation="Horizontal">
-                                            <ui:SymbolIcon Symbol="Add24" FontSize="16" Foreground="White" Margin="0,0,8,0" VerticalAlignment="Center"/>
-                                            <TextBlock Text="Thêm vào giỏ" FontSize="14" FontWeight="SemiBold" Foreground="White"/>
+                                        <Border.Effect>
+                                            <DropShadowEffect BlurRadius="15" ShadowDepth="4" Direction="270" Color="#4338CA" Opacity="0.4"/>
+                                        </Border.Effect>
+                                        <StackPanel Orientation="Horizontal" HorizontalAlignment="Center">
+                                            <ui:SymbolIcon Symbol="Cart24" FontSize="16" Foreground="White" Margin="0,0,8,0" VerticalAlignment="Center" FontWeight="Bold"/>
+                                            <TextBlock Text="Thêm vào giỏ" FontSize="15" FontWeight="Black" Foreground="White" VerticalAlignment="Center"/>
                                         </StackPanel>
                                     </Border>
                                     <ControlTemplate.Triggers>
                                         <Trigger Property="IsMouseOver" Value="True">
-                                            <Setter TargetName="border" Property="Opacity" Value="0.9"/>
+                                            <Setter TargetName="border" Property="Opacity" Value="0.95"/>
+                                            <Setter TargetName="border" Property="RenderTransform">
+                                                <Setter.Value>
+                                                    <TranslateTransform Y="-1"/>
+                                                </Setter.Value>
+                                            </Setter>
+                                        </Trigger>
+                                        <Trigger Property="IsPressed" Value="True">
+                                            <Setter TargetName="border" Property="Opacity" Value="0.85"/>
+                                            <Setter TargetName="border" Property="RenderTransform">
+                                                <Setter.Value>
+                                                    <TranslateTransform Y="1"/>
+                                                </Setter.Value>
+                                            </Setter>
                                         </Trigger>
                                     </ControlTemplate.Triggers>
                                 </ControlTemplate>
                             </Button.Template>
                         </Button>
-                    </StackPanel>
+                    </Grid>
                 </Grid>
             </Border>
         </Grid>

@@ -1,4 +1,4 @@
-﻿namespace QuanLyKhoNguyenLieuPizza.Models;
+namespace QuanLyKhoNguyenLieuPizza.Models;
 
 public class PhieuBanHang
 {
@@ -6,6 +6,8 @@ public class PhieuBanHang
     public int? NhanVienBanID { get; set; }
     public DateTime? NgayBan { get; set; } = DateTime.Now;
     public decimal? TongTien { get; set; }
+    public decimal? GiamGia { get; set; }
+    public decimal? ThanhToan { get; set; }
     public string? PhuongThucTT { get; set; } = "Tiền mặt";
     public string? GhiChu { get; set; }
 

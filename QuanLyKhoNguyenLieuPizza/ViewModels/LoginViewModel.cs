@@ -1,4 +1,4 @@
-﻿using System.Windows.Input;
+using System.Windows.Input;
 using QuanLyKhoNguyenLieuPizza.Core.Commands;
 using QuanLyKhoNguyenLieuPizza.Core.Interfaces;
 using QuanLyKhoNguyenLieuPizza.Services;
@@ -8,7 +8,7 @@ namespace QuanLyKhoNguyenLieuPizza.ViewModels;
 
 public class LoginViewModel : BaseViewModel
 {
-    private readonly IDatabaseService _databaseService;
+    private readonly DatabaseService _databaseService;
     private readonly UserPreferencesService _preferencesService;
     private string _username = string.Empty;
     private string _password = string.Empty;
@@ -56,7 +56,7 @@ public class LoginViewModel : BaseViewModel
     {
         try
         {
-            _databaseService = ServiceLocator.Instance.GetService<IDatabaseService>();
+            _databaseService = new DatabaseService();
         }
         catch
         {
@@ -68,15 +68,15 @@ public class LoginViewModel : BaseViewModel
         LoginCommand = new AsyncRelayCommand(ExecuteLoginAsync, CanExecuteLogin);
         ForgotPasswordCommand = new RelayCommand(ExecuteForgotPassword);
         
-        // Tải thông tin đăng nhập đã lưu (nếu có)
+        // T?i th�ng tin dang nh?p d� luu (n?u c�)
         LoadSavedCredentials();
         
-        // Kiểm tra kết nối khi khởi động
+        // Ki?m tra k?t n?i khi kh?i d?ng
         _ = TestConnectionAsync();
     }
 
     /// <summary>
-    /// Tải thông tin đăng nhập đã lưu từ lần trước
+    /// T?i th�ng tin dang nh?p d� luu t? l?n tru?c
     /// </summary>
     private void LoadSavedCredentials()
     {
@@ -90,12 +90,12 @@ public class LoginViewModel : BaseViewModel
                 Password = savedPassword;
                 RememberMe = true;
                 
-                System.Diagnostics.Debug.WriteLine($"Đã tải thông tin đăng nhập đã lưu cho: {savedUsername}");
+                System.Diagnostics.Debug.WriteLine($"�� t?i th�ng tin dang nh?p d� luu cho: {savedUsername}");
             }
         }
         catch (Exception ex)
         {
-            System.Diagnostics.Debug.WriteLine($"Lỗi khi tải thông tin đăng nhập: {ex.Message}");
+            System.Diagnostics.Debug.WriteLine($"L?i khi t?i th�ng tin dang nh?p: {ex.Message}");
         }
     }
 
@@ -122,7 +122,7 @@ public class LoginViewModel : BaseViewModel
         {
             if (string.IsNullOrWhiteSpace(Username) || string.IsNullOrWhiteSpace(Password))
             {
-                ErrorMessage = "Vui lòng nhập đầy đủ thông tin đăng nhập!";
+                ErrorMessage = "Vui l�ng nh?p d?y d? th�ng tin dang nh?p!";
                 return;
             }
 
@@ -130,7 +130,7 @@ public class LoginViewModel : BaseViewModel
             
             if (taiKhoan != null)
             {
-                // Xử lý ghi nhớ đăng nhập
+                // X? l� ghi nh? dang nh?p
                 if (RememberMe)
                 {
                     _preferencesService.SaveLoginCredentials(Username, Password);
@@ -145,12 +145,12 @@ public class LoginViewModel : BaseViewModel
             }
             else
             {
-                ErrorMessage = "Tên đăng nhập hoặc mật khẩu không đúng!";
+                ErrorMessage = "T�n dang nh?p ho?c m?t kh?u kh�ng d�ng!";
             }
         }
         catch (Exception ex)
         {
-            ErrorMessage = $"Lỗi: {ex.Message}";
+            ErrorMessage = $"L?i: {ex.Message}";
         }
         finally
         {
@@ -165,7 +165,7 @@ public class LoginViewModel : BaseViewModel
 
     public void Reset()
     {
-        // Chỉ xóa password và error nếu KHÔNG ghi nhớ đăng nhập
+        // Ch? x�a password v� error n?u KH�NG ghi nh? dang nh?p
         if (!RememberMe)
         {
             Username = string.Empty;

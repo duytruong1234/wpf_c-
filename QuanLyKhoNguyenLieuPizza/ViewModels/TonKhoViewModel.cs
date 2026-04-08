@@ -56,7 +56,7 @@ public class QuyDoiDonViItemViewModel : BaseViewModel
 
 public class TonKhoViewModel : BaseViewModel
 {
-    private readonly IDatabaseService _databaseService;
+    private readonly DatabaseService _databaseService;
     
     private LoaiNguyenLieu? _selectedLoaiNguyenLieu;
     private TonKhoItemViewModel? _selectedNguyenLieu;
@@ -252,7 +252,7 @@ public class TonKhoViewModel : BaseViewModel
     {
         try
         {
-            _databaseService = ServiceLocator.Instance.GetService<IDatabaseService>();
+            _databaseService = new DatabaseService();
         }
         catch
         {
@@ -265,7 +265,7 @@ public class TonKhoViewModel : BaseViewModel
         SafeInitializeAsync(LoadDataAsync);
     }
 
-    public TonKhoViewModel(IDatabaseService databaseService)
+    public TonKhoViewModel(DatabaseService databaseService)
     {
         _databaseService = databaseService;
         InitializeCommands();
@@ -285,7 +285,7 @@ public class TonKhoViewModel : BaseViewModel
         });
         SelectNguyenLieuCommand = new RelayCommand(ExecuteSelectNguyenLieu);
         EditCommand = new RelayCommand(_ => IsEditing = true);
-        SaveCommand = new RelayCommand(async _ => await ExecuteSaveAsync());
+        SaveCommand = new AsyncRelayCommand(async _ => await ExecuteSaveAsync());
         AddQuyDoiCommand = new RelayCommand(_ => 
         {
             IsAddQuyDoiPopupOpen = true;
@@ -294,11 +294,11 @@ public class TonKhoViewModel : BaseViewModel
         });
         OpenAddQuyDoiPopupCommand = new RelayCommand(_ => IsAddQuyDoiPopupOpen = true);
         CloseAddQuyDoiPopupCommand = new RelayCommand(_ => IsAddQuyDoiPopupOpen = false);
-        SaveNewQuyDoiCommand = new RelayCommand(async _ => await ExecuteSaveNewQuyDoiAsync());
+        SaveNewQuyDoiCommand = new AsyncRelayCommand(async _ => await ExecuteSaveNewQuyDoiAsync());
         BackCommand = new RelayCommand(_ => OnBack?.Invoke());
-        RefreshCommand = new RelayCommand(async _ => await LoadDataAsync());
+        RefreshCommand = new AsyncRelayCommand(async _ => await LoadDataAsync());
         EditItemCommand = new RelayCommand(ExecuteEditItem);
-        DeleteItemCommand = new RelayCommand(async param => await ExecuteDeleteItemAsync(param));
+        DeleteItemCommand = new AsyncRelayCommand(async param => await ExecuteDeleteItemAsync(param));
         
         // Lệnh lọc
         FilterTatCaCommand = new RelayCommand(_ => SelectedFilter = "TatCa");
@@ -308,11 +308,11 @@ public class TonKhoViewModel : BaseViewModel
         // Lệnh popup chỉnh sửa
         OpenEditPopupCommand = new RelayCommand(ExecuteOpenEditPopup);
         CloseEditPopupCommand = new RelayCommand(_ => IsEditPopupOpen = false);
-        SaveEditCommand = new RelayCommand(async _ => await ExecuteSaveEditAsync());
+        SaveEditCommand = new AsyncRelayCommand(async _ => await ExecuteSaveEditAsync());
         
         // Lệnh sửa/xóa quy đổi
         EditQuyDoiCommand = new RelayCommand(ExecuteEditQuyDoi);
-        DeleteQuyDoiCommand = new RelayCommand(async param => await ExecuteDeleteQuyDoiAsync(param));
+        DeleteQuyDoiCommand = new AsyncRelayCommand(async param => await ExecuteDeleteQuyDoiAsync(param));
         
         // Lệnh chuyển trang
         GoToPhieuNhapCommand = new RelayCommand(_ => OnNavigateToPhieuNhap?.Invoke());

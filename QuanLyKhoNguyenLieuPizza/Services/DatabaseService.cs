@@ -3938,7 +3938,7 @@ public class DatabaseService : IDatabaseService
             using var conn2 = GetConnection();
             await conn2.OpenAsync();
             var sql2 = @"SELECT pb.MaPhieuBan, pb.NhanVienBanID, pb.NgayBan, ISNULL(pb.TongTien, 0),
-                                nv.HoTen, pb.GhiChu, pb.PhuongThucTT
+                                nv.HoTen, pb.GhiChu, pb.PhuongThucTT, ISNULL(pb.GiamGia, 0), ISNULL(pb.ThanhToan, ISNULL(pb.TongTien, 0))
                          FROM PhieuBanHang pb
                          LEFT JOIN NhanVien nv ON pb.NhanVienBanID = nv.NhanVienID
                          WHERE 1=1";
@@ -3968,8 +3968,8 @@ public class DatabaseService : IDatabaseService
                     NhanVienID = reader2.IsDBNull(1) ? null : reader2.GetInt32(1),
                     NgayTao = reader2.IsDBNull(2) ? DateTime.Now : reader2.GetDateTime(2),
                     TongTien = reader2.GetDecimal(3),
-                    GiamGia = 0,
-                    ThanhToan = reader2.GetDecimal(3),
+                    GiamGia = reader2.GetDecimal(7),
+                    ThanhToan = reader2.GetDecimal(8),
                     PhuongThucTT = reader2.IsDBNull(6) ? "Tiền mặt" : reader2.GetString(6),
                     TrangThai = 2, // Hoàn thành
                     GhiChu = reader2.IsDBNull(5) ? "Bán hàng tại quầy" : reader2.GetString(5)
@@ -5255,8 +5255,8 @@ public class DatabaseService : IDatabaseService
             }
 
             // 3) Lưu PhiếuBánHàng
-            var sql = @"INSERT INTO PhieuBanHang (MaPhieuBan, NhanVienBanID, NgayBan, TongTien, PhuongThucTT, GhiChu)
-                       VALUES (@MaPhieuBan, @NhanVienBanID, @NgayBan, @TongTien, @PhuongThucTT, @GhiChu)";
+            var sql = @"INSERT INTO PhieuBanHang (MaPhieuBan, NhanVienBanID, NgayBan, TongTien, PhuongThucTT, GhiChu, GiamGia, ThanhToan)
+                       VALUES (@MaPhieuBan, @NhanVienBanID, @NgayBan, @TongTien, @PhuongThucTT, @GhiChu, @GiamGia, @ThanhToan)";
             using (var cmd = new SqlCommand(sql, conn, transaction))
             {
                 cmd.Parameters.AddWithValue("@MaPhieuBan", phieuBan.MaPhieuBan);
@@ -5265,6 +5265,8 @@ public class DatabaseService : IDatabaseService
                 cmd.Parameters.AddWithValue("@TongTien", phieuBan.TongTien ?? (object)DBNull.Value);
                 cmd.Parameters.AddWithValue("@PhuongThucTT", phieuBan.PhuongThucTT ?? "Tiền mặt");
                 cmd.Parameters.AddWithValue("@GhiChu", phieuBan.GhiChu ?? (object)DBNull.Value);
+                cmd.Parameters.AddWithValue("@GiamGia", phieuBan.GiamGia ?? (object)DBNull.Value);
+                cmd.Parameters.AddWithValue("@ThanhToan", phieuBan.ThanhToan ?? (object)DBNull.Value);
                 await cmd.ExecuteNonQueryAsync();
             }
 

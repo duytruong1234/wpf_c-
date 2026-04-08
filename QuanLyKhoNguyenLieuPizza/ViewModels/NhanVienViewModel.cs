@@ -3,6 +3,7 @@ using System.IO;
 using System.Windows.Input;
 using Microsoft.Win32;
 using QuanLyKhoNguyenLieuPizza.Models;
+using QuanLyKhoNguyenLieuPizza.Core.Interfaces;
 using QuanLyKhoNguyenLieuPizza.Services;
 
 namespace QuanLyKhoNguyenLieuPizza.ViewModels;
@@ -333,35 +334,35 @@ public class NhanVienViewModel : BaseViewModel
     {
         _databaseService = new DatabaseService();
 
-        LoadDataCommand = new RelayCommand(async _ => await LoadDataAsync());
+        LoadDataCommand = new AsyncRelayCommand(async _ => await LoadDataAsync());
         CreateNhanVienCommand = new RelayCommand(_ => OpenCreateDialog());
         EditNhanVienCommand = new RelayCommand(p => OpenEditDialog(p));
-        DeleteNhanVienCommand = new RelayCommand(async p => await DeleteNhanVienAsync(p));
-        ToggleStatusCommand = new RelayCommand(async p => await ToggleStatusAsync(p));
-        SaveNhanVienCommand = new RelayCommand(async _ => await SaveNhanVienAsync());
+        DeleteNhanVienCommand = new AsyncRelayCommand(async p => await DeleteNhanVienAsync(p));
+        ToggleStatusCommand = new AsyncRelayCommand(async p => await ToggleStatusAsync(p));
+        SaveNhanVienCommand = new AsyncRelayCommand(async _ => await SaveNhanVienAsync());
         CancelDialogCommand = new RelayCommand(_ => CloseDialog());
         
         OpenChucVuViewCommand = new RelayCommand(_ => OpenChucVuView());
         BackToMainViewCommand = new RelayCommand(_ => BackToMainView());
         CreateChucVuCommand = new RelayCommand(_ => OpenCreateChucVuDialog());
         EditChucVuCommand = new RelayCommand(p => OpenEditChucVuDialog(p));
-        DeleteChucVuCommand = new RelayCommand(async p => await DeleteChucVuAsync(p));
-        SaveChucVuCommand = new RelayCommand(async _ => await SaveChucVuAsync());
+        DeleteChucVuCommand = new AsyncRelayCommand(async p => await DeleteChucVuAsync(p));
+        SaveChucVuCommand = new AsyncRelayCommand(async _ => await SaveChucVuAsync());
         CancelChucVuDialogCommand = new RelayCommand(_ => CloseChucVuDialog());
         
-        OpenAccountDialogCommand = new RelayCommand(async p => await OpenAccountDialogAsync(p));
-        SaveAccountCommand = new RelayCommand(async _ => await SaveAccountAsync());
+        OpenAccountDialogCommand = new AsyncRelayCommand(async p => await OpenAccountDialogAsync(p));
+        SaveAccountCommand = new AsyncRelayCommand(async _ => await SaveAccountAsync());
         CancelAccountDialogCommand = new RelayCommand(_ => CloseAccountDialog());
         
-        ApplyChucVuFilterCommand = new RelayCommand(async _ => await LoadNhanViensAsync());
+        ApplyChucVuFilterCommand = new AsyncRelayCommand(async _ => await LoadNhanViensAsync());
         ClearFilterCommand = new RelayCommand(_ => ClearFilter());
         
         SelectImageCommand = new RelayCommand(_ => SelectImage());
 
         CloseStatusDialogCommand = new RelayCommand(_ => IsStatusDialogOpen = false);
-        ConfirmToggleStatusCommand = new RelayCommand(async _ => await ConfirmToggleStatusAsync());
+        ConfirmToggleStatusCommand = new AsyncRelayCommand(async _ => await ConfirmToggleStatusAsync());
 
-        _ = LoadDataAsync();
+        SafeInitializeAsync(LoadDataAsync);
     }
 
     #region Phương thức

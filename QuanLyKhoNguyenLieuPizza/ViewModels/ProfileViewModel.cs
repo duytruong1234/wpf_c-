@@ -1,7 +1,8 @@
-﻿using System.IO;
+using System.IO;
 using System.Windows.Input;
 using System.Windows;
 using Microsoft.Win32;
+using QuanLyKhoNguyenLieuPizza.Core.Interfaces;
 using QuanLyKhoNguyenLieuPizza.Services;
 
 namespace QuanLyKhoNguyenLieuPizza.ViewModels;
@@ -19,7 +20,7 @@ public class ProfileViewModel : BaseViewModel
     public string? SDT => CurrentUserSession.Instance.CurrentUser?.NhanVien?.SDT;
     public DateTime? NgaySinh => CurrentUserSession.Instance.CurrentUser?.NhanVien?.NgaySinh;
     public string? DiaChi => CurrentUserSession.Instance.CurrentUser?.NhanVien?.DiaChi;
-    public string ChucVu => CurrentUserSession.Instance.CurrentUser?.NhanVien?.ChucVu?.TenChucVu ?? "Nhân viên";
+    public string ChucVu => CurrentUserSession.Instance.CurrentUser?.NhanVien?.ChucVu?.TenChucVu ?? "Nh�n vi�n";
     
     public string? HinhAnh
     {
@@ -54,10 +55,10 @@ public class ProfileViewModel : BaseViewModel
         ChangePasswordCommand = new RelayCommand(_ => OnChangePassword?.Invoke());
         LogoutCommand = new RelayCommand(_ => OnLogout?.Invoke());
         ChangeAvatarCommand = new RelayCommand(_ => SelectAvatarAsync());
-        SaveAvatarCommand = new RelayCommand(async _ => await SaveAvatarAsync(), _ => IsAvatarChanged);
+        SaveAvatarCommand = new AsyncRelayCommand(async _ => await SaveAvatarAsync(), _ => IsAvatarChanged);
         CancelAvatarChangeCommand = new RelayCommand(_ => CancelAvatarChange(), _ => IsAvatarChanged);
         
-        // Tải ảnh đại diện hiện tại
+        // T?i ?nh d?i di?n hi?n t?i
         _hinhAnh = CurrentUserSession.Instance.CurrentUser?.NhanVien?.HinhAnh;
     }
 
@@ -65,8 +66,8 @@ public class ProfileViewModel : BaseViewModel
     {
         var openFileDialog = new OpenFileDialog
         {
-            Title = "Chọn ảnh đại diện",
-            Filter = "Tệp hình ảnh (*.png;*.jpg;*.jpeg)|*.png;*.jpg;*.jpeg|Tất cả tệp (*.*)|*.*",
+            Title = "Ch?n ?nh d?i di?n",
+            Filter = "T?p h�nh ?nh (*.png;*.jpg;*.jpeg)|*.png;*.jpg;*.jpeg|T?t c? t?p (*.*)|*.*",
             FilterIndex = 1
         };
 
@@ -74,10 +75,10 @@ public class ProfileViewModel : BaseViewModel
         {
             try
             {
-                // Lưu file nguồn và hiển thị xem trước
+                // Luu file ngu?n v� hi?n th? xem tru?c
                 _pendingAvatarSourceFile = openFileDialog.FileName;
                 
-                // Hiển thị xem trước ngay lập tức bằng file nguồn
+                // Hi?n th? xem tru?c ngay l?p t?c b?ng file ngu?n
                 HinhAnh = _pendingAvatarSourceFile;
                 IsAvatarChanged = true;
                 
@@ -88,7 +89,7 @@ public class ProfileViewModel : BaseViewModel
             catch (Exception ex)
             {
                 System.Diagnostics.Debug.WriteLine($"Error loading avatar preview: {ex.Message}");
-                MessageBox.Show("Không thể tải ảnh. Vui lòng thử lại!", "Lỗi", MessageBoxButton.OK, MessageBoxImage.Error);
+                MessageBox.Show("Kh�ng th? t?i ?nh. Vui l�ng th? l?i!", "L?i", MessageBoxButton.OK, MessageBoxImage.Error);
             }
         }
     }
@@ -105,17 +106,17 @@ public class ProfileViewModel : BaseViewModel
             var relativePath = Path.Combine("Resources", "Images", fileName);
             var destinationPath = Path.Combine(AppDomain.CurrentDomain.BaseDirectory, relativePath);
 
-            // Đảm bảo thư mục tồn tại
+            // �?m b?o thu m?c t?n t?i
             var directory = Path.GetDirectoryName(destinationPath);
             if (!string.IsNullOrEmpty(directory) && !Directory.Exists(directory))
             {
                 Directory.CreateDirectory(directory);
             }
 
-            // Sao chép file vào Resources/Images
+            // Sao ch�p file v�o Resources/Images
             File.Copy(sourceFile, destinationPath, true);
 
-            // Cập nhật cơ sở dữ liệu
+            // C?p nh?t co s? d? li?u
             var nhanVien = CurrentUserSession.Instance.CurrentUser?.NhanVien;
             if (nhanVien != null)
             {
@@ -123,29 +124,29 @@ public class ProfileViewModel : BaseViewModel
                 
                 if (success)
                 {
-                    // Cập nhật phiên
+                    // C?p nh?t phi�n
                     nhanVien.HinhAnh = relativePath;
                     
-                    // Cập nhật giao diện
+                    // C?p nh?t giao di?n
                     HinhAnh = relativePath;
                     IsAvatarChanged = false;
                     _pendingAvatarSourceFile = null;
                     
                     OnPropertyChanged(nameof(HasAvatar));
                     
-                    MessageBox.Show("Cập nhật ảnh đại diện thành công!", "Thành công", MessageBoxButton.OK, MessageBoxImage.Information);
+                    MessageBox.Show("C?p nh?t ?nh d?i di?n th�nh c�ng!", "Th�nh c�ng", MessageBoxButton.OK, MessageBoxImage.Information);
                     System.Diagnostics.Debug.WriteLine($"Avatar updated successfully: {relativePath}");
                 }
                 else
                 {
-                    MessageBox.Show("Không thể lưu ảnh vào database!", "Lỗi", MessageBoxButton.OK, MessageBoxImage.Error);
+                    MessageBox.Show("Kh�ng th? luu ?nh v�o database!", "L?i", MessageBoxButton.OK, MessageBoxImage.Error);
                     System.Diagnostics.Debug.WriteLine("Failed to update avatar in database");
                 }
             }
         }
         catch (Exception ex)
         {
-            MessageBox.Show($"Lỗi khi lưu ảnh: {ex.Message}", "Lỗi", MessageBoxButton.OK, MessageBoxImage.Error);
+            MessageBox.Show($"L?i khi luu ?nh: {ex.Message}", "L?i", MessageBoxButton.OK, MessageBoxImage.Error);
             System.Diagnostics.Debug.WriteLine($"Error saving avatar: {ex.Message}");
             System.Diagnostics.Debug.WriteLine($"Stack trace: {ex.StackTrace}");
         }
@@ -153,7 +154,7 @@ public class ProfileViewModel : BaseViewModel
 
     private void CancelAvatarChange()
     {
-        // Khôi phục ảnh đại diện gốc
+        // Kh�i ph?c ?nh d?i di?n g?c
         HinhAnh = CurrentUserSession.Instance.CurrentUser?.NhanVien?.HinhAnh;
         IsAvatarChanged = false;
         _pendingAvatarSourceFile = null;

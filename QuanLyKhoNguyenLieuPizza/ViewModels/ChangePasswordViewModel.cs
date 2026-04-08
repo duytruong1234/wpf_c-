@@ -1,4 +1,4 @@
-﻿using System.Windows.Input;
+using System.Windows.Input;
 using QuanLyKhoNguyenLieuPizza.Core.Commands;
 using QuanLyKhoNguyenLieuPizza.Core.Interfaces;
 using QuanLyKhoNguyenLieuPizza.Services;
@@ -7,7 +7,7 @@ namespace QuanLyKhoNguyenLieuPizza.ViewModels;
 
 public class ChangePasswordViewModel : BaseViewModel
 {
-    private readonly IDatabaseService _databaseService;
+    private readonly DatabaseService _databaseService;
     private string _email = string.Empty;
     private string _newPassword = string.Empty;
     private string _confirmPassword = string.Empty;
@@ -116,7 +116,7 @@ public class ChangePasswordViewModel : BaseViewModel
     {
         try
         {
-            _databaseService = ServiceLocator.Instance.GetService<IDatabaseService>();
+            _databaseService = new DatabaseService();
         }
         catch
         {
@@ -156,23 +156,23 @@ public class ChangePasswordViewModel : BaseViewModel
         PasswordStrength = strength;
         PasswordStrengthText = strength switch
         {
-            1 => "Yếu",
-            2 => "Trung bình",
-            3 => "Mạnh",
-            4 => "Rất mạnh",
+            1 => "Y?u",
+            2 => "Trung b�nh",
+            3 => "M?nh",
+            4 => "R?t m?nh",
             _ => string.Empty
         };
     }
 
     private void CheckPasswordMatch()
     {
-        // Chỉ hiển thị khi cả hai trường đều có nội dung
+        // Ch? hi?n th? khi c? hai tru?ng d?u c� n?i dung
         ShowPasswordMatch = !string.IsNullOrEmpty(NewPassword) && !string.IsNullOrEmpty(ConfirmPassword);
 
         if (ShowPasswordMatch)
         {
             PasswordsMatch = NewPassword == ConfirmPassword;
-            PasswordMatchText = PasswordsMatch ? "Mật khẩu khớp" : "Mật khẩu không khớp";
+            PasswordMatchText = PasswordsMatch ? "M?t kh?u kh?p" : "M?t kh?u kh�ng kh?p";
         }
     }
 
@@ -194,7 +194,7 @@ public class ChangePasswordViewModel : BaseViewModel
         {
             if (string.IsNullOrEmpty(Email))
             {
-                ErrorMessage = "Email không hợp lệ!";
+                ErrorMessage = "Email kh�ng h?p l?!";
                 return;
             }
 
@@ -206,7 +206,7 @@ public class ChangePasswordViewModel : BaseViewModel
             }
             else
             {
-                ErrorMessage = "Không thể đổi mật khẩu. Vui lòng thử lại!";
+                ErrorMessage = "Kh�ng th? d?i m?t kh?u. Vui l�ng th? l?i!";
             }
         }
         catch (Exception ex)

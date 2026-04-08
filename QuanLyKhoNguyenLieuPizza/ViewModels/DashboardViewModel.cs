@@ -29,7 +29,7 @@ public class TopPizzaItem : BaseViewModel
 
 public class DashboardViewModel : BaseViewModel
 {
-    private readonly IDatabaseService _databaseService;
+    private readonly DatabaseService _databaseService;
 
     private string _selectedMenuItem = "BaoCaoThongKe";
     private string _tenNguoiDung = string.Empty;
@@ -254,7 +254,7 @@ public class DashboardViewModel : BaseViewModel
     {
         try
         {
-            _databaseService = ServiceLocator.Instance.GetService<IDatabaseService>();
+            _databaseService = new DatabaseService();
         }
         catch
         {
@@ -275,7 +275,7 @@ public class DashboardViewModel : BaseViewModel
         SafeInitializeAsync(LoadDataAsync);
     }
 
-    public DashboardViewModel(IDatabaseService databaseService)
+    public DashboardViewModel(DatabaseService databaseService)
     {
         _databaseService = databaseService;
         

@@ -292,27 +292,27 @@ public class NhaCungCapViewModel : BaseViewModel
     {
         _databaseService = new DatabaseService();
 
-        LoadDataCommand = new RelayCommand(async _ => await LoadDataAsync());
+        LoadDataCommand = new AsyncRelayCommand(async _ => await LoadDataAsync());
         CreateNhaCungCapCommand = new RelayCommand(_ => OpenCreateDialog());
-        ViewDetailCommand = new RelayCommand(async p => await ViewDetailAsync(p));
+        ViewDetailCommand = new AsyncRelayCommand(async p => await ViewDetailAsync(p));
         EditNhaCungCapCommand = new RelayCommand(p => OpenEditDialog(p));
-        DeleteNhaCungCapCommand = new RelayCommand(async p => await DeleteNhaCungCapAsync(p));
+        DeleteNhaCungCapCommand = new AsyncRelayCommand(async p => await DeleteNhaCungCapAsync(p));
         OpenStatusDialogCommand = new RelayCommand(p => OpenStatusDialog(p));
-        ToggleStatusCommand = new RelayCommand(async _ => await ToggleStatusAsync());
-        SaveNhaCungCapCommand = new RelayCommand(async _ => await SaveNhaCungCapAsync());
+        ToggleStatusCommand = new AsyncRelayCommand(async _ => await ToggleStatusAsync());
+        SaveNhaCungCapCommand = new AsyncRelayCommand(async _ => await SaveNhaCungCapAsync());
         CancelDialogCommand = new RelayCommand(_ => CloseDialog());
         CloseDetailDialogCommand = new RelayCommand(_ => IsDetailDialogOpen = false);
         CloseStatusDialogCommand = new RelayCommand(_ => IsStatusDialogOpen = false);
         ClearFilterCommand = new RelayCommand(_ => ClearFilter());
-        OpenAddNLDialogCommand = new RelayCommand(async _ => await OpenAddNLDialogAsync());
+        OpenAddNLDialogCommand = new AsyncRelayCommand(async _ => await OpenAddNLDialogAsync());
         CloseAddNLDialogCommand = new RelayCommand(_ => IsAddNLDialogOpen = false);
-        SaveAddNLCommand = new RelayCommand(async _ => await SaveAddNLAsync());
-        DeleteNLFromNCCCommand = new RelayCommand(async p => await DeleteNLFromNCCAsync(p));
+        SaveAddNLCommand = new AsyncRelayCommand(async _ => await SaveAddNLAsync());
+        DeleteNLFromNCCCommand = new AsyncRelayCommand(async p => await DeleteNLFromNCCAsync(p));
         ComposeDiaChiCommand = new RelayCommand(_ => ComposeDiaChi());
         ResetDiaChiCommand = new RelayCommand(_ => ResetDiaChi());
 
         // Tải dữ liệu khi khởi tạo
-        _ = LoadDataAsync();
+        SafeInitializeAsync(LoadDataAsync);
     }
 
     #region Phương thức

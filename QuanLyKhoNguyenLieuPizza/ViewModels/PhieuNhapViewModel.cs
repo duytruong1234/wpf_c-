@@ -10,7 +10,7 @@ namespace QuanLyKhoNguyenLieuPizza.ViewModels;
 public class PhieuNhapViewModel : BaseViewModel
 {
     // ⚡ Sử dụng interface thay vì concrete class — dùng chung singleton từ ServiceLocator
-    private readonly IDatabaseService _databaseService;
+    private readonly DatabaseService _databaseService;
 
     #region Thuộc tính
     // Thuộc tính theo vai trò
@@ -372,7 +372,7 @@ public class PhieuNhapViewModel : BaseViewModel
         // ⚡ Dùng ServiceLocator thay vì new DatabaseService() — dùng chung singleton
         try
         {
-            _databaseService = ServiceLocator.Instance.GetService<IDatabaseService>();
+            _databaseService = new DatabaseService();
         }
         catch
         {

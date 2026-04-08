@@ -1,5 +1,6 @@
 using System.Collections.ObjectModel;
 using System.Windows.Input;
+using QuanLyKhoNguyenLieuPizza.Core.Interfaces;
 using QuanLyKhoNguyenLieuPizza.Models;
 using QuanLyKhoNguyenLieuPizza.Services;
 
@@ -312,25 +313,25 @@ public class PhieuXuatViewModel : BaseViewModel
         IsNhanVien = chucVuId == 3 || chucVuId == 4; // 3: Nhân viên bếp, 4: Nhân viên kho
         CurrentUserName = currentUser?.NhanVien?.HoTen ?? "Nhân viên";
 
-        LoadDataCommand = new RelayCommand(async _ => await LoadDataAsync());
+        LoadDataCommand = new AsyncRelayCommand(async _ => await LoadDataAsync());
         CreatePhieuXuatCommand = new RelayCommand(_ => OpenCreateDialog());
-        ViewDetailCommand = new RelayCommand(async p => await ViewDetailAsync(p));
-        EditPhieuXuatCommand = new RelayCommand(async p => await EditPhieuXuatAsync(p));
-        DeletePhieuXuatCommand = new RelayCommand(async p => await DeletePhieuXuatAsync(p));
-        ApprovePhieuXuatCommand = new RelayCommand(async _ => await ApprovePhieuXuatAsync());
-        CancelPhieuXuatCommand = new RelayCommand(async _ => await CancelPhieuXuatAsync());
-        SavePhieuXuatCommand = new RelayCommand(async _ => await SavePhieuXuatAsync());
+        ViewDetailCommand = new AsyncRelayCommand(async p => await ViewDetailAsync(p));
+        EditPhieuXuatCommand = new AsyncRelayCommand(async p => await EditPhieuXuatAsync(p));
+        DeletePhieuXuatCommand = new AsyncRelayCommand(async p => await DeletePhieuXuatAsync(p));
+        ApprovePhieuXuatCommand = new AsyncRelayCommand(async _ => await ApprovePhieuXuatAsync());
+        CancelPhieuXuatCommand = new AsyncRelayCommand(async _ => await CancelPhieuXuatAsync());
+        SavePhieuXuatCommand = new AsyncRelayCommand(async _ => await SavePhieuXuatAsync());
         CancelDialogCommand = new RelayCommand(_ => CloseDialog());
         CloseDetailDialogCommand = new RelayCommand(_ => IsDetailDialogOpen = false);
         AddNguyenLieuCommand = new RelayCommand(p => AddNguyenLieuToForm(p));
         RemoveChiTietCommand = new RelayCommand(p => RemoveChiTietFromForm(p));
         ClearFilterCommand = new RelayCommand(_ => ClearFilter());
-        PrintPhieuXuatCommand = new RelayCommand(async p => await PrintPhieuXuatAsync(p));
+        PrintPhieuXuatCommand = new AsyncRelayCommand(async p => await PrintPhieuXuatAsync(p));
         IncreaseQuantityCommand = new RelayCommand(p => IncreaseQuantity(p));
         DecreaseQuantityCommand = new RelayCommand(p => DecreaseQuantity(p));
 
         // Tải dữ liệu khi khởi tạo
-        _ = LoadDataAsync(true);
+        SafeInitializeAsync(() => LoadDataAsync(true));
     }
 
     private void IncreaseQuantity(object? parameter)

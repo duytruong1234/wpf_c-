@@ -1,4 +1,4 @@
-﻿using System.Collections.ObjectModel;
+using System.Collections.ObjectModel;
 using System.Windows.Input;
 using QuanLyKhoNguyenLieuPizza.Models;
 using QuanLyKhoNguyenLieuPizza.Services;
@@ -22,12 +22,12 @@ public class LoaiNguyenLieuViewModel : BaseViewModel
     private ObservableCollection<LoaiNguyenLieuItemViewModel> _loaiNguyenLieus = new();
     private bool _isLoading;
     
-    // Popup thêm/sửa
+    // Popup th�m/s?a
     private bool _isAddEditPopupOpen;
     private bool _isEditing;
     private LoaiNguyenLieuItemViewModel? _selectedLoaiNguyenLieu;
     
-    // Trường form
+    // Tru?ng form
     private string _formTenLoai = string.Empty;
     
     public event Action? OnBack;
@@ -69,7 +69,7 @@ public class LoaiNguyenLieuViewModel : BaseViewModel
         set => SetProperty(ref _formTenLoai, value);
     }
     
-    // Lệnh
+    // L?nh
     public ICommand LoadDataCommand { get; }
     public ICommand OpenAddPopupCommand { get; }
     public ICommand ClosePopupCommand { get; }
@@ -80,10 +80,10 @@ public class LoaiNguyenLieuViewModel : BaseViewModel
     {
         _databaseService = ServiceLocator.Instance.GetService<IDatabaseService>();
         
-        LoadDataCommand = new RelayCommand(async _ => await LoadDataAsync());
+        LoadDataCommand = new AsyncRelayCommand(async _ => await LoadDataAsync());
         OpenAddPopupCommand = new RelayCommand(_ => OpenAddPopup());
         ClosePopupCommand = new RelayCommand(_ => ClosePopup());
-        SaveCommand = new RelayCommand(async _ => await SaveAsync());
+        SaveCommand = new AsyncRelayCommand(async _ => await SaveAsync());
         BackCommand = new RelayCommand(_ => OnBack?.Invoke());
         
         _ = LoadDataAsync();
@@ -106,7 +106,7 @@ public class LoaiNguyenLieuViewModel : BaseViewModel
                     TenLoai = item.TenLoai
                 };
                 vm.EditCommand = new RelayCommand(p => EditLoaiNguyenLieu(vm));
-                vm.DeleteCommand = new RelayCommand(async p => await DeleteLoaiNguyenLieuAsync(vm));
+                vm.DeleteCommand = new AsyncRelayCommand(async p => await DeleteLoaiNguyenLieuAsync(vm));
                 LoaiNguyenLieus.Add(vm);
             }
         }
