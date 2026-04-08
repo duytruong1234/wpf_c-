@@ -345,8 +345,24 @@
 
                                             <!-- Account -->
                                             <StackPanel Grid.Column="7" HorizontalAlignment="Center" VerticalAlignment="Center">
-                                                <TextBlock Text="{Binding TaiKhoan.Username}" FontSize="12" Foreground="{StaticResource Gray800}" 
-                                                           Visibility="{Binding TaiKhoan, Converter={StaticResource NullToVisibilityConverter}}"/>
+                                                <!-- Có tài khoản: hiện username dạng nút bấm được để sửa -->
+                                                <Button Command="{Binding DataContext.OpenAccountDialogCommand, RelativeSource={RelativeSource AncestorType=ItemsControl}}"
+                                                        CommandParameter="{Binding}" Cursor="Hand"
+                                                        Visibility="{Binding TaiKhoan, Converter={StaticResource NullToVisibilityConverter}}">
+                                                    <Button.Template>
+                                                        <ControlTemplate TargetType="Button">
+                                                            <Border x:Name="btnBorder" Background="{StaticResource LightBlue}" CornerRadius="6" Padding="8,4">
+                                                                <TextBlock Text="{Binding TaiKhoan.Username}" FontSize="11" Foreground="{StaticResource PrimaryBlue}" FontWeight="Medium"/>
+                                                            </Border>
+                                                            <ControlTemplate.Triggers>
+                                                                <Trigger Property="IsMouseOver" Value="True">
+                                                                    <Setter TargetName="btnBorder" Property="Background" Value="#DCE0FF"/>
+                                                                </Trigger>
+                                                            </ControlTemplate.Triggers>
+                                                        </ControlTemplate>
+                                                    </Button.Template>
+                                                </Button>
+                                                <!-- Chưa có tài khoản: hiện nút thiết lập -->
                                                 <Button Command="{Binding DataContext.OpenAccountDialogCommand, RelativeSource={RelativeSource AncestorType=ItemsControl}}"
                                                         CommandParameter="{Binding}" Cursor="Hand"
                                                         Visibility="{Binding TaiKhoan, Converter={StaticResource NullToVisibilityInverseConverter}}">
@@ -660,6 +676,8 @@
                                 <RowDefinition Height="Auto"/>
                                 <RowDefinition Height="16"/>
                                 <RowDefinition Height="Auto"/>
+                                <RowDefinition Height="16"/>
+                                <RowDefinition Height="Auto"/>
                             </Grid.RowDefinitions>
                             <Grid.ColumnDefinitions>
                                 <ColumnDefinition Width="*"/>
@@ -732,7 +750,21 @@
                             <StackPanel Grid.Row="6" Grid.Column="0">
                                 <TextBlock Text="Số điện thoại" FontSize="12" FontWeight="Medium" Foreground="{StaticResource Gray500}" Margin="0,0,0,6"/>
                                 <Border Background="White" BorderBrush="{StaticResource Gray200}" BorderThickness="1" CornerRadius="10" Padding="14,12">
-                                    <TextBox Text="{Binding FormSDT, UpdateSourceTrigger=PropertyChanged}" BorderThickness="0" Background="Transparent" FontSize="14"/>
+                                    <Grid>
+                                        <TextBox x:Name="SdtTextBox" Text="{Binding FormSDT, UpdateSourceTrigger=PropertyChanged}" BorderThickness="0" Background="Transparent" FontSize="14"/>
+                                        <TextBlock Text="VD: 0xxx xxx xxx" FontSize="13" Foreground="{StaticResource Gray300}" VerticalAlignment="Center" IsHitTestVisible="False">
+                                            <TextBlock.Style>
+                                                <Style TargetType="TextBlock">
+                                                    <Setter Property="Visibility" Value="Collapsed"/>
+                                                    <Style.Triggers>
+                                                        <DataTrigger Binding="{Binding Text, ElementName=SdtTextBox}" Value="">
+                                                            <Setter Property="Visibility" Value="Visible"/>
+                                                        </DataTrigger>
+                                                    </Style.Triggers>
+                                                </Style>
+                                            </TextBlock.Style>
+                                        </TextBlock>
+                                    </Grid>
                                 </Border>
                             </StackPanel>
 
@@ -740,21 +772,58 @@
                             <StackPanel Grid.Row="6" Grid.Column="2">
                                 <TextBlock Text="Email" FontSize="12" FontWeight="Medium" Foreground="{StaticResource Gray500}" Margin="0,0,0,6"/>
                                 <Border Background="White" BorderBrush="{StaticResource Gray200}" BorderThickness="1" CornerRadius="10" Padding="14,12">
-                                    <TextBox Text="{Binding FormEmail, UpdateSourceTrigger=PropertyChanged}" BorderThickness="0" Background="Transparent" FontSize="14"/>
+                                    <Grid>
+                                        <TextBox x:Name="EmailTextBox" Text="{Binding FormEmail, UpdateSourceTrigger=PropertyChanged}" BorderThickness="0" Background="Transparent" FontSize="14"/>
+                                        <TextBlock Text="VD: abc@gmail.com" FontSize="13" Foreground="{StaticResource Gray300}" VerticalAlignment="Center" IsHitTestVisible="False">
+                                            <TextBlock.Style>
+                                                <Style TargetType="TextBlock">
+                                                    <Setter Property="Visibility" Value="Collapsed"/>
+                                                    <Style.Triggers>
+                                                        <DataTrigger Binding="{Binding Text, ElementName=EmailTextBox}" Value="">
+                                                            <Setter Property="Visibility" Value="Visible"/>
+                                                        </DataTrigger>
+                                                    </Style.Triggers>
+                                                </Style>
+                                            </TextBlock.Style>
+                                        </TextBlock>
+                                    </Grid>
                                 </Border>
                             </StackPanel>
 
-                            <!-- Địa chỉ -->
-                            <StackPanel Grid.Row="8" Grid.ColumnSpan="3">
-                                <TextBlock Text="Địa chỉ" FontSize="12" FontWeight="Medium" Foreground="{StaticResource Gray500}" Margin="0,0,0,6"/>
+                            <!-- Số nhà / đường -->
+                            <StackPanel Grid.Row="8" Grid.Column="0">
+                                <TextBlock Text="Số nhà / Đường" FontSize="12" FontWeight="Medium" Foreground="{StaticResource Gray500}" Margin="0,0,0,6"/>
                                 <Border Background="White" BorderBrush="{StaticResource Gray200}" BorderThickness="1" CornerRadius="10" Padding="14,12">
-                                    <TextBox Text="{Binding FormDiaChi, UpdateSourceTrigger=PropertyChanged}" BorderThickness="0" Background="Transparent" FontSize="14"
-                                             TextWrapping="Wrap" MinHeight="50" AcceptsReturn="True"/>
+                                    <TextBox Text="{Binding FormDiaChiChiTiet, UpdateSourceTrigger=PropertyChanged}" BorderThickness="0" Background="Transparent" FontSize="14"/>
+                                </Border>
+                            </StackPanel>
+
+                            <!-- Thôn / Xóm -->
+                            <StackPanel Grid.Row="8" Grid.Column="2">
+                                <TextBlock Text="Thôn / Xóm" FontSize="12" FontWeight="Medium" Foreground="{StaticResource Gray500}" Margin="0,0,0,6"/>
+                                <Border Background="White" BorderBrush="{StaticResource Gray200}" BorderThickness="1" CornerRadius="10" Padding="14,12">
+                                    <TextBox Text="{Binding FormThonXom, UpdateSourceTrigger=PropertyChanged}" BorderThickness="0" Background="Transparent" FontSize="14"/>
+                                </Border>
+                            </StackPanel>
+
+                            <!-- Phường / Xã -->
+                            <StackPanel Grid.Row="10" Grid.Column="0">
+                                <TextBlock Text="Phường / Xã" FontSize="12" FontWeight="Medium" Foreground="{StaticResource Gray500}" Margin="0,0,0,6"/>
+                                <Border Background="White" BorderBrush="{StaticResource Gray200}" BorderThickness="1" CornerRadius="10" Padding="14,12">
+                                    <TextBox Text="{Binding FormPhuongXa, UpdateSourceTrigger=PropertyChanged}" BorderThickness="0" Background="Transparent" FontSize="14"/>
+                                </Border>
+                            </StackPanel>
+
+                            <!-- Tỉnh / Thành phố -->
+                            <StackPanel Grid.Row="10" Grid.Column="2">
+                                <TextBlock Text="Tỉnh / Thành phố" FontSize="12" FontWeight="Medium" Foreground="{StaticResource Gray500}" Margin="0,0,0,6"/>
+                                <Border Background="White" BorderBrush="{StaticResource Gray200}" BorderThickness="1" CornerRadius="10" Padding="14,12">
+                                    <TextBox Text="{Binding FormTinhTP, UpdateSourceTrigger=PropertyChanged}" BorderThickness="0" Background="Transparent" FontSize="14"/>
                                 </Border>
                             </StackPanel>
 
                             <!-- Trạng thái -->
-                            <StackPanel Grid.Row="10" Grid.ColumnSpan="3">
+                            <StackPanel Grid.Row="12" Grid.ColumnSpan="3">
                                 <CheckBox Content="Đang làm việc" IsChecked="{Binding FormTrangThai}" FontSize="13"/>
                             </StackPanel>
                         </Grid>
@@ -939,7 +1008,18 @@
 
                     <!-- Tiêu đề -->
                     <Grid Grid.Row="0" Margin="0,0,0,24">
-                        <TextBlock Text="Thiết lập tài khoản" FontSize="22" FontWeight="Bold" Foreground="{StaticResource PrimaryBlue}" HorizontalAlignment="Center"/>
+                        <TextBlock FontSize="22" FontWeight="Bold" Foreground="{StaticResource PrimaryBlue}" HorizontalAlignment="Center">
+                            <TextBlock.Style>
+                                <Style TargetType="TextBlock">
+                                    <Setter Property="Text" Value="Thiết lập tài khoản"/>
+                                    <Style.Triggers>
+                                        <DataTrigger Binding="{Binding IsAccountEditMode}" Value="True">
+                                            <Setter Property="Text" Value="Cập nhật tài khoản"/>
+                                        </DataTrigger>
+                                    </Style.Triggers>
+                                </Style>
+                            </TextBlock.Style>
+                        </TextBlock>
                         <Button HorizontalAlignment="Right" Command="{Binding CancelAccountDialogCommand}" Cursor="Hand">
                             <Button.Template>
                                 <ControlTemplate TargetType="Button">
@@ -1006,7 +1086,18 @@
                                         <Border.Effect>
                                             <DropShadowEffect BlurRadius="12" ShadowDepth="2" Direction="270" Color="#5B6AFF" Opacity="0.2"/>
                                         </Border.Effect>
-                                        <TextBlock Text="Lưu tài khoản" FontSize="14" FontWeight="SemiBold" Foreground="White"/>
+                                        <TextBlock FontSize="14" FontWeight="SemiBold" Foreground="White">
+                                            <TextBlock.Style>
+                                                <Style TargetType="TextBlock">
+                                                    <Setter Property="Text" Value="Lưu tài khoản"/>
+                                                    <Style.Triggers>
+                                                        <DataTrigger Binding="{Binding IsAccountEditMode}" Value="True">
+                                                            <Setter Property="Text" Value="Cập nhật tài khoản"/>
+                                                        </DataTrigger>
+                                                    </Style.Triggers>
+                                                </Style>
+                                            </TextBlock.Style>
+                                        </TextBlock>
                                     </Border>
                                     <ControlTemplate.Triggers>
                                         <Trigger Property="IsMouseOver" Value="True">

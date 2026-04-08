@@ -1,4 +1,4 @@
-﻿using System.Collections.ObjectModel;
+using System.Collections.ObjectModel;
 using System.Windows.Input;
 using QuanLyKhoNguyenLieuPizza.Models;
 using QuanLyKhoNguyenLieuPizza.Services;
@@ -8,6 +8,7 @@ namespace QuanLyKhoNguyenLieuPizza.ViewModels;
 public class PhieuXuatViewModel : BaseViewModel
 {
     private readonly DatabaseService _databaseService;
+    private bool _hasOpenedCreateFormOnce;
 
     #region Thuộc tính
     // Thuộc tính theo vai trò
@@ -356,6 +357,12 @@ public class PhieuXuatViewModel : BaseViewModel
 
             await LoadPhieuXuatsAsync();
 
+            // Nhân viên bếp: hiển thị form tạo phiếu xuất trước
+            if (IsNhanVien && !_hasOpenedCreateFormOnce)
+            {
+                _hasOpenedCreateFormOnce = true;
+                OpenCreateDialog();
+            }
         }
         catch (Exception ex)
         {

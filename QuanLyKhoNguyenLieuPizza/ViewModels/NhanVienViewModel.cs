@@ -1,4 +1,4 @@
-﻿using System.Collections.ObjectModel;
+using System.Collections.ObjectModel;
 using System.IO;
 using System.Windows.Input;
 using Microsoft.Win32;
@@ -284,6 +284,13 @@ public class NhanVienViewModel : BaseViewModel
     {
         get => _isStatusDialogOpen;
         set => SetProperty(ref _isStatusDialogOpen, value);
+    }
+
+    private bool _isAccountEditMode;
+    public bool IsAccountEditMode
+    {
+        get => _isAccountEditMode;
+        set => SetProperty(ref _isAccountEditMode, value);
     }
     #endregion
 
@@ -742,11 +749,13 @@ public class NhanVienViewModel : BaseViewModel
             var taiKhoan = await _databaseService.GetTaiKhoanByNhanVienIDAsync(nv.NhanVienID);
             if (taiKhoan != null)
             {
+                IsAccountEditMode = true;
                 FormUsername = taiKhoan.Username;
                 FormPassword = taiKhoan.Password;
             }
             else
             {
+                IsAccountEditMode = false;
                 FormUsername = string.Empty;
                 FormPassword = string.Empty;
             }
