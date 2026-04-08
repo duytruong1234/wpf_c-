@@ -141,7 +141,7 @@
                         </DataGrid.ColumnHeaderStyle>
                         <DataGrid.RowStyle>
                             <Style TargetType="DataGridRow">
-                                <Setter Property="Height" Value="60"/>
+                                <Setter Property="MinHeight" Value="60"/>
                                 <Setter Property="BorderThickness" Value="0,0,0,1"/>
                                 <Setter Property="BorderBrush" Value="{StaticResource Gray100}"/>
                                 <Style.Triggers>
@@ -158,8 +158,8 @@
                             <Style TargetType="DataGridCell">
                                 <Setter Property="BorderThickness" Value="0"/>
                                 <Setter Property="BorderBrush" Value="Transparent"/>
-                                <Setter Property="Padding" Value="24,12"/>
-                                <Setter Property="VerticalAlignment" Value="Center"/>
+                                <Setter Property="Padding" Value="24,0"/>
+                                <Setter Property="VerticalAlignment" Value="Stretch"/>
                                 <Setter Property="Foreground" Value="{StaticResource Gray800}"/>
                                 <Setter Property="FontSize" Value="14"/>
                                 <Setter Property="Template">

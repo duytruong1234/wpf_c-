@@ -80,7 +80,7 @@
 
     <Grid>
         <!-- ========== MANAGER VIEW ========== -->
-        <Grid Background="{StaticResource Gray50}" Margin="24"
+        <Grid Background="{StaticResource Gray50}" Margin="24,20,24,24"
               Visibility="{Binding IsQuanLy, Converter={StaticResource BoolToVisibilityConverter}}">
             <Grid.RowDefinitions>
                 <RowDefinition Height="Auto"/>
@@ -90,7 +90,7 @@
             </Grid.RowDefinitions>
 
             <!-- Page Tiêu đề + Actions -->
-            <Grid Grid.Row="0" Margin="0,0,0,20">
+            <Grid Grid.Row="0" Margin="0,0,80,20">
                 <Grid.ColumnDefinitions>
                     <ColumnDefinition Width="Auto"/>
                     <ColumnDefinition Width="*"/>
@@ -108,7 +108,7 @@
                     </StackPanel>
                 </StackPanel>
 
-                <Border Grid.Column="1" Style="{StaticResource ModernInputBorder}" Width="320" HorizontalAlignment="Right" Margin="0,0,16,0">
+                <Border Grid.Column="1" Style="{StaticResource ModernInputBorder}" Width="320" Height="44" HorizontalAlignment="Right" Margin="0,0,16,0">
                     <Grid>
                         <Grid.ColumnDefinitions>
                             <ColumnDefinition Width="Auto"/>
@@ -136,10 +136,10 @@
                     </Grid>
                 </Border>
 
-                <Button Grid.Column="2" Command="{Binding CreatePhieuXuatCommand}" Cursor="Hand">
+                <Button Grid.Column="2" Command="{Binding CreatePhieuXuatCommand}" Cursor="Hand" Height="44">
                     <Button.Template>
                         <ControlTemplate TargetType="Button">
-                            <Border x:Name="border" CornerRadius="10" Padding="20,12">
+                            <Border x:Name="border" CornerRadius="10" Padding="20,0">
                                 <Border.Background>
                                     <LinearGradientBrush StartPoint="0,0" EndPoint="1,0">
                                         <GradientStop Color="#5B6AFF" Offset="0"/>
@@ -149,9 +149,9 @@
                                 <Border.Effect>
                                     <DropShadowEffect BlurRadius="12" ShadowDepth="2" Direction="270" Color="#5B6AFF" Opacity="0.2"/>
                                 </Border.Effect>
-                                <StackPanel Orientation="Horizontal">
+                                <StackPanel Orientation="Horizontal" HorizontalAlignment="Center" VerticalAlignment="Center">
                                     <TextBlock Text="&#xE710;" FontFamily="Segoe MDL2 Assets" FontSize="14" Foreground="White" Margin="0,0,8,0" VerticalAlignment="Center"/>
-                                    <TextBlock Text="Tạo phiếu xuất" FontSize="14" FontWeight="SemiBold" Foreground="White"/>
+                                    <TextBlock Text="Tạo phiếu xuất" FontSize="14" FontWeight="SemiBold" Foreground="White" VerticalAlignment="Center"/>
                                 </StackPanel>
                             </Border>
                             <ControlTemplate.Triggers>
@@ -411,7 +411,7 @@
         </Grid>
 
         <!-- ========== EMPLOYEE VIEW ========== -->
-        <Grid Background="{StaticResource Gray50}" Margin="32"
+        <Grid Background="{StaticResource Gray50}" Margin="32,20,32,32"
               Visibility="{Binding IsNhanVien, Converter={StaticResource BoolToVisibilityConverter}}">
             <Grid.RowDefinitions>
                 <RowDefinition Height="Auto"/>
@@ -420,7 +420,7 @@
             </Grid.RowDefinitions>
 
             <!-- Employee Tiêu đề -->
-            <Grid Grid.Row="0" Margin="0,0,0,20">
+            <Grid Grid.Row="0" Margin="0,0,80,20">
                 <Grid.ColumnDefinitions>
                     <ColumnDefinition Width="Auto"/>
                     <ColumnDefinition Width="*"/>
@@ -436,7 +436,7 @@
                                Foreground="{StaticResource Gray900}" VerticalAlignment="Center"/>
                 </StackPanel>
 
-                <Border Grid.Column="1" Style="{StaticResource ModernInputBorder}" Width="280" HorizontalAlignment="Right" Margin="0,0,16,0">
+                <Border Grid.Column="1" Style="{StaticResource ModernInputBorder}" Width="280" Height="44" HorizontalAlignment="Right" Margin="0,0,16,0">
                     <Grid>
                         <Grid.ColumnDefinitions>
                             <ColumnDefinition Width="Auto"/>
@@ -465,14 +465,14 @@
                 </Border>
 
                 <Button Grid.Column="2" Command="{Binding CreatePhieuXuatCommand}"
-                        VerticalAlignment="Center" Cursor="Hand">
+                        VerticalAlignment="Center" Cursor="Hand" Height="44">
                     <Button.Template>
                         <ControlTemplate TargetType="Button">
-                            <Border x:Name="border" CornerRadius="10" Padding="20,12"
+                            <Border x:Name="border" CornerRadius="10" Padding="20,0"
                                     BorderBrush="{StaticResource Gray200}" BorderThickness="1" Background="White">
-                                <StackPanel Orientation="Horizontal">
+                                <StackPanel Orientation="Horizontal" HorizontalAlignment="Center" VerticalAlignment="Center">
                                     <TextBlock Text="&#xE710;" FontFamily="Segoe MDL2 Assets" FontSize="13" Foreground="{StaticResource PrimaryBlue}" Margin="0,0,8,0" VerticalAlignment="Center"/>
-                                    <TextBlock Text="Tạo phiếu xuất" FontSize="14" Foreground="{StaticResource Gray800}"/>
+                                    <TextBlock Text="Tạo phiếu xuất" FontSize="14" Foreground="{StaticResource Gray800}" VerticalAlignment="Center"/>
                                 </StackPanel>
                             </Border>
                             <ControlTemplate.Triggers>
@@ -937,17 +937,34 @@
                     </Grid.RowDefinitions>
 
                     <Grid Grid.Row="0" Margin="0,0,0,16">
-                        <TextBlock Text="Tạo phiếu xuất" FontSize="26" FontWeight="Bold" Foreground="{StaticResource Gray800}"/>
-                        <Button HorizontalAlignment="Right" Command="{Binding CancelDialogCommand}" Cursor="Hand">
+                        <Grid.ColumnDefinitions>
+                            <ColumnDefinition Width="*"/>
+                            <ColumnDefinition Width="Auto"/>
+                        </Grid.ColumnDefinitions>
+                        
+                        <StackPanel Orientation="Horizontal" VerticalAlignment="Center">
+                            <Border Background="{StaticResource LightBlue}" CornerRadius="12" Width="44" Height="44" Margin="0,0,14,0">
+                                <TextBlock Text="&#xE710;" FontFamily="Segoe MDL2 Assets" FontSize="20" Foreground="{StaticResource PrimaryBlue}"
+                                           HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                            </Border>
+                            <TextBlock Text="Tạo phiếu xuất kho" FontSize="24" FontWeight="Bold"
+                                       Foreground="{StaticResource Gray900}" VerticalAlignment="Center"/>
+                        </StackPanel>
+
+                        <Button Grid.Column="1" Command="{Binding CancelDialogCommand}"
+                                VerticalAlignment="Center" Cursor="Hand" Height="44">
                             <Button.Template>
                                 <ControlTemplate TargetType="Button">
-                                    <Border x:Name="border" Background="{StaticResource Gray100}" CornerRadius="8" Width="32" Height="32">
-                                        <TextBlock Text="&#xE711;" FontFamily="Segoe MDL2 Assets" FontSize="12" Foreground="{StaticResource Gray500}"
-                                                   HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                                    <Border x:Name="border" CornerRadius="10" Padding="20,0"
+                                            BorderBrush="{StaticResource Gray200}" BorderThickness="1" Background="White">
+                                        <StackPanel Orientation="Horizontal" HorizontalAlignment="Center" VerticalAlignment="Center">
+                                            <TextBlock Text="&#xE81C;" FontFamily="Segoe MDL2 Assets" FontSize="15" Foreground="{StaticResource Gray600}" Margin="0,0,8,0" VerticalAlignment="Center"/>
+                                            <TextBlock Text="Xem lịch sử phiếu" FontSize="14" FontWeight="SemiBold" Foreground="{StaticResource Gray600}" VerticalAlignment="Center"/>
+                                        </StackPanel>
                                     </Border>
                                     <ControlTemplate.Triggers>
                                         <Trigger Property="IsMouseOver" Value="True">
-                                            <Setter TargetName="border" Property="Background" Value="{StaticResource Gray200}"/>
+                                            <Setter TargetName="border" Property="Background" Value="{StaticResource Gray50}"/>
                                         </Trigger>
                                     </ControlTemplate.Triggers>
                                 </ControlTemplate>

@@ -421,7 +421,7 @@
                             </DataGrid.ColumnHeaderStyle>
                             <DataGrid.RowStyle>
                                 <Style TargetType="DataGridRow">
-                                    <Setter Property="Height" Value="70"/>
+                                    <Setter Property="MinHeight" Value="70"/>
                                     <Setter Property="BorderThickness" Value="0,0,0,1"/>
                                     <Setter Property="BorderBrush" Value="{StaticResource Gray100}"/>
                                     <Style.Triggers>
@@ -438,8 +438,8 @@
                                 <Style TargetType="DataGridCell">
                                     <Setter Property="BorderThickness" Value="0"/>
                                     <Setter Property="BorderBrush" Value="Transparent"/>
-                                    <Setter Property="Padding" Value="16,8"/>
-                                    <Setter Property="VerticalAlignment" Value="Center"/>
+                                    <Setter Property="Padding" Value="16,0"/>
+                                    <Setter Property="VerticalAlignment" Value="Stretch"/>
                                     <Setter Property="Foreground" Value="#1F2937"/>
                                     <Setter Property="FontSize" Value="13"/>
                                     <Setter Property="Template">
@@ -485,16 +485,16 @@
                                 <DataGridTemplateColumn Header="Hình ảnh" Width="100">
                                     <DataGridTemplateColumn.CellTemplate>
                                         <DataTemplate>
-                                            <Border Width="40" Height="40" 
-                                                    CornerRadius="8"
+                                            <Border Width="46" Height="46" 
+                                                    CornerRadius="23"
                                                     BorderBrush="{StaticResource Gray200}"
                                                     BorderThickness="1"
                                                     Background="{StaticResource Gray50}"
                                                     VerticalAlignment="Center"
                                                     HorizontalAlignment="Center">
-                                                <Border CornerRadius="8" ClipToBounds="True">
+                                                <Border CornerRadius="23" ClipToBounds="True">
                                                     <Border.Background>
-                                                        <ImageBrush ImageSource="{Binding HinhAnh, Converter={StaticResource ImagePathConverter}}" Stretch="Uniform"/>
+                                                        <ImageBrush ImageSource="{Binding HinhAnh, Converter={StaticResource ImagePathConverter}}" Stretch="UniformToFill"/>
                                                     </Border.Background>
                                                 </Border>
                                             </Border>

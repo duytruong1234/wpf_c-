@@ -405,7 +405,7 @@ public class DatabaseService : IDatabaseService
                        FROM TaiKhoan tk
                        LEFT JOIN NhanVien nv ON tk.NhanVienID = nv.NhanVienID
                        LEFT JOIN ChucVu cv ON nv.ChucVuID = cv.ChucVuID
-                       WHERE tk.Username = @Username AND tk.Password = @Password AND tk.TrangThai = 1 AND (nv.TrangThai IS NULL OR nv.TrangThai = 1)";
+                       WHERE tk.Username = @Username AND tk.Password = @Password";
             
             using var cmd = new SqlCommand(sql, conn);
             cmd.Parameters.AddWithValue("@Username", username);
@@ -415,6 +415,21 @@ public class DatabaseService : IDatabaseService
             
             if (await reader.ReadAsync())
             {
+                var tkTrangThai = reader.GetBoolean(4);
+                if (!tkTrangThai)
+                {
+                    throw new Exception("Tài khoản này đã bị khóa!");
+                }
+
+                if (!reader.IsDBNull(13))
+                {
+                    var nvTrangThai = reader.GetBoolean(13);
+                    if (!nvTrangThai)
+                    {
+                        throw new Exception("Tài khoản của nhân viên đã nghỉ việc không được phép truy cập vào hệ thống!");
+                    }
+                }
+
                 var taiKhoan = new TaiKhoan
                 {
                     TaiKhoanID = reader.GetInt32(0),
@@ -457,6 +472,7 @@ public class DatabaseService : IDatabaseService
         }
         catch (Exception ex)
         {
+            if (ex.Message.Contains("Tài khoản")) throw;
             throw new Exception($"Lỗi xác thực: {ex.Message}", ex);
         }
         

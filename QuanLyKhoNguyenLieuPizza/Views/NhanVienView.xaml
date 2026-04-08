@@ -1056,7 +1056,7 @@
 
                         <TextBlock Text="Mật khẩu" FontSize="12" FontWeight="Medium" Foreground="{StaticResource Gray500}" Margin="0,0,0,6"/>
                         <Border Background="White" BorderBrush="{StaticResource Gray200}" BorderThickness="1" CornerRadius="10" Padding="14,12">
-                            <PasswordBox x:Name="PasswordBox" BorderThickness="0" Background="Transparent" FontSize="14" PasswordChanged="PasswordBox_PasswordChanged"/>
+                            <TextBox BorderThickness="0" Background="Transparent" FontSize="14" Text="{Binding FormPassword, UpdateSourceTrigger=PropertyChanged}"/>
                         </Border>
                     </StackPanel>
 

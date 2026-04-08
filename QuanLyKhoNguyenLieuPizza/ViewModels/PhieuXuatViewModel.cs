@@ -8,7 +8,6 @@ namespace QuanLyKhoNguyenLieuPizza.ViewModels;
 public class PhieuXuatViewModel : BaseViewModel
 {
     private readonly DatabaseService _databaseService;
-    private bool _hasOpenedCreateFormOnce;
 
     #region Thuộc tính
     // Thuộc tính theo vai trò
@@ -226,15 +225,25 @@ public class PhieuXuatViewModel : BaseViewModel
     public bool IsDialogOpen
     {
         get => _isDialogOpen;
-        set => SetProperty(ref _isDialogOpen, value);
+        set
+        {
+            if (SetProperty(ref _isDialogOpen, value))
+                OnPropertyChanged(nameof(AnyDialogOpen));
+        }
     }
 
     private bool _isDetailDialogOpen;
     public bool IsDetailDialogOpen
     {
         get => _isDetailDialogOpen;
-        set => SetProperty(ref _isDetailDialogOpen, value);
+        set
+        {
+            if (SetProperty(ref _isDetailDialogOpen, value))
+                OnPropertyChanged(nameof(AnyDialogOpen));
+        }
     }
+
+    public override bool AnyDialogOpen => IsDialogOpen || IsDetailDialogOpen;
 
     private bool _isCreateMode;
     public bool IsCreateMode
@@ -321,7 +330,7 @@ public class PhieuXuatViewModel : BaseViewModel
         DecreaseQuantityCommand = new RelayCommand(p => DecreaseQuantity(p));
 
         // Tải dữ liệu khi khởi tạo
-        _ = LoadDataAsync();
+        _ = LoadDataAsync(true);
     }
 
     private void IncreaseQuantity(object? parameter)
@@ -341,7 +350,7 @@ public class PhieuXuatViewModel : BaseViewModel
     }
 
     #region Phương thức
-    private async Task LoadDataAsync()
+    private async Task LoadDataAsync(bool isInitialLoad = false)
     {
         IsLoading = true;
         try
@@ -357,10 +366,8 @@ public class PhieuXuatViewModel : BaseViewModel
 
             await LoadPhieuXuatsAsync();
 
-            // Nhân viên bếp: hiển thị form tạo phiếu xuất trước
-            if (IsNhanVien && !_hasOpenedCreateFormOnce)
+            if (isInitialLoad && IsNhanVien)
             {
-                _hasOpenedCreateFormOnce = true;
                 OpenCreateDialog();
             }
         }
