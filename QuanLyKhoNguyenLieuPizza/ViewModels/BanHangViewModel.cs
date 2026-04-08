@@ -1,4 +1,4 @@
-﻿using System.Collections.ObjectModel;
+using System.Collections.ObjectModel;
 using System.Windows;
 using System.Windows.Input;
 using QuanLyKhoNguyenLieuPizza.Core.Commands;
@@ -43,6 +43,7 @@ public class BanHangViewModel : BaseViewModel
     private bool _isLoading;
     private bool _isSizeDeDialogOpen;
     private bool _isDeletePhieuBanDialogOpen;
+    private bool _isEditPhieuBanDialogOpen;
 
     // Danh sách sản phẩm & giỏ hàng
     private ObservableCollection<HangHoa> _hangHoas = new();
@@ -67,6 +68,7 @@ public class BanHangViewModel : BaseViewModel
     private PhieuBanHang? _selectedPhieuBan;
     private ObservableCollection<CT_PhieuBan> _selectedChiTiets = new();
     private PhieuBanHang? _deletingPhieuBan;
+    private PhieuBanHang? _editingPhieuBan;
 
     // Lọc
     private DateTime _filterFromDate = DateTime.Today;
@@ -86,6 +88,8 @@ public class BanHangViewModel : BaseViewModel
     public bool IsLoading { get => _isLoading; set { SetProperty(ref _isLoading, value); } }
     public bool IsSizeDeDialogOpen { get => _isSizeDeDialogOpen; set { SetProperty(ref _isSizeDeDialogOpen, value); } }
     public bool IsDeletePhieuBanDialogOpen { get => _isDeletePhieuBanDialogOpen; set { SetProperty(ref _isDeletePhieuBanDialogOpen, value); } }
+    public bool IsEditPhieuBanDialogOpen { get => _isEditPhieuBanDialogOpen; set { SetProperty(ref _isEditPhieuBanDialogOpen, value); } }
+    public PhieuBanHang? EditingPhieuBan { get => _editingPhieuBan; set { SetProperty(ref _editingPhieuBan, value); } }
 
     public ObservableCollection<HangHoa> HangHoas { get => _hangHoas; set { SetProperty(ref _hangHoas, value); } }
     public ObservableCollection<CartItem> CartItems { get => _cartItems; set { SetProperty(ref _cartItems, value); } }
@@ -236,6 +240,10 @@ public class BanHangViewModel : BaseViewModel
     public ICommand DeletePhieuBanCommand { get; }
     public ICommand CloseDeletePhieuBanDialogCommand { get; }
     public ICommand ConfirmDeletePhieuBanCommand { get; }
+    
+    public ICommand EditPhieuBanCommand { get; }
+    public ICommand CloseEditPhieuBanDialogCommand { get; }
+    public ICommand SaveEditPhieuBanCommand { get; }
     #endregion
 
     public BanHangViewModel()
@@ -264,6 +272,10 @@ public class BanHangViewModel : BaseViewModel
         DeletePhieuBanCommand = new RelayCommand(ExecuteDeletePhieuBan);
         CloseDeletePhieuBanDialogCommand = new RelayCommand(_ => { IsDeletePhieuBanDialogOpen = false; DeletingPhieuBan = null; });
         ConfirmDeletePhieuBanCommand = new AsyncRelayCommand(ExecuteConfirmDeletePhieuBanAsync);
+        
+        EditPhieuBanCommand = new RelayCommand(ExecuteEditPhieuBan);
+        CloseEditPhieuBanDialogCommand = new RelayCommand(_ => { IsEditPhieuBanDialogOpen = false; EditingPhieuBan = null; });
+        SaveEditPhieuBanCommand = new AsyncRelayCommand(ExecuteSaveEditPhieuBanAsync);
 
         _ = InitializeAsync();
     }
@@ -633,6 +645,55 @@ public class BanHangViewModel : BaseViewModel
             IsLoading = false;
             IsDeletePhieuBanDialogOpen = false;
             DeletingPhieuBan = null;
+        }
+    }
+    
+    private void ExecuteEditPhieuBan(object? parameter)
+    {
+        if (parameter is not PhieuBanHang pb) return;
+        EditingPhieuBan = new PhieuBanHang
+        {
+            MaPhieuBan = pb.MaPhieuBan,
+            PhuongThucTT = pb.PhuongThucTT,
+            GhiChu = pb.GhiChu
+        };
+        IsEditPhieuBanDialogOpen = true;
+    }
+
+    private async Task ExecuteSaveEditPhieuBanAsync(object? parameter)
+    {
+        if (EditingPhieuBan == null) return;
+        IsLoading = true;
+        try
+        {
+            var success = await _db.UpdatePhieuBanHangAsync(EditingPhieuBan);
+            if (success)
+            {
+                var existingIndex = PhieuBanHangs.ToList().FindIndex(p => p.MaPhieuBan == EditingPhieuBan.MaPhieuBan);
+                if (existingIndex >= 0)
+                {
+                    PhieuBanHangs[existingIndex].PhuongThucTT = EditingPhieuBan.PhuongThucTT;
+                    PhieuBanHangs[existingIndex].GhiChu = EditingPhieuBan.GhiChu;
+                    
+                    // Trigger INotifyPropertyChanged logic if needed or just re-assign
+                    var temp = PhieuBanHangs[existingIndex];
+                    PhieuBanHangs[existingIndex] = temp;
+                }
+                IsEditPhieuBanDialogOpen = false;
+                EditingPhieuBan = null;
+            }
+            else
+            {
+                System.Windows.MessageBox.Show("Có lỗi xảy ra khi lưu!", "Lỗi", System.Windows.MessageBoxButton.OK, System.Windows.MessageBoxImage.Error);
+            }
+        }
+        catch (Exception ex)
+        {
+             System.Windows.MessageBox.Show("Lỗi: " + ex.Message, "Lỗi", System.Windows.MessageBoxButton.OK, System.Windows.MessageBoxImage.Error);
+        }
+        finally
+        {
+            IsLoading = false;
         }
     }
     #endregion

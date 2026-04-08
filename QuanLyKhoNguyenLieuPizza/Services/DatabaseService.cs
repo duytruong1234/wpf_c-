@@ -5027,6 +5027,31 @@ public class DatabaseService : IDatabaseService
             return $"PB{DateTime.Now:yyyyMMddHHmmss}";
         }
     }
+    public async Task<bool> UpdatePhieuBanHangAsync(PhieuBanHang pb)
+    {
+        try
+        {
+            using var conn = GetConnection();
+            await conn.OpenAsync();
+            var sql = @"UPDATE PhieuBanHang 
+                        SET PhuongThucTT = @PhuongThucTT, 
+                            GhiChu = @GhiChu 
+                        WHERE MaPhieuBan = @MaPhieuBan";
+            using var cmd = new SqlCommand(sql, conn);
+            cmd.Parameters.AddWithValue("@PhuongThucTT", pb.PhuongThucTT ?? (object)DBNull.Value);
+            cmd.Parameters.AddWithValue("@GhiChu", pb.GhiChu ?? (object)DBNull.Value);
+            cmd.Parameters.AddWithValue("@MaPhieuBan", pb.MaPhieuBan);
+            
+            var rowsAffected = await cmd.ExecuteNonQueryAsync();
+            return rowsAffected > 0;
+        }
+        catch (Exception ex)
+        {
+            System.Diagnostics.Debug.WriteLine($"Error updating PhieuBanHang: {ex.Message}");
+            return false;
+        }
+    }
+
 
     public async Task<bool> DeletePhieuBanHangAsync(string maPhieuBan)
     {
@@ -5437,65 +5462,88 @@ public class DatabaseService : IDatabaseService
     #region Thống kê bán hàng (PhiếuBánHàng)
     public async Task<decimal> GetDoanhThuBanHangAsync(DateTime fromDate, DateTime toDate)
     {
+        decimal total = 0;
         try
         {
             using var conn = GetConnection();
             await conn.OpenAsync();
-            
-            // Tính doanh thu từ cả bảng DonHang (trạng thái Hoàn thành = 2) và PhieuBanHang
-            var sql = @"
-                SELECT ISNULL(SUM(DoanhThu), 0) FROM (
-                    SELECT ThanhToan AS DoanhThu 
-                    FROM DonHang 
-                    WHERE NgayTao >= @FromDate AND NgayTao < @ToDate AND TrangThai = 2
-                    UNION ALL
-                    SELECT TongTien AS DoanhThu 
-                    FROM PhieuBanHang 
-                    WHERE NgayBan >= @FromDate AND NgayBan < @ToDate
-                ) AS CombinedRevenue";
-            
-            using var cmd = new SqlCommand(sql, conn);
-            cmd.Parameters.AddWithValue("@FromDate", fromDate.Date);
-            cmd.Parameters.AddWithValue("@ToDate", toDate.Date.AddDays(1));
-            var result = await cmd.ExecuteScalarAsync();
-            return result != null && result != DBNull.Value ? Convert.ToDecimal(result) : 0;
+
+            // Doanh thu từ PhieuBanHang (POS)
+            try
+            {
+                var sql1 = @"SELECT ISNULL(SUM(TongTien), 0) FROM PhieuBanHang 
+                             WHERE NgayBan >= @FromDate AND NgayBan < @ToDate";
+                using var cmd1 = new SqlCommand(sql1, conn);
+                cmd1.Parameters.AddWithValue("@FromDate", fromDate.Date);
+                cmd1.Parameters.AddWithValue("@ToDate", toDate.Date.AddDays(1));
+                var r1 = await cmd1.ExecuteScalarAsync();
+                if (r1 != null && r1 != DBNull.Value) total += Convert.ToDecimal(r1);
+            }
+            catch (Exception ex1)
+            {
+                System.Diagnostics.Debug.WriteLine($"Error PhieuBanHang revenue: {ex1.Message}");
+            }
+
+            // Doanh thu từ DonHang (nếu bảng tồn tại)
+            try
+            {
+                var sql2 = @"SELECT ISNULL(SUM(ThanhToan), 0) FROM DonHang 
+                             WHERE NgayTao >= @FromDate AND NgayTao < @ToDate AND TrangThai = 2";
+                using var cmd2 = new SqlCommand(sql2, conn);
+                cmd2.Parameters.AddWithValue("@FromDate", fromDate.Date);
+                cmd2.Parameters.AddWithValue("@ToDate", toDate.Date.AddDays(1));
+                var r2 = await cmd2.ExecuteScalarAsync();
+                if (r2 != null && r2 != DBNull.Value) total += Convert.ToDecimal(r2);
+            }
+            catch { /* Bảng DonHang có thể không tồn tại */ }
         }
         catch (Exception ex)
         {
             System.Diagnostics.Debug.WriteLine($"Error getting DoanhThuBanHang: {ex.Message}");
-            return 0;
         }
+        return total;
     }
 
     public async Task<int> GetTotalPhieuBanCountAsync(DateTime fromDate, DateTime toDate)
     {
+        int total = 0;
         try
         {
             using var conn = GetConnection();
             await conn.OpenAsync();
-            
-            // Đếm tổng số đơn từ cả bảng DonHang (trạng thái Hoàn thành = 2) và PhieuBanHang
-            var sql = @"
-                SELECT COUNT(*) FROM (
-                    SELECT DonHangID 
-                    FROM DonHang 
-                    WHERE NgayTao >= @FromDate AND NgayTao < @ToDate AND TrangThai = 2
-                    UNION ALL
-                    SELECT ROW_NUMBER() OVER (ORDER BY NgayBan) 
-                    FROM PhieuBanHang 
-                    WHERE NgayBan >= @FromDate AND NgayBan < @ToDate
-                ) AS CombinedOrders";
-            
-            using var cmd = new SqlCommand(sql, conn);
-            cmd.Parameters.AddWithValue("@FromDate", fromDate.Date);
-            cmd.Parameters.AddWithValue("@ToDate", toDate.Date.AddDays(1));
-            return Convert.ToInt32(await cmd.ExecuteScalarAsync());
+
+            // Đếm từ PhieuBanHang (POS)
+            try
+            {
+                var sql1 = @"SELECT COUNT(*) FROM PhieuBanHang 
+                             WHERE NgayBan >= @FromDate AND NgayBan < @ToDate";
+                using var cmd1 = new SqlCommand(sql1, conn);
+                cmd1.Parameters.AddWithValue("@FromDate", fromDate.Date);
+                cmd1.Parameters.AddWithValue("@ToDate", toDate.Date.AddDays(1));
+                total += Convert.ToInt32(await cmd1.ExecuteScalarAsync());
+            }
+            catch (Exception ex1)
+            {
+                System.Diagnostics.Debug.WriteLine($"Error PhieuBanHang count: {ex1.Message}");
+            }
+
+            // Đếm từ DonHang (nếu bảng tồn tại)
+            try
+            {
+                var sql2 = @"SELECT COUNT(*) FROM DonHang 
+                             WHERE NgayTao >= @FromDate AND NgayTao < @ToDate AND TrangThai = 2";
+                using var cmd2 = new SqlCommand(sql2, conn);
+                cmd2.Parameters.AddWithValue("@FromDate", fromDate.Date);
+                cmd2.Parameters.AddWithValue("@ToDate", toDate.Date.AddDays(1));
+                total += Convert.ToInt32(await cmd2.ExecuteScalarAsync());
+            }
+            catch { /* Bảng DonHang có thể không tồn tại */ }
         }
         catch (Exception ex)
         {
             System.Diagnostics.Debug.WriteLine($"Error getting PhieuBan count: {ex.Message}");
-            return 0;
         }
+        return total;
     }
     #endregion
 }

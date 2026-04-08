@@ -190,16 +190,11 @@
                                 <ColumnDefinition Width="*"/>
                             </Grid.ColumnDefinitions>
                             <TextBlock Text="&#xE721;" FontFamily="Segoe MDL2 Assets" FontSize="15" Foreground="{StaticResource Gray400}" VerticalAlignment="Center" Margin="0,0,10,0"/>
-                            <TextBox x:Name="SearchTextBox" Grid.Column="1"
-                                     Text="{Binding SearchText, UpdateSourceTrigger=PropertyChanged}"
-                                     BorderThickness="0"
-                                     Background="Transparent"
-                                     FontSize="14"
-                                     VerticalContentAlignment="Center"/>
                             <TextBlock Grid.Column="1"
                                        Text="Tìm kiếm nhà cung cấp..."
                                        FontSize="14"
                                        Foreground="{StaticResource Gray400}"
+                                       Padding="4,0,0,0"
                                        VerticalAlignment="Center"
                                        IsHitTestVisible="False">
                                 <TextBlock.Style>
@@ -209,10 +204,20 @@
                                             <DataTrigger Binding="{Binding Text, ElementName=SearchTextBox}" Value="">
                                                 <Setter Property="Visibility" Value="Visible"/>
                                             </DataTrigger>
+                                            <DataTrigger Binding="{Binding Text, ElementName=SearchTextBox}" Value="{x:Null}">
+                                                <Setter Property="Visibility" Value="Visible"/>
+                                            </DataTrigger>
                                         </Style.Triggers>
                                     </Style>
                                 </TextBlock.Style>
                             </TextBlock>
+                            <TextBox x:Name="SearchTextBox" Grid.Column="1"
+                                     Text="{Binding SearchText, UpdateSourceTrigger=PropertyChanged}"
+                                     BorderThickness="0"
+                                     Background="Transparent"
+                                     FontSize="14"
+                                     Padding="0"
+                                     VerticalContentAlignment="Center"/>
                         </Grid>
                     </Border>
 
@@ -523,13 +528,35 @@
                                        Visibility="{Binding ErrorEmail, Converter={StaticResource StringToVisibilityConverter}}"/>
                         </StackPanel>
 
-                        <!-- Địa chỉ -->
-                        <StackPanel Grid.Row="4" Grid.ColumnSpan="3">
-                            <TextBlock Text="Địa chỉ" FontSize="12" FontWeight="Medium" Foreground="{StaticResource Gray500}" Margin="0,0,0,6"/>
+                        <!-- Số nhà / đường -->
+                        <StackPanel Grid.Row="4" Grid.Column="0">
+                            <TextBlock Text="Số nhà / Đường / Tòa nhà" FontSize="12" FontWeight="Medium" Foreground="{StaticResource Gray500}" Margin="0,0,0,6"/>
                             <Border Background="White" BorderBrush="{StaticResource Gray200}" BorderThickness="1" CornerRadius="10" Padding="14,12">
-                                <TextBox Text="{Binding FormDiaChi, UpdateSourceTrigger=PropertyChanged}"
-                                         BorderThickness="0" Background="Transparent" FontSize="14"
-                                         TextWrapping="Wrap" MinHeight="50" AcceptsReturn="True"/>
+                                <TextBox Text="{Binding FormDiaChiChiTiet, UpdateSourceTrigger=PropertyChanged}" BorderThickness="0" Background="Transparent" FontSize="14"/>
+                            </Border>
+                        </StackPanel>
+
+                        <!-- Thôn / Xóm -->
+                        <StackPanel Grid.Row="4" Grid.Column="2">
+                            <TextBlock Text="Thôn / Xóm" FontSize="12" FontWeight="Medium" Foreground="{StaticResource Gray500}" Margin="0,0,0,6"/>
+                            <Border Background="White" BorderBrush="{StaticResource Gray200}" BorderThickness="1" CornerRadius="10" Padding="14,12">
+                                <TextBox Text="{Binding FormThonXom, UpdateSourceTrigger=PropertyChanged}" BorderThickness="0" Background="Transparent" FontSize="14"/>
+                            </Border>
+                        </StackPanel>
+
+                        <!-- Phường / Xã -->
+                        <StackPanel Grid.Row="6" Grid.Column="0">
+                            <TextBlock Text="Phường / Xã" FontSize="12" FontWeight="Medium" Foreground="{StaticResource Gray500}" Margin="0,0,0,6"/>
+                            <Border Background="White" BorderBrush="{StaticResource Gray200}" BorderThickness="1" CornerRadius="10" Padding="14,12">
+                                <TextBox Text="{Binding FormPhuongXa, UpdateSourceTrigger=PropertyChanged}" BorderThickness="0" Background="Transparent" FontSize="14"/>
+                            </Border>
+                        </StackPanel>
+
+                        <!-- Tỉnh / Thành phố -->
+                        <StackPanel Grid.Row="6" Grid.Column="2">
+                            <TextBlock Text="Tỉnh / Thành phố" FontSize="12" FontWeight="Medium" Foreground="{StaticResource Gray500}" Margin="0,0,0,6"/>
+                            <Border Background="White" BorderBrush="{StaticResource Gray200}" BorderThickness="1" CornerRadius="10" Padding="14,12">
+                                <TextBox Text="{Binding FormTinhTP, UpdateSourceTrigger=PropertyChanged}" BorderThickness="0" Background="Transparent" FontSize="14"/>
                             </Border>
                         </StackPanel>
                     </Grid>
@@ -727,11 +754,15 @@
 
                     <!-- Tiêu đề -->
                     <Grid Grid.Row="0" Margin="0,0,0,20">
-                        <TextBlock FontSize="22" FontWeight="Bold" Foreground="#1E293B" HorizontalAlignment="Left" VerticalAlignment="Center">
+                        <Grid.ColumnDefinitions>
+                            <ColumnDefinition Width="*" />
+                            <ColumnDefinition Width="Auto" />
+                        </Grid.ColumnDefinitions>
+                        <TextBlock Grid.Column="0" FontSize="22" FontWeight="Bold" Foreground="#1E293B" HorizontalAlignment="Left" VerticalAlignment="Center" TextTrimming="CharacterEllipsis" Margin="0,0,16,0">
                             <Run Text="Nguyên liệu cung cấp - "/>
                             <Run Text="{Binding SelectedNhaCungCap.TenNCC}"/>
                         </TextBlock>
-                        <StackPanel Orientation="Horizontal" HorizontalAlignment="Right">
+                        <StackPanel Grid.Column="1" Orientation="Horizontal" HorizontalAlignment="Right" VerticalAlignment="Center">
                             <!-- Nút Thêm nguyên liệu -->
                             <Button Command="{Binding OpenAddNLDialogCommand}" Cursor="Hand" Margin="0,0,8,0">
                                 <Button.Template>
@@ -806,11 +837,13 @@
                                         <ColumnDefinition Width="2*"/>
                                         <ColumnDefinition Width="1*"/>
                                         <ColumnDefinition Width="1*"/>
+                                        <ColumnDefinition Width="Auto" MinWidth="50"/>
                                     </Grid.ColumnDefinitions>
                                     <TextBlock Grid.Column="0" Text="Mã NL" Style="{StaticResource TableHeaderStyle}"/>
                                     <TextBlock Grid.Column="1" Text="Tên nguyên liệu" Style="{StaticResource TableHeaderStyle}"/>
                                     <TextBlock Grid.Column="2" Text="Đơn vị" Style="{StaticResource TableHeaderStyle}"/>
                                     <TextBlock Grid.Column="3" Text="Giá nhập" Style="{StaticResource TableHeaderStyle}"/>
+                                    <TextBlock Grid.Column="4" Text="" Style="{StaticResource TableHeaderStyle}"/>
                                 </Grid>
                             </Border>
 
@@ -825,6 +858,7 @@
                                                         <ColumnDefinition Width="2*"/>
                                                         <ColumnDefinition Width="1*"/>
                                                         <ColumnDefinition Width="1*"/>
+                                                        <ColumnDefinition Width="Auto" MinWidth="50"/>
                                                     </Grid.ColumnDefinitions>
                                                     <TextBlock Grid.Column="0" Text="{Binding MaNguyenLieu}" Style="{StaticResource TableCellStyle}"/>
                                                     <TextBlock Grid.Column="1" Text="{Binding TenNguyenLieu}" Style="{StaticResource TableCellStyle}" TextAlignment="Left"/>
@@ -834,6 +868,20 @@
                                                             <Binding Path="NguyenLieuNhaCungCaps[0].GiaNhap" Mode="OneWay" StringFormat="{}{0:N0}"/>
                                                         </TextBlock.Text>
                                                     </TextBlock>
+                                                    <Button Grid.Column="4" Command="{Binding DataContext.DeleteNLFromNCCCommand, RelativeSource={RelativeSource AncestorType=ItemsControl}}" CommandParameter="{Binding}" Cursor="Hand" ToolTip="Xóa nguyên liệu" HorizontalAlignment="Center" VerticalAlignment="Center" Background="Transparent" BorderThickness="0">
+                                                        <Button.Template>
+                                                            <ControlTemplate TargetType="Button">
+                                                                <Border x:Name="btnBorder" Background="{StaticResource DangerRedLight}" CornerRadius="6" Width="28" Height="28">
+                                                                    <TextBlock Text="&#xE74D;" FontFamily="Segoe MDL2 Assets" FontSize="12" Foreground="{StaticResource DangerRed}" HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                                                                </Border>
+                                                                <ControlTemplate.Triggers>
+                                                                    <Trigger Property="IsMouseOver" Value="True">
+                                                                        <Setter TargetName="btnBorder" Property="Background" Value="#FEE2E2"/>
+                                                                    </Trigger>
+                                                                </ControlTemplate.Triggers>
+                                                            </ControlTemplate>
+                                                        </Button.Template>
+                                                    </Button>
                                                 </Grid>
                                             </Border>
                                         </DataTemplate>
@@ -851,6 +899,91 @@
                             </StackPanel>
                         </Grid>
                     </Border>
+                </Grid>
+            </Border>
+        </Grid>
+
+        <!-- Hộp thoại Thêm nguyên liệu cung cấp -->
+        <Grid Visibility="{Binding IsAddNLDialogOpen, Converter={StaticResource BoolToVisibilityConverter}}" Background="#80000000">
+            <Border Background="White" CornerRadius="20" Width="440" VerticalAlignment="Center" HorizontalAlignment="Center" Padding="32">
+                <Border.Effect>
+                    <DropShadowEffect BlurRadius="30" ShadowDepth="4" Direction="270" Color="#000000" Opacity="0.12"/>
+                </Border.Effect>
+                <Grid>
+                    <Grid.RowDefinitions>
+                        <RowDefinition Height="Auto"/>
+                        <RowDefinition Height="Auto"/>
+                        <RowDefinition Height="Auto"/>
+                    </Grid.RowDefinitions>
+
+                    <!-- Header -->
+                    <Grid Grid.Row="0" Margin="0,0,0,24">
+                        <TextBlock Text="Thêm nguyên liệu cung cấp" FontSize="18" FontWeight="Bold" Foreground="#1E293B" HorizontalAlignment="Center"/>
+                        <Button HorizontalAlignment="Right" Command="{Binding CloseAddNLDialogCommand}" Cursor="Hand" VerticalAlignment="Center">
+                            <Button.Template>
+                                <ControlTemplate TargetType="Button">
+                                    <Border x:Name="border" Background="#F1F5F9" CornerRadius="8" Width="28" Height="28">
+                                        <TextBlock Text="&#xE711;" FontFamily="Segoe MDL2 Assets" FontSize="10" Foreground="#64748B" HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                                    </Border>
+                                    <ControlTemplate.Triggers>
+                                        <Trigger Property="IsMouseOver" Value="True">
+                                            <Setter TargetName="border" Property="Background" Value="#E2E8F0"/>
+                                        </Trigger>
+                                    </ControlTemplate.Triggers>
+                                </ControlTemplate>
+                            </Button.Template>
+                        </Button>
+                    </Grid>
+
+                    <!-- Form -->
+                    <StackPanel Grid.Row="1" Margin="0,0,0,24">
+                        <TextBlock Text="Chọn nguyên liệu" FontSize="12" FontWeight="SemiBold" Foreground="#64748B" Margin="0,0,0,8"/>
+                        <Border Background="White" BorderBrush="#E2E8F0" BorderThickness="1" CornerRadius="8" Padding="12,10" Margin="0,0,0,16">
+                            <ComboBox ItemsSource="{Binding AllNguyenLieus}" SelectedItem="{Binding SelectedNguyenLieuToAdd}" DisplayMemberPath="TenNguyenLieu" BorderThickness="0" Background="Transparent" FontSize="14" Foreground="#1E293B" IsEditable="False"/>
+                        </Border>
+
+                        <TextBlock Text="Đơn vị nhập" FontSize="12" FontWeight="SemiBold" Foreground="#64748B" Margin="0,0,0,8"/>
+                        <Border Background="White" BorderBrush="#E2E8F0" BorderThickness="1" CornerRadius="8" Padding="12,10" Margin="0,0,0,16">
+                            <ComboBox ItemsSource="{Binding DonViTinhs}" SelectedItem="{Binding FormDonViNhap}" DisplayMemberPath="TenDonVi" BorderThickness="0" Background="Transparent" FontSize="14" Foreground="#1E293B"/>
+                        </Border>
+
+                        <TextBlock Text="Giá nhập (đ)" FontSize="12" FontWeight="SemiBold" Foreground="#64748B" Margin="0,0,0,8"/>
+                        <Border Background="White" BorderBrush="#E2E8F0" BorderThickness="1" CornerRadius="8" Padding="12,10">
+                            <TextBox Text="{Binding FormGiaNhap, UpdateSourceTrigger=PropertyChanged}" BorderThickness="0" Background="Transparent" FontSize="14" Foreground="#1E293B"/>
+                        </Border>
+                    </StackPanel>
+
+                    <!-- Actions -->
+                    <StackPanel Grid.Row="2" Orientation="Horizontal" HorizontalAlignment="Center">
+                        <Button Command="{Binding CloseAddNLDialogCommand}" Cursor="Hand" Margin="0,0,16,0">
+                            <Button.Template>
+                                <ControlTemplate TargetType="Button">
+                                    <Border x:Name="border" Background="#F1F5F9" CornerRadius="8" Padding="32,10">
+                                        <TextBlock Text="Hủy" FontSize="14" FontWeight="SemiBold" Foreground="#475569"/>
+                                    </Border>
+                                    <ControlTemplate.Triggers>
+                                        <Trigger Property="IsMouseOver" Value="True">
+                                            <Setter TargetName="border" Property="Background" Value="#E2E8F0"/>
+                                        </Trigger>
+                                    </ControlTemplate.Triggers>
+                                </ControlTemplate>
+                            </Button.Template>
+                        </Button>
+                        <Button Command="{Binding SaveAddNLCommand}" Cursor="Hand">
+                            <Button.Template>
+                                <ControlTemplate TargetType="Button">
+                                    <Border x:Name="border" CornerRadius="8" Padding="40,10" Background="#6366F1">
+                                        <TextBlock Text="Lưu" FontSize="14" FontWeight="SemiBold" Foreground="White"/>
+                                    </Border>
+                                    <ControlTemplate.Triggers>
+                                        <Trigger Property="IsMouseOver" Value="True">
+                                            <Setter TargetName="border" Property="Opacity" Value="0.9"/>
+                                        </Trigger>
+                                    </ControlTemplate.Triggers>
+                                </ControlTemplate>
+                            </Button.Template>
+                        </Button>
+                    </StackPanel>
                 </Grid>
             </Border>
         </Grid>

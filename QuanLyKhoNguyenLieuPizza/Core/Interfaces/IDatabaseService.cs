@@ -112,6 +112,7 @@ public interface IDatabaseService
     Task<List<CT_PhieuBan>> GetChiTietPhieuBanAsync(string maPhieuBan);
     Task<string> SavePhieuBanHangAsync(PhieuBanHang phieuBan, List<CT_PhieuBan> chiTiets);
     Task<string> GenerateMaPhieuBanAsync();
+    Task<bool> UpdatePhieuBanHangAsync(PhieuBanHang pb);
     Task<bool> DeletePhieuBanHangAsync(string maPhieuBan);
 
     // CongThuc_Pizza

@@ -717,26 +717,6 @@ public class PhieuNhapViewModel : BaseViewModel
             return;
 
         var supplierLink = nguyenLieu.NguyenLieuNhaCungCaps?.FirstOrDefault();
-        if ((SelectedNhaCungCapForm == null || SelectedNhaCungCapForm.NhaCungCapID == 0) &&
-            supplierLink?.NhaCungCapID > 0)
-        {
-            var matchedSupplier = NhaCungCaps.FirstOrDefault(n => n.NhaCungCapID == supplierLink.NhaCungCapID);
-            if (matchedSupplier != null)
-            {
-                SelectedNhaCungCapForm = matchedSupplier;
-            }
-        }
-
-        if (SelectedNhaCungCapForm == null || SelectedNhaCungCapForm.NhaCungCapID == 0)
-        {
-            System.Windows.MessageBox.Show(
-                "Nguyên liệu này chưa có nhà cung cấp mặc định. Vui lòng chọn nhà cung cấp trước khi thêm.",
-                "Cảnh báo",
-                System.Windows.MessageBoxButton.OK,
-                System.Windows.MessageBoxImage.Warning);
-            return;
-        }
-
         var giaNhap = supplierLink?.GiaNhap ?? 0;
 
         var chiTiet = new CT_PhieuNhap
@@ -907,21 +887,45 @@ public class PhieuNhapViewModel : BaseViewModel
 
     private async Task SavePhieuNhapAsync()
     {
-        if (SelectedNhaCungCapForm == null || SelectedNhaCungCapForm.NhaCungCapID == 0)
-        {
-            System.Windows.MessageBox.Show("Vui lòng chọn một Nhà cung cấp cụ thể (không chọn 'Tất cả')!", "Cảnh báo", System.Windows.MessageBoxButton.OK, System.Windows.MessageBoxImage.Warning);
-            return;
-        }
-
         if (!ChiTietForm.Any())
         {
             System.Windows.MessageBox.Show("Vui lòng thêm ít nhất một nguyên liệu vào phiếu nhập!", "Cảnh báo", System.Windows.MessageBoxButton.OK, System.Windows.MessageBoxImage.Warning);
             return;
         }
 
+        if (SelectedNhaCungCapForm == null || SelectedNhaCungCapForm.NhaCungCapID == 0)
+        {
+            // Auto detect supplier if all items come from the same supplier
+            var distinctSuppliers = ChiTietForm
+                .Select(ct => ct.NguyenLieu?.NhaCungCapMacDinhID)
+                .Where(id => id.HasValue && id.Value > 0)
+                .Distinct()
+                .ToList();
+
+            if (distinctSuppliers.Count == 1)
+            {
+                var matchedSupplier = NhaCungCaps.FirstOrDefault(n => n.NhaCungCapID == distinctSuppliers.First());
+                if (matchedSupplier != null)
+                {
+                    SelectedNhaCungCapForm = matchedSupplier;
+                }
+            }
+            else
+            {
+                System.Windows.MessageBox.Show("Vui lòng chọn một Nhà cung cấp cụ thể (không chọn 'Tất cả')!", "Cảnh báo", System.Windows.MessageBoxButton.OK, System.Windows.MessageBoxImage.Warning);
+                return;
+            }
+        }
+
         if (ChiTietForm.Any(ct => !ct.DonViID.HasValue || ct.HeSo <= 0))
         {
             System.Windows.MessageBox.Show("Vui lòng chọn đơn vị nhập hợp lệ cho tất cả nguyên liệu.", "Cảnh báo", System.Windows.MessageBoxButton.OK, System.Windows.MessageBoxImage.Warning);
+            return;
+        }
+
+        if (SelectedNhaCungCapForm == null)
+        {
+            System.Windows.MessageBox.Show("Dữ liệu nhà cung cấp không hợp lệ.", "Lỗi", System.Windows.MessageBoxButton.OK, System.Windows.MessageBoxImage.Error);
             return;
         }
 

@@ -203,13 +203,10 @@
                                 <ColumnDefinition Width="*"/>
                             </Grid.ColumnDefinitions>
                             <TextBlock Text="&#xE721;" FontFamily="Segoe MDL2 Assets" FontSize="15" Foreground="{StaticResource Gray400}" VerticalAlignment="Center" Margin="0,0,10,0"/>
-                            <TextBox x:Name="SearchTextBox" Grid.Column="1"
-                                     Text="{Binding SearchText, UpdateSourceTrigger=PropertyChanged}"
-                                     BorderThickness="0" Background="Transparent" FontSize="14" VerticalContentAlignment="Center"/>
                             <TextBlock Grid.Column="1"
                                         Text="Tìm kiếm nhân viên..."
                                         FontSize="14" Foreground="{StaticResource Gray400}"
-                                        VerticalAlignment="Center" IsHitTestVisible="False">
+                                        Padding="4,0,0,0" VerticalAlignment="Center" IsHitTestVisible="False">
                                 <TextBlock.Style>
                                     <Style TargetType="TextBlock">
                                         <Setter Property="Visibility" Value="Collapsed"/>
@@ -217,10 +214,16 @@
                                             <DataTrigger Binding="{Binding Text, ElementName=SearchTextBox}" Value="">
                                                 <Setter Property="Visibility" Value="Visible"/>
                                             </DataTrigger>
+                                            <DataTrigger Binding="{Binding Text, ElementName=SearchTextBox}" Value="{x:Null}">
+                                                <Setter Property="Visibility" Value="Visible"/>
+                                            </DataTrigger>
                                         </Style.Triggers>
                                     </Style>
                                 </TextBlock.Style>
                             </TextBlock>
+                            <TextBox x:Name="SearchTextBox" Grid.Column="1"
+                                     Text="{Binding SearchText, UpdateSourceTrigger=PropertyChanged}"
+                                     BorderThickness="0" Background="Transparent" FontSize="14" Padding="0" VerticalContentAlignment="Center"/>
                         </Grid>
                     </Border>
 
@@ -619,12 +622,12 @@
         <!-- ADD/EDIT NHANVIEN DIALOG -->
         <Grid Visibility="{Binding IsDialogOpen, Converter={StaticResource BoolToVisibilityConverter}}" Background="#80000000">
             <Border Background="White" CornerRadius="20" Width="580" MaxHeight="720"
-                    VerticalAlignment="Center" HorizontalAlignment="Center" Padding="32">
+                    VerticalAlignment="Center" HorizontalAlignment="Center" Padding="32,32,12,32">
                 <Border.Effect>
                     <DropShadowEffect BlurRadius="30" ShadowDepth="4" Direction="270" Color="#000000" Opacity="0.12"/>
                 </Border.Effect>
                 <ScrollViewer VerticalScrollBarVisibility="Auto">
-                    <Grid>
+                    <Grid Margin="0,0,16,0">
                         <Grid.RowDefinitions>
                             <RowDefinition Height="Auto"/>
                             <RowDefinition Height="Auto"/>

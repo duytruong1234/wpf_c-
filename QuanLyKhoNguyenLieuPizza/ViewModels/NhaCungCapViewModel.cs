@@ -1,4 +1,4 @@
-﻿using System.Collections.ObjectModel;
+using System.Collections.ObjectModel;
 using System.Text.RegularExpressions;
 using System.Windows.Input;
 using QuanLyKhoNguyenLieuPizza.Core.Interfaces;
@@ -533,6 +533,8 @@ public class NhaCungCapViewModel : BaseViewModel
 
     private async Task SaveNhaCungCapAsync()
     {
+        ComposeDiaChi();
+
         if (string.IsNullOrWhiteSpace(FormTenNCC))
         {
             return;

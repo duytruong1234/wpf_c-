@@ -1,4 +1,4 @@
-﻿<?xml version="1.0" encoding="utf-8"?>
+<?xml version="1.0" encoding="utf-8"?>
 <UserControl x:Class="QuanLyKhoNguyenLieuPizza.Views.LoginView"
              xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
              xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
@@ -118,16 +118,7 @@
             </Border.RenderTransform>
 
             <Grid>
-                <!-- Thanh trang trí trên -->
-                <Border CornerRadius="24,24,0,0" Height="4" VerticalAlignment="Top">
-                    <Border.Background>
-                        <LinearGradientBrush StartPoint="0,0" EndPoint="1,0">
-                            <GradientStop Color="#E85D04" Offset="0"/>
-                            <GradientStop Color="#F48C06" Offset="0.5"/>
-                            <GradientStop Color="#FFBA08" Offset="1"/>
-                        </LinearGradientBrush>
-                    </Border.Background>
-                </Border>
+
 
                 <StackPanel Margin="44,36,44,40">
 

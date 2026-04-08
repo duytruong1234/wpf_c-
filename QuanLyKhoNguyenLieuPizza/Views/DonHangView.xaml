@@ -131,8 +131,6 @@
                     <ColumnDefinition Width="*"/>
                     <ColumnDefinition Width="16"/>
                     <ColumnDefinition Width="*"/>
-                    <ColumnDefinition Width="16"/>
-                    <ColumnDefinition Width="*"/>
                 </Grid.ColumnDefinitions>
 
                 <!-- Tổng đơn hàng -->
@@ -148,22 +146,8 @@
                     </StackPanel>
                 </Border>
 
-                <!-- Hoàn thành -->
-                <Border Grid.Column="2" Background="#ECFDF5" BorderBrush="#A7F3D0" BorderThickness="1.5" MinHeight="110" Style="{StaticResource CardStyle}" Padding="20">
-                    <StackPanel>
-                        <Grid Margin="0,0,0,12">
-                            <TextBlock Text="Hoàn thành" FontSize="12" Foreground="{StaticResource Gray500}"/>
-                            <Border Background="{StaticResource SuccessGreenLight}" CornerRadius="8" Width="32" Height="32" HorizontalAlignment="Right">
-                                <ui:SymbolIcon Symbol="Edit24" FontSize="16" 
-                                           Foreground="{StaticResource SuccessGreen}" HorizontalAlignment="Center" VerticalAlignment="Center"/>
-                            </Border>
-                        </Grid>
-                        <TextBlock Text="{Binding DonHoanThanh}" FontSize="32" FontWeight="Bold" Foreground="{StaticResource SuccessGreen}"/>
-                    </StackPanel>
-                </Border>
-
                 <!-- Doanh thu -->
-                <Border Grid.Column="4" Background="#ECFDF5" BorderBrush="#A7F3D0" BorderThickness="1.5" MinHeight="110" Style="{StaticResource CardStyle}" Padding="20">
+                <Border Grid.Column="2" Background="#ECFDF5" BorderBrush="#A7F3D0" BorderThickness="1.5" MinHeight="110" Style="{StaticResource CardStyle}" Padding="20">
                     <StackPanel>
                         <Grid Margin="0,0,0,12">
                             <TextBlock Text="Doanh thu" FontSize="12" Foreground="{StaticResource Gray500}"/>
@@ -180,7 +164,7 @@
                 </Border>
 
                 <!-- NV bán chạy nhất -->
-                <Border Grid.Column="6" Background="#FFF7ED" BorderBrush="#FED7AA" BorderThickness="1.5" MinHeight="110" Style="{StaticResource CardStyle}" Padding="20">
+                <Border Grid.Column="4" Background="#FFF7ED" BorderBrush="#FED7AA" BorderThickness="1.5" MinHeight="110" Style="{StaticResource CardStyle}" Padding="20">
                     <StackPanel>
                         <Grid Margin="0,0,0,12">
                             <TextBlock Text="NV bán chạy nhất" FontSize="12" Foreground="{StaticResource Gray500}"/>
