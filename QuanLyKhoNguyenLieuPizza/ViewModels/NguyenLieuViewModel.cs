@@ -66,6 +66,9 @@ public class NguyenLieuViewModel : BaseViewModel
     // Hộp thoại trạng thái
     private bool _isStatusDialogOpen;
     private NguyenLieuItemViewModel? _statusNguyenLieu;
+
+    // Quản lý hệ số quy đổi
+    public QuyDoiDonViViewModel QuyDoiVM { get; }
     
     public ObservableCollection<NguyenLieuItemViewModel> FilteredNguyenLieus
     {
@@ -272,6 +275,7 @@ public class NguyenLieuViewModel : BaseViewModel
     public ICommand BrowseImageCommand { get; }
     public ICommand CloseStatusDialogCommand { get; }
     public ICommand ConfirmToggleStatusCommand { get; }
+    public ICommand OpenQuyDoiCommand { get; }
     
     // LoaiNguyenLieu ViewModel
     public LoaiNguyenLieuViewModel LoaiNguyenLieuVM { get; }
@@ -287,6 +291,8 @@ public class NguyenLieuViewModel : BaseViewModel
             SafeInitializeAsync(ReloadLoaiNguyenLieusAsync);
         };
         LoaiNguyenLieuVM.OnDataChanged += () => SafeInitializeAsync(ReloadLoaiNguyenLieusAsync);
+
+        QuyDoiVM = new QuyDoiDonViViewModel();
         
         // ⚡ AsyncRelayCommand thay vì async void trong RelayCommand
         LoadDataCommand = new AsyncRelayCommand(async _ => await LoadDataAsync());
@@ -299,6 +305,7 @@ public class NguyenLieuViewModel : BaseViewModel
         BrowseImageCommand = new RelayCommand(_ => BrowseImage());
         CloseStatusDialogCommand = new RelayCommand(_ => IsStatusDialogOpen = false);
         ConfirmToggleStatusCommand = new RelayCommand(async _ => await ConfirmToggleStatusAsync());
+        OpenQuyDoiCommand = new RelayCommand(async _ => await QuyDoiVM.OpenAsync());
         
         // ⚡ SafeInitializeAsync thay vì fire-and-forget
         SafeInitializeAsync(LoadDataAsync);

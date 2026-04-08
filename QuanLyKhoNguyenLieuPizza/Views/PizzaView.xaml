@@ -244,13 +244,13 @@
                             BorderBrush="{StaticResource Gray100}" BorderThickness="0,0,0,1">
                         <Grid>
                             <Grid.ColumnDefinitions>
-                                <ColumnDefinition Width="0.8*"/>
-                                <ColumnDefinition Width="0.5*"/>
+                                <ColumnDefinition Width="1*"/>
+                                <ColumnDefinition Width="0.6*"/>
+                                <ColumnDefinition Width="2*"/>
+                                <ColumnDefinition Width="1*"/>
+                                <ColumnDefinition Width="1.2*"/>
+                                <ColumnDefinition Width="1.2*"/>
                                 <ColumnDefinition Width="1.6*"/>
-                                <ColumnDefinition Width="0.7*"/>
-                                <ColumnDefinition Width="*"/>
-                                <ColumnDefinition Width="0.8*"/>
-                                <ColumnDefinition Width="0.7*"/>
                             </Grid.ColumnDefinitions>
                             <TextBlock Grid.Column="0" Text="MÃ MÓN ĂN" FontSize="11" FontWeight="Bold" Foreground="{StaticResource Gray400}"/>
                             <TextBlock Grid.Column="1" Text="ẢNH" FontSize="11" FontWeight="Bold" Foreground="{StaticResource Gray400}" TextAlignment="Center"/>
@@ -280,13 +280,13 @@
                                         </Border.Style>
                                         <Grid>
                                             <Grid.ColumnDefinitions>
-                                                <ColumnDefinition Width="0.8*"/>
-                                                <ColumnDefinition Width="0.5*"/>
+                                                <ColumnDefinition Width="1*"/>
+                                                <ColumnDefinition Width="0.6*"/>
+                                                <ColumnDefinition Width="2*"/>
+                                                <ColumnDefinition Width="1*"/>
+                                                <ColumnDefinition Width="1.2*"/>
+                                                <ColumnDefinition Width="1.2*"/>
                                                 <ColumnDefinition Width="1.6*"/>
-                                                <ColumnDefinition Width="0.7*"/>
-                                                <ColumnDefinition Width="*"/>
-                                                <ColumnDefinition Width="0.8*"/>
-                                                <ColumnDefinition Width="0.7*"/>
                                             </Grid.ColumnDefinitions>
 
                                             <!-- Mã pizza -->
@@ -773,52 +773,6 @@
                                         </ItemsControl>
                                     </ScrollViewer>
                                 </Grid>
-                            </Border>
-
-                            <!-- Form Thêm Nguyên Liệu -->
-                            <Border Background="{StaticResource Gray50}" CornerRadius="12" Padding="20" Margin="0,20,0,0">
-                                <StackPanel>
-                                    <TextBlock Text="Thêm chức năng xóa" FontSize="14" FontWeight="Bold" Foreground="{StaticResource Gray800}" Margin="0,0,0,16"/>
-                                    <Grid>
-                                        <Grid.ColumnDefinitions>
-                                            <ColumnDefinition Width="3*"/>
-                                            <ColumnDefinition Width="2*"/>
-                                            <ColumnDefinition Width="2*"/>
-                                            <ColumnDefinition Width="Auto"/>
-                                        </Grid.ColumnDefinitions>
-                                        <Grid.RowDefinitions>
-                                            <RowDefinition Height="Auto"/>
-                                            <RowDefinition Height="Auto"/>
-                                        </Grid.RowDefinitions>
-
-                                        <ComboBox Grid.Column="0" Grid.Row="1" ItemsSource="{Binding AllNguyenLieus}" SelectedItem="{Binding RecipeSelectedNguyenLieu}"
-                                                  DisplayMemberPath="TenNguyenLieu" FontSize="13" Padding="12,10" Margin="0,0,12,0"/>
-                                        <TextBox Grid.Column="1" Grid.Row="1" Text="{Binding RecipeSoLuong, UpdateSourceTrigger=PropertyChanged}"
-                                                 FontSize="13" Padding="12,10" Margin="0,0,12,0" Background="White"/>
-                                        <ComboBox Grid.Column="2" Grid.Row="1" ItemsSource="{Binding DonViTinhs}" SelectedItem="{Binding RecipeSelectedDonVi}"
-                                                  DisplayMemberPath="TenDonVi" FontSize="13" Padding="12,10" Margin="0,0,12,0"/>
-                                        <Button Grid.Column="3" Grid.Row="1" Command="{Binding SaveRecipeItemCommand}" Cursor="Hand">
-                                            <Button.Template>
-                                                <ControlTemplate TargetType="Button">
-                                                    <Border x:Name="addBorder" CornerRadius="10" Padding="16,10">
-                                                        <Border.Background>
-                                                            <LinearGradientBrush StartPoint="0,0" EndPoint="1,0">
-                                                                <GradientStop Color="#10B981" Offset="0"/>
-                                                                <GradientStop Color="#34D399" Offset="1"/>
-                                                            </LinearGradientBrush>
-                                                        </Border.Background>
-                                                        <TextBlock Text="Thêm" FontSize="13" FontWeight="SemiBold" Foreground="White"/>
-                                                    </Border>
-                                                    <ControlTemplate.Triggers>
-                                                        <Trigger Property="IsMouseOver" Value="True">
-                                                            <Setter TargetName="addBorder" Property="Opacity" Value="0.85"/>
-                                                        </Trigger>
-                                                    </ControlTemplate.Triggers>
-                                                </ControlTemplate>
-                                            </Button.Template>
-                                        </Button>
-                                    </Grid>
-                                </StackPanel>
                             </Border>
                         </StackPanel>
                     </ScrollViewer>

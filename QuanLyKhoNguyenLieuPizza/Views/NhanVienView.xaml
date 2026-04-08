@@ -159,8 +159,8 @@
                     <StackPanel>
                         <Grid Margin="0,0,0,12">
                             <TextBlock Text="Tổng nhân viên" FontSize="12" Foreground="{StaticResource Gray500}"/>
-                            <Border Background="{StaticResource LightBlue}" CornerRadius="8" Width="32" Height="32" HorizontalAlignment="Right">
-                                <ui:SymbolIcon Symbol="Person24" FontSize="14" Foreground="{StaticResource PrimaryBlue}" HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                            <Border Background="{StaticResource LightBlue}" CornerRadius="12" Width="40" Height="40" HorizontalAlignment="Right">
+                                <ui:SymbolIcon Symbol="Person24" FontSize="20" Foreground="{StaticResource PrimaryBlue}" HorizontalAlignment="Center" VerticalAlignment="Center"/>
                             </Border>
                         </Grid>
                         <TextBlock Text="{Binding TongSo}" FontSize="32" FontWeight="Bold" Foreground="{StaticResource Gray900}"/>
@@ -171,8 +171,8 @@
                     <StackPanel>
                         <Grid Margin="0,0,0,12">
                             <TextBlock Text="Đang làm việc" FontSize="12" Foreground="{StaticResource Gray500}"/>
-                            <Border Background="{StaticResource SuccessGreenLight}" CornerRadius="8" Width="32" Height="32" HorizontalAlignment="Right">
-                                <ui:SymbolIcon Symbol="Edit24" FontSize="16" Foreground="{StaticResource SuccessGreen}" HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                            <Border Background="{StaticResource SuccessGreenLight}" CornerRadius="12" Width="40" Height="40" HorizontalAlignment="Right">
+                                <ui:SymbolIcon Symbol="Edit24" FontSize="20" Foreground="{StaticResource SuccessGreen}" HorizontalAlignment="Center" VerticalAlignment="Center"/>
                             </Border>
                         </Grid>
                         <TextBlock Text="{Binding CountDangLamViec}" FontSize="32" FontWeight="Bold" Foreground="#059669"/>
@@ -183,8 +183,8 @@
                     <StackPanel>
                         <Grid Margin="0,0,0,12">
                             <TextBlock Text="Đã nghỉ việc" FontSize="12" Foreground="{StaticResource Gray500}"/>
-                            <Border Background="{StaticResource DangerRedLight}" CornerRadius="8" Width="32" Height="32" HorizontalAlignment="Right">
-                                <ui:SymbolIcon Symbol="Dismiss24" FontSize="16" Foreground="{StaticResource DangerRed}" HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                            <Border Background="{StaticResource DangerRedLight}" CornerRadius="12" Width="40" Height="40" HorizontalAlignment="Right">
+                                <ui:SymbolIcon Symbol="Dismiss24" FontSize="20" Foreground="{StaticResource DangerRed}" HorizontalAlignment="Center" VerticalAlignment="Center"/>
                             </Border>
                         </Grid>
                         <TextBlock Text="{Binding CountDaNghiViec}" FontSize="32" FontWeight="Bold" Foreground="#DC2626"/>

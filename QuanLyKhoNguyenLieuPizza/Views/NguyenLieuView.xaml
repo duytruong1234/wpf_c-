@@ -180,6 +180,7 @@
                         <ColumnDefinition Width="*"/>
                         <ColumnDefinition Width="Auto"/>
                         <ColumnDefinition Width="Auto"/>
+                        <ColumnDefinition Width="Auto"/>
                     </Grid.ColumnDefinitions>
 
                     <StackPanel Orientation="Horizontal" VerticalAlignment="Center">
@@ -199,7 +200,7 @@
                             BorderThickness="1"
                             CornerRadius="10"
                             Padding="12,10"
-                            Width="320" HorizontalAlignment="Right" Margin="0,0,16,0">
+                            Width="260" HorizontalAlignment="Right" Margin="16,0,12,0">
                         <Grid>
                             <Grid.ColumnDefinitions>
                                 <ColumnDefinition Width="Auto"/>
@@ -229,16 +230,23 @@
                         </Grid>
                     </Border>
 
-                    <!-- Nút Hành động -->
                     <Button Grid.Column="2" Style="{StaticResource OutlineButton}"
-                            Command="{Binding OpenLoaiNguyenLieuCommand}" Margin="0,0,12,0">
+                            Command="{Binding OpenQuyDoiCommand}" Margin="0,0,12,0">
                         <StackPanel Orientation="Horizontal">
-                            <ui:SymbolIcon Symbol="Settings24" FontSize="13" Foreground="{StaticResource PrimaryBlue}" Margin="0,0,8,0" VerticalAlignment="Center"/>
-                                <TextBlock Text="Thiết lập loại nguyên liệu" FontSize="14"/>
+                            <ui:SymbolIcon Symbol="ArrowSwap24" FontSize="13" Foreground="{StaticResource PrimaryBlue}" Margin="0,0,8,0" VerticalAlignment="Center"/>
+                            <TextBlock Text="Hệ số quy đổi" FontSize="14"/>
                         </StackPanel>
                     </Button>
 
-                    <Button Grid.Column="3" Command="{Binding OpenAddPopupCommand}" Cursor="Hand">
+                    <Button Grid.Column="3" Style="{StaticResource OutlineButton}"
+                            Command="{Binding OpenLoaiNguyenLieuCommand}" Margin="0,0,12,0">
+                        <StackPanel Orientation="Horizontal">
+                            <ui:SymbolIcon Symbol="Settings24" FontSize="13" Foreground="{StaticResource PrimaryBlue}" Margin="0,0,8,0" VerticalAlignment="Center"/>
+                                <TextBlock Text="Loại nguyên liệu" FontSize="14"/>
+                        </StackPanel>
+                    </Button>
+
+                    <Button Grid.Column="4" Command="{Binding OpenAddPopupCommand}" Cursor="Hand">
                         <Button.Template>
                             <ControlTemplate TargetType="Button">
                                 <Border x:Name="border" CornerRadius="10" Padding="20,12">
@@ -1012,5 +1020,309 @@
                 </Grid>
             </Border>
         </Grid>
+
+        <!-- QUY DOI DON VI POPUP -->
+        <Grid Visibility="{Binding QuyDoiVM.IsOpen, Converter={StaticResource BoolToVisibilityConverter}}" Background="#80000000">
+            <Border Background="White" CornerRadius="20" Width="820" MaxHeight="600"
+                    VerticalAlignment="Center" HorizontalAlignment="Center">
+                <Border.Effect>
+                    <DropShadowEffect BlurRadius="40" ShadowDepth="6" Direction="270" Color="#000000" Opacity="0.15"/>
+                </Border.Effect>
+                <Grid>
+                    <Grid.RowDefinitions>
+                        <RowDefinition Height="Auto"/>
+                        <RowDefinition Height="*"/>
+                    </Grid.RowDefinitions>
+
+                    <!-- Header -->
+                    <Border Grid.Row="0" Padding="24,20,24,16">
+                        <Border.Background>
+                            <LinearGradientBrush StartPoint="0,0" EndPoint="1,0">
+                                <GradientStop Color="#F59E0B" Offset="0"/>
+                                <GradientStop Color="#F97316" Offset="1"/>
+                            </LinearGradientBrush>
+                        </Border.Background>
+                        <Grid>
+                            <StackPanel>
+                                <TextBlock Text="Quản Lý Hệ Số Quy Đổi" FontSize="20" FontWeight="Bold" Foreground="White"/>
+                                <TextBlock Text="Cài đặt hệ số chuyển đổi giữa các đơn vị tính" FontSize="12" Foreground="#FFFFFFCC" Margin="0,4,0,0"/>
+                            </StackPanel>
+                            <Button HorizontalAlignment="Right" VerticalAlignment="Top" 
+                                    Command="{Binding QuyDoiVM.CloseCommand}" Cursor="Hand">
+                                <Button.Template>
+                                    <ControlTemplate TargetType="Button">
+                                        <Border x:Name="closeBorder" Width="32" Height="32" CornerRadius="16" Background="#30FFFFFF">
+                                            <TextBlock Text="&#xE711;" FontFamily="Segoe MDL2 Assets" FontSize="12" Foreground="White"
+                                                       HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                                        </Border>
+                                        <ControlTemplate.Triggers>
+                                            <Trigger Property="IsMouseOver" Value="True">
+                                                <Setter TargetName="closeBorder" Property="Background" Value="#50FFFFFF"/>
+                                            </Trigger>
+                                        </ControlTemplate.Triggers>
+                                    </ControlTemplate>
+                                </Button.Template>
+                            </Button>
+                        </Grid>
+                    </Border>
+
+                    <!-- Body -->
+                    <Grid Grid.Row="1" Margin="24,16,24,24">
+                        <Grid.ColumnDefinitions>
+                            <ColumnDefinition Width="240"/>
+                            <ColumnDefinition Width="16"/>
+                            <ColumnDefinition Width="*"/>
+                        </Grid.ColumnDefinitions>
+
+                        <!-- LEFT: Ingredient selector -->
+                        <Border Grid.Column="0" Background="{StaticResource Gray50}" CornerRadius="12" Padding="12">
+                            <Grid>
+                                <Grid.RowDefinitions>
+                                    <RowDefinition Height="Auto"/>
+                                    <RowDefinition Height="*"/>
+                                </Grid.RowDefinitions>
+
+                                <!-- Filter -->
+                                <Border Grid.Row="0" Background="White" BorderBrush="{StaticResource Gray200}" BorderThickness="1" CornerRadius="8" Padding="8,6" Margin="0,0,0,10">
+                                    <ComboBox ItemsSource="{Binding QuyDoiVM.LoaiFilters}"
+                                              SelectedItem="{Binding QuyDoiVM.FilterLoai}"
+                                              BorderThickness="0" Background="Transparent" FontSize="13"/>
+                                </Border>
+
+                                <!-- Ingredient grid -->
+                                <ScrollViewer Grid.Row="1" VerticalScrollBarVisibility="Auto">
+                                    <ItemsControl ItemsSource="{Binding QuyDoiVM.FilteredNguyenLieus}">
+                                        <ItemsControl.ItemsPanel>
+                                            <ItemsPanelTemplate>
+                                                <WrapPanel/>
+                                            </ItemsPanelTemplate>
+                                        </ItemsControl.ItemsPanel>
+                                        <ItemsControl.ItemTemplate>
+                                            <DataTemplate>
+                                                <Button Command="{Binding DataContext.QuyDoiVM.SelectNguyenLieuCommand, RelativeSource={RelativeSource AncestorType=UserControl}}"
+                                                        CommandParameter="{Binding}" Cursor="Hand" Margin="4">
+                                                    <Button.Template>
+                                                        <ControlTemplate TargetType="Button">
+                                                            <Border x:Name="itemBorder" Width="95" Padding="6,8" CornerRadius="10" Background="White"
+                                                                    BorderBrush="{StaticResource Gray200}" BorderThickness="1">
+                                                                <StackPanel HorizontalAlignment="Center">
+                                                                    <Border Width="48" Height="48" CornerRadius="24" ClipToBounds="True" 
+                                                                            Background="{StaticResource Gray100}" HorizontalAlignment="Center" Margin="0,0,0,6">
+                                                                        <Border.Style>
+                                                                            <Style TargetType="Border">
+                                                                                <Setter Property="Background" Value="{StaticResource Gray100}"/>
+                                                                            </Style>
+                                                                        </Border.Style>
+                                                                        <Border CornerRadius="24" ClipToBounds="True">
+                                                                            <Border.Background>
+                                                                                <ImageBrush ImageSource="{Binding HinhAnh, Converter={StaticResource ImagePathConverter}}" Stretch="UniformToFill"/>
+                                                                            </Border.Background>
+                                                                        </Border>
+                                                                    </Border>
+                                                                    <TextBlock Text="{Binding TenNguyenLieu}" FontSize="11" FontWeight="Medium" 
+                                                                               Foreground="{StaticResource Gray800}" TextAlignment="Center"
+                                                                               TextWrapping="Wrap" MaxWidth="85"/>
+                                                                </StackPanel>
+                                                            </Border>
+                                                            <ControlTemplate.Triggers>
+                                                                <DataTrigger Binding="{Binding IsSelected}" Value="True">
+                                                                    <Setter TargetName="itemBorder" Property="BorderBrush" Value="#F59E0B"/>
+                                                                    <Setter TargetName="itemBorder" Property="BorderThickness" Value="2"/>
+                                                                    <Setter TargetName="itemBorder" Property="Background" Value="#FFF7ED"/>
+                                                                </DataTrigger>
+                                                                <Trigger Property="IsMouseOver" Value="True">
+                                                                    <Setter TargetName="itemBorder" Property="Background" Value="{StaticResource Gray50}"/>
+                                                                </Trigger>
+                                                            </ControlTemplate.Triggers>
+                                                        </ControlTemplate>
+                                                    </Button.Template>
+                                                </Button>
+                                            </DataTemplate>
+                                        </ItemsControl.ItemTemplate>
+                                    </ItemsControl>
+                                </ScrollViewer>
+                            </Grid>
+                        </Border>
+
+                        <!-- RIGHT: Conversion table -->
+                        <Grid Grid.Column="2">
+                            <Grid.RowDefinitions>
+                                <RowDefinition Height="Auto"/>
+                                <RowDefinition Height="*"/>
+                                <RowDefinition Height="Auto"/>
+                                <RowDefinition Height="Auto"/>
+                            </Grid.RowDefinitions>
+
+                            <!-- Selected ingredient name -->
+                            <StackPanel Grid.Row="0" Margin="0,0,0,12">
+                                <TextBlock Text="{Binding QuyDoiVM.SelectedNguyenLieu.TenNguyenLieu, FallbackValue='Chọn nguyên liệu'}"
+                                           FontSize="18" FontWeight="Bold" Foreground="{StaticResource Gray900}"/>
+                                <TextBlock FontSize="12" Foreground="{StaticResource Gray400}" Margin="0,4,0,0">
+                                    <Run Text="Đơn vị chính: "/><Run Text="{Binding QuyDoiVM.SelectedNguyenLieu.DonViChinh, FallbackValue='-'}" FontWeight="SemiBold"/>
+                                </TextBlock>
+                            </StackPanel>
+
+                            <!-- Conversion table -->
+                            <Border Grid.Row="1" BorderBrush="{StaticResource Gray200}" BorderThickness="1" CornerRadius="10" ClipToBounds="True">
+                                <Grid>
+                                    <Grid.RowDefinitions>
+                                        <RowDefinition Height="Auto"/>
+                                        <RowDefinition Height="*"/>
+                                    </Grid.RowDefinitions>
+
+                                    <!-- Table header -->
+                                    <Grid Grid.Row="0" Background="{StaticResource Gray50}">
+                                        <Grid.ColumnDefinitions>
+                                            <ColumnDefinition Width="*"/>
+                                            <ColumnDefinition Width="90"/>
+                                            <ColumnDefinition Width="80"/>
+                                            <ColumnDefinition Width="80"/>
+                                            <ColumnDefinition Width="50"/>
+                                        </Grid.ColumnDefinitions>
+                                        <TextBlock Grid.Column="0" Text="Đơn Vị" FontSize="12" FontWeight="SemiBold" Foreground="{StaticResource Gray500}" Padding="14,10" VerticalAlignment="Center"/>
+                                        <TextBlock Grid.Column="1" Text="Hệ Số" FontSize="12" FontWeight="SemiBold" Foreground="{StaticResource Gray500}" Padding="8,10" HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                                        <TextBlock Grid.Column="2" Text="Loại" FontSize="12" FontWeight="SemiBold" Foreground="{StaticResource Gray500}" Padding="8,10" HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                                        <TextBlock Grid.Column="3" Text="Mặc Định" FontSize="12" FontWeight="SemiBold" Foreground="{StaticResource Gray500}" Padding="8,10" HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                                        <TextBlock Grid.Column="4" Text="Xóa" FontSize="12" FontWeight="SemiBold" Foreground="{StaticResource Gray500}" Padding="8,10" HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                                    </Grid>
+
+                                    <!-- Table rows -->
+                                    <ScrollViewer Grid.Row="1" VerticalScrollBarVisibility="Auto" MaxHeight="250">
+                                        <ItemsControl ItemsSource="{Binding QuyDoiVM.QuyDoiRows}">
+                                            <ItemsControl.ItemTemplate>
+                                                <DataTemplate>
+                                                    <Border BorderBrush="{StaticResource Gray100}" BorderThickness="0,0,0,1" Padding="0,4">
+                                                        <Grid>
+                                                            <Grid.ColumnDefinitions>
+                                                                <ColumnDefinition Width="*"/>
+                                                                <ColumnDefinition Width="90"/>
+                                                                <ColumnDefinition Width="80"/>
+                                                                <ColumnDefinition Width="80"/>
+                                                                <ColumnDefinition Width="50"/>
+                                                            </Grid.ColumnDefinitions>
+
+                                                            <!-- Tên đơn vị -->
+                                                            <TextBlock Grid.Column="0" Text="{Binding TenDonVi}" FontSize="14" FontWeight="Medium" 
+                                                                       Foreground="{StaticResource Gray800}" Padding="14,8" VerticalAlignment="Center"/>
+
+                                                            <!-- Hệ số (editable) -->
+                                                            <Border Grid.Column="1" Background="White" BorderBrush="{StaticResource Gray200}" BorderThickness="1" 
+                                                                    CornerRadius="6" Margin="4,4" Padding="6,4">
+                                                                <TextBox Text="{Binding HeSoText, UpdateSourceTrigger=PropertyChanged}" 
+                                                                         BorderThickness="0" Background="Transparent" FontSize="13" 
+                                                                         HorizontalContentAlignment="Center" VerticalContentAlignment="Center"/>
+                                                            </Border>
+
+                                                            <!-- Loại đơn vị indicator -->
+                                                            <Border Grid.Column="2" HorizontalAlignment="Center" VerticalAlignment="Center" Margin="4">
+                                                                <TextBlock Text="{Binding LoaiDonVi}" FontSize="11" FontWeight="Medium" HorizontalAlignment="Center">
+                                                                    <TextBlock.Style>
+                                                                        <Style TargetType="TextBlock">
+                                                                            <Setter Property="Foreground" Value="#F59E0B"/>
+                                                                            <Style.Triggers>
+                                                                                <DataTrigger Binding="{Binding LaDonViChuan}" Value="True">
+                                                                                    <Setter Property="Foreground" Value="#10B981"/>
+                                                                                </DataTrigger>
+                                                                            </Style.Triggers>
+                                                                        </Style>
+                                                                    </TextBlock.Style>
+                                                                </TextBlock>
+                                                            </Border>
+
+                                                            <!-- Mặc định checkbox -->
+                                                            <CheckBox Grid.Column="3" IsChecked="{Binding LaDonViChuan}" 
+                                                                      HorizontalAlignment="Center" VerticalAlignment="Center"/>
+
+                                                            <!-- Xóa button -->
+                                                            <Button Grid.Column="4" Command="{Binding DeleteCommand}" Cursor="Hand"
+                                                                    HorizontalAlignment="Center" VerticalAlignment="Center">
+                                                                <Button.Template>
+                                                                    <ControlTemplate TargetType="Button">
+                                                                        <Border x:Name="delBorder" Width="28" Height="28" CornerRadius="6" Background="{StaticResource DangerRedLight}">
+                                                                            <TextBlock Text="&#xE74D;" FontFamily="Segoe MDL2 Assets" FontSize="12" 
+                                                                                       Foreground="{StaticResource DangerRed}" HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                                                                        </Border>
+                                                                        <ControlTemplate.Triggers>
+                                                                            <Trigger Property="IsMouseOver" Value="True">
+                                                                                <Setter TargetName="delBorder" Property="Background" Value="#FEE2E2"/>
+                                                                            </Trigger>
+                                                                        </ControlTemplate.Triggers>
+                                                                    </ControlTemplate>
+                                                                </Button.Template>
+                                                            </Button>
+                                                        </Grid>
+                                                    </Border>
+                                                </DataTemplate>
+                                            </ItemsControl.ItemTemplate>
+                                        </ItemsControl>
+                                    </ScrollViewer>
+                                </Grid>
+                            </Border>
+
+                            <!-- Add new unit row -->
+                            <Grid Grid.Row="2" Margin="0,12,0,0">
+                                <Grid.ColumnDefinitions>
+                                    <ColumnDefinition Width="*"/>
+                                    <ColumnDefinition Width="Auto"/>
+                                </Grid.ColumnDefinitions>
+                                <Border Background="White" BorderBrush="{StaticResource Gray200}" BorderThickness="1" CornerRadius="8" Padding="8,4">
+                                    <ComboBox ItemsSource="{Binding QuyDoiVM.DonViTinhs}" 
+                                              SelectedItem="{Binding QuyDoiVM.SelectedNewDonVi}"
+                                              DisplayMemberPath="TenDonVi"
+                                              BorderThickness="0" Background="Transparent" FontSize="13"/>
+                                </Border>
+                                <Button Grid.Column="1" Command="{Binding QuyDoiVM.AddNewRowCommand}" Cursor="Hand" Margin="8,0,0,0">
+                                    <Button.Template>
+                                        <ControlTemplate TargetType="Button">
+                                            <Border x:Name="addBorder" Background="{StaticResource LightBlue}" CornerRadius="8" Padding="14,8">
+                                                <StackPanel Orientation="Horizontal">
+                                                    <ui:SymbolIcon Symbol="Add24" FontSize="14" Foreground="{StaticResource PrimaryBlue}" Margin="0,0,6,0"/>
+                                                    <TextBlock Text="Thêm" FontSize="13" FontWeight="Medium" Foreground="{StaticResource PrimaryBlue}"/>
+                                                </StackPanel>
+                                            </Border>
+                                            <ControlTemplate.Triggers>
+                                                <Trigger Property="IsMouseOver" Value="True">
+                                                    <Setter TargetName="addBorder" Property="Background" Value="#DCE0FF"/>
+                                                </Trigger>
+                                            </ControlTemplate.Triggers>
+                                        </ControlTemplate>
+                                    </Button.Template>
+                                </Button>
+                            </Grid>
+
+                            <!-- Save button -->
+                            <StackPanel Grid.Row="3" Orientation="Horizontal" HorizontalAlignment="Right" Margin="0,16,0,0">
+                                <Button Command="{Binding QuyDoiVM.SaveCommand}" Cursor="Hand">
+                                    <Button.Template>
+                                        <ControlTemplate TargetType="Button">
+                                            <Border x:Name="saveBorder" CornerRadius="10" Padding="28,12">
+                                                <Border.Background>
+                                                    <LinearGradientBrush StartPoint="0,0" EndPoint="1,0">
+                                                        <GradientStop Color="#F59E0B" Offset="0"/>
+                                                        <GradientStop Color="#F97316" Offset="1"/>
+                                                    </LinearGradientBrush>
+                                                </Border.Background>
+                                                <TextBlock Text="Lưu" FontSize="14" FontWeight="SemiBold" Foreground="White"/>
+                                            </Border>
+                                            <ControlTemplate.Triggers>
+                                                <Trigger Property="IsMouseOver" Value="True">
+                                                    <Setter TargetName="saveBorder" Property="Opacity" Value="0.9"/>
+                                                </Trigger>
+                                            </ControlTemplate.Triggers>
+                                        </ControlTemplate>
+                                    </Button.Template>
+                                </Button>
+
+                                <Button Command="{Binding QuyDoiVM.AddNewRowCommand}" Cursor="Hand" Margin="10,0,0,0"
+                                        Visibility="Collapsed">
+                                    <!-- Hidden Thêm Mới button placeholder -->
+                                </Button>
+                            </StackPanel>
+                        </Grid>
+                    </Grid>
+                </Grid>
+            </Border>
+        </Grid>
+
     </Grid>
 </UserControl>

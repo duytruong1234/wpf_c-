@@ -109,16 +109,6 @@
                 </TextBlock>
             </StackPanel>
 
-            <!-- Version info at bottom right -->
-            <TextBlock Text="v1.0.0"
-                       FontSize="11" Foreground="#94A3B8"
-                       HorizontalAlignment="Right" VerticalAlignment="Bottom"
-                       Margin="0,0,16,12"
-                       FontFamily="Segoe UI Variable, Segoe UI, Arial">
-                <TextBlock.Effect>
-                    <DropShadowEffect BlurRadius="3" ShadowDepth="1" Color="Black" Opacity="0.5"/>
-                </TextBlock.Effect>
-            </TextBlock>
         </Grid>
     </Border>
 </Window>
