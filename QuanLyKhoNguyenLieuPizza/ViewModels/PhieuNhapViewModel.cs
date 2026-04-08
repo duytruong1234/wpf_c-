@@ -590,6 +590,16 @@ public class PhieuNhapViewModel : BaseViewModel
                 DenNgay,
                 trangThaiFilter.Any() ? trangThaiFilter : null);
 
+            // Nhân viên chỉ thấy phiếu của mình, quản lý thấy tất cả
+            if (IsNhanVienKho)
+            {
+                var currentUser = CurrentUserSession.Instance.CurrentUser;
+                if (currentUser != null && currentUser.NhanVienID.HasValue)
+                {
+                    phieuNhaps = phieuNhaps.Where(p => p.NhanVienNhapID == currentUser.NhanVienID.Value).ToList();
+                }
+            }
+
             PhieuNhaps = new ObservableCollection<PhieuNhap>(phieuNhaps);
 
             // Đếm số phiếu theo trạng thái
@@ -597,11 +607,7 @@ public class PhieuNhapViewModel : BaseViewModel
             SoPhieuDaDuyet = phieuNhaps.Count(p => p.TrangThai == 2);
             SoPhieuDaHuy = phieuNhaps.Count(p => p.TrangThai == 3);
 
-            TongTien = await _databaseService.GetTotalTongTienPhieuNhapAsync(
-                SelectedNhanVienFilter?.NhanVienID,
-                SelectedNhaCungCapFilter?.NhaCungCapID,
-                TuNgay,
-                DenNgay);
+            TongTien = phieuNhaps.Sum(p => p.TongTien);
         }
         catch (Exception ex)
         {

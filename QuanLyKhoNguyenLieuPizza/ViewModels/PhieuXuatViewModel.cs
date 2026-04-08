@@ -398,6 +398,7 @@ public class PhieuXuatViewModel : BaseViewModel
                 DenNgay,
                 trangThaiFilter.Any() ? trangThaiFilter : null);
 
+            // Nhân viên chỉ thấy phiếu của mình, quản lý thấy tất cả
             if (IsNhanVien)
             {
                 var currentUser = CurrentUserSession.Instance.CurrentUser;

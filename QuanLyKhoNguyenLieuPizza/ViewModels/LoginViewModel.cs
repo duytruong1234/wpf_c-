@@ -1,4 +1,4 @@
-using System.Windows.Input;
+Ôªøusing System.Windows.Input;
 using QuanLyKhoNguyenLieuPizza.Core.Commands;
 using QuanLyKhoNguyenLieuPizza.Core.Interfaces;
 using QuanLyKhoNguyenLieuPizza.Services;
@@ -68,7 +68,7 @@ public class LoginViewModel : BaseViewModel
         LoginCommand = new AsyncRelayCommand(ExecuteLoginAsync, CanExecuteLogin);
         ForgotPasswordCommand = new RelayCommand(ExecuteForgotPassword);
         
-        // T?i thÙng tin dang nh?p d„ luu (n?u cÛ)
+        // T?i th√¥ng tin dang nh?p d√£ luu (n?u c√≥)
         LoadSavedCredentials();
         
         // Ki?m tra k?t n?i khi kh?i d?ng
@@ -76,7 +76,7 @@ public class LoginViewModel : BaseViewModel
     }
 
     /// <summary>
-    /// T?i thÙng tin dang nh?p d„ luu t? l?n tru?c
+    /// T?i th√¥ng tin dang nh?p d√£ luu t? l?n tru?c
     /// </summary>
     private void LoadSavedCredentials()
     {
@@ -90,12 +90,12 @@ public class LoginViewModel : BaseViewModel
                 Password = savedPassword;
                 RememberMe = true;
                 
-                System.Diagnostics.Debug.WriteLine($"–„ t?i thÙng tin dang nh?p d„ luu cho: {savedUsername}");
+                System.Diagnostics.Debug.WriteLine($"√ê√£ t?i th√¥ng tin dang nh?p d√£ luu cho: {savedUsername}");
             }
         }
         catch (Exception ex)
         {
-            System.Diagnostics.Debug.WriteLine($"L?i khi t?i thÙng tin dang nh?p: {ex.Message}");
+            System.Diagnostics.Debug.WriteLine($"L?i khi t?i th√¥ng tin dang nh?p: {ex.Message}");
         }
     }
 
@@ -122,7 +122,7 @@ public class LoginViewModel : BaseViewModel
         {
             if (string.IsNullOrWhiteSpace(Username) || string.IsNullOrWhiteSpace(Password))
             {
-                ErrorMessage = "Vui lÚng nh?p d?y d? thÙng tin dang nh?p!";
+                ErrorMessage = "Vui l√≤ng nh·∫≠p ƒë·∫ßy ƒë·ªß th√¥ng tin ƒëƒÉng nh·∫≠p!";
                 return;
             }
 
@@ -130,7 +130,7 @@ public class LoginViewModel : BaseViewModel
             
             if (taiKhoan != null)
             {
-                // X? l˝ ghi nh? dang nh?p
+                // X? l√Ω ghi nh? dang nh?p
                 if (RememberMe)
                 {
                     _preferencesService.SaveLoginCredentials(Username, Password);
@@ -145,12 +145,12 @@ public class LoginViewModel : BaseViewModel
             }
             else
             {
-                ErrorMessage = "TÍn dang nh?p ho?c m?t kh?u khÙng d˙ng!";
+                ErrorMessage = "T√™n ƒëƒÉng nh·∫≠p ho·∫∑c m·∫≠t kh·∫©u kh√¥ng ƒë√∫ng!";
             }
         }
         catch (Exception ex)
         {
-            ErrorMessage = $"L?i: {ex.Message}";
+            ErrorMessage = $"L·ªói: {ex.Message}";
         }
         finally
         {
@@ -165,7 +165,7 @@ public class LoginViewModel : BaseViewModel
 
     public void Reset()
     {
-        // Ch? xÛa password v‡ error n?u KH‘NG ghi nh? dang nh?p
+        // Ch? x√≥a password v√† error n?u KH√îNG ghi nh? dang nh?p
         if (!RememberMe)
         {
             Username = string.Empty;
@@ -174,3 +174,4 @@ public class LoginViewModel : BaseViewModel
         ErrorMessage = string.Empty;
     }
 }
+

@@ -696,8 +696,8 @@
                                             <TextBlock Grid.Column="0" Text="{Binding MaPhieuBan}" Style="{StaticResource TableCellStyle}" FontWeight="SemiBold"/>
                                             <TextBlock Grid.Column="1" Text="{Binding NgayBan, StringFormat={}{0:dd/MM/yyyy HH:mm}}" Style="{StaticResource TableCellStyle}"/>
                                             <TextBlock Grid.Column="2" Text="{Binding NhanVienBan.HoTen}" Style="{StaticResource TableCellStyle}"/>
-                                            <TextBlock Grid.Column="3" Text="{Binding TongTien, StringFormat={}{0:N0} đ}" Style="{StaticResource TableCellStyle}" FontWeight="SemiBold" Foreground="{StaticResource PrimaryBlue}"/>
-                                            <TextBlock Grid.Column="4" Text="{Binding PhuongThucTT}" Style="{StaticResource TableCellStyle}" Foreground="{StaticResource Gray600}"/>
+                                            <TextBlock Grid.Column="3" Text="{Binding TongTien, StringFormat={}{0:N0} đ}" Style="{StaticResource TableCellStyle}" Foreground="{StaticResource Gray600}"/>
+                                            <TextBlock Grid.Column="4" Text="{Binding ThanhToan, StringFormat={}{0:N0} đ}" Style="{StaticResource TableCellStyle}" FontWeight="SemiBold" Foreground="{StaticResource PrimaryBlue}"/>
 
                                             <!-- Thao tác Nút -->
                                             <StackPanel Grid.Column="5" Orientation="Horizontal" HorizontalAlignment="Center" VerticalAlignment="Center">
@@ -1052,10 +1052,20 @@
                                 <TextBlock Text="{Binding SelectedPhieuBan.GhiChu}" FontSize="13" Foreground="{StaticResource Gray800}" TextWrapping="Wrap"/>
                             </StackPanel>
                         </Border>
-                        <Grid>
-                            <TextBlock Text="T&#x1ED5;ng ti&#x1EC1;n:" FontSize="16" FontWeight="SemiBold" Foreground="{StaticResource Gray600}" VerticalAlignment="Center"/>
-                            <TextBlock Text="{Binding SelectedPhieuBan.TongTien, StringFormat={}{0:N0} &#x111;}" FontSize="22" FontWeight="Bold" Foreground="{StaticResource PrimaryBlue}" HorizontalAlignment="Right" VerticalAlignment="Center"/>
+                        <Grid Margin="0,0,0,6">
+                            <TextBlock Text="Tổng tiền hàng:" FontSize="13" Foreground="{StaticResource Gray500}" VerticalAlignment="Center"/>
+                            <TextBlock Text="{Binding SelectedPhieuBan.TongTien, StringFormat={}{0:N0} đ}" FontSize="13" FontWeight="Medium" Foreground="{StaticResource Gray700}" HorizontalAlignment="Right" VerticalAlignment="Center"/>
                         </Grid>
+                        <Grid Margin="0,0,0,8">
+                            <TextBlock Text="Giảm giá:" FontSize="13" Foreground="{StaticResource Gray500}" VerticalAlignment="Center"/>
+                            <TextBlock Text="{Binding SelectedPhieuBan.GiamGia, StringFormat=-{0:N0} đ}" FontSize="13" FontWeight="Medium" Foreground="{StaticResource DangerRed}" HorizontalAlignment="Right" VerticalAlignment="Center"/>
+                        </Grid>
+                        <Border BorderBrush="{StaticResource Gray200}" BorderThickness="0,1,0,0" Padding="0,8,0,0">
+                            <Grid>
+                                <TextBlock Text="Thanh toán:" FontSize="16" FontWeight="Bold" Foreground="{StaticResource Gray800}" VerticalAlignment="Center"/>
+                                <TextBlock Text="{Binding SelectedPhieuBan.ThanhToan, StringFormat={}{0:N0} đ}" FontSize="22" FontWeight="Bold" Foreground="{StaticResource PrimaryBlue}" HorizontalAlignment="Right" VerticalAlignment="Center"/>
+                            </Grid>
+                        </Border>
                     </StackPanel>
                 </Grid>
             </Border>
@@ -1174,11 +1184,89 @@
         </Grid>
 
         <!-- ═══════════════ Màn hình Chờ ═══════════════ -->
-        <Border Background="#80FFFFFF" Visibility="{Binding IsLoading, Converter={StaticResource BoolToVisibilityConverter}}">
+        <Grid Visibility="{Binding IsLoading, Converter={StaticResource BoolToVisibilityConverter}}" Panel.ZIndex="999">
+            <!-- Nền tối sang trọng (Dark SlateBlur effect) -->
+            <Border Background="#E60F172A" />
+            
             <StackPanel HorizontalAlignment="Center" VerticalAlignment="Center">
-                <ui:SymbolIcon Symbol="ArrowSync24" FontSize="36" HorizontalAlignment="Center" Foreground="{StaticResource PrimaryBlue}"/>
-                <TextBlock Text="Đang tải dữ liệu..." FontSize="14" Foreground="{StaticResource Gray500}" Margin="0,8,0,0"/>
+                <Grid Width="120" Height="120" Margin="0,0,0,30" HorizontalAlignment="Center">
+                    <!-- Vòng tròn nền mờ -->
+                    <Ellipse Width="120" Height="120" Stroke="#1E293B" StrokeThickness="4"/>
+                    
+                    <!-- Progress ring hiện đại -->
+                    <ui:ProgressRing IsIndeterminate="True" Foreground="#818CF8" Width="120" Height="120" BorderThickness="4" HorizontalAlignment="Center" VerticalAlignment="Center">
+                        <ui:ProgressRing.Effect>
+                            <DropShadowEffect BlurRadius="15" Color="#818CF8" Opacity="0.6" ShadowDepth="0"/>
+                        </ui:ProgressRing.Effect>
+                    </ui:ProgressRing>
+                    
+                    <!-- Biểu tượng giữa -->
+                    <Border Width="60" Height="60" CornerRadius="30" Background="#1E293B" HorizontalAlignment="Center" VerticalAlignment="Center">
+                        <ui:SymbolIcon Symbol="WalletCreditCard24" FontSize="26" Foreground="#E0E7FF" HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                    </Border>
+                </Grid>
+                
+                <TextBlock Text="ĐANG XỬ LÝ GIAO DỊCH" FontSize="20" FontWeight="Black" Foreground="White" HorizontalAlignment="Center">
+                    <TextBlock.Effect>
+                        <DropShadowEffect BlurRadius="12" Color="#818CF8" Opacity="0.4" ShadowDepth="0"/>
+                    </TextBlock.Effect>
+                </TextBlock>
+                <TextBlock Text="Hệ thống đang lưu hóa đơn, vui lòng đợi..." FontSize="14" Foreground="#94A3B8" HorizontalAlignment="Center" Margin="0,8,0,0"/>
+
+                <!-- Loading Dots hiện đại -->
+                <StackPanel Orientation="Horizontal" HorizontalAlignment="Center" Margin="0,20,0,0">
+                    <!-- Dot 1 -->
+                    <Ellipse Width="8" Height="8" Fill="#818CF8" Margin="4" Opacity="0.3">
+                        <Ellipse.RenderTransform>
+                            <TranslateTransform Y="0"/>
+                        </Ellipse.RenderTransform>
+                        <Ellipse.Triggers>
+                            <EventTrigger RoutedEvent="Loaded">
+                                <BeginStoryboard>
+                                    <Storyboard RepeatBehavior="Forever" AutoReverse="True">
+                                        <DoubleAnimation Storyboard.TargetProperty="Opacity" From="0.3" To="1.0" Duration="0:0:0.6"/>
+                                        <DoubleAnimation Storyboard.TargetProperty="RenderTransform.(TranslateTransform.Y)" From="0" To="-8" Duration="0:0:0.6"/>
+                                    </Storyboard>
+                                </BeginStoryboard>
+                            </EventTrigger>
+                        </Ellipse.Triggers>
+                    </Ellipse>
+                    
+                    <!-- Dot 2 -->
+                    <Ellipse Width="8" Height="8" Fill="#818CF8" Margin="4" Opacity="0.3">
+                        <Ellipse.RenderTransform>
+                            <TranslateTransform Y="0"/>
+                        </Ellipse.RenderTransform>
+                        <Ellipse.Triggers>
+                            <EventTrigger RoutedEvent="Loaded">
+                                <BeginStoryboard>
+                                    <Storyboard RepeatBehavior="Forever" AutoReverse="True">
+                                        <DoubleAnimation Storyboard.TargetProperty="Opacity" From="0.3" To="1.0" Duration="0:0:0.6" BeginTime="0:0:0.2"/>
+                                        <DoubleAnimation Storyboard.TargetProperty="RenderTransform.(TranslateTransform.Y)" From="0" To="-8" Duration="0:0:0.6" BeginTime="0:0:0.2"/>
+                                    </Storyboard>
+                                </BeginStoryboard>
+                            </EventTrigger>
+                        </Ellipse.Triggers>
+                    </Ellipse>
+                    
+                    <!-- Dot 3 -->
+                    <Ellipse Width="8" Height="8" Fill="#818CF8" Margin="4" Opacity="0.3">
+                        <Ellipse.RenderTransform>
+                            <TranslateTransform Y="0"/>
+                        </Ellipse.RenderTransform>
+                        <Ellipse.Triggers>
+                            <EventTrigger RoutedEvent="Loaded">
+                                <BeginStoryboard>
+                                    <Storyboard RepeatBehavior="Forever" AutoReverse="True">
+                                        <DoubleAnimation Storyboard.TargetProperty="Opacity" From="0.3" To="1.0" Duration="0:0:0.6" BeginTime="0:0:0.4"/>
+                                        <DoubleAnimation Storyboard.TargetProperty="RenderTransform.(TranslateTransform.Y)" From="0" To="-8" Duration="0:0:0.6" BeginTime="0:0:0.4"/>
+                                    </Storyboard>
+                                </BeginStoryboard>
+                            </EventTrigger>
+                        </Ellipse.Triggers>
+                    </Ellipse>
+                </StackPanel>
             </StackPanel>
-        </Border>
+        </Grid>
     </Grid>
 </UserControl>

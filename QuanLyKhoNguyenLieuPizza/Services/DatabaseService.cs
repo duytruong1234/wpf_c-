@@ -3689,7 +3689,27 @@ public class DatabaseService : IDatabaseService
         {
             using var conn = GetConnection();
             await conn.OpenAsync();
-            using var cmd = new SqlCommand("UPDATE HangHoa SET TinhTrang = 0 WHERE MaHangHoa = @Ma", conn);
+            using var cmd = new SqlCommand(@"
+                BEGIN TRY
+                    BEGIN TRAN;
+                    DELETE FROM CongThuc_Pizza WHERE MaHangHoa = @Ma;
+                    DELETE FROM GiaTheo_Size WHERE MaHangHoa = @Ma;
+                    DELETE FROM HangHoa WHERE MaHangHoa = @Ma;
+                    COMMIT TRAN;
+                END TRY
+                BEGIN CATCH
+                    ROLLBACK TRAN;
+                    -- Lỗi 547 là vi phạm khoá ngoại (vd: đã từng bán trong hoá đơn)
+                    -- Trường hợp này ta fallback về Soft Delete (Ngừng bán)
+                    IF ERROR_NUMBER() = 547
+                    BEGIN
+                        UPDATE HangHoa SET TinhTrang = 0 WHERE MaHangHoa = @Ma;
+                    END
+                    ELSE
+                    BEGIN
+                        THROW;
+                    END
+                END CATCH", conn);
             cmd.Parameters.AddWithValue("@Ma", maHangHoa);
             await cmd.ExecuteNonQueryAsync();
             return true;
@@ -4882,7 +4902,7 @@ public class DatabaseService : IDatabaseService
             using var conn = GetConnection();
             await conn.OpenAsync();
             var sql = @"SELECT pb.MaPhieuBan, pb.NhanVienBanID, pb.NgayBan, pb.TongTien,
-                              nv.HoTen, pb.GhiChu, pb.PhuongThucTT
+                              nv.HoTen, pb.GhiChu, pb.PhuongThucTT, pb.GiamGia, pb.ThanhToan
                        FROM PhieuBanHang pb
                        LEFT JOIN NhanVien nv ON pb.NhanVienBanID = nv.NhanVienID
                        WHERE 1=1";
@@ -4908,7 +4928,9 @@ public class DatabaseService : IDatabaseService
                     NgayBan = reader.IsDBNull(2) ? null : reader.GetDateTime(2),
                     TongTien = reader.IsDBNull(3) ? null : reader.GetDecimal(3),
                     GhiChu = reader.IsDBNull(5) ? null : reader.GetString(5),
-                    PhuongThucTT = reader.IsDBNull(6) ? null : reader.GetString(6)
+                    PhuongThucTT = reader.IsDBNull(6) ? null : reader.GetString(6),
+                    GiamGia = reader.IsDBNull(7) ? null : reader.GetDecimal(7),
+                    ThanhToan = reader.IsDBNull(8) ? null : reader.GetDecimal(8)
                 };
                 if (!reader.IsDBNull(4))
                 {
@@ -4935,7 +4957,7 @@ public class DatabaseService : IDatabaseService
             using var conn = GetConnection();
             await conn.OpenAsync();
             var sql = @"SELECT pb.MaPhieuBan, pb.NhanVienBanID, pb.NgayBan, pb.TongTien,
-                              nv.HoTen, pb.GhiChu, pb.PhuongThucTT
+                              nv.HoTen, pb.GhiChu, pb.PhuongThucTT, pb.GiamGia, pb.ThanhToan
                        FROM PhieuBanHang pb
                        LEFT JOIN NhanVien nv ON pb.NhanVienBanID = nv.NhanVienID
                        WHERE pb.MaPhieuBan = @MaPhieuBan";
@@ -4951,7 +4973,9 @@ public class DatabaseService : IDatabaseService
                     NgayBan = reader.IsDBNull(2) ? null : reader.GetDateTime(2),
                     TongTien = reader.IsDBNull(3) ? null : reader.GetDecimal(3),
                     GhiChu = reader.IsDBNull(5) ? null : reader.GetString(5),
-                    PhuongThucTT = reader.IsDBNull(6) ? null : reader.GetString(6)
+                    PhuongThucTT = reader.IsDBNull(6) ? null : reader.GetString(6),
+                    GiamGia = reader.IsDBNull(7) ? null : reader.GetDecimal(7),
+                    ThanhToan = reader.IsDBNull(8) ? null : reader.GetDecimal(8)
                 };
                 if (!reader.IsDBNull(4))
                 {

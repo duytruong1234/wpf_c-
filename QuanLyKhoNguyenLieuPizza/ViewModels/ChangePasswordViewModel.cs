@@ -1,4 +1,4 @@
-using System.Windows.Input;
+﻿using System.Windows.Input;
 using QuanLyKhoNguyenLieuPizza.Core.Commands;
 using QuanLyKhoNguyenLieuPizza.Core.Interfaces;
 using QuanLyKhoNguyenLieuPizza.Services;
@@ -156,23 +156,23 @@ public class ChangePasswordViewModel : BaseViewModel
         PasswordStrength = strength;
         PasswordStrengthText = strength switch
         {
-            1 => "Y?u",
-            2 => "Trung b�nh",
-            3 => "M?nh",
-            4 => "R?t m?nh",
+            1 => "Yáº¿u",
+            2 => "Trung bình",
+            3 => "Máº¡nh",
+            4 => "R?t Máº¡nh",
             _ => string.Empty
         };
     }
 
     private void CheckPasswordMatch()
     {
-        // Ch? hi?n th? khi c? hai tru?ng d?u c� n?i dung
+        // Ch? hi?n th? khi c? hai tru?ng d?u có n?i dung
         ShowPasswordMatch = !string.IsNullOrEmpty(NewPassword) && !string.IsNullOrEmpty(ConfirmPassword);
 
         if (ShowPasswordMatch)
         {
             PasswordsMatch = NewPassword == ConfirmPassword;
-            PasswordMatchText = PasswordsMatch ? "M?t kh?u kh?p" : "M?t kh?u kh�ng kh?p";
+            PasswordMatchText = PasswordsMatch ? "Máº­t kháº©u khá»›p" : "Máº­t kháº©u khÃ´ng khá»›p";
         }
     }
 
@@ -194,7 +194,7 @@ public class ChangePasswordViewModel : BaseViewModel
         {
             if (string.IsNullOrEmpty(Email))
             {
-                ErrorMessage = "Email kh�ng h?p l?!";
+                ErrorMessage = "Email không h?p l?!";
                 return;
             }
 
@@ -206,7 +206,7 @@ public class ChangePasswordViewModel : BaseViewModel
             }
             else
             {
-                ErrorMessage = "Kh�ng th? d?i m?t kh?u. Vui l�ng th? l?i!";
+                ErrorMessage = "Không th? d?i m?t kh?u. Vui lòng th? Lá»—i!";
             }
         }
         catch (Exception ex)

@@ -41,7 +41,7 @@ public class QuyDoiDonViItemViewModel : BaseViewModel
     public decimal HeSo
     {
         get => _heSo;
-        set => SetProperty(ref _heSo, value);
+        set => SetProperty(ref _heSo, value / 1.000000000000000000000000000000000m);
     }
     
     public bool LaDonViChuan
@@ -631,12 +631,26 @@ public class TonKhoViewModel : BaseViewModel
 
     private async Task ExecuteSaveNewQuyDoiAsync()
     {
-        if (SelectedNguyenLieu == null || SelectedDonViXuat == null) return;
-        
-        if (!decimal.TryParse(HeSoNhap, out decimal heSo) || heSo <= 0)
+        System.Diagnostics.Debug.WriteLine($"=== ExecuteSaveNewQuyDoiAsync called ===");
+        System.Diagnostics.Debug.WriteLine($"SelectedNguyenLieu: {SelectedNguyenLieu?.TenNguyenLieu ?? "NULL"}");
+        System.Diagnostics.Debug.WriteLine($"SelectedDonViXuat: {SelectedDonViXuat?.TenDonVi ?? "NULL"} (DonViID: {SelectedDonViXuat?.DonViID})");
+        System.Diagnostics.Debug.WriteLine($"HeSoNhap: '{HeSoNhap}'");
+
+        if (SelectedNguyenLieu == null || SelectedDonViXuat == null)
         {
+            System.Diagnostics.Debug.WriteLine("=== RETURN: SelectedNguyenLieu or SelectedDonViXuat is null ===");
             return;
         }
+        
+        // Hỗ trợ cả dấu chấm và dấu phẩy cho phân cách thập phân
+        var heSoText = HeSoNhap?.Replace(",", ".") ?? "";
+        if (!decimal.TryParse(heSoText, System.Globalization.NumberStyles.Any, System.Globalization.CultureInfo.InvariantCulture, out decimal heSo) || heSo <= 0)
+        {
+            System.Diagnostics.Debug.WriteLine($"=== RETURN: HeSo parse failed or <= 0. Text: '{HeSoNhap}' ===");
+            return;
+        }
+
+        System.Diagnostics.Debug.WriteLine($"=== Parsed HeSo: {heSo} ===");
 
         try
         {
@@ -650,6 +664,7 @@ public class TonKhoViewModel : BaseViewModel
             };
             
             var success = await _databaseService.SaveQuyDoiDonViAsync(quyDoi);
+            System.Diagnostics.Debug.WriteLine($"=== SaveQuyDoiDonViAsync result: {success} ===");
             
             if (success)
             {
@@ -673,6 +688,7 @@ public class TonKhoViewModel : BaseViewModel
         catch (Exception ex)
         {
             System.Diagnostics.Debug.WriteLine($"Error saving new QuyDoi: {ex.Message}");
+            System.Diagnostics.Debug.WriteLine($"Stack trace: {ex.StackTrace}");
         }
     }
 

@@ -343,7 +343,7 @@
                                                        FontSize="12" Foreground="{StaticResource Gray600}" TextAlignment="Center" VerticalAlignment="Center"/>
 
                                             <!-- Thanh toán -->
-                                            <TextBlock Grid.Column="3" Text="{Binding ThanhToan, StringFormat='{}{0:N0}d'}" 
+                                            <TextBlock Grid.Column="3" Text="{Binding ThanhToan, StringFormat='{}{0:N0} đ'}" 
                                                        FontSize="13" FontWeight="Bold" Foreground="{StaticResource Gray800}" TextAlignment="Right" VerticalAlignment="Center"/>
 
                                             <!-- Phương thức -->

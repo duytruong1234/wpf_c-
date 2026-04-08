@@ -320,7 +320,7 @@
                                             </Border>
 
                                             <!-- Giá bán -->
-                                            <TextBlock Grid.Column="4" Text="{Binding GiaBanFormatted, StringFormat='{}{0}đ'}" 
+                                            <TextBlock Grid.Column="4" Text="{Binding GiaBanFormatted, StringFormat='{}{0} đ'}" 
                                                        FontSize="13" FontWeight="Bold" Foreground="{StaticResource Gray800}" 
                                                        TextAlignment="Right" VerticalAlignment="Center"/>
 
@@ -437,7 +437,7 @@
         <!-- ADD/EDIT POPUP -->
         <Grid Visibility="{Binding IsAddEditPopupOpen, Converter={StaticResource BoolToVisibilityConverter}}"
               Background="#80000000">
-            <Border Width="520" VerticalAlignment="Center" HorizontalAlignment="Center"
+            <Border Width="520" MaxHeight="600" VerticalAlignment="Center" HorizontalAlignment="Center"
                     Background="White" CornerRadius="20">
                 <Border.Effect>
                     <DropShadowEffect BlurRadius="40" ShadowDepth="4" Direction="270" Color="#000000" Opacity="0.15"/>
@@ -445,7 +445,7 @@
                 <Grid>
                     <Grid.RowDefinitions>
                         <RowDefinition Height="Auto"/>
-                        <RowDefinition Height="Auto" MaxHeight="500"/>
+                        <RowDefinition Height="*"/>
                         <RowDefinition Height="Auto"/>
                     </Grid.RowDefinitions>
 
@@ -511,7 +511,7 @@
                             <TextBlock Text="Loại món ăn *" FontSize="12" FontWeight="SemiBold" Foreground="{StaticResource Gray600}" Margin="0,14,0,6"/>
                             <Border Background="{StaticResource Gray50}" CornerRadius="10" BorderBrush="{StaticResource Gray200}" BorderThickness="1" Padding="14,0">
                                 <ComboBox ItemsSource="{Binding LoaiHangHoas}" SelectedItem="{Binding FormLoaiMonAn}"
-                                          DisplayMemberPath="TenLoai"
+                                          DisplayMemberPath="TenLoaiHangHoa"
                                           Background="Transparent" BorderThickness="0" FontSize="13" Padding="0,10"/>
                             </Border>
 
