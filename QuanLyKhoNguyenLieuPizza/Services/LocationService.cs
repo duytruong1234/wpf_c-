@@ -1,9 +1,9 @@
 using System;
 using System.Collections.Generic;
-using System.IO;
 using System.Linq;
+using System.Net.Http;
 using System.Text.Json;
-using System.Text.Json.Serialization;
+using System.Threading.Tasks;
 
 namespace QuanLyKhoNguyenLieuPizza.Services
 {
@@ -12,98 +12,97 @@ namespace QuanLyKhoNguyenLieuPizza.Services
         private static LocationService? _instance;
         public static LocationService Instance => _instance ??= new LocationService();
 
-        private Dictionary<string, TinhThanh> _data = new();
+        private readonly HttpClient _httpClient;
 
         private LocationService()
         {
-            LoadData();
+            _httpClient = new HttpClient { BaseAddress = new Uri("https://provinces.open-api.vn/api/") };
+            _httpClient.Timeout = TimeSpan.FromSeconds(10);
         }
 
-        private void LoadData()
+        public async Task<List<ApiProvince>> GetProvincesAsync()
         {
             try
             {
-                var filePath = Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "Assets", "LocationData", "tree.json");
-                if (File.Exists(filePath))
+                var response = await _httpClient.GetAsync("p/");
+                if (response.IsSuccessStatusCode)
                 {
-                    var json = File.ReadAllText(filePath);
-                    _data = JsonSerializer.Deserialize<Dictionary<string, TinhThanh>>(json) ?? new Dictionary<string, TinhThanh>();
+                    var json = await response.Content.ReadAsStringAsync();
+                    var provinces = JsonSerializer.Deserialize<List<ApiProvince>>(json, new JsonSerializerOptions { PropertyNameCaseInsensitive = true });
+                    return provinces?.OrderBy(p => p.name).ToList() ?? new List<ApiProvince>();
                 }
             }
             catch (Exception ex)
             {
-                System.Diagnostics.Debug.WriteLine($"Failed to load location data: {ex.Message}");
+                System.Diagnostics.Debug.WriteLine($"Error fetching provinces: {ex.Message}");
             }
+            return new List<ApiProvince>();
         }
 
-        public List<string> GetTinhThanhs()
+        public async Task<List<ApiDistrict>> GetDistrictsAsync(int provinceCode)
         {
-            return _data.Values.Select(x => x.name_with_type ?? x.name).OrderBy(x => x).ToList();
-        }
-
-        public List<string> GetQuanHuyens(string tinhThanhName)
-        {
-            var tinh = _data.Values.FirstOrDefault(x => (x.name_with_type ?? x.name) == tinhThanhName);
-            if (tinh != null && tinh.quan_huyen != null)
+            try
             {
-                return tinh.quan_huyen.Values.Select(x => x.name_with_type ?? x.name).OrderBy(x => x).ToList();
-            }
-            return new List<string>();
-        }
-
-        public List<string> GetPhuongXas(string tinhThanhName, string quanHuyenName)
-        {
-            var tinh = _data.Values.FirstOrDefault(x => (x.name_with_type ?? x.name) == tinhThanhName);
-            if (tinh != null && tinh.quan_huyen != null)
-            {
-                var quan = tinh.quan_huyen.Values.FirstOrDefault(x => (x.name_with_type ?? x.name) == quanHuyenName);
-                if (quan != null && quan.xa_phuong != null)
+                var response = await _httpClient.GetAsync($"p/{provinceCode}?depth=2");
+                if (response.IsSuccessStatusCode)
                 {
-                    return quan.xa_phuong.Values.Select(x => x.name_with_type ?? x.name).OrderBy(x => x).ToList();
+                    var json = await response.Content.ReadAsStringAsync();
+                    var province = JsonSerializer.Deserialize<ApiProvinceResponse>(json, new JsonSerializerOptions { PropertyNameCaseInsensitive = true });
+                    return province?.districts?.OrderBy(d => d.name).ToList() ?? new List<ApiDistrict>();
                 }
             }
-            return new List<string>();
+            catch (Exception ex)
+            {
+                System.Diagnostics.Debug.WriteLine($"Error fetching districts: {ex.Message}");
+            }
+            return new List<ApiDistrict>();
+        }
+
+        public async Task<List<ApiWard>> GetWardsAsync(int districtCode)
+        {
+            try
+            {
+                var response = await _httpClient.GetAsync($"d/{districtCode}?depth=2");
+                if (response.IsSuccessStatusCode)
+                {
+                    var json = await response.Content.ReadAsStringAsync();
+                    var district = JsonSerializer.Deserialize<ApiDistrictResponse>(json, new JsonSerializerOptions { PropertyNameCaseInsensitive = true });
+                    return district?.wards?.OrderBy(w => w.name).ToList() ?? new List<ApiWard>();
+                }
+            }
+            catch (Exception ex)
+            {
+                System.Diagnostics.Debug.WriteLine($"Error fetching wards: {ex.Message}");
+            }
+            return new List<ApiWard>();
         }
     }
 
-    public class TinhThanh
+    public class ApiProvince
     {
+        public int code { get; set; }
         public string name { get; set; } = "";
-        public string type { get; set; } = "";
-        public string slug { get; set; } = "";
-        public string name_with_type { get; set; } = "";
-        public string path { get; set; } = "";
-        public string path_with_type { get; set; } = "";
-        public string code { get; set; } = "";
-        
-        [JsonPropertyName("quan-huyen")]
-        public Dictionary<string, QuanHuyen>? quan_huyen { get; set; }
     }
 
-    public class QuanHuyen
+    public class ApiDistrict
     {
+        public int code { get; set; }
         public string name { get; set; } = "";
-        public string type { get; set; } = "";
-        public string slug { get; set; } = "";
-        public string name_with_type { get; set; } = "";
-        public string path { get; set; } = "";
-        public string path_with_type { get; set; } = "";
-        public string code { get; set; } = "";
-        public string parent_code { get; set; } = "";
-        
-        [JsonPropertyName("xa-phuong")]
-        public Dictionary<string, PhuongXa>? xa_phuong { get; set; }
     }
 
-    public class PhuongXa
+    public class ApiWard
     {
+        public int code { get; set; }
         public string name { get; set; } = "";
-        public string type { get; set; } = "";
-        public string slug { get; set; } = "";
-        public string name_with_type { get; set; } = "";
-        public string path { get; set; } = "";
-        public string path_with_type { get; set; } = "";
-        public string code { get; set; } = "";
-        public string parent_code { get; set; } = "";
+    }
+
+    public class ApiProvinceResponse
+    {
+        public List<ApiDistrict> districts { get; set; } = new();
+    }
+
+    public class ApiDistrictResponse
+    {
+        public List<ApiWard> wards { get; set; } = new();
     }
 }
