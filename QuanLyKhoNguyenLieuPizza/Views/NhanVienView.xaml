@@ -801,11 +801,11 @@
                                 </Border>
                             </StackPanel>
 
-                            <!-- Thôn / Xóm -->
+                            <!-- Quận / Huyện -->
                             <StackPanel Grid.Row="8" Grid.Column="2">
-                                <TextBlock Text="Thôn / Xóm" FontSize="12" FontWeight="Medium" Foreground="{StaticResource Gray500}" Margin="0,0,0,6"/>
+                                <TextBlock Text="Quận / Huyện" FontSize="12" FontWeight="Medium" Foreground="{StaticResource Gray500}" Margin="0,0,0,6"/>
                                 <Border Background="White" BorderBrush="{StaticResource Gray200}" BorderThickness="1" CornerRadius="10" Padding="14,12">
-                                    <TextBox Text="{Binding FormThonXom, UpdateSourceTrigger=PropertyChanged}" BorderThickness="0" Background="Transparent" FontSize="14"/>
+                                    <ComboBox ItemsSource="{Binding Districts}" SelectedItem="{Binding SelectedDistrict}" DisplayMemberPath="name" BorderThickness="0" Background="Transparent" FontSize="14"/>
                                 </Border>
                             </StackPanel>
 
@@ -813,7 +813,7 @@
                             <StackPanel Grid.Row="10" Grid.Column="0">
                                 <TextBlock Text="Phường / Xã" FontSize="12" FontWeight="Medium" Foreground="{StaticResource Gray500}" Margin="0,0,0,6"/>
                                 <Border Background="White" BorderBrush="{StaticResource Gray200}" BorderThickness="1" CornerRadius="10" Padding="14,12">
-                                    <TextBox Text="{Binding FormPhuongXa, UpdateSourceTrigger=PropertyChanged}" BorderThickness="0" Background="Transparent" FontSize="14"/>
+                                    <ComboBox ItemsSource="{Binding Wards}" SelectedItem="{Binding SelectedWard}" DisplayMemberPath="name" BorderThickness="0" Background="Transparent" FontSize="14"/>
                                 </Border>
                             </StackPanel>
 
@@ -821,7 +821,7 @@
                             <StackPanel Grid.Row="10" Grid.Column="2">
                                 <TextBlock Text="Tỉnh / Thành phố" FontSize="12" FontWeight="Medium" Foreground="{StaticResource Gray500}" Margin="0,0,0,6"/>
                                 <Border Background="White" BorderBrush="{StaticResource Gray200}" BorderThickness="1" CornerRadius="10" Padding="14,12">
-                                    <TextBox Text="{Binding FormTinhTP, UpdateSourceTrigger=PropertyChanged}" BorderThickness="0" Background="Transparent" FontSize="14"/>
+                                    <ComboBox ItemsSource="{Binding Provinces}" SelectedItem="{Binding SelectedProvince}" DisplayMemberPath="name" BorderThickness="0" Background="Transparent" FontSize="14"/>
                                 </Border>
                             </StackPanel>
 

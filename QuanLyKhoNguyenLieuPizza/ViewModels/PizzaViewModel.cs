@@ -1,4 +1,4 @@
-using System.Collections.ObjectModel;
+﻿using System.Collections.ObjectModel;
 using System.Windows.Input;
 using QuanLyKhoNguyenLieuPizza.Core.Interfaces;
 using QuanLyKhoNguyenLieuPizza.Models;
@@ -616,24 +616,8 @@ public class PizzaViewModel : BaseViewModel
 
             if (openFileDialog.ShowDialog() == true)
             {
-                var sourceFile = openFileDialog.FileName;
-                var fileName = System.IO.Path.GetFileName(sourceFile);
-
-                var timestamp = DateTime.Now.ToString("yyyyMMddHHmmss");
-                var extension = System.IO.Path.GetExtension(fileName);
-                var nameWithoutExt = System.IO.Path.GetFileNameWithoutExtension(fileName);
-                var uniqueFileName = $"{nameWithoutExt}_{timestamp}{extension}";
-
-                var projectPath = AppDomain.CurrentDomain.BaseDirectory;
-                var resourcesPath = System.IO.Path.Combine(projectPath, "Resources", "Images");
-
-                System.IO.Directory.CreateDirectory(resourcesPath);
-
-                var destPath = System.IO.Path.Combine(resourcesPath, uniqueFileName);
-
-                System.IO.File.Copy(sourceFile, destPath, true);
-
-                FormHinhAnh = $"/Resources/Images/{uniqueFileName}";
+                // Sử dụng helper để lưu ảnh vào AppData
+                FormHinhAnh = Helpers.ImageStorageHelper.CopyImageToStorage(openFileDialog.FileName);
             }
         }
         catch (Exception ex)
@@ -780,3 +764,4 @@ public class PizzaViewModel : BaseViewModel
 
     #endregion
 }
+

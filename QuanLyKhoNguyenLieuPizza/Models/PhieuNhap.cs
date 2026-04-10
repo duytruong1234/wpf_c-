@@ -1,4 +1,4 @@
-﻿namespace QuanLyKhoNguyenLieuPizza.Models;
+namespace QuanLyKhoNguyenLieuPizza.Models;
 
 public class PhieuNhap
 {
@@ -11,6 +11,7 @@ public class PhieuNhap
     public DateTime? NgayDuyet { get; set; }
     public decimal TongTien { get; set; } = 0;
     public byte TrangThai { get; set; } = 1; // 1: Chờ duyệt, 2: Đã duyệt, 3: Đã hủy
+    public string? GhiChu { get; set; } // Lý do hủy phiếu (3.1.4)
 
     // Thuộc tính điều hướng
     public virtual NhanVien? NhanVienNhap { get; set; }

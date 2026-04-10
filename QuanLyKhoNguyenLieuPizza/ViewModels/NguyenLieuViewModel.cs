@@ -264,6 +264,18 @@ public class NguyenLieuViewModel : BaseViewModel
         set => SetProperty(ref _statusNguyenLieu, value);
     }
     
+    // Thuộc tính nguồn hàng popup
+    private bool _isNguonHangPopupOpen;
+    public bool IsNguonHangPopupOpen
+    {
+        get => _isNguonHangPopupOpen;
+        set => SetProperty(ref _isNguonHangPopupOpen, value);
+    }
+    public ObservableCollection<NguyenLieuNhaCungCap> NguonHangList { get; } = new();
+    
+    public ICommand OpenNguonHangCommand { get; }
+    public ICommand CloseNguonHangCommand { get; }
+    
     // Lệnh
     public ICommand LoadDataCommand { get; }
     public ICommand OpenAddPopupCommand { get; }
@@ -306,6 +318,8 @@ public class NguyenLieuViewModel : BaseViewModel
         CloseStatusDialogCommand = new RelayCommand(_ => IsStatusDialogOpen = false);
         ConfirmToggleStatusCommand = new AsyncRelayCommand(async _ => await ConfirmToggleStatusAsync());
         OpenQuyDoiCommand = new AsyncRelayCommand(async _ => await QuyDoiVM.OpenAsync());
+        OpenNguonHangCommand = new AsyncRelayCommand(async param => await OpenNguonHangAsync(param as NguyenLieuItemViewModel));
+        CloseNguonHangCommand = new RelayCommand(_ => IsNguonHangPopupOpen = false);
         
         // ⚡ SafeInitializeAsync thay vì fire-and-forget
         SafeInitializeAsync(LoadDataAsync);
@@ -457,25 +471,11 @@ public class NguyenLieuViewModel : BaseViewModel
         // Validate tất cả trường bắt buộc (trừ mã và hình ảnh)
         if (string.IsNullOrWhiteSpace(FormTenNguyenLieu) ||
             FormLoaiNguyenLieu == null ||
-            FormDonViTinh == null ||
-            FormNhaCungCap == null ||
-            string.IsNullOrWhiteSpace(FormGiaNhap))
+            FormDonViTinh == null)
         {
             System.Windows.MessageBox.Show(
                 "Vui lòng nhập đầy đủ các trường bắt buộc (*)",
                 "Thiếu thông tin",
-                System.Windows.MessageBoxButton.OK,
-                System.Windows.MessageBoxImage.Warning);
-            return;
-        }
-        
-        // Parse giá nhập
-        var giaNhapText = FormGiaNhap.Replace(",", "").Replace(".", "").Trim();
-        if (!decimal.TryParse(giaNhapText, out decimal giaNhap))
-        {
-            System.Windows.MessageBox.Show(
-                "Giá nhập không hợp lệ",
-                "Lỗi",
                 System.Windows.MessageBoxButton.OK,
                 System.Windows.MessageBoxImage.Warning);
             return;
@@ -496,14 +496,6 @@ public class NguyenLieuViewModel : BaseViewModel
         
         if (success)
         {
-            // Lưu quan hệ NguyenLieu - NhaCungCap
-            if (FormNhaCungCap != null)
-            {
-                await _databaseService.UpsertNguyenLieuNhaCungCapAsync(
-                    nguyenLieu.NguyenLieuID, 
-                    FormNhaCungCap.NhaCungCapID, 
-                    giaNhap);
-            }
             
             ClosePopup();
             await LoadDataAsync();
@@ -547,6 +539,25 @@ public class NguyenLieuViewModel : BaseViewModel
         catch (Exception ex)
         {
             System.Diagnostics.Debug.WriteLine($"Error toggling status: {ex.Message}");
+        }
+    }
+
+    private async Task OpenNguonHangAsync(NguyenLieuItemViewModel? item)
+    {
+        if (item == null) return;
+        try
+        {
+            var list = await _databaseService.GetNguyenLieuNhaCungCapsAsync(item.NguyenLieuID);
+            NguonHangList.Clear();
+            foreach(var n in list)
+            {
+                NguonHangList.Add(n);
+            }
+            IsNguonHangPopupOpen = true;
+        }
+        catch (Exception ex)
+        {
+            System.Diagnostics.Debug.WriteLine($"Error open nguon hang: {ex.Message}");
         }
     }
     
@@ -598,33 +609,10 @@ public class NguyenLieuViewModel : BaseViewModel
             if (openFileDialog.ShowDialog() == true)
             {
                 // Lấy đường dẫn file nguồn
-                var sourceFile = openFileDialog.FileName;
-                var fileName = System.IO.Path.GetFileName(sourceFile);
+                // Sử dụng helper để lưu ảnh vào AppData và lấy đường dẫn tương đối
+                FormHinhAnh = Helpers.ImageStorageHelper.CopyImageToStorage(openFileDialog.FileName);
                 
-                // Tạo tên file duy nhất để tránh ghi đè
-                var timestamp = DateTime.Now.ToString("yyyyMMddHHmmss");
-                var extension = System.IO.Path.GetExtension(fileName);
-                var nameWithoutExt = System.IO.Path.GetFileNameWithoutExtension(fileName);
-                var uniqueFileName = $"{nameWithoutExt}_{timestamp}{extension}";
-                
-                // Xác định đường dẫn đích trong thư mục Resources
-                var projectPath = AppDomain.CurrentDomain.BaseDirectory;
-                var resourcesPath = System.IO.Path.Combine(projectPath, "Resources", "Images");
-                
-                // Tạo thư mục nếu chưa tồn tại
-                System.IO.Directory.CreateDirectory(resourcesPath);
-                
-                // Đường dẫn đích đầy đủ
-                var destPath = System.IO.Path.Combine(resourcesPath, uniqueFileName);
-                
-                // Sao chép file vào thư mục Resources
-                System.IO.File.Copy(sourceFile, destPath, true);
-                
-                // Lưu đường dẫn tương đối cho cơ sở dữ liệu
-                FormHinhAnh = $"/Resources/Images/{uniqueFileName}";
-                
-                System.Diagnostics.Debug.WriteLine($"Image saved to: {destPath}");
-                System.Diagnostics.Debug.WriteLine($"Relative path: {FormHinhAnh}");
+                System.Diagnostics.Debug.WriteLine($"Relative path saved: {FormHinhAnh}");
             }
         }
         catch (Exception ex)
@@ -634,4 +622,5 @@ public class NguyenLieuViewModel : BaseViewModel
         }
     }
 }
+
 

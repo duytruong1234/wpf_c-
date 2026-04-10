@@ -47,11 +47,31 @@ public class QuyDoiDonViItemViewModel : BaseViewModel
     public bool LaDonViChuan
     {
         get => _laDonViChuan;
-        set => SetProperty(ref _laDonViChuan, value);
+        set
+        {
+            if (SetProperty(ref _laDonViChuan, value) && value)
+            {
+                // Khi được tích, gọi command để bỏ tích các đơn vị khác
+                SetDonViChuanCommand?.Execute(this);
+            }
+        }
+    }
+    
+    /// <summary>
+    /// Đặt LaDonViChuan mà không kích hoạt command (tránh vòng lặp vô hạn)
+    /// </summary>
+    public void SetDonViChuanSilent(bool value)
+    {
+        if (_laDonViChuan != value)
+        {
+            _laDonViChuan = value;
+            OnPropertyChanged(nameof(LaDonViChuan));
+        }
     }
     
     public ICommand? EditCommand { get; set; }
     public ICommand? DeleteCommand { get; set; }
+    public ICommand? SetDonViChuanCommand { get; set; }
 }
 
 public class TonKhoViewModel : BaseViewModel
@@ -241,6 +261,7 @@ public class TonKhoViewModel : BaseViewModel
     public ICommand SaveEditCommand { get; private set; } = null!;
     public ICommand EditQuyDoiCommand { get; private set; } = null!;
     public ICommand DeleteQuyDoiCommand { get; private set; } = null!;
+    public ICommand SetDonViChuanCommand { get; private set; } = null!;
     public ICommand GoToPhieuNhapCommand { get; private set; } = null!;
     public ICommand GoToPhieuXuatCommand { get; private set; } = null!;
 
@@ -313,6 +334,7 @@ public class TonKhoViewModel : BaseViewModel
         // Lệnh sửa/xóa quy đổi
         EditQuyDoiCommand = new RelayCommand(ExecuteEditQuyDoi);
         DeleteQuyDoiCommand = new AsyncRelayCommand(async param => await ExecuteDeleteQuyDoiAsync(param));
+        SetDonViChuanCommand = new RelayCommand(ExecuteSetDonViChuan);
         
         // Lệnh chuyển trang
         GoToPhieuNhapCommand = new RelayCommand(_ => OnNavigateToPhieuNhap?.Invoke());
@@ -552,7 +574,8 @@ public class TonKhoViewModel : BaseViewModel
                         HeSo = qd.HeSo,
                         LaDonViChuan = qd.LaDonViChuan,
                         EditCommand = EditQuyDoiCommand,
-                        DeleteCommand = DeleteQuyDoiCommand
+                        DeleteCommand = DeleteQuyDoiCommand,
+                        SetDonViChuanCommand = SetDonViChuanCommand
                     });
                 }
             }
@@ -573,7 +596,8 @@ public class TonKhoViewModel : BaseViewModel
                         HeSo = 1.0m,
                         LaDonViChuan = true,
                         EditCommand = EditQuyDoiCommand,
-                        DeleteCommand = DeleteQuyDoiCommand
+                        DeleteCommand = DeleteQuyDoiCommand,
+                        SetDonViChuanCommand = SetDonViChuanCommand
                     });
                 }
                 else
@@ -587,7 +611,8 @@ public class TonKhoViewModel : BaseViewModel
                         HeSo = 1.0m,
                         LaDonViChuan = true,
                         EditCommand = EditQuyDoiCommand,
-                        DeleteCommand = DeleteQuyDoiCommand
+                        DeleteCommand = DeleteQuyDoiCommand,
+                        SetDonViChuanCommand = SetDonViChuanCommand
                     });
                 }
             }
@@ -677,7 +702,8 @@ public class TonKhoViewModel : BaseViewModel
                     HeSo = heSo,
                     LaDonViChuan = false,
                     EditCommand = EditQuyDoiCommand,
-                    DeleteCommand = DeleteQuyDoiCommand
+                    DeleteCommand = DeleteQuyDoiCommand,
+                    SetDonViChuanCommand = SetDonViChuanCommand
                 });
                 
                 IsAddQuyDoiPopupOpen = false;
@@ -749,6 +775,21 @@ public class TonKhoViewModel : BaseViewModel
         {
             // Bật chế độ chỉnh sửa cho mục cụ thể này
             IsEditing = true;
+        }
+    }
+
+    private void ExecuteSetDonViChuan(object? parameter)
+    {
+        if (parameter is QuyDoiDonViItemViewModel selectedItem)
+        {
+            // Bỏ tích tất cả các đơn vị khác, chỉ giữ đơn vị được chọn
+            foreach (var item in QuyDoiDonVis)
+            {
+                if (item != selectedItem && item.LaDonViChuan)
+                {
+                    item.SetDonViChuanSilent(false);
+                }
+            }
         }
     }
 

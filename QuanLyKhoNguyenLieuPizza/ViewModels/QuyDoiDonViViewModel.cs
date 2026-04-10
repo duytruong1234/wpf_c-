@@ -52,11 +52,11 @@ public class QuyDoiRowItem : BaseViewModel
     }
 
     /// <summary>
-    /// Nhãn loại đơn vị: "Nhập" hoặc "Xuất"
-    /// Đơn vị chuẩn (HeSo=1 hoặc LaDonViChuan=true) = đơn vị Nhập (đơn vị gốc khi nhập kho)
-    /// Các đơn vị khác = đơn vị Xuất (đơn vị dùng khi xuất kho)
+    /// Nhãn loại đơn vị: "ĐV Chuẩn" hoặc "Quy đổi"
+    /// Đơn vị chuẩn (LaDonViChuan=true) = đơn vị lưu tồn kho
+    /// Các đơn vị khác = đơn vị quy đổi (dùng khi nhập/xuất/bán hàng, sẽ quy về ĐV chuẩn)
     /// </summary>
-    public string LoaiDonVi => LaDonViChuan ? "📦 Nhập" : "📤 Xuất";
+    public string LoaiDonVi => LaDonViChuan ? "📦 ĐV Chuẩn" : "🔄 Quy đổi";
 
     public ICommand? DeleteCommand { get; set; }
 }
@@ -314,8 +314,8 @@ public class QuyDoiDonViViewModel : BaseViewModel
         if (QuyDoiRows.Any() && !QuyDoiRows.Any(r => r.LaDonViChuan))
         {
             MessageBox.Show(
-                "Phải có ít nhất 1 đơn vị được chọn làm Mặc Định (đơn vị nhập kho)!",
-                "Thiếu đơn vị mặc định",
+                "Phải có ít nhất 1 đơn vị được chọn làm ĐV Chuẩn (đơn vị lưu tồn kho)!",
+                "Thiếu đơn vị chuẩn",
                 MessageBoxButton.OK,
                 MessageBoxImage.Warning);
             return;

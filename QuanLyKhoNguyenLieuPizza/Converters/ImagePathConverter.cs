@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Globalization;
 using System.IO;
 using System.Windows.Data;
@@ -24,39 +24,17 @@ public class ImagePathConverter : IValueConverter
                 return new BitmapImage(new Uri(imagePath));
             }
 
-            // Kiểm tra nếu là đường dẫn tương đối bắt đầu bằng Resources
-            if (imagePath.StartsWith("Resources", StringComparison.OrdinalIgnoreCase))
+            // Sử dụng helper để phân giải đường dẫn ảnh từ AppData, BaseDirectory, hoặc đường dẫn tuyệt đối
+            var absolutePath = Helpers.ImageStorageHelper.ResolveImagePath(imagePath);
+
+            if (absolutePath != null)
             {
-                var basePath = AppDomain.CurrentDomain.BaseDirectory;
-                var absolutePath = Path.Combine(basePath, imagePath.Replace('/', Path.DirectorySeparatorChar));
-
-                if (File.Exists(absolutePath))
-                {
-                    var bitmap = new BitmapImage();
-                    bitmap.BeginInit();
-                    bitmap.CacheOption = BitmapCacheOption.OnLoad;
-                    bitmap.UriSource = new Uri(absolutePath, UriKind.Absolute);
-                    bitmap.EndInit();
-                    return bitmap;
-                }
-            }
-
-            // Kiểm tra nếu là đường dẫn tương đối bắt đầu bằng /
-            if (imagePath.StartsWith("/"))
-            {
-                // Chuyển thành đường dẫn tuyệt đối
-                var basePath = AppDomain.CurrentDomain.BaseDirectory;
-                var absolutePath = Path.Combine(basePath, imagePath.TrimStart('/').Replace('/', Path.DirectorySeparatorChar));
-
-                if (File.Exists(absolutePath))
-                {
-                    var bitmap = new BitmapImage();
-                    bitmap.BeginInit();
-                    bitmap.CacheOption = BitmapCacheOption.OnLoad;
-                    bitmap.UriSource = new Uri(absolutePath, UriKind.Absolute);
-                    bitmap.EndInit();
-                    return bitmap;
-                }
+                var bitmap = new BitmapImage();
+                bitmap.BeginInit();
+                bitmap.CacheOption = BitmapCacheOption.OnLoad;
+                bitmap.UriSource = new Uri(absolutePath, UriKind.Absolute);
+                bitmap.EndInit();
+                return bitmap;
             }
 
             // Kiểm tra nếu là đường dẫn tuyệt đối

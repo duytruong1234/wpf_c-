@@ -137,6 +137,97 @@ public class NhaCungCapViewModel : BaseViewModel
         set => SetProperty(ref _formDiaChi, value);
     }
 
+    private bool _isProgrammaticAddressUpdate = false;
+
+    private ObservableCollection<ApiProvince> _provinces = new();
+    public ObservableCollection<ApiProvince> Provinces
+    {
+        get => _provinces;
+        set => SetProperty(ref _provinces, value);
+    }
+
+    private ObservableCollection<ApiDistrict> _districts = new();
+    public ObservableCollection<ApiDistrict> Districts
+    {
+        get => _districts;
+        set => SetProperty(ref _districts, value);
+    }
+
+    private ObservableCollection<ApiWard> _wards = new();
+    public ObservableCollection<ApiWard> Wards
+    {
+        get => _wards;
+        set => SetProperty(ref _wards, value);
+    }
+
+    private ApiProvince? _selectedProvince;
+    public ApiProvince? SelectedProvince
+    {
+        get => _selectedProvince;
+        set
+        {
+            if (SetProperty(ref _selectedProvince, value))
+            {
+                FormTinhTP = value?.name ?? string.Empty;
+                if (!_isProgrammaticAddressUpdate)
+                {
+                    SelectedDistrict = null;
+                    Districts.Clear();
+                    Wards.Clear();
+                    if (value != null)
+                    {
+                        Task.Run(async () => {
+                            var dists = await LocationService.Instance.GetDistrictsAsync(value.code);
+                            System.Windows.Application.Current.Dispatcher.Invoke(() => {
+                                Districts = new ObservableCollection<ApiDistrict>(dists);
+                            });
+                        });
+                    }
+                }
+            }
+        }
+    }
+
+    private ApiDistrict? _selectedDistrict;
+    public ApiDistrict? SelectedDistrict
+    {
+        get => _selectedDistrict;
+        set
+        {
+            if (SetProperty(ref _selectedDistrict, value))
+            {
+                FormQuanHuyen = value?.name ?? string.Empty;
+                if (!_isProgrammaticAddressUpdate)
+                {
+                    SelectedWard = null;
+                    Wards.Clear();
+                    if (value != null)
+                    {
+                        Task.Run(async () => {
+                            var wards = await LocationService.Instance.GetWardsAsync(value.code);
+                            System.Windows.Application.Current.Dispatcher.Invoke(() => {
+                                Wards = new ObservableCollection<ApiWard>(wards);
+                            });
+                        });
+                    }
+                }
+            }
+        }
+    }
+
+    private ApiWard? _selectedWard;
+    public ApiWard? SelectedWard
+    {
+        get => _selectedWard;
+        set
+        {
+            if (SetProperty(ref _selectedWard, value))
+            {
+                if (value != null) FormPhuongXa = value.name;
+            }
+        }
+    }
+
     // Trường địa chỉ có cấu trúc
     private string _formTinhTP = string.Empty;
     public string FormTinhTP
@@ -152,11 +243,11 @@ public class NhaCungCapViewModel : BaseViewModel
         set => SetProperty(ref _formPhuongXa, value);
     }
 
-    private string _formThonXom = string.Empty;
-    public string FormThonXom
+    private string _formQuanHuyen = string.Empty;
+    public string FormQuanHuyen
     {
-        get => _formThonXom;
-        set => SetProperty(ref _formThonXom, value);
+        get => _formQuanHuyen;
+        set => SetProperty(ref _formQuanHuyen, value);
     }
 
     private string _formDiaChiChiTiet = string.Empty;
@@ -378,9 +469,10 @@ public class NhaCungCapViewModel : BaseViewModel
         FormDiaChi = string.Empty;
         FormTinhTP = string.Empty;
         FormPhuongXa = string.Empty;
-        FormThonXom = string.Empty;
+        FormQuanHuyen = string.Empty;
         FormDiaChiChiTiet = string.Empty;
         FormSDT = string.Empty;
+        _ = SetupAddressAsync("", "", "");
         FormEmail = string.Empty;
         ErrorSDT = string.Empty;
         ErrorEmail = string.Empty;
@@ -400,16 +492,56 @@ public class NhaCungCapViewModel : BaseViewModel
 
             // Phân tích địa chỉ có cấu trúc từ Địa chỉ
             ParseDiaChi(ncc.DiaChi);
+            _ = SetupAddressAsync(FormTinhTP, FormQuanHuyen, FormPhuongXa);
 
             IsDialogOpen = true;
         }
+    }
+
+
+    private async Task SetupAddressAsync(string provinceName, string districtName, string wardName)
+    {
+        _isProgrammaticAddressUpdate = true;
+        
+        if (Provinces.Count == 0)
+        {
+            var p = await LocationService.Instance.GetProvincesAsync();
+            Provinces = new ObservableCollection<ApiProvince>(p);
+        }
+
+        var prov = Provinces.FirstOrDefault(x => x.name == provinceName);
+        SelectedProvince = prov;
+        
+        if (prov != null)
+        {
+            var dists = await LocationService.Instance.GetDistrictsAsync(prov.code);
+            Districts = new ObservableCollection<ApiDistrict>(dists);
+            var dist = Districts.FirstOrDefault(x => x.name == districtName);
+            SelectedDistrict = dist;
+            
+            if (dist != null)
+            {
+                var wards = await LocationService.Instance.GetWardsAsync(dist.code);
+                Wards = new ObservableCollection<ApiWard>(wards);
+                SelectedWard = Wards.FirstOrDefault(x => x.name == wardName);
+            }
+        }
+        else 
+        {
+            SelectedDistrict = null;
+            SelectedWard = null;
+            Districts.Clear();
+            Wards.Clear();
+        }
+        
+        _isProgrammaticAddressUpdate = false;
     }
 
     private void ParseDiaChi(string? diaChi)
     {
         FormTinhTP = string.Empty;
         FormPhuongXa = string.Empty;
-        FormThonXom = string.Empty;
+        FormQuanHuyen = string.Empty;
         FormDiaChiChiTiet = string.Empty;
 
         if (string.IsNullOrWhiteSpace(diaChi)) return;
@@ -419,7 +551,7 @@ public class NhaCungCapViewModel : BaseViewModel
         if (parts.Length >= 4)
         {
             FormDiaChiChiTiet = parts[0];
-            FormThonXom = parts[1];
+            FormQuanHuyen = parts[1];
             FormPhuongXa = parts[2];
             FormTinhTP = string.Join(", ", parts.Skip(3));
         }
@@ -444,7 +576,7 @@ public class NhaCungCapViewModel : BaseViewModel
     {
         var parts = new List<string>();
         if (!string.IsNullOrWhiteSpace(FormDiaChiChiTiet)) parts.Add(FormDiaChiChiTiet.Trim());
-        if (!string.IsNullOrWhiteSpace(FormThonXom)) parts.Add(FormThonXom.Trim());
+        if (!string.IsNullOrWhiteSpace(FormQuanHuyen)) parts.Add(FormQuanHuyen.Trim());
         if (!string.IsNullOrWhiteSpace(FormPhuongXa)) parts.Add(FormPhuongXa.Trim());
         if (!string.IsNullOrWhiteSpace(FormTinhTP)) parts.Add(FormTinhTP.Trim());
         FormDiaChi = string.Join(", ", parts);
@@ -454,7 +586,7 @@ public class NhaCungCapViewModel : BaseViewModel
     {
         FormTinhTP = string.Empty;
         FormPhuongXa = string.Empty;
-        FormThonXom = string.Empty;
+        FormQuanHuyen = string.Empty;
         FormDiaChiChiTiet = string.Empty;
         FormDiaChi = string.Empty;
     }
@@ -619,9 +751,10 @@ public class NhaCungCapViewModel : BaseViewModel
         FormDiaChi = string.Empty;
         FormTinhTP = string.Empty;
         FormPhuongXa = string.Empty;
-        FormThonXom = string.Empty;
+        FormQuanHuyen = string.Empty;
         FormDiaChiChiTiet = string.Empty;
         FormSDT = string.Empty;
+        _ = SetupAddressAsync("", "", "");
         FormEmail = string.Empty;
         ErrorSDT = string.Empty;
         ErrorEmail = string.Empty;

@@ -16,11 +16,33 @@ public class ProfileViewModel : BaseViewModel
 
     public string Username => CurrentUserSession.Instance.CurrentUser?.Username ?? "N/A";
     public string HoTen => CurrentUserSession.Instance.CurrentUser?.NhanVien?.HoTen ?? "N/A";
-    public string? Email => CurrentUserSession.Instance.CurrentUser?.NhanVien?.Email;
-    public string? SDT => CurrentUserSession.Instance.CurrentUser?.NhanVien?.SDT;
-    public DateTime? NgaySinh => CurrentUserSession.Instance.CurrentUser?.NhanVien?.NgaySinh;
-    public string? DiaChi => CurrentUserSession.Instance.CurrentUser?.NhanVien?.DiaChi;
-    public string ChucVu => CurrentUserSession.Instance.CurrentUser?.NhanVien?.ChucVu?.TenChucVu ?? "Nhân viên";
+    public string ChucVu => CurrentUserSession.Instance.CurrentUser?.NhanVien?.ChucVu?.TenChucVu ?? "NhÃ¢n viÃªn";
+    
+    private string? _email;
+    public string? Email { get => _email; set => SetProperty(ref _email, value); }
+    
+    private string? _sdt;
+    public string? SDT { get => _sdt; set => SetProperty(ref _sdt, value); }
+    
+    private DateTime? _ngaySinh;
+    public DateTime? NgaySinh { get => _ngaySinh; set => SetProperty(ref _ngaySinh, value); }
+    
+    private string? _diaChi;
+    public string? DiaChi { get => _diaChi; set => SetProperty(ref _diaChi, value); }
+    
+    private bool _isEditing;
+    public bool IsEditing
+    {
+        get => _isEditing;
+        set
+        {
+            if (SetProperty(ref _isEditing, value))
+            {
+                OnPropertyChanged(nameof(IsNotEditing));
+            }
+        }
+    }
+    public bool IsNotEditing => !IsEditing;
     
     public string? HinhAnh
     {
@@ -42,6 +64,9 @@ public class ProfileViewModel : BaseViewModel
     public ICommand ChangeAvatarCommand { get; }
     public ICommand SaveAvatarCommand { get; }
     public ICommand CancelAvatarChangeCommand { get; }
+    public ICommand EditProfileCommand { get; }
+    public ICommand SaveProfileCommand { get; }
+    public ICommand CancelEditProfileCommand { get; }
 
     public event Action? OnClose;
     public event Action? OnChangePassword;
@@ -57,9 +82,20 @@ public class ProfileViewModel : BaseViewModel
         ChangeAvatarCommand = new RelayCommand(_ => SelectAvatarAsync());
         SaveAvatarCommand = new AsyncRelayCommand(async _ => await SaveAvatarAsync(), _ => IsAvatarChanged);
         CancelAvatarChangeCommand = new RelayCommand(_ => CancelAvatarChange(), _ => IsAvatarChanged);
+        EditProfileCommand = new RelayCommand(_ => IsEditing = true);
+        CancelEditProfileCommand = new RelayCommand(_ =>
+        {
+            IsEditing = false;
+            RefreshData();
+        });
+        SaveProfileCommand = new AsyncRelayCommand(async _ => await SaveProfileAsync());
         
         // T?i ?nh d?i di?n hi?n t?i
         _hinhAnh = CurrentUserSession.Instance.CurrentUser?.NhanVien?.HinhAnh;
+        _email = CurrentUserSession.Instance.CurrentUser?.NhanVien?.Email;
+        _sdt = CurrentUserSession.Instance.CurrentUser?.NhanVien?.SDT;
+        _ngaySinh = CurrentUserSession.Instance.CurrentUser?.NhanVien?.NgaySinh;
+        _diaChi = CurrentUserSession.Instance.CurrentUser?.NhanVien?.DiaChi;
     }
 
     private void SelectAvatarAsync()
@@ -67,7 +103,7 @@ public class ProfileViewModel : BaseViewModel
         var openFileDialog = new OpenFileDialog
         {
             Title = "Ch?n ?nh d?i di?n",
-            Filter = "T?p hình ?nh (*.png;*.jpg;*.jpeg)|*.png;*.jpg;*.jpeg|T?t c? t?p (*.*)|*.*",
+            Filter = "T?p hï¿½nh ?nh (*.png;*.jpg;*.jpeg)|*.png;*.jpg;*.jpeg|T?t c? t?p (*.*)|*.*",
             FilterIndex = 1
         };
 
@@ -75,7 +111,7 @@ public class ProfileViewModel : BaseViewModel
         {
             try
             {
-                // Luu file ngu?n và hi?n th? xem tru?c
+                // Luu file ngu?n vï¿½ hi?n th? xem tru?c
                 _pendingAvatarSourceFile = openFileDialog.FileName;
                 
                 // Hi?n th? xem tru?c ngay l?p t?c b?ng file ngu?n
@@ -89,7 +125,7 @@ public class ProfileViewModel : BaseViewModel
             catch (Exception ex)
             {
                 System.Diagnostics.Debug.WriteLine($"Error loading avatar preview: {ex.Message}");
-                MessageBox.Show("Không th? t?i ?nh. Vui lòng th? l?i!", "L?i", MessageBoxButton.OK, MessageBoxImage.Error);
+                MessageBox.Show("Khï¿½ng th? t?i ?nh. Vui lï¿½ng th? l?i!", "L?i", MessageBoxButton.OK, MessageBoxImage.Error);
             }
         }
     }
@@ -102,19 +138,7 @@ public class ProfileViewModel : BaseViewModel
         try
         {
             var sourceFile = _pendingAvatarSourceFile;
-            var fileName = $"avatar_{CurrentUserSession.Instance.CurrentUser?.NhanVien?.NhanVienID}_{DateTime.Now:yyyyMMddHHmmss}{Path.GetExtension(sourceFile)}";
-            var relativePath = Path.Combine("Resources", "Images", fileName);
-            var destinationPath = Path.Combine(AppDomain.CurrentDomain.BaseDirectory, relativePath);
-
-            // Ð?m b?o thu m?c t?n t?i
-            var directory = Path.GetDirectoryName(destinationPath);
-            if (!string.IsNullOrEmpty(directory) && !Directory.Exists(directory))
-            {
-                Directory.CreateDirectory(directory);
-            }
-
-            // Sao chép file vào Resources/Images
-            File.Copy(sourceFile, destinationPath, true);
+            var relativePath = Helpers.ImageStorageHelper.CopyImageToStorage(sourceFile, "NhanVien");
 
             // C?p nh?t co s? d? li?u
             var nhanVien = CurrentUserSession.Instance.CurrentUser?.NhanVien;
@@ -124,7 +148,7 @@ public class ProfileViewModel : BaseViewModel
                 
                 if (success)
                 {
-                    // C?p nh?t phiên
+                    // C?p nh?t phiï¿½n
                     nhanVien.HinhAnh = relativePath;
                     
                     // C?p nh?t giao di?n
@@ -134,12 +158,12 @@ public class ProfileViewModel : BaseViewModel
                     
                     OnPropertyChanged(nameof(HasAvatar));
                     
-                    MessageBox.Show("C?p nh?t ?nh d?i di?n thành công!", "Thành công", MessageBoxButton.OK, MessageBoxImage.Information);
+                    MessageBox.Show("C?p nh?t ?nh d?i di?n thï¿½nh cï¿½ng!", "Thï¿½nh cï¿½ng", MessageBoxButton.OK, MessageBoxImage.Information);
                     System.Diagnostics.Debug.WriteLine($"Avatar updated successfully: {relativePath}");
                 }
                 else
                 {
-                    MessageBox.Show("Không th? luu ?nh vào database!", "L?i", MessageBoxButton.OK, MessageBoxImage.Error);
+                    MessageBox.Show("Khï¿½ng th? luu ?nh vï¿½o database!", "L?i", MessageBoxButton.OK, MessageBoxImage.Error);
                     System.Diagnostics.Debug.WriteLine("Failed to update avatar in database");
                 }
             }
@@ -152,9 +176,39 @@ public class ProfileViewModel : BaseViewModel
         }
     }
 
+    private async Task SaveProfileAsync()
+    {
+        try
+        {
+            var nhanVien = CurrentUserSession.Instance.CurrentUser?.NhanVien;
+            if (nhanVien != null)
+            {
+                nhanVien.Email = Email;
+                nhanVien.SDT = SDT;
+                nhanVien.NgaySinh = NgaySinh;
+                nhanVien.DiaChi = DiaChi;
+                
+                var success = await _databaseService.SaveNhanVienAsync(nhanVien);
+                if (success > 0)
+                {
+                    IsEditing = false;
+                    RefreshData();
+                }
+                else
+                {
+                    MessageBox.Show("Cáº­p nháº­t thÃ´ng tin tháº¥t báº¡i!", "Lá»—i", MessageBoxButton.OK, MessageBoxImage.Error);
+                }
+            }
+        }
+        catch (Exception ex)
+        {
+            MessageBox.Show($"Lá»—i: {ex.Message}", "Lá»—i", MessageBoxButton.OK, MessageBoxImage.Error);
+        }
+    }
+
     private void CancelAvatarChange()
     {
-        // Khôi ph?c ?nh d?i di?n g?c
+        // Khï¿½i ph?c ?nh d?i di?n g?c
         HinhAnh = CurrentUserSession.Instance.CurrentUser?.NhanVien?.HinhAnh;
         IsAvatarChanged = false;
         _pendingAvatarSourceFile = null;
@@ -166,6 +220,10 @@ public class ProfileViewModel : BaseViewModel
     public void RefreshData()
     {
         _hinhAnh = CurrentUserSession.Instance.CurrentUser?.NhanVien?.HinhAnh;
+        _email = CurrentUserSession.Instance.CurrentUser?.NhanVien?.Email;
+        _sdt = CurrentUserSession.Instance.CurrentUser?.NhanVien?.SDT;
+        _ngaySinh = CurrentUserSession.Instance.CurrentUser?.NhanVien?.NgaySinh;
+        _diaChi = CurrentUserSession.Instance.CurrentUser?.NhanVien?.DiaChi;
         
         OnPropertyChanged(nameof(Username));
         OnPropertyChanged(nameof(HoTen));
@@ -178,5 +236,8 @@ public class ProfileViewModel : BaseViewModel
         OnPropertyChanged(nameof(HasAvatar));
     }
 }
+
+
+
 
 

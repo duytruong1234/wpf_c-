@@ -250,13 +250,12 @@
                         </Border>
                     </StackPanel>
 
-                    <StackPanel Grid.Row="1" Grid.Column="3" Margin="16,0,0,0" VerticalAlignment="Bottom">
-                        <TextBlock Text="Trạng thái" FontSize="12" Foreground="{StaticResource Gray500}" Margin="0,0,0,8"/>
-                        <StackPanel Orientation="Horizontal">
-                            <CheckBox Content="Chờ duyệt" IsChecked="{Binding FilterChoDuyet}" Margin="0,0,12,0" FontSize="13"/>
-                            <CheckBox Content="Đã xuất kho" IsChecked="{Binding FilterDaDuyet}" Margin="0,0,12,0" FontSize="13"/>
-                            <CheckBox Content="Đã hủy" IsChecked="{Binding FilterDaHuy}" FontSize="13"/>
-                        </StackPanel>
+                    <StackPanel Grid.Row="1" Grid.Column="3" Margin="0,0,10,0">
+                        <TextBlock Text="Trạng thái" FontSize="12" Foreground="{StaticResource Gray500}" Margin="0,0,0,6"/>
+                        <Border Style="{StaticResource ModernInputBorder}">
+                            <ComboBox ItemsSource="{Binding TrangThaiOptions}" SelectedItem="{Binding SelectedTrangThaiFilter}"
+                                      BorderThickness="0" Background="Transparent" FontSize="13"/>
+                        </Border>
                     </StackPanel>
 
                     <Button Grid.Row="1" Grid.Column="4" Command="{Binding ClearFilterCommand}" Cursor="Hand" VerticalAlignment="Bottom" Margin="12,0,0,0">
@@ -747,6 +746,8 @@
                                                                         <TextBlock FontSize="10" Foreground="{StaticResource PrimaryBlue}" HorizontalAlignment="Center" Margin="0,2,0,0">
                                                                             <Run Text="Tồn: "/>
                                                                             <Run Text="{Binding TonKho.SoLuongTon, StringFormat=\{0:N0\}}"/>
+                                                                            <Run Text=" "/>
+                                                                            <Run Text="{Binding DonViTinh.TenDonVi}"/>
                                                                         </TextBlock>
                                                                     </StackPanel>
                                                                 </StackPanel>
@@ -1011,6 +1012,8 @@
                                                                         <TextBlock FontSize="10" Foreground="{StaticResource PrimaryBlue}" HorizontalAlignment="Center" Margin="0,2,0,0">
                                                                             <Run Text="Tồn: "/>
                                                                             <Run Text="{Binding TonKho.SoLuongTon, StringFormat=\{0:N0\}}"/>
+                                                                            <Run Text=" "/>
+                                                                            <Run Text="{Binding DonViTinh.TenDonVi}"/>
                                                                         </TextBlock>
                                                                     </StackPanel>
                                                                 </StackPanel>
@@ -1263,11 +1266,11 @@
                             <StackPanel Grid.Column="1">
                                 <TextBlock FontSize="13" Foreground="{StaticResource Gray500}">
                                     <Run Text="Nhân viên duyệt: "/>
-                                    <Run Text="{Binding SelectedPhieuXuat.NhanVienDuyet.HoTen, FallbackValue='(Chưa duyệt)'}" FontWeight="SemiBold" Foreground="{StaticResource Gray800}"/>
+                                    <Run Text="{Binding SelectedPhieuXuat.NhanVienDuyet.HoTen, TargetNullValue='(Chưa duyệt)'}" FontWeight="SemiBold" Foreground="{StaticResource Gray800}"/>
                                 </TextBlock>
                                 <TextBlock FontSize="13" Foreground="{StaticResource Gray500}" Margin="0,4,0,0">
                                     <Run Text="Ngày duyệt: "/>
-                                    <Run Text="{Binding SelectedPhieuXuat.NgayDuyet, StringFormat=\{0:dd/MM/yyyy HH:mm\}, FallbackValue='(Chưa duyệt)'}" FontWeight="SemiBold" Foreground="{StaticResource Gray800}"/>
+                                    <Run Text="{Binding SelectedPhieuXuat.NgayDuyet, StringFormat=\{0:dd/MM/yyyy HH:mm\}, TargetNullValue='(Chưa duyệt)'}" FontWeight="SemiBold" Foreground="{StaticResource Gray800}"/>
                                 </TextBlock>
                             </StackPanel>
                         </Grid>
@@ -1286,10 +1289,12 @@
                                         <ColumnDefinition Width="2*"/>
                                         <ColumnDefinition Width="1*"/>
                                         <ColumnDefinition Width="1*"/>
+                                        <ColumnDefinition Width="1*"/>
                                     </Grid.ColumnDefinitions>
                                     <TextBlock Grid.Column="0" Text="Tên nguyên liệu" Style="{StaticResource TableHeaderStyle}"/>
                                     <TextBlock Grid.Column="1" Text="Số lượng" Style="{StaticResource TableHeaderStyle}"/>
                                     <TextBlock Grid.Column="2" Text="Đơn vị tính" Style="{StaticResource TableHeaderStyle}"/>
+                                    <TextBlock Grid.Column="3" Text="Hệ số" Style="{StaticResource TableHeaderStyle}"/>
                                 </Grid>
                             </Border>
 
@@ -1303,10 +1308,12 @@
                                                         <ColumnDefinition Width="2*"/>
                                                         <ColumnDefinition Width="1*"/>
                                                         <ColumnDefinition Width="1*"/>
+                                                        <ColumnDefinition Width="1*"/>
                                                     </Grid.ColumnDefinitions>
                                                     <TextBlock Grid.Column="0" Text="{Binding NguyenLieu.TenNguyenLieu}" Style="{StaticResource TableCellStyle}" TextAlignment="Left" Padding="20,16"/>
                                                     <TextBlock Grid.Column="1" Text="{Binding SoLuong, StringFormat=\{0:N0\}}" Style="{StaticResource TableCellStyle}"/>
                                                     <TextBlock Grid.Column="2" Text="{Binding DonViTinh.TenDonVi}" Style="{StaticResource TableCellStyle}"/>
+                                                    <TextBlock Grid.Column="3" Text="{Binding HeSo, StringFormat=\{0:0.##\}}" Style="{StaticResource TableCellStyle}"/>
                                                 </Grid>
                                             </Border>
                                         </DataTemplate>
@@ -1356,7 +1363,7 @@
                         </Button>
 
                         <Button Command="{Binding EditPhieuXuatCommand}" CommandParameter="{Binding SelectedPhieuXuat}" IsEnabled="{Binding CanEditDelete}"
-                                Visibility="{Binding IsQuanLy, Converter={StaticResource BoolToVisibilityConverter}}" Cursor="Hand" Margin="0,0,12,0">
+                                Visibility="{Binding IsEditDeleteVisible, Converter={StaticResource BoolToVisibilityConverter}}" Cursor="Hand" Margin="0,0,12,0">
                             <Button.Template>
                                 <ControlTemplate TargetType="Button">
                                     <Border x:Name="border" CornerRadius="10" Padding="28,12">
@@ -1380,8 +1387,8 @@
                             </Button.Template>
                         </Button>
 
-                        <Button Command="{Binding CancelPhieuXuatCommand}" IsEnabled="{Binding CanApprove}"
-                                Visibility="{Binding IsQuanLy, Converter={StaticResource BoolToVisibilityConverter}}" Cursor="Hand" Margin="0,0,12,0">
+                        <Button Command="{Binding CancelPhieuXuatCommand}" IsEnabled="{Binding CanCancel}"
+                                Visibility="{Binding IsCancelVisible, Converter={StaticResource BoolToVisibilityConverter}}" Cursor="Hand" Margin="0,0,12,0">
                             <Button.Template>
                                 <ControlTemplate TargetType="Button">
                                     <Border x:Name="border" Background="{StaticResource WarningOrange}" CornerRadius="10" Padding="28,12">
@@ -1399,8 +1406,8 @@
                             </Button.Template>
                         </Button>
 
-                        <Button Command="{Binding DeletePhieuXuatCommand}" CommandParameter="{Binding SelectedPhieuXuat}" IsEnabled="{Binding CanEditDelete}"
-                                Visibility="{Binding IsQuanLy, Converter={StaticResource BoolToVisibilityConverter}}" Cursor="Hand">
+                        <Button Command="{Binding DeletePhieuXuatCommand}" CommandParameter="{Binding SelectedPhieuXuat}" IsEnabled="{Binding CanDelete}"
+                                Visibility="{Binding IsDeleteVisible, Converter={StaticResource BoolToVisibilityConverter}}" Cursor="Hand">
                             <Button.Template>
                                 <ControlTemplate TargetType="Button">
                                     <Border x:Name="border" Background="{StaticResource DangerRed}" CornerRadius="10" Padding="28,12">

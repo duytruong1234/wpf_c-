@@ -206,11 +206,31 @@
                         </Grid>
                     </Border>
 
-                    <!-- Info Cards -->
-                    <TextBlock Text="THÔNG TIN CÁ NHÂN" 
-                               FontSize="11" FontWeight="Bold" 
-                               Foreground="{StaticResource Gray400}"
-                               Margin="4,0,0,12"/>
+                    <!-- Info Cards Header -->
+                    <Grid Margin="4,0,0,12">
+                        <TextBlock Text="THÔNG TIN CÁ NHÂN" 
+                                   FontSize="11" FontWeight="Bold" 
+                                   Foreground="{StaticResource Gray400}"
+                                   VerticalAlignment="Center"/>
+                        <Button Command="{Binding EditProfileCommand}" 
+                                Visibility="{Binding IsNotEditing, Converter={StaticResource BoolToVisibilityConverter}}"
+                                HorizontalAlignment="Right" Background="Transparent" BorderThickness="0" Cursor="Hand" Padding="4,0">
+                            <StackPanel Orientation="Horizontal">
+                                <ui:SymbolIcon Symbol="Edit16" FontSize="12" Foreground="{StaticResource PrimaryBlue}" Margin="0,0,4,0" VerticalAlignment="Center"/>
+                                <TextBlock Text="Sửa" FontSize="11" FontWeight="SemiBold" Foreground="{StaticResource PrimaryBlue}" VerticalAlignment="Center"/>
+                            </StackPanel>
+                        </Button>
+                        <StackPanel Orientation="Horizontal" HorizontalAlignment="Right" Visibility="{Binding IsEditing, Converter={StaticResource BoolToVisibilityConverter}}">
+                            <Button Command="{Binding CancelEditProfileCommand}" 
+                                    Background="Transparent" BorderThickness="0" Cursor="Hand" Padding="4,0" Margin="0,0,12,0">
+                                <TextBlock Text="Hủy" FontSize="11" FontWeight="Medium" Foreground="{StaticResource Gray500}"/>
+                            </Button>
+                            <Button Command="{Binding SaveProfileCommand}" 
+                                    Background="Transparent" BorderThickness="0" Cursor="Hand" Padding="4,0">
+                                <TextBlock Text="Lưu" FontSize="11" FontWeight="Bold" Foreground="{StaticResource SuccessGreen}"/>
+                            </Button>
+                        </StackPanel>
+                    </Grid>
 
                     <!-- Username -->
                     <Border Background="{StaticResource Gray50}" CornerRadius="12" Padding="16,14" Margin="0,0,0,8"
@@ -249,7 +269,8 @@
                             </Border>
                             <StackPanel Grid.Column="1" VerticalAlignment="Center">
                                 <TextBlock Text="Email" FontSize="11" Foreground="{StaticResource Gray400}" Margin="0,0,0,3"/>
-                                <TextBlock Text="{Binding Email, TargetNullValue='Chưa cập nhật'}" FontSize="14" FontWeight="SemiBold" Foreground="{StaticResource Gray900}" TextTrimming="CharacterEllipsis"/>
+                                <TextBlock Text="{Binding Email, TargetNullValue='Chưa cập nhật'}" FontSize="14" FontWeight="SemiBold" Foreground="{StaticResource Gray900}" TextTrimming="CharacterEllipsis" Visibility="{Binding IsNotEditing, Converter={StaticResource BoolToVisibilityConverter}}"/>
+                                <TextBox Text="{Binding Email, UpdateSourceTrigger=PropertyChanged}" FontSize="14" FontWeight="SemiBold" Foreground="{StaticResource Gray900}" BorderThickness="0" Background="Transparent" Padding="0" Margin="0" Visibility="{Binding IsEditing, Converter={StaticResource BoolToVisibilityConverter}}"/>
                             </StackPanel>
                         </Grid>
                     </Border>
@@ -270,7 +291,8 @@
                             </Border>
                             <StackPanel Grid.Column="1" VerticalAlignment="Center">
                                 <TextBlock Text="Số điện thoại" FontSize="11" Foreground="{StaticResource Gray400}" Margin="0,0,0,3"/>
-                                <TextBlock Text="{Binding SDT, TargetNullValue='Chưa cập nhật'}" FontSize="14" FontWeight="SemiBold" Foreground="{StaticResource Gray900}"/>
+                                <TextBlock Text="{Binding SDT, TargetNullValue='Chưa cập nhật'}" FontSize="14" FontWeight="SemiBold" Foreground="{StaticResource Gray900}" Visibility="{Binding IsNotEditing, Converter={StaticResource BoolToVisibilityConverter}}"/>
+                                <TextBox Text="{Binding SDT, UpdateSourceTrigger=PropertyChanged}" FontSize="14" FontWeight="SemiBold" Foreground="{StaticResource Gray900}" BorderThickness="0" Background="Transparent" Padding="0" Margin="0" Visibility="{Binding IsEditing, Converter={StaticResource BoolToVisibilityConverter}}"/>
                             </StackPanel>
                         </Grid>
                     </Border>
@@ -289,7 +311,8 @@
                             </Border>
                             <StackPanel Grid.Column="1" VerticalAlignment="Center">
                                 <TextBlock Text="Ngày sinh" FontSize="11" Foreground="{StaticResource Gray400}" Margin="0,0,0,3"/>
-                                <TextBlock Text="{Binding NgaySinh, StringFormat={}{0:dd/MM/yyyy}, TargetNullValue='Chưa cập nhật'}" FontSize="14" FontWeight="SemiBold" Foreground="{StaticResource Gray900}"/>
+                                <TextBlock Text="{Binding NgaySinh, StringFormat={}{0:dd/MM/yyyy}, TargetNullValue='Chưa cập nhật'}" FontSize="14" FontWeight="SemiBold" Foreground="{StaticResource Gray900}" Visibility="{Binding IsNotEditing, Converter={StaticResource BoolToVisibilityConverter}}"/>
+                                <DatePicker SelectedDate="{Binding NgaySinh, UpdateSourceTrigger=PropertyChanged}" FontSize="14" FontWeight="SemiBold" Foreground="{StaticResource Gray900}" BorderThickness="0" Background="Transparent" Padding="0" Margin="-4,0,0,0" Visibility="{Binding IsEditing, Converter={StaticResource BoolToVisibilityConverter}}"/>
                             </StackPanel>
                         </Grid>
                     </Border>
@@ -309,7 +332,8 @@
                             </Border>
                             <StackPanel Grid.Column="1" VerticalAlignment="Center">
                                 <TextBlock Text="Địa chỉ" FontSize="11" Foreground="{StaticResource Gray400}" Margin="0,0,0,3"/>
-                                <TextBlock Text="{Binding DiaChi, TargetNullValue='Chưa cập nhật'}" FontSize="14" FontWeight="SemiBold" Foreground="{StaticResource Gray900}" TextWrapping="Wrap"/>
+                                <TextBlock Text="{Binding DiaChi, TargetNullValue='Chưa cập nhật'}" FontSize="14" FontWeight="SemiBold" Foreground="{StaticResource Gray900}" TextWrapping="Wrap" Visibility="{Binding IsNotEditing, Converter={StaticResource BoolToVisibilityConverter}}"/>
+                                <TextBox Text="{Binding DiaChi, UpdateSourceTrigger=PropertyChanged}" FontSize="14" FontWeight="SemiBold" Foreground="{StaticResource Gray900}" BorderThickness="0" Background="Transparent" Padding="0" Margin="0" TextWrapping="Wrap" Visibility="{Binding IsEditing, Converter={StaticResource BoolToVisibilityConverter}}"/>
                             </StackPanel>
                         </Grid>
                     </Border>

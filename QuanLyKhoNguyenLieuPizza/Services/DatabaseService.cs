@@ -1,4 +1,4 @@
-using System.Text;
+﻿using System.Text;
 using System.Globalization;
 using System.Linq;
 using Microsoft.Data.SqlClient;
@@ -14,7 +14,7 @@ public class DatabaseService : IDatabaseService
 
     public DatabaseService()
     {
-        // Tải từ cấu hình thay vì mã cứng
+        // Táº£i tá»« cáº¥u hÃ¬nh thay vÃ¬ mÃ£ cá»©ng
         _connectionString = ConfigurationService.Instance.GetConnectionString();
     }
 
@@ -294,12 +294,12 @@ public class DatabaseService : IDatabaseService
             return convertedAmount;
 
         throw new InvalidOperationException(
-            $"Chưa cấu hình quy đổi đơn vị cho nguyên liệu '{context.Name}' ({sourceUnitName ?? $"ID {sourceUnitId.Value}"} -> {context.StockUnitName ?? "đơn vị tồn kho"}).");
+            $"ChÆ°a cáº¥u hÃ¬nh quy Ä‘á»•i Ä‘Æ¡n vá»‹ cho nguyÃªn liá»‡u '{context.Name}' ({sourceUnitName ?? $"ID {sourceUnitId.Value}"} -> {context.StockUnitName ?? "Ä‘Æ¡n vá»‹ tá»“n kho"}).");
     }
 
-    #region Phương thức hỗ trợ
+    #region PhÆ°Æ¡ng thá»©c há»— trá»£
     /// <summary>
-    /// Thực thi truy vấn và ánh xạ kết quả thành danh sách. Xử lý kết nối, try-catch và ghi log.
+    /// Thá»±c thi truy váº¥n vÃ  Ã¡nh xáº¡ káº¿t quáº£ thÃ nh danh sÃ¡ch. Xá»­ lÃ½ káº¿t ná»‘i, try-catch vÃ  ghi log.
     /// </summary>
     private async Task<List<T>> ExecuteQueryListAsync<T>(string sql, Func<SqlDataReader, T> mapper, params SqlParameter[] parameters)
     {
@@ -324,7 +324,7 @@ public class DatabaseService : IDatabaseService
     }
 
     /// <summary>
-    /// Thực thi truy vấn trả về một giá trị đơn. Xử lý kết nối, try-catch và ghi log.
+    /// Thá»±c thi truy váº¥n tráº£ vá» má»™t giÃ¡ trá»‹ Ä‘Æ¡n. Xá»­ lÃ½ káº¿t ná»‘i, try-catch vÃ  ghi log.
     /// </summary>
     private async Task<T> ExecuteScalarValueAsync<T>(string sql, T defaultValue, params SqlParameter[] parameters)
     {
@@ -346,7 +346,7 @@ public class DatabaseService : IDatabaseService
     }
 
     /// <summary>
-    /// Thực thi lệnh không trả về dữ liệu (INSERT/UPDATE/DELETE). Xử lý kết nối, try-catch và ghi log.
+    /// Thá»±c thi lá»‡nh khÃ´ng tráº£ vá» dá»¯ liá»‡u (INSERT/UPDATE/DELETE). Xá»­ lÃ½ káº¿t ná»‘i, try-catch vÃ  ghi log.
     /// </summary>
     private async Task<bool> ExecuteCommandAsync(string sql, params SqlParameter[] parameters)
     {
@@ -367,7 +367,7 @@ public class DatabaseService : IDatabaseService
     }
 
     /// <summary>
-    /// Thực thi truy vấn trả về một đối tượng hoặc null. Xử lý kết nối, try-catch và ghi log.
+    /// Thá»±c thi truy váº¥n tráº£ vá» má»™t Ä‘á»‘i tÆ°á»£ng hoáº·c null. Xá»­ lÃ½ káº¿t ná»‘i, try-catch vÃ  ghi log.
     /// </summary>
     private async Task<T?> ExecuteQuerySingleAsync<T>(string sql, Func<SqlDataReader, T> mapper, params SqlParameter[] parameters) where T : class
     {
@@ -391,7 +391,7 @@ public class DatabaseService : IDatabaseService
     }
     #endregion
 
-    #region Xác thực
+    #region XÃ¡c thá»±c
     public async Task<TaiKhoan?> AuthenticateAsync(string username, string password)
     {
         try
@@ -418,7 +418,7 @@ public class DatabaseService : IDatabaseService
                 var tkTrangThai = reader.GetBoolean(4);
                 if (!tkTrangThai)
                 {
-                    throw new Exception("Tài khoản này đã bị khóa!");
+                    throw new Exception("TÃ i khoáº£n nÃ y Ä‘Ã£ bá»‹ khÃ³a!");
                 }
 
                 if (!reader.IsDBNull(13))
@@ -426,7 +426,7 @@ public class DatabaseService : IDatabaseService
                     var nvTrangThai = reader.GetBoolean(13);
                     if (!nvTrangThai)
                     {
-                        throw new Exception("Tài khoản của nhân viên đã nghỉ việc không được phép truy cập vào hệ thống!");
+                        throw new Exception("TÃ i khoáº£n cá»§a nhÃ¢n viÃªn Ä‘Ã£ nghá»‰ viá»‡c khÃ´ng Ä‘Æ°á»£c phÃ©p truy cáº­p vÃ o há»‡ thá»‘ng!");
                     }
                 }
 
@@ -468,19 +468,19 @@ public class DatabaseService : IDatabaseService
         }
         catch (SqlException sqlEx)
         {
-            throw new Exception($"Lỗi kết nối database: {sqlEx.Message}", sqlEx);
+            throw new Exception($"Lá»—i káº¿t ná»‘i database: {sqlEx.Message}", sqlEx);
         }
         catch (Exception ex)
         {
-            if (ex.Message.Contains("Tài khoản")) throw;
-            throw new Exception($"Lỗi xác thực: {ex.Message}", ex);
+            if (ex.Message.Contains("TÃ i khoáº£n")) throw;
+            throw new Exception($"Lá»—i xÃ¡c thá»±c: {ex.Message}", ex);
         }
         
         return null;
     }
     #endregion
 
-    #region Quản lý người dùng
+    #region Quáº£n lÃ½ ngÆ°á»i dÃ¹ng
     public async Task<List<ChucVu>> GetChucVusAsync() =>
         await ExecuteQueryListAsync("SELECT ChucVuID, TenChucVu FROM ChucVu",
             r => new ChucVu { ChucVuID = r.GetInt32(0), TenChucVu = r.GetString(1) });
@@ -492,8 +492,8 @@ public class DatabaseService : IDatabaseService
             using var conn = GetConnection();
             await conn.OpenAsync();
             
-            // Xác thực nới lỏng: Tìm người dùng theo Email trước (độc nhất), sau đó xác minh thông tin khác trong bộ nhớ
-            // Điều này xử lý các vấn đề về phân biệt chữ hoa/thường, khoảng trắng, định dạng ngày, v.v.
+            // XÃ¡c thá»±c ná»›i lá»ng: TÃ¬m ngÆ°á»i dÃ¹ng theo Email trÆ°á»›c (Ä‘á»™c nháº¥t), sau Ä‘Ã³ xÃ¡c minh thÃ´ng tin khÃ¡c trong bá»™ nhá»›
+            // Äiá»u nÃ y xá»­ lÃ½ cÃ¡c váº¥n Ä‘á» vá» phÃ¢n biá»‡t chá»¯ hoa/thÆ°á»ng, khoáº£ng tráº¯ng, Ä‘á»‹nh dáº¡ng ngÃ y, v.v.
             var sql = @"SELECT NhanVienID, HoTen, Email, ChucVuID, NgaySinh
                         FROM NhanVien 
                         WHERE Email = @Email AND TrangThai = 1";
@@ -510,12 +510,12 @@ public class DatabaseService : IDatabaseService
                 var dbChucVuID = reader.IsDBNull(3) ? 0 : reader.GetInt32(3);
                 var dbNgaySinh = reader.IsDBNull(4) ? (DateTime?)null : reader.GetDateTime(4);
 
-                // Xác thực tên (Không phân biệt hoa/thường, bỏ TẤT CẢ khoảng trắng, bỏ dấu)
+                // XÃ¡c thá»±c tÃªn (KhÃ´ng phÃ¢n biá»‡t hoa/thÆ°á»ng, bá» Táº¤T Cáº¢ khoáº£ng tráº¯ng, bá» dáº¥u)
                 string Normalize(string s)
                 {
                     if (string.IsNullOrEmpty(s)) return string.Empty;
                     
-                    // Bỏ dấu
+                    // Bá» dáº¥u
                     var normalized = s.Normalize(NormalizationForm.FormD);
                     var builder = new StringBuilder();
                     foreach (var c in normalized)
@@ -527,7 +527,7 @@ public class DatabaseService : IDatabaseService
                     }
                     var withoutAccents = builder.ToString().Normalize(NormalizationForm.FormC);
                     
-                    // Bỏ khoảng trắng và chuyển chữ thường
+                    // Bá» khoáº£ng tráº¯ng vÃ  chuyá»ƒn chá»¯ thÆ°á»ng
                     return withoutAccents.Replace(" ", "").ToLower();
                 }
                 
@@ -538,14 +538,14 @@ public class DatabaseService : IDatabaseService
                     return null;
                 }
 
-                // Xác thực ngày sinh (Chỉ phần ngày)
+                // XÃ¡c thá»±c ngÃ y sinh (Chá»‰ pháº§n ngÃ y)
                 if (dbNgaySinh?.Date != ngaySinh.Date)
                 {
                     System.Diagnostics.Debug.WriteLine($"Verify Failed: DoB mismatch. DB='{dbNgaySinh:d}', Input='{ngaySinh:d}'");
                     return null;
                 }
 
-                // Xác thực chức vụ
+                // XÃ¡c thá»±c chá»©c vá»¥
                 if (dbChucVuID != chucVuId)
                 {
                     System.Diagnostics.Debug.WriteLine($"Verify Failed: Role mismatch. DB='{dbChucVuID}', Input='{chucVuId}'");
@@ -567,7 +567,7 @@ public class DatabaseService : IDatabaseService
             System.Diagnostics.Debug.WriteLine($"Error verifying user info: {ex.Message}");
             throw;
         }
-        return null; // Không tìm thấy
+        return null; // KhÃ´ng tÃ¬m tháº¥y
     }
 
     public async Task<bool> ChangePasswordAsync(string email, string newPassword)
@@ -577,7 +577,7 @@ public class DatabaseService : IDatabaseService
             using var conn = GetConnection();
             await conn.OpenAsync();
             
-            // Cập nhật mật khẩu cho người dùng liên kết với email này
+            // Cáº­p nháº­t máº­t kháº©u cho ngÆ°á»i dÃ¹ng liÃªn káº¿t vá»›i email nÃ y
             var sql = @"UPDATE TaiKhoan 
                         SET Password = @Password 
                         FROM TaiKhoan tk
@@ -599,7 +599,7 @@ public class DatabaseService : IDatabaseService
     }
     #endregion
 
-    #region Loại Nguyên Liệu
+    #region Loáº¡i NguyÃªn Liá»‡u
     public async Task<List<LoaiNguyenLieu>> GetLoaiNguyenLieusAsync() =>
         await ExecuteQueryListAsync("SELECT LoaiNLID, TenLoai FROM LoaiNguyenLieu",
             r => new LoaiNguyenLieu { LoaiNLID = r.GetInt32(0), TenLoai = r.GetString(1) });
@@ -671,7 +671,7 @@ public class DatabaseService : IDatabaseService
     }
     #endregion
 
-    #region Nhà Cung Cấp
+    #region NhÃ  Cung Cáº¥p
     public async Task<List<NhaCungCap>> GetNhaCungCapsAsync()
     {
         var result = new List<NhaCungCap>();
@@ -847,7 +847,7 @@ public class DatabaseService : IDatabaseService
     }
     #endregion
 
-    #region Nguyên Liệu
+    #region NguyÃªn Liá»‡u
     public async Task<List<NguyenLieu>> GetNguyenLieusAsync(int? loaiNLID = null)
     {
         var result = new List<NguyenLieu>();
@@ -990,7 +990,7 @@ public class DatabaseService : IDatabaseService
     }
     #endregion
 
-    #region Tồn Kho
+    #region Tá»“n Kho
     public async Task<List<TonKho>> GetTonKhosAsync()
     {
         var result = new List<TonKho>();
@@ -1041,13 +1041,13 @@ public class DatabaseService : IDatabaseService
     }
     #endregion
 
-    #region Đơn Vị Tính
+    #region ÄÆ¡n Vá»‹ TÃ­nh
     public async Task<List<DonViTinh>> GetDonViTinhsAsync() =>
         await ExecuteQueryListAsync("SELECT DonViID, TenDonVi FROM DonViTinh",
             r => new DonViTinh { DonViID = r.GetInt32(0), TenDonVi = r.GetString(1) });
     #endregion
 
-    #region Quy Đổi Đơn Vị
+    #region Quy Äá»•i ÄÆ¡n Vá»‹
     public async Task<List<QuyDoiDonVi>> GetQuyDoiDonVisAsync(int nguyenLieuID)
     {
         var result = new List<QuyDoiDonVi>();
@@ -1152,7 +1152,7 @@ public class DatabaseService : IDatabaseService
     }
     #endregion
 
-    #region Phương thức bổ sung
+    #region PhÆ°Æ¡ng thá»©c bá»• sung
     public async Task<NguyenLieu?> GetNguyenLieuByIdAsync(int id)
     {
         try
@@ -1314,7 +1314,7 @@ public class DatabaseService : IDatabaseService
             new SqlParameter("@NguyenLieuID", nguyenLieuId));
     #endregion
 
-    #region Thống kê cho Dashboard
+    #region Thá»‘ng kÃª cho Dashboard
     public async Task<int> GetTotalNguyenLieuCountAsync() =>
         await ExecuteScalarValueAsync("SELECT COUNT(*) FROM NguyenLieu WHERE TrangThai = 1", 0);
 
@@ -1463,7 +1463,7 @@ public class DatabaseService : IDatabaseService
     }
     #endregion
 
-    #region Phiếu Nhập
+    #region Phiáº¿u Nháº­p
     public async Task<List<PhieuNhap>> GetPhieuNhapsAsync(
         string? searchText = null,
         int? nhanVienId = null,
@@ -1482,7 +1482,8 @@ public class DatabaseService : IDatabaseService
             var sql = @"SELECT pn.PhieuNhapID, pn.MaPhieuNhap, pn.NhanVienNhapID, pn.NhaCungCapID,
                               pn.NgayNhap, pn.TongTien, pn.TrangThai,
                               nv.HoTen as TenNhanVien, ncc.TenNCC,
-                              pn.NhanVienDuyetID, pn.NgayDuyet, nvd.HoTen as TenNhanVienDuyet
+                              pn.NhanVienDuyetID, pn.NgayDuyet, nvd.HoTen as TenNhanVienDuyet,
+                              pn.GhiChu
                        FROM PhieuNhap pn
                        LEFT JOIN NhanVien nv ON pn.NhanVienNhapID = nv.NhanVienID
                        LEFT JOIN NhaCungCap ncc ON pn.NhaCungCapID = ncc.NhaCungCapID
@@ -1562,7 +1563,8 @@ public class DatabaseService : IDatabaseService
                     TongTien = reader.GetDecimal(5),
                     TrangThai = reader.GetByte(6),
                     NhanVienDuyetID = reader.IsDBNull(9) ? null : reader.GetInt32(9),
-                    NgayDuyet = reader.IsDBNull(10) ? null : reader.GetDateTime(10)
+                    NgayDuyet = reader.IsDBNull(10) ? null : reader.GetDateTime(10),
+                    GhiChu = reader.IsDBNull(12) ? null : reader.GetString(12)
                 };
                 
                 if (!reader.IsDBNull(7))
@@ -1601,7 +1603,8 @@ public class DatabaseService : IDatabaseService
             var sql = @"SELECT pn.PhieuNhapID, pn.MaPhieuNhap, pn.NhanVienNhapID, pn.NhaCungCapID,
                               pn.NgayNhap, pn.TongTien, pn.TrangThai,
                               nv.HoTen as TenNhanVien, ncc.TenNCC, ncc.DiaChi,
-                              pn.NhanVienDuyetID, pn.NgayDuyet, nvd.HoTen as TenNhanVienDuyet
+                              pn.NhanVienDuyetID, pn.NgayDuyet, nvd.HoTen as TenNhanVienDuyet,
+                              pn.GhiChu
                        FROM PhieuNhap pn
                        LEFT JOIN NhanVien nv ON pn.NhanVienNhapID = nv.NhanVienID
                        LEFT JOIN NhaCungCap ncc ON pn.NhaCungCapID = ncc.NhaCungCapID
@@ -1625,7 +1628,8 @@ public class DatabaseService : IDatabaseService
                     TongTien = reader.GetDecimal(5),
                     TrangThai = reader.GetByte(6),
                     NhanVienDuyetID = reader.IsDBNull(10) ? null : reader.GetInt32(10),
-                    NgayDuyet = reader.IsDBNull(11) ? null : reader.GetDateTime(11)
+                    NgayDuyet = reader.IsDBNull(11) ? null : reader.GetDateTime(11),
+                    GhiChu = reader.IsDBNull(13) ? null : reader.GetString(13)
                 };
                 
                 if (!reader.IsDBNull(7))
@@ -1903,7 +1907,7 @@ public class DatabaseService : IDatabaseService
             
             if (phieuNhap.PhieuNhapID == 0)
             {
-                // Thêm phiếu nhập mới
+                // ThÃªm phiáº¿u nháº­p má»›i
                 var sql = @"INSERT INTO PhieuNhap (MaPhieuNhap, NhanVienNhapID, NhaCungCapID, NgayNhap, TongTien, TrangThai)
                            VALUES (@MaPhieuNhap, @NhanVienNhapID, @NhaCungCapID, @NgayNhap, @TongTien, @TrangThai);
                            SELECT SCOPE_IDENTITY();";
@@ -1921,7 +1925,7 @@ public class DatabaseService : IDatabaseService
             }
             else
             {
-                // Cập nhật phiếu nhập hiện có
+                // Cáº­p nháº­t phiáº¿u nháº­p hiá»‡n cÃ³
                 phieuNhapId = phieuNhap.PhieuNhapID;
                 
                 var sql = @"UPDATE PhieuNhap 
@@ -1939,14 +1943,14 @@ public class DatabaseService : IDatabaseService
                 
                 await cmd.ExecuteNonQueryAsync();
                 
-                // Xóa chi tiết hiện có
+                // XÃ³a chi tiáº¿t hiá»‡n cÃ³
                 var deleteSql = "DELETE FROM CT_PhieuNhap WHERE PhieuNhapID = @PhieuNhapID";
                 using var deleteCmd = new SqlCommand(deleteSql, conn, transaction);
                 deleteCmd.Parameters.AddWithValue("@PhieuNhapID", phieuNhapId);
                 await deleteCmd.ExecuteNonQueryAsync();
             }
             
-            // Thêm chi tiết
+            // ThÃªm chi tiáº¿t
             foreach (var ct in chiTiets)
             {
                 var ctSql = @"INSERT INTO CT_PhieuNhap (PhieuNhapID, NguyenLieuID, SoLuong, DonViID, HeSo, DonGia, ThanhTien, HSD)
@@ -1964,7 +1968,7 @@ public class DatabaseService : IDatabaseService
                 
                 await ctCmd.ExecuteNonQueryAsync();
                 
-                // KHÔNG cập nhật TồnKho ở đây - chỉ cập nhật khi duyệt phiếu
+                // KHÃ”NG cáº­p nháº­t Tá»“nKho á»Ÿ Ä‘Ã¢y - chá»‰ cáº­p nháº­t khi duyá»‡t phiáº¿u
             }
             
             transaction.Commit();
@@ -1986,7 +1990,7 @@ public class DatabaseService : IDatabaseService
         
         try
         {
-            // Cập nhật trạng thái phiếu nhập
+            // Cáº­p nháº­t tráº¡ng thÃ¡i phiáº¿u nháº­p
             var sql = @"UPDATE PhieuNhap 
                        SET TrangThai = 2, NhanVienDuyetID = @NhanVienDuyetID, NgayDuyet = GETDATE()
                        WHERE PhieuNhapID = @PhieuNhapID AND TrangThai = 1";
@@ -2002,7 +2006,7 @@ public class DatabaseService : IDatabaseService
                 return false;
             }
             
-            // Lấy chi tiết phiếu nhập để cập nhật TồnKho
+            // Láº¥y chi tiáº¿t phiáº¿u nháº­p Ä‘á»ƒ cáº­p nháº­t Tá»“nKho
             var getSql = "SELECT NguyenLieuID, SoLuong, HeSo FROM CT_PhieuNhap WHERE PhieuNhapID = @PhieuNhapID";
             using var getCmd = new SqlCommand(getSql, conn, transaction);
             getCmd.Parameters.AddWithValue("@PhieuNhapID", phieuNhapId);
@@ -2015,7 +2019,7 @@ public class DatabaseService : IDatabaseService
             }
             reader.Close();
             
-            // Cập nhật TồnKho
+            // Cáº­p nháº­t Tá»“nKho
             foreach (var ct in chiTiets)
             {
                 await UpdateTonKhoOnNhapAsync(conn, transaction, ct.NguyenLieuID, ct.SoLuong * ct.HeSo);
@@ -2032,7 +2036,7 @@ public class DatabaseService : IDatabaseService
         }
     }
 
-    public async Task<bool> CancelPhieuNhapAsync(int phieuNhapId, int nguoiHuyId)
+    public async Task<bool> CancelPhieuNhapAsync(int phieuNhapId, int nguoiHuyId, string? lyDoHuy = null)
     {
         try
         {
@@ -2040,12 +2044,13 @@ public class DatabaseService : IDatabaseService
             await conn.OpenAsync();
             
             var sql = @"UPDATE PhieuNhap 
-                        SET TrangThai = 3, NhanVienDuyetID = @NguoiHuyId, NgayDuyet = GETDATE()
+                        SET TrangThai = 3, NhanVienDuyetID = @NguoiHuyId, NgayDuyet = GETDATE(), GhiChu = @GhiChu
                         WHERE PhieuNhapID = @PhieuNhapID AND TrangThai = 1";
             
             using var cmd = new SqlCommand(sql, conn);
             cmd.Parameters.AddWithValue("@PhieuNhapID", phieuNhapId);
             cmd.Parameters.AddWithValue("@NguoiHuyId", nguoiHuyId);
+            cmd.Parameters.AddWithValue("@GhiChu", (object?)lyDoHuy ?? DBNull.Value);
             
             var rows = await cmd.ExecuteNonQueryAsync();
             return rows > 0;
@@ -2059,7 +2064,7 @@ public class DatabaseService : IDatabaseService
 
     private async Task UpdateTonKhoOnNhapAsync(SqlConnection conn, SqlTransaction transaction, int nguyenLieuId, decimal soLuong)
     {
-        // Kiểm tra nếu TồnKho đã tồn tại
+        // Kiá»ƒm tra náº¿u Tá»“nKho Ä‘Ã£ tá»“n táº¡i
         var checkSql = "SELECT COUNT(*) FROM TonKho WHERE NguyenLieuID = @NguyenLieuID";
         using var checkCmd = new SqlCommand(checkSql, conn, transaction);
         checkCmd.Parameters.AddWithValue("@NguyenLieuID", nguyenLieuId);
@@ -2094,7 +2099,7 @@ public class DatabaseService : IDatabaseService
         
         try
         {
-            // Lấy chi tiết để hoàn tác TồnKho
+            // Láº¥y chi tiáº¿t Ä‘á»ƒ hoÃ n tÃ¡c Tá»“nKho
             var chiTiets = new List<(int NguyenLieuID, decimal SoLuong, decimal HeSo)>();
             
             var getSql = "SELECT NguyenLieuID, SoLuong, HeSo FROM CT_PhieuNhap WHERE PhieuNhapID = @PhieuNhapID";
@@ -2108,7 +2113,7 @@ public class DatabaseService : IDatabaseService
             }
             reader.Close();
             
-            // Hoàn tác Tồn kho
+            // HoÃ n tÃ¡c Tá»“n kho
             foreach (var ct in chiTiets)
             {
                 var updateSql = @"UPDATE TonKho 
@@ -2120,13 +2125,13 @@ public class DatabaseService : IDatabaseService
                 await updateCmd.ExecuteNonQueryAsync();
             }
             
-            // Xóa chi tiết
+            // XÃ³a chi tiáº¿t
             var deleteCtSql = "DELETE FROM CT_PhieuNhap WHERE PhieuNhapID = @PhieuNhapID";
             using var deleteCtCmd = new SqlCommand(deleteCtSql, conn, transaction);
             deleteCtCmd.Parameters.AddWithValue("@PhieuNhapID", phieuNhapId);
             await deleteCtCmd.ExecuteNonQueryAsync();
             
-            // Xóa PhiếuNhập
+            // XÃ³a Phiáº¿uNháº­p
             var deleteSql = "DELETE FROM PhieuNhap WHERE PhieuNhapID = @PhieuNhapID";
             using var deleteCmd = new SqlCommand(deleteSql, conn, transaction);
             deleteCmd.Parameters.AddWithValue("@PhieuNhapID", phieuNhapId);
@@ -2248,7 +2253,7 @@ public class DatabaseService : IDatabaseService
     }
     #endregion
 
-    #region Phiếu Xuất
+    #region Phiáº¿u Xuáº¥t
     public async Task<List<PhieuXuat>> GetPhieuXuatsAsync(
         string? searchText = null,
         int? nhanVienYeuCauId = null,
@@ -2510,7 +2515,7 @@ public class DatabaseService : IDatabaseService
             
             if (phieuXuat.PhieuXuatID == 0)
             {
-                // Thêm phiếu xuất mới
+                // ThÃªm phiáº¿u xuáº¥t má»›i
                 var sql = @"INSERT INTO PhieuXuat (MaPhieuXuat, NhanVienYeuID, NhanVienDuyetID, NgayYeuCau, NgayDuyet, TrangThai)
                            VALUES (@MaPhieuXuat, @NhanVienYeuID, @NhanVienDuyetID, @NgayYeuCau, @NgayDuyet, @TrangThai);
                            SELECT SCOPE_IDENTITY();";
@@ -2528,7 +2533,7 @@ public class DatabaseService : IDatabaseService
             }
             else
             {
-                // Cập nhật phiếu xuất hiện có
+                // Cáº­p nháº­t phiáº¿u xuáº¥t hiá»‡n cÃ³
                 phieuXuatId = phieuXuat.PhieuXuatID;
                 
                 var sql = @"UPDATE PhieuXuat 
@@ -2546,14 +2551,14 @@ public class DatabaseService : IDatabaseService
                 
                 await cmd.ExecuteNonQueryAsync();
                 
-                // Xóa chi tiết hiện có
+                // XÃ³a chi tiáº¿t hiá»‡n cÃ³
                 var deleteSql = "DELETE FROM CT_PhieuXuat WHERE PhieuXuatID = @PhieuXuatID";
                 using var deleteCmd = new SqlCommand(deleteSql, conn, transaction);
                 deleteCmd.Parameters.AddWithValue("@PhieuXuatID", phieuXuatId);
                 await deleteCmd.ExecuteNonQueryAsync();
             }
             
-            // Thêm chi tiết
+            // ThÃªm chi tiáº¿t
             foreach (var ct in chiTiets)
             {
                 var ctSql = @"INSERT INTO CT_PhieuXuat (PhieuXuatID, NguyenLieuID, SoLuong, DonViID, HeSo)
@@ -2588,7 +2593,7 @@ public class DatabaseService : IDatabaseService
         
         try
         {
-            // Lấy chi tiết để cập nhật TồnKho
+            // Láº¥y chi tiáº¿t Ä‘á»ƒ cáº­p nháº­t Tá»“nKho
             var chiTiets = new List<(int NguyenLieuID, decimal SoLuong, decimal HeSo)>();
             
             var getSql = "SELECT NguyenLieuID, SoLuong, HeSo FROM CT_PhieuXuat WHERE PhieuXuatID = @PhieuXuatID";
@@ -2602,19 +2607,31 @@ public class DatabaseService : IDatabaseService
             }
             reader.Close();
             
-            // Cập nhật TồnKho (trừ)
+            // Cáº­p nháº­t Tá»“nKho (trá»«)
             foreach (var ct in chiTiets)
             {
+                var soLuongTru = ct.SoLuong * ct.HeSo;
+                
+                var checkSql = "SELECT ISNULL(SoLuongTon, 0) FROM TonKho WHERE NguyenLieuID = @NguyenLieuID";
+                using var checkCmd = new SqlCommand(checkSql, conn, transaction);
+                checkCmd.Parameters.AddWithValue("@NguyenLieuID", ct.NguyenLieuID);
+                var currentTon = Convert.ToDecimal(await checkCmd.ExecuteScalarAsync() ?? 0);
+                
+                if (currentTon < soLuongTru)
+                {
+                    throw new Exception("Sá»‘ lÆ°á»£ng tá»“n kho khÃ´ng Ä‘á»§ Ä‘á»ƒ trá»«. (Tá»“n kho khÃ´ng Ä‘Æ°á»£c phÃ©p nhá» hÆ¡n 0)");
+                }
+
                 var updateSql = @"UPDATE TonKho 
                                  SET SoLuongTon = SoLuongTon - @SoLuong, NgayCapNhat = GETDATE()
                                  WHERE NguyenLieuID = @NguyenLieuID";
                 using var updateCmd = new SqlCommand(updateSql, conn, transaction);
-                updateCmd.Parameters.AddWithValue("@SoLuong", ct.SoLuong * ct.HeSo);
+                updateCmd.Parameters.AddWithValue("@SoLuong", soLuongTru);
                 updateCmd.Parameters.AddWithValue("@NguyenLieuID", ct.NguyenLieuID);
                 await updateCmd.ExecuteNonQueryAsync();
             }
             
-            // Cập nhật trạng thái PhiếuXuất
+            // Cáº­p nháº­t tráº¡ng thÃ¡i Phiáº¿uXuáº¥t
             var sql = @"UPDATE PhieuXuat 
                        SET TrangThai = 2, NhanVienDuyetID = @NhanVienDuyetID, NgayDuyet = GETDATE()
                        WHERE PhieuXuatID = @PhieuXuatID";
@@ -2666,13 +2683,13 @@ public class DatabaseService : IDatabaseService
         
         try
         {
-            // Xóa chi tiết
+            // XÃ³a chi tiáº¿t
             var deleteCtSql = "DELETE FROM CT_PhieuXuat WHERE PhieuXuatID = @PhieuXuatID";
             using var deleteCtCmd = new SqlCommand(deleteCtSql, conn, transaction);
             deleteCtCmd.Parameters.AddWithValue("@PhieuXuatID", phieuXuatId);
             await deleteCtCmd.ExecuteNonQueryAsync();
             
-            // Xóa PhiếuXuất
+            // XÃ³a Phiáº¿uXuáº¥t
             var deleteSql = "DELETE FROM PhieuXuat WHERE PhieuXuatID = @PhieuXuatID";
             using var deleteCmd = new SqlCommand(deleteSql, conn, transaction);
             deleteCmd.Parameters.AddWithValue("@PhieuXuatID", phieuXuatId);
@@ -2741,7 +2758,7 @@ public class DatabaseService : IDatabaseService
     }
     #endregion
 
-    #region Quản lý Nhà Cung Cấp
+    #region Quáº£n lÃ½ NhÃ  Cung Cáº¥p
     public async Task<List<NhaCungCap>> GetAllNhaCungCapsAsync(string? searchText = null, bool? trangThai = null)
     {
         var result = new List<NhaCungCap>();
@@ -2913,7 +2930,7 @@ public class DatabaseService : IDatabaseService
             using var conn = GetConnection();
             await conn.OpenAsync();
             
-            // Kiểm tra nếu NhàCungCấp đang được sử dụng
+            // Kiá»ƒm tra náº¿u NhÃ CungCáº¥p Ä‘ang Ä‘Æ°á»£c sá»­ dá»¥ng
             var checkSql = @"SELECT COUNT(*) FROM NguyenLieuNhaCungCap WHERE NhaCungCapID = @NhaCungCapID";
             using var checkCmd = new SqlCommand(checkSql, conn);
             checkCmd.Parameters.AddWithValue("@NhaCungCapID", nhaCungCapId);
@@ -2921,11 +2938,11 @@ public class DatabaseService : IDatabaseService
             
             if (count > 0)
             {
-                // Xóa mềm - đặt TrạngThái = false
+                // XÃ³a má»m - Ä‘áº·t Tráº¡ngThÃ¡i = false
                 return await UpdateNhaCungCapTrangThaiAsync(nhaCungCapId, false);
             }
             
-            // Xóa cứng nếu không được sử dụng
+            // XÃ³a cá»©ng náº¿u khÃ´ng Ä‘Æ°á»£c sá»­ dá»¥ng
             var sql = "DELETE FROM NhaCungCap WHERE NhaCungCapID = @NhaCungCapID";
             using var cmd = new SqlCommand(sql, conn);
             cmd.Parameters.AddWithValue("@NhaCungCapID", nhaCungCapId);
@@ -3003,7 +3020,7 @@ public class DatabaseService : IDatabaseService
             using var conn = GetConnection();
             await conn.OpenAsync();
             
-            var sql = "SELECT COUNT(*) FROM NhaCungCap";
+            var sql = @"SELECT COUNT(*) FROM NhaCungCap";
             if (trangThai.HasValue)
             {
                 sql += " WHERE TrangThai = @TrangThai";
@@ -3045,7 +3062,7 @@ public class DatabaseService : IDatabaseService
     }
     #endregion
 
-    #region Quản lý Chức Vụ
+    #region Quáº£n lÃ½ Chá»©c Vá»¥
     public async Task<List<ChucVu>> GetAllChucVusAsync()
     {
         var result = new List<ChucVu>();
@@ -3055,7 +3072,7 @@ public class DatabaseService : IDatabaseService
             using var conn = GetConnection();
             await conn.OpenAsync();
             
-            var sql = "SELECT ChucVuID, TenChucVu FROM ChucVu ORDER BY TenChucVu";
+            var sql = @"SELECT ChucVuID, TenChucVu FROM ChucVu ORDER BY TenChucVu";
             
             using var cmd = new SqlCommand(sql, conn);
             using var reader = await cmd.ExecuteReaderAsync();
@@ -3121,7 +3138,7 @@ public class DatabaseService : IDatabaseService
             using var conn = GetConnection();
             await conn.OpenAsync();
             
-            // Kiểm tra nếu có NhânViên nào đang sử dụng ChứcVụ này
+            // Kiá»ƒm tra náº¿u cÃ³ NhÃ¢nViÃªn nÃ o Ä‘ang sá»­ dá»¥ng Chá»©cVá»¥ nÃ y
             var checkSql = "SELECT COUNT(*) FROM NhanVien WHERE ChucVuID = @ChucVuID";
             using var checkCmd = new SqlCommand(checkSql, conn);
             checkCmd.Parameters.AddWithValue("@ChucVuID", chucVuId);
@@ -3147,7 +3164,7 @@ public class DatabaseService : IDatabaseService
     }
     #endregion
 
-    #region Quản lý Nhân Viên
+    #region Quáº£n lÃ½ NhÃ¢n ViÃªn
     public async Task<List<NhanVien>> GetAllNhanViensFullAsync(string? searchText = null, bool? trangThai = null, List<int>? chucVuIds = null)
     {
         var result = new List<NhanVien>();
@@ -3361,13 +3378,13 @@ public class DatabaseService : IDatabaseService
         
         try
         {
-            // Xóa TàiKhoản trước
+            // XÃ³a TÃ iKhoáº£n trÆ°á»›c
             var deleteAccountSql = "DELETE FROM TaiKhoan WHERE NhanVienID = @NhanVienID";
             using var deleteAccountCmd = new SqlCommand(deleteAccountSql, conn, transaction);
             deleteAccountCmd.Parameters.AddWithValue("@NhanVienID", nhanVienId);
             await deleteAccountCmd.ExecuteNonQueryAsync();
             
-            // Sau đó xóa NhânViên
+            // Sau Ä‘Ã³ xÃ³a NhÃ¢nViÃªn
             var sql = "DELETE FROM NhanVien WHERE NhanVienID = @NhanVienID";
             using var cmd = new SqlCommand(sql, conn, transaction);
             cmd.Parameters.AddWithValue("@NhanVienID", nhanVienId);
@@ -3391,7 +3408,7 @@ public class DatabaseService : IDatabaseService
         {
             using var conn = GetConnection();
             await conn.OpenAsync();
-            var sql = "SELECT TaiKhoanID, NhanVienID, Username, Password, TrangThai FROM TaiKhoan WHERE NhanVienID = @NhanVienID";
+            var sql = @"SELECT TaiKhoanID, NhanVienID, Username, Password, TrangThai FROM TaiKhoan WHERE NhanVienID = @NhanVienID";
             using var cmd = new SqlCommand(sql, conn);
             cmd.Parameters.AddWithValue("@NhanVienID", nhanVienId);
             using var reader = await cmd.ExecuteReaderAsync();
@@ -3460,7 +3477,7 @@ public class DatabaseService : IDatabaseService
             using var conn = GetConnection();
             await conn.OpenAsync();
             
-            var sql = "SELECT COUNT(*) FROM NhanVien";
+            var sql = @"SELECT COUNT(*) FROM NhanVien";
             if (trangThai.HasValue)
             {
                 sql += " WHERE TrangThai = @TrangThai";
@@ -3582,7 +3599,7 @@ public class DatabaseService : IDatabaseService
 
     public async Task<Pizza?> GetPizzaByIdAsync(int pizzaId)
     {
-        // Không sử dụng với schema dựa trên HàngHóa (không có bảng Pizza)
+        // KhÃ´ng sá»­ dá»¥ng vá»›i schema dá»±a trÃªn HÃ ngHÃ³a (khÃ´ng cÃ³ báº£ng Pizza)
         return null;
     }
 
@@ -3596,14 +3613,14 @@ public class DatabaseService : IDatabaseService
             if (string.IsNullOrEmpty(pizza.MaPizza))
                 return false;
 
-            // Kiểm tra nếu HàngHóa đã tồn tại
+            // Kiá»ƒm tra náº¿u HÃ ngHÃ³a Ä‘Ã£ tá»“n táº¡i
             using var checkCmd = new SqlCommand("SELECT COUNT(1) FROM HangHoa WHERE MaHangHoa = @Ma", conn);
             checkCmd.Parameters.AddWithValue("@Ma", pizza.MaPizza);
             var exists = Convert.ToInt32(await checkCmd.ExecuteScalarAsync()) > 0;
 
             if (exists)
             {
-                // Cập nhật Hàng hóa
+                // Cáº­p nháº­t HÃ ng hÃ³a
                 using var cmdHH = new SqlCommand(
                     @"UPDATE HangHoa SET TenHangHoa=@Ten, HinhAnh=@Anh, TinhTrang=@TT, LoaiHangHoaID=@Loai, DonViID=@DVT WHERE MaHangHoa=@Ma", conn);
                 cmdHH.Parameters.AddWithValue("@Ma", pizza.MaPizza);
@@ -3679,7 +3696,7 @@ public class DatabaseService : IDatabaseService
 
     public async Task<bool> DeletePizzaAsync(int pizzaId)
     {
-        // Không sử dụng với schema dựa trên HàngHóa
+        // KhÃ´ng sá»­ dá»¥ng vá»›i schema dá»±a trÃªn HÃ ngHÃ³a
         return false;
     }
 
@@ -3699,8 +3716,8 @@ public class DatabaseService : IDatabaseService
                 END TRY
                 BEGIN CATCH
                     ROLLBACK TRAN;
-                    -- Lỗi 547 là vi phạm khoá ngoại (vd: đã từng bán trong hoá đơn)
-                    -- Trường hợp này ta fallback về Soft Delete (Ngừng bán)
+                    -- Lá»—i 547 lÃ  vi pháº¡m khoÃ¡ ngoáº¡i (vd: Ä‘Ã£ tá»«ng bÃ¡n trong hoÃ¡ Ä‘Æ¡n)
+                    -- TrÆ°á»ng há»£p nÃ y ta fallback vá» Soft Delete (Ngá»«ng bÃ¡n)
                     IF ERROR_NUMBER() = 547
                     BEGIN
                         UPDATE HangHoa SET TinhTrang = 0 WHERE MaHangHoa = @Ma;
@@ -3741,7 +3758,7 @@ public class DatabaseService : IDatabaseService
     }
     #endregion
 
-    #region Công Thức
+    #region CÃ´ng Thá»©c
     public async Task<List<CongThuc>> GetCongThucsAsync(int pizzaId)
     {
         var result = new List<CongThuc>();
@@ -3855,7 +3872,7 @@ public class DatabaseService : IDatabaseService
 
     public async Task<decimal> CalculateGiaVonAsync(int pizzaId)
     {
-        // Không sử dụng với schema dựa trên HàngHóa
+        // KhÃ´ng sá»­ dá»¥ng vá»›i schema dá»±a trÃªn HÃ ngHÃ³a
         return 0;
     }
 
@@ -3889,7 +3906,7 @@ public class DatabaseService : IDatabaseService
     }
     #endregion
 
-    #region Đơn Hàng
+    #region ÄÆ¡n HÃ ng
     public async Task<List<DonHang>> GetDonHangsAsync(DateTime? fromDate = null, DateTime? toDate = null)
     {
         var result = new List<DonHang>();
@@ -3930,7 +3947,7 @@ public class DatabaseService : IDatabaseService
                     TongTien = reader.GetDecimal(4),
                     GiamGia = reader.GetDecimal(5),
                     ThanhToan = reader.GetDecimal(6),
-                    PhuongThucTT = reader.IsDBNull(7) ? "Tiền mặt" : reader.GetString(7),
+                    PhuongThucTT = reader.IsDBNull(7) ? "Tiá»n máº·t" : reader.GetString(7),
                     TrangThai = reader.GetByte(8),
                     GhiChu = reader.IsDBNull(9) ? null : reader.GetString(9)
                 };
@@ -3990,9 +4007,9 @@ public class DatabaseService : IDatabaseService
                     TongTien = reader2.GetDecimal(3),
                     GiamGia = reader2.GetDecimal(7),
                     ThanhToan = reader2.GetDecimal(8),
-                    PhuongThucTT = reader2.IsDBNull(6) ? "Tiền mặt" : reader2.GetString(6),
-                    TrangThai = 2, // Hoàn thành
-                    GhiChu = reader2.IsDBNull(5) ? "Bán hàng tại quầy" : reader2.GetString(5)
+                    PhuongThucTT = reader2.IsDBNull(6) ? "Tiá»n máº·t" : reader2.GetString(6),
+                    TrangThai = 2, // HoÃ n thÃ nh
+                    GhiChu = reader2.IsDBNull(5) ? "BÃ¡n hÃ ng táº¡i quáº§y" : reader2.GetString(5)
                 };
                 if (!reader2.IsDBNull(4))
                 {
@@ -4010,7 +4027,7 @@ public class DatabaseService : IDatabaseService
             System.Diagnostics.Debug.WriteLine($"Error getting DonHangs from PhieuBanHang: {ex.Message}");
         }
 
-        // Sắp xếp kết quả kết hợp theo ngày giảm dần
+        // Sáº¯p xáº¿p káº¿t quáº£ káº¿t há»£p theo ngÃ y giáº£m dáº§n
         result.Sort((a, b) => b.NgayTao.CompareTo(a.NgayTao));
         return result;
     }
@@ -4084,7 +4101,7 @@ public class DatabaseService : IDatabaseService
             using var transaction = conn.BeginTransaction();
             try
             {
-                // Thêm ĐơnHàng
+                // ThÃªm ÄÆ¡nHÃ ng
                 var sql = @"INSERT INTO DonHang (MaDonHang, NhanVienID, NgayTao, TongTien, GiamGia, ThanhToan, PhuongThucTT, TrangThai, GhiChu)
                            VALUES (@MaDonHang, @NhanVienID, @NgayTao, @TongTien, @GiamGia, @ThanhToan, @PhuongThucTT, @TrangThai, @GhiChu);
                            SELECT SCOPE_IDENTITY();";
@@ -4102,7 +4119,7 @@ public class DatabaseService : IDatabaseService
                 var donHangId = Convert.ToInt32(await cmd.ExecuteScalarAsync());
                 donHang.DonHangID = donHangId;
 
-                // Thêm CT_ĐơnHàng
+                // ThÃªm CT_ÄÆ¡nHÃ ng
                 foreach (var ct in chiTiets)
                 {
                     var ctSql = @"INSERT INTO CT_DonHang (DonHangID, PizzaID, SoLuong, DonGia, ThanhTien)
@@ -4116,7 +4133,7 @@ public class DatabaseService : IDatabaseService
                     await ctCmd.ExecuteNonQueryAsync();
                 }
 
-                // Trừ nguyên liệu từ TồnKho dựa trên CôngThức
+                // Trá»« nguyÃªn liá»‡u tá»« Tá»“nKho dá»±a trÃªn CÃ´ngThá»©c
                 foreach (var ct in chiTiets)
                 {
                     var congThucs = await GetCongThucsInternalAsync(conn, transaction, ct.PizzaID);
@@ -4150,7 +4167,7 @@ public class DatabaseService : IDatabaseService
     private async Task<List<CongThuc>> GetCongThucsInternalAsync(SqlConnection conn, SqlTransaction transaction, int pizzaId)
     {
         var result = new List<CongThuc>();
-        var sql = "SELECT CongThucID, PizzaID, NguyenLieuID, SoLuong, DonViID FROM CongThuc WHERE PizzaID = @PizzaID";
+        var sql = @"SELECT CongThucID, PizzaID, NguyenLieuID, SoLuong, DonViID FROM CongThuc WHERE PizzaID = @PizzaID";
         using var cmd = new SqlCommand(sql, conn, transaction);
         cmd.Parameters.AddWithValue("@PizzaID", pizzaId);
         using var reader = await cmd.ExecuteReaderAsync();
@@ -4198,7 +4215,7 @@ public class DatabaseService : IDatabaseService
             {
                 if (donHang.DonHangID > 0)
                 {
-                    // Xóa từ bảng DonHang (xóa CT_DonHang trước)
+                    // XÃ³a tá»« báº£ng DonHang (xÃ³a CT_DonHang trÆ°á»›c)
                     using var delCt = new SqlCommand("DELETE FROM CT_DonHang WHERE DonHangID = @DonHangID", conn, transaction);
                     delCt.Parameters.AddWithValue("@DonHangID", donHang.DonHangID);
                     await delCt.ExecuteNonQueryAsync();
@@ -4209,7 +4226,7 @@ public class DatabaseService : IDatabaseService
                 }
                 else if (!string.IsNullOrEmpty(donHang.MaDonHang))
                 {
-                    // Xóa từ bảng PhieuBanHang (xóa CT trước)
+                    // XÃ³a tá»« báº£ng PhieuBanHang (xÃ³a CT trÆ°á»›c)
                     using var delCt = new SqlCommand("DELETE FROM CT_PhieuBan WHERE MaPhieuBan = @MaPhieu", conn, transaction);
                     delCt.Parameters.AddWithValue("@MaPhieu", donHang.MaDonHang);
                     await delCt.ExecuteNonQueryAsync();
@@ -4236,15 +4253,15 @@ public class DatabaseService : IDatabaseService
     }
     #endregion
 
-    #region Thống kê bán hàng
+    #region Thá»‘ng kÃª bÃ¡n hÃ ng
     public async Task<decimal> GetDoanhThuAsync(DateTime fromDate, DateTime toDate)
     {
         try
         {
             using var conn = GetConnection();
             await conn.OpenAsync();
-            // Doanh thu chính từ PhieuBanHang (nguồn dữ liệu bán hàng chính)
-            // + DonHang records chưa có trong PhieuBanHang
+            // Doanh thu chÃ­nh tá»« PhieuBanHang (nguá»“n dá»¯ liá»‡u bÃ¡n hÃ ng chÃ­nh)
+            // + DonHang records chÆ°a cÃ³ trong PhieuBanHang
             var sql = @"SELECT ISNULL(SUM(ThanhToan), 0) FROM (
                            SELECT ISNULL(TongTien, 0) AS ThanhToan FROM PhieuBanHang 
                            WHERE NgayBan >= @FromDate AND NgayBan < @ToDate
@@ -4272,7 +4289,7 @@ public class DatabaseService : IDatabaseService
         {
             using var conn = GetConnection();
             await conn.OpenAsync();
-            // Đếm đơn hàng chính từ PhieuBanHang + DonHang chưa có trong PhieuBanHang
+            // Äáº¿m Ä‘Æ¡n hÃ ng chÃ­nh tá»« PhieuBanHang + DonHang chÆ°a cÃ³ trong PhieuBanHang
             var sql = @"SELECT COUNT(*) FROM (
                            SELECT MaPhieuBan FROM PhieuBanHang 
                            WHERE NgayBan >= @FromDate AND NgayBan < @ToDate
@@ -4297,7 +4314,7 @@ public class DatabaseService : IDatabaseService
     {
         try
         {
-            // Lợi nhuận = Doanh thu - Chi phí NL tiêu hao
+            // Lá»£i nhuáº­n = Doanh thu - Chi phÃ­ NL tiÃªu hao
             var doanhThu = await GetDoanhThuAsync(fromDate, toDate);
             var chiPhi = await GetChiPhiNguyenLieuAsync(fromDate, toDate);
             return doanhThu - chiPhi;
@@ -4315,8 +4332,8 @@ public class DatabaseService : IDatabaseService
         {
             using var conn = GetConnection();
             await conn.OpenAsync();
-            // Chi phí NL tiêu hao = SUM(lượng NL tiêu hao per pizza × đơn giá nhập gần nhất × số lượng mua)
-            // Bao gồm: CongThuc_Pizza (nhân) + QuyDinh_Bot (bột) + QuyDinh_Vien (viền)
+            // Chi phÃ­ NL tiÃªu hao = SUM(lÆ°á»£ng NL tiÃªu hao per pizza Ã— Ä‘Æ¡n giÃ¡ nháº­p gáº§n nháº¥t Ã— sá»‘ lÆ°á»£ng mua)
+            // Bao gá»“m: CongThuc_Pizza (nhÃ¢n) + QuyDinh_Bot (bá»™t) + QuyDinh_Vien (viá»n)
             var sql = @"
                 ;WITH SalesInPeriod AS (
                     SELECT ct.MaHangHoa, ct.SizeID, ct.MaDeBanh, ct.SoLuong
@@ -4324,24 +4341,24 @@ public class DatabaseService : IDatabaseService
                     INNER JOIN PhieuBanHang pb ON ct.MaPhieuBan = pb.MaPhieuBan
                     WHERE pb.NgayBan >= @FromDate AND pb.NgayBan <= @ToDate
                 ),
-                -- Bước 1: Nguyên liệu từ CongThuc_Pizza (nhân bánh)
+                -- BÆ°á»›c 1: NguyÃªn liá»‡u tá»« CongThuc_Pizza (nhÃ¢n bÃ¡nh)
                 NhanCost AS (
                     SELECT s.MaHangHoa, s.SizeID, s.MaDeBanh, s.SoLuong AS SoLuongMua,
                            ctp.NguyenLieuID, CAST(ctp.SoLuong AS decimal(18,4)) AS SoLuongNL
                     FROM SalesInPeriod s
                     INNER JOIN CongThuc_Pizza ctp ON s.MaHangHoa = ctp.MaHangHoa AND s.SizeID = ctp.SizeID
                 ),
-                -- Bước 2: Nguyên liệu bột mì từ QuyDinh_Bot
+                -- BÆ°á»›c 2: NguyÃªn liá»‡u bá»™t mÃ¬ tá»« QuyDinh_Bot
                 BotCost AS (
                     SELECT s.MaHangHoa, s.SizeID, s.MaDeBanh, s.SoLuong AS SoLuongMua,
                            nl.NguyenLieuID, CAST(qb.TrongLuongBot AS decimal(18,4)) AS SoLuongNL
                     FROM SalesInPeriod s
                     INNER JOIN DoanhMuc_De dd ON s.MaDeBanh = dd.MaDeBanh
                     INNER JOIN QuyDinh_Bot qb ON s.SizeID = qb.SizeID AND dd.LoaiCotBanh = qb.LoaiCotBanh
-                    CROSS APPLY (SELECT TOP 1 NguyenLieuID FROM NguyenLieu WHERE TenNguyenLieu LIKE N'%Bột mì%') nl
+                    CROSS APPLY (SELECT TOP 1 NguyenLieuID FROM NguyenLieu WHERE TenNguyenLieu LIKE N'%Bá»™t mÃ¬%') nl
                     WHERE s.MaDeBanh IS NOT NULL
                 ),
-                -- Bước 3: Nguyên liệu viền từ QuyDinh_Vien
+                -- BÆ°á»›c 3: NguyÃªn liá»‡u viá»n tá»« QuyDinh_Vien
                 VienCost AS (
                     SELECT s.MaHangHoa, s.SizeID, s.MaDeBanh, s.SoLuong AS SoLuongMua,
                            qv.NguyenLieuID, CAST(qv.SoLuongVien AS decimal(18,4)) AS SoLuongNL
@@ -4349,7 +4366,7 @@ public class DatabaseService : IDatabaseService
                     INNER JOIN QuyDinh_Vien qv ON s.MaDeBanh = qv.MaDeBanh AND s.SizeID = qv.SizeID
                     WHERE s.MaDeBanh IS NOT NULL
                 ),
-                -- Gom tất cả
+                -- Gom táº¥t cáº£
                 AllCosts AS (
                     SELECT NguyenLieuID, SoLuongMua, SoLuongNL FROM NhanCost
                     UNION ALL
@@ -4357,7 +4374,7 @@ public class DatabaseService : IDatabaseService
                     UNION ALL
                     SELECT NguyenLieuID, SoLuongMua, SoLuongNL FROM VienCost
                 ),
-                -- Lấy đơn giá nhập gần nhất cho mỗi nguyên liệu
+                -- Láº¥y Ä‘Æ¡n giÃ¡ nháº­p gáº§n nháº¥t cho má»—i nguyÃªn liá»‡u
                 LatestPrice AS (
                     SELECT ctn.NguyenLieuID, ctn.DonGia
                     FROM CT_PhieuNhap ctn
@@ -4390,7 +4407,7 @@ public class DatabaseService : IDatabaseService
         {
             using var conn = GetConnection();
             await conn.OpenAsync();
-            // Lấy từ CT_PhieuBan (nguồn dữ liệu bán hàng chính)
+            // Láº¥y tá»« CT_PhieuBan (nguá»“n dá»¯ liá»‡u bÃ¡n hÃ ng chÃ­nh)
             var sql = @"SELECT TOP (@Top) 
                            ISNULL(hh.TenHangHoa, ct.MaHangHoa) AS TenPizza, 
                            ISNULL(ds.TenSize, ct.SizeID) AS KichThuoc, 
@@ -4430,7 +4447,7 @@ public class DatabaseService : IDatabaseService
         var donHangs = new List<DonHang>();
         var existingMaDonHangs = new HashSet<string>();
 
-        // 1) Lấy từ bảng DonHang
+        // 1) Láº¥y tá»« báº£ng DonHang
         try
         {
             using var conn = GetConnection();
@@ -4455,7 +4472,7 @@ public class DatabaseService : IDatabaseService
                     TongTien = reader.GetDecimal(4),
                     GiamGia = reader.GetDecimal(5),
                     ThanhToan = reader.GetDecimal(6),
-                    PhuongThucTT = reader.IsDBNull(7) ? "Tiền mặt" : reader.GetString(7),
+                    PhuongThucTT = reader.IsDBNull(7) ? "Tiá»n máº·t" : reader.GetString(7),
                     TrangThai = reader.GetByte(8),
                     GhiChu = reader.IsDBNull(9) ? null : reader.GetString(9),
                     NhanVien = reader.IsDBNull(10) ? null : new NhanVien { HoTen = reader.GetString(10) }
@@ -4470,7 +4487,7 @@ public class DatabaseService : IDatabaseService
             System.Diagnostics.Debug.WriteLine($"Error getting RecentDonHangs from DonHang: {ex.Message}");
         }
 
-        // 2) Lấy từ bảng PhieuBanHang (nguồn dữ liệu bán hàng chính)
+        // 2) Láº¥y tá»« báº£ng PhieuBanHang (nguá»“n dá»¯ liá»‡u bÃ¡n hÃ ng chÃ­nh)
         try
         {
             using var conn2 = GetConnection();
@@ -4498,9 +4515,9 @@ public class DatabaseService : IDatabaseService
                     TongTien = reader2.GetDecimal(3),
                     GiamGia = 0,
                     ThanhToan = reader2.GetDecimal(3),
-                    PhuongThucTT = reader2.IsDBNull(6) ? "Tiền mặt" : reader2.GetString(6),
-                    TrangThai = 2, // Hoàn thành
-                    GhiChu = reader2.IsDBNull(5) ? "Bán hàng tại quầy" : reader2.GetString(5),
+                    PhuongThucTT = reader2.IsDBNull(6) ? "Tiá»n máº·t" : reader2.GetString(6),
+                    TrangThai = 2, // HoÃ n thÃ nh
+                    GhiChu = reader2.IsDBNull(5) ? "BÃ¡n hÃ ng táº¡i quáº§y" : reader2.GetString(5),
                     NhanVien = reader2.IsDBNull(4) ? null : new NhanVien 
                     { 
                         NhanVienID = reader2.IsDBNull(1) ? 0 : reader2.GetInt32(1),
@@ -4514,13 +4531,13 @@ public class DatabaseService : IDatabaseService
             System.Diagnostics.Debug.WriteLine($"Error getting RecentDonHangs from PhieuBanHang: {ex.Message}");
         }
 
-        // Sắp xếp theo ngày mới nhất và lấy top
+        // Sáº¯p xáº¿p theo ngÃ y má»›i nháº¥t vÃ  láº¥y top
         donHangs.Sort((a, b) => b.NgayTao.CompareTo(a.NgayTao));
         return donHangs.Take(top).ToList();
     }
     #endregion
 
-    #region Hàng Hóa
+    #region HÃ ng HÃ³a
     public async Task<List<HangHoa>> GetHangHoasAsync()
     {
         var result = new List<HangHoa>();
@@ -4628,7 +4645,7 @@ public class DatabaseService : IDatabaseService
                        req.TenNguyenLieu,
                        req.SoLuongTon
                 FROM (
-                    -- Nguyên liệu nhân bánh
+                    -- NguyÃªn liá»‡u nhÃ¢n bÃ¡nh
                     SELECT gs.MaHangHoa,
                            ctp.NguyenLieuID,
                            CAST(ctp.SoLuong AS decimal(18,4)) AS SoLuong,
@@ -4647,7 +4664,7 @@ public class DatabaseService : IDatabaseService
 
                     UNION ALL
 
-                    -- Nguyên liệu bột theo size + đế
+                    -- NguyÃªn liá»‡u bá»™t theo size + Ä‘áº¿
                     SELECT gs.MaHangHoa,
                            botNl.NguyenLieuID,
                            CAST(qb.TrongLuongBot AS decimal(18,4)) AS SoLuong,
@@ -4665,7 +4682,7 @@ public class DatabaseService : IDatabaseService
                     CROSS APPLY (
                         SELECT TOP 1 nl.NguyenLieuID, nl.TenNguyenLieu
                         FROM NguyenLieu nl
-                        WHERE nl.TenNguyenLieu LIKE N'%Bột mì%'
+                        WHERE nl.TenNguyenLieu LIKE N'%Bá»™t mÃ¬%'
                            OR nl.TenNguyenLieu LIKE N'%Bot mi%'
                     ) botNl
                     LEFT JOIN TonKho tk
@@ -4674,7 +4691,7 @@ public class DatabaseService : IDatabaseService
 
                     UNION ALL
 
-                    -- Nguyên liệu viền theo size + đế
+                    -- NguyÃªn liá»‡u viá»n theo size + Ä‘áº¿
                     SELECT gs.MaHangHoa,
                            qv.NguyenLieuID,
                            CAST(qv.SoLuongVien AS decimal(18,4)) AS SoLuong,
@@ -4893,7 +4910,7 @@ public class DatabaseService : IDatabaseService
     }
     #endregion
 
-    #region Phiếu Bán Hàng
+    #region Phiáº¿u BÃ¡n HÃ ng
     public async Task<List<PhieuBanHang>> GetPhieuBanHangsAsync(DateTime? fromDate = null, DateTime? toDate = null)
     {
         var result = new List<PhieuBanHang>();
@@ -5133,7 +5150,7 @@ public class DatabaseService : IDatabaseService
         using var transaction = conn.BeginTransaction();
         try
         {
-            // 1) Tính tổng nguyên liệu cần trừ cho toàn bộ đơn
+            // 1) TÃ­nh tá»•ng nguyÃªn liá»‡u cáº§n trá»« cho toÃ n bá»™ Ä‘Æ¡n
             var requiredMap = new Dictionary<int, decimal>();
             var unitContextCache = new Dictionary<int, IngredientUnitContext>();
             var unitNameCache = new Dictionary<int, string>();
@@ -5155,7 +5172,7 @@ public class DatabaseService : IDatabaseService
 
                 var ingredientMap = new Dictionary<int, decimal>();
 
-                // Bước 1: CongThuc_Pizza (nhân bánh)
+                // BÆ°á»›c 1: CongThuc_Pizza (nhÃ¢n bÃ¡nh)
                 var congThucs = await GetCongThucPizzaInternalAsync(conn, transaction, ct.MaHangHoa, ct.SizeID);
                 foreach (var recipe in congThucs)
                 {
@@ -5174,7 +5191,7 @@ public class DatabaseService : IDatabaseService
                         ingredientMap[recipe.NguyenLieuID] = amount;
                 }
 
-                // Bước 2: QuyDinh_Bot (bột mì) - lookup bằng SizeID + LoaiCotBanh từ DoanhMuc_De
+                // BÆ°á»›c 2: QuyDinh_Bot (bá»™t mÃ¬) - lookup báº±ng SizeID + LoaiCotBanh tá»« DoanhMuc_De
                 if (!string.IsNullOrEmpty(ct.MaDeBanh))
                 {
                     var botSql = @"SELECT qb.TrongLuongBot, qb.DonViID
@@ -5192,8 +5209,8 @@ public class DatabaseService : IDatabaseService
                         botReader.Close();
                         if (trongLuongBot > 0)
                         {
-                            // Tìm NguyenLieuID của bột mì (tên chứa "Bột" hoặc "bột mì")
-                            var findBotSql = "SELECT TOP 1 NguyenLieuID FROM NguyenLieu WHERE TenNguyenLieu LIKE N'%Bột mì%' OR TenNguyenLieu LIKE N'%Bot mi%'";
+                            // TÃ¬m NguyenLieuID cá»§a bá»™t mÃ¬ (tÃªn chá»©a "Bá»™t" hoáº·c "bá»™t mÃ¬")
+                            var findBotSql = "SELECT TOP 1 NguyenLieuID FROM NguyenLieu WHERE TenNguyenLieu LIKE N'%Bá»™t mÃ¬%' OR TenNguyenLieu LIKE N'%Bot mi%'";
                             using var findBotCmd = CreateCommand(findBotSql, conn, transaction);
                             var botNlId = await findBotCmd.ExecuteScalarAsync();
                             if (botNlId != null && botNlId != DBNull.Value)
@@ -5220,7 +5237,7 @@ public class DatabaseService : IDatabaseService
                     }
                 }
 
-                // Bước 3: QuyDinh_Vien (viền) - lookup bằng MaDeBanh + SizeID
+                // BÆ°á»›c 3: QuyDinh_Vien (viá»n) - lookup báº±ng MaDeBanh + SizeID
                 if (!string.IsNullOrEmpty(ct.MaDeBanh))
                 {
                     var vienSql = @"SELECT NguyenLieuID, SoLuongVien, DonViID FROM QuyDinh_Vien 
@@ -5258,7 +5275,7 @@ public class DatabaseService : IDatabaseService
                     }
                 }
 
-                // Gom tổng nguyên liệu theo số lượng mua
+                // Gom tá»•ng nguyÃªn liá»‡u theo sá»‘ lÆ°á»£ng mua
                 foreach (var (nguyenLieuId, amountPerPizza) in ingredientMap)
                 {
                     var totalAmount = amountPerPizza * soLuongMua;
@@ -5266,19 +5283,19 @@ public class DatabaseService : IDatabaseService
                 }
             }
 
-            // 2) Kiểm tra tồn kho trước khi lưu phiếu
+            // 2) Kiá»ƒm tra tá»“n kho trÆ°á»›c khi lÆ°u phiáº¿u
             if (requiredMap.Count > 0)
             {
                 var insufficient = await GetInsufficientIngredientsAsync(conn, transaction, requiredMap);
                 if (insufficient.Count > 0)
                 {
-                    var message = "Không đủ nguyên liệu: " +
-                                  string.Join(", ", insufficient.Select(i => $"{i.Name} (còn {i.Available:N2})"));
+                    var message = "KhÃ´ng Ä‘á»§ nguyÃªn liá»‡u: " +
+                                  string.Join(", ", insufficient.Select(i => $"{i.Name} (cÃ²n {i.Available:N2})"));
                     throw new Exception(message);
                 }
             }
 
-            // 3) Lưu PhiếuBánHàng
+            // 3) LÆ°u Phiáº¿uBÃ¡nHÃ ng
             var sql = @"INSERT INTO PhieuBanHang (MaPhieuBan, NhanVienBanID, NgayBan, TongTien, PhuongThucTT, GhiChu, GiamGia, ThanhToan)
                        VALUES (@MaPhieuBan, @NhanVienBanID, @NgayBan, @TongTien, @PhuongThucTT, @GhiChu, @GiamGia, @ThanhToan)";
             using (var cmd = new SqlCommand(sql, conn, transaction))
@@ -5287,14 +5304,14 @@ public class DatabaseService : IDatabaseService
                 cmd.Parameters.AddWithValue("@NhanVienBanID", phieuBan.NhanVienBanID ?? (object)DBNull.Value);
                 cmd.Parameters.AddWithValue("@NgayBan", phieuBan.NgayBan ?? (object)DateTime.Now);
                 cmd.Parameters.AddWithValue("@TongTien", phieuBan.TongTien ?? (object)DBNull.Value);
-                cmd.Parameters.AddWithValue("@PhuongThucTT", phieuBan.PhuongThucTT ?? "Tiền mặt");
+                cmd.Parameters.AddWithValue("@PhuongThucTT", phieuBan.PhuongThucTT ?? "Tiá»n máº·t");
                 cmd.Parameters.AddWithValue("@GhiChu", phieuBan.GhiChu ?? (object)DBNull.Value);
                 cmd.Parameters.AddWithValue("@GiamGia", phieuBan.GiamGia ?? (object)DBNull.Value);
                 cmd.Parameters.AddWithValue("@ThanhToan", phieuBan.ThanhToan ?? (object)DBNull.Value);
                 await cmd.ExecuteNonQueryAsync();
             }
 
-            // 4) Lưu CT_PhiếuBán
+            // 4) LÆ°u CT_Phiáº¿uBÃ¡n
             foreach (var ct in chiTiets)
             {
                 var ctSql = @"INSERT INTO CT_PhieuBan (MaPhieuBan, MaHangHoa, SizeID, MaDeBanh, SoLuong, ThanhTien)
@@ -5309,7 +5326,7 @@ public class DatabaseService : IDatabaseService
                 await ctCmd.ExecuteNonQueryAsync();
             }
 
-            // 5) Trừ tồn kho theo tổng nguyên liệu
+            // 5) Trá»« tá»“n kho theo tá»•ng nguyÃªn liá»‡u
             foreach (var kvp in requiredMap)
             {
                 var deductSql = @"UPDATE TonKho 
@@ -5321,7 +5338,7 @@ public class DatabaseService : IDatabaseService
                 var rows = await deductCmd.ExecuteNonQueryAsync();
                 if (rows == 0)
                 {
-                    throw new Exception($"Nguyên liệu không đủ tồn kho (ID {kvp.Key})");
+                    throw new Exception($"NguyÃªn liá»‡u khÃ´ng Ä‘á»§ tá»“n kho (ID {kvp.Key})");
                 }
             }
 
@@ -5387,7 +5404,7 @@ public class DatabaseService : IDatabaseService
     private async Task<List<CongThuc_Pizza>> GetCongThucPizzaInternalAsync(SqlConnection conn, SqlTransaction transaction, string maHangHoa, string sizeId)
     {
         var result = new List<CongThuc_Pizza>();
-        var sql = "SELECT MaHangHoa, SizeID, NguyenLieuID, SoLuong, DonViID FROM CongThuc_Pizza WHERE MaHangHoa = @MaHangHoa AND SizeID = @SizeID";
+        var sql = @"SELECT MaHangHoa, SizeID, NguyenLieuID, SoLuong, DonViID FROM CongThuc_Pizza WHERE MaHangHoa = @MaHangHoa AND SizeID = @SizeID";
         using var cmd = new SqlCommand(sql, conn, transaction);
         cmd.Parameters.AddWithValue("@MaHangHoa", maHangHoa);
         cmd.Parameters.AddWithValue("@SizeID", sizeId);
@@ -5501,7 +5518,7 @@ public class DatabaseService : IDatabaseService
     }
     #endregion
 
-    #region Thống kê bán hàng (PhiếuBánHàng)
+    #region Thá»‘ng kÃª bÃ¡n hÃ ng (Phiáº¿uBÃ¡nHÃ ng)
     public async Task<decimal> GetDoanhThuBanHangAsync(DateTime fromDate, DateTime toDate)
     {
         decimal total = 0;
@@ -5510,7 +5527,7 @@ public class DatabaseService : IDatabaseService
             using var conn = GetConnection();
             await conn.OpenAsync();
 
-            // Doanh thu từ PhieuBanHang (POS)
+            // Doanh thu tá»« PhieuBanHang (POS)
             try
             {
                 var sql1 = @"SELECT ISNULL(SUM(TongTien), 0) FROM PhieuBanHang 
@@ -5526,7 +5543,7 @@ public class DatabaseService : IDatabaseService
                 System.Diagnostics.Debug.WriteLine($"Error PhieuBanHang revenue: {ex1.Message}");
             }
 
-            // Doanh thu từ DonHang (nếu bảng tồn tại)
+            // Doanh thu tá»« DonHang (náº¿u báº£ng tá»“n táº¡i)
             try
             {
                 var sql2 = @"SELECT ISNULL(SUM(ThanhToan), 0) FROM DonHang 
@@ -5537,7 +5554,7 @@ public class DatabaseService : IDatabaseService
                 var r2 = await cmd2.ExecuteScalarAsync();
                 if (r2 != null && r2 != DBNull.Value) total += Convert.ToDecimal(r2);
             }
-            catch { /* Bảng DonHang có thể không tồn tại */ }
+            catch { /* Báº£ng DonHang cÃ³ thá»ƒ khÃ´ng tá»“n táº¡i */ }
         }
         catch (Exception ex)
         {
@@ -5554,7 +5571,7 @@ public class DatabaseService : IDatabaseService
             using var conn = GetConnection();
             await conn.OpenAsync();
 
-            // Đếm từ PhieuBanHang (POS)
+            // Äáº¿m tá»« PhieuBanHang (POS)
             try
             {
                 var sql1 = @"SELECT COUNT(*) FROM PhieuBanHang 
@@ -5569,7 +5586,7 @@ public class DatabaseService : IDatabaseService
                 System.Diagnostics.Debug.WriteLine($"Error PhieuBanHang count: {ex1.Message}");
             }
 
-            // Đếm từ DonHang (nếu bảng tồn tại)
+            // Äáº¿m tá»« DonHang (náº¿u báº£ng tá»“n táº¡i)
             try
             {
                 var sql2 = @"SELECT COUNT(*) FROM DonHang 
@@ -5579,7 +5596,7 @@ public class DatabaseService : IDatabaseService
                 cmd2.Parameters.AddWithValue("@ToDate", toDate.Date.AddDays(1));
                 total += Convert.ToInt32(await cmd2.ExecuteScalarAsync());
             }
-            catch { /* Bảng DonHang có thể không tồn tại */ }
+            catch { /* Báº£ng DonHang cÃ³ thá»ƒ khÃ´ng tá»“n táº¡i */ }
         }
         catch (Exception ex)
         {
@@ -5588,6 +5605,175 @@ public class DatabaseService : IDatabaseService
         return total;
     }
     #endregion
+    #region QuyDinh_Bot & QuyDinh_Vien
+
+    public async Task<List<QuyDinh_Bot>> GetQuyDinhBotsAsync()
+    {
+        var result = new List<QuyDinh_Bot>();
+        try
+        {
+            using var conn = GetConnection();
+            await conn.OpenAsync();
+            var sql = @"SELECT qb.SizeID, qb.LoaiCotBanh, qb.TrongLuongBot, qb.DonViID,
+                               ds.TenSize, dv.TenDonVi
+                        FROM QuyDinh_Bot qb
+                        LEFT JOIN DoanhMuc_Size ds ON qb.SizeID = ds.SizeID
+                        LEFT JOIN DonViTinh dv ON qb.DonViID = dv.DonViID";
+            using var cmd = new SqlCommand(sql, conn);
+            using var reader = await cmd.ExecuteReaderAsync();
+            while (await reader.ReadAsync())
+            {
+                result.Add(new QuyDinh_Bot
+                {
+                    SizeID = reader.GetString(0),
+                    LoaiCotBanh = reader.GetString(1),
+                    TrongLuongBot = reader.IsDBNull(2) ? null : Convert.ToDouble(reader.GetValue(2)),
+                    DonViID = reader.IsDBNull(3) ? null : reader.GetInt32(3),
+                    DoanhMucSize = reader.IsDBNull(4) ? null : new DoanhMuc_Size { SizeID = reader.GetString(0), TenSize = reader.GetString(4) },
+                    DonViTinh = reader.IsDBNull(5) ? null : new DonViTinh { DonViID = reader.GetInt32(3), TenDonVi = reader.GetString(5) }
+                });
+            }
+        }
+        catch (Exception ex)
+        {
+            System.Diagnostics.Debug.WriteLine($"Error getting QuyDinh_Bot: {ex.Message}");
+        }
+        return result;
+    }
+
+    public async Task<bool> SaveQuyDinhBotAsync(QuyDinh_Bot item)
+    {
+        try
+        {
+            using var conn = GetConnection();
+            await conn.OpenAsync();
+            var sql = @"MERGE QuyDinh_Bot AS target
+                        USING (SELECT @SizeID AS SizeID, @LoaiCotBanh AS LoaiCotBanh) AS source
+                        ON target.SizeID = source.SizeID AND target.LoaiCotBanh = source.LoaiCotBanh
+                        WHEN MATCHED THEN
+                            UPDATE SET TrongLuongBot = @TrongLuong, DonViID = @DonViID
+                        WHEN NOT MATCHED THEN
+                            INSERT (SizeID, LoaiCotBanh, TrongLuongBot, DonViID)
+                            VALUES (@SizeID, @LoaiCotBanh, @TrongLuong, @DonViID);";
+
+            using var cmd = new SqlCommand(sql, conn);
+            cmd.Parameters.AddWithValue("@SizeID", item.SizeID);
+            cmd.Parameters.AddWithValue("@LoaiCotBanh", item.LoaiCotBanh);
+            cmd.Parameters.AddWithValue("@TrongLuong", item.TrongLuongBot ?? (object)DBNull.Value);
+            cmd.Parameters.AddWithValue("@DonViID", item.DonViID ?? (object)DBNull.Value);
+            return await cmd.ExecuteNonQueryAsync() > 0;
+        }
+        catch (Exception ex)
+        {
+            System.Diagnostics.Debug.WriteLine($"Error saving QuyDinh_Bot: {ex.Message}");
+            return false;
+        }
+    }
+
+    public async Task<bool> DeleteQuyDinhBotAsync(string sizeId, string loaiCotBanh)
+    {
+        try
+        {
+            using var conn = GetConnection();
+            await conn.OpenAsync();
+            using var cmd = new SqlCommand("DELETE FROM QuyDinh_Bot WHERE SizeID = @SizeID AND LoaiCotBanh = @LoaiCotBanh", conn);
+            cmd.Parameters.AddWithValue("@SizeID", sizeId);
+            cmd.Parameters.AddWithValue("@LoaiCotBanh", loaiCotBanh);
+            return await cmd.ExecuteNonQueryAsync() > 0;
+        }
+        catch (Exception ex)
+        {
+            System.Diagnostics.Debug.WriteLine($"Error deleting QuyDinh_Bot: {ex.Message}");
+            return false;
+        }
+    }
+
+    public async Task<List<QuyDinh_Vien>> GetQuyDinhViensAsync()
+    {
+        var result = new List<QuyDinh_Vien>();
+        try
+        {
+            using var conn = GetConnection();
+            await conn.OpenAsync();
+            var sql = @"SELECT qv.MaDeBanh, qv.SizeID, qv.NguyenLieuID, qv.SoLuongVien, qv.DonViID,
+                               dd.TenDeBanh, ds.TenSize, nl.TenNguyenLieu, dv.TenDonVi
+                        FROM QuyDinh_Vien qv
+                        LEFT JOIN DoanhMuc_De dd ON qv.MaDeBanh = dd.MaDeBanh
+                        LEFT JOIN DoanhMuc_Size ds ON qv.SizeID = ds.SizeID
+                        LEFT JOIN NguyenLieu nl ON qv.NguyenLieuID = nl.NguyenLieuID
+                        LEFT JOIN DonViTinh dv ON qv.DonViID = dv.DonViID";
+            using var cmd = new SqlCommand(sql, conn);
+            using var reader = await cmd.ExecuteReaderAsync();
+            while (await reader.ReadAsync())
+            {
+                result.Add(new QuyDinh_Vien
+                {
+                    MaDeBanh = reader.GetString(0),
+                    SizeID = reader.GetString(1),
+                    NguyenLieuID = reader.GetInt32(2),
+                    SoLuongVien = reader.IsDBNull(3) ? null : Convert.ToDouble(reader.GetValue(3)),
+                    DonViID = reader.IsDBNull(4) ? null : reader.GetInt32(4),
+                    DoanhMucDe = reader.IsDBNull(5) ? null : new DoanhMuc_De { MaDeBanh = reader.GetString(0), TenDeBanh = reader.GetString(5) },
+                    DoanhMucSize = reader.IsDBNull(6) ? null : new DoanhMuc_Size { SizeID = reader.GetString(1), TenSize = reader.GetString(6) },
+                    NguyenLieu = reader.IsDBNull(7) ? null : new NguyenLieu { NguyenLieuID = reader.GetInt32(2), TenNguyenLieu = reader.GetString(7) },
+                    DonViTinh = reader.IsDBNull(8) ? null : new DonViTinh { DonViID = reader.GetInt32(4), TenDonVi = reader.GetString(8) }
+                });
+            }
+        }
+        catch (Exception ex)
+        {
+            System.Diagnostics.Debug.WriteLine($"Error getting QuyDinh_Vien: {ex.Message}");
+        }
+        return result;
+    }
+
+    public async Task<bool> SaveQuyDinhVienAsync(QuyDinh_Vien item)
+    {
+        try
+        {
+            using var conn = GetConnection();
+            await conn.OpenAsync();
+            var sql = @"MERGE QuyDinh_Vien AS target
+                        USING (SELECT @MaDeBanh AS MaDeBanh, @SizeID AS SizeID, @NguyenLieuID AS NguyenLieuID) AS source
+                        ON target.MaDeBanh = source.MaDeBanh AND target.SizeID = source.SizeID AND target.NguyenLieuID = source.NguyenLieuID
+                        WHEN MATCHED THEN
+                            UPDATE SET SoLuongVien = @SoLuong, DonViID = @DonViID
+                        WHEN NOT MATCHED THEN
+                            INSERT (MaDeBanh, SizeID, NguyenLieuID, SoLuongVien, DonViID)
+                            VALUES (@MaDeBanh, @SizeID, @NguyenLieuID, @SoLuong, @DonViID);";
+
+            using var cmd = new SqlCommand(sql, conn);
+            cmd.Parameters.AddWithValue("@MaDeBanh", item.MaDeBanh);
+            cmd.Parameters.AddWithValue("@SizeID", item.SizeID);
+            cmd.Parameters.AddWithValue("@NguyenLieuID", item.NguyenLieuID);
+            cmd.Parameters.AddWithValue("@SoLuong", item.SoLuongVien ?? (object)DBNull.Value);
+            cmd.Parameters.AddWithValue("@DonViID", item.DonViID ?? (object)DBNull.Value);
+            return await cmd.ExecuteNonQueryAsync() > 0;
+        }
+        catch (Exception ex)
+        {
+            System.Diagnostics.Debug.WriteLine($"Error saving QuyDinh_Vien: {ex.Message}");
+            return false;
+        }
+    }
+
+    public async Task<bool> DeleteQuyDinhVienAsync(string maDeBanh, string sizeId, int nguyenLieuId)
+    {
+        try
+        {
+            using var conn = GetConnection();
+            await conn.OpenAsync();
+            using var cmd = new SqlCommand("DELETE FROM QuyDinh_Vien WHERE MaDeBanh = @MaDeBanh AND SizeID = @SizeID AND NguyenLieuID = @NguyenLieuID", conn);
+            cmd.Parameters.AddWithValue("@MaDeBanh", maDeBanh);
+            cmd.Parameters.AddWithValue("@SizeID", sizeId);
+            cmd.Parameters.AddWithValue("@NguyenLieuID", nguyenLieuId);
+            return await cmd.ExecuteNonQueryAsync() > 0;
+        }
+        catch (Exception ex)
+        {
+            System.Diagnostics.Debug.WriteLine($"Error deleting QuyDinh_Vien: {ex.Message}");
+            return false;
+        }
+    }
+    #endregion
 }
-
-

@@ -1,4 +1,4 @@
-﻿using System.IO;
+using System.IO;
 using System.Globalization;
 using System.Windows;
 using System.Windows.Markup;
@@ -27,6 +27,9 @@ namespace QuanLyKhoNguyenLieuPizza
         protected override async void OnStartup(StartupEventArgs e)
         {
             base.OnStartup(e);
+
+            // Migrate hình ảnh cũ sang AppData nếu cần
+            Helpers.ImageStorageHelper.MigrateImagesFromBaseDirectory();
 
             // Đặt định dạng ngày tháng theo Việt Nam (dd/MM/yyyy)
             var culture = new CultureInfo("vi-VN");

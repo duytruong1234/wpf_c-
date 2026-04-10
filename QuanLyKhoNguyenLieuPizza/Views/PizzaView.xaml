@@ -497,7 +497,18 @@
                             <TextBlock Text="Mã món ăn *" FontSize="12" FontWeight="SemiBold" Foreground="{StaticResource Gray600}" Margin="0,0,0,6"/>
                             <Border Background="{StaticResource Gray50}" CornerRadius="10" BorderBrush="{StaticResource Gray200}" BorderThickness="1" Padding="14,10">
                                 <TextBox Text="{Binding FormMaPizza, UpdateSourceTrigger=PropertyChanged}" 
-                                         FontSize="13" Background="Transparent" BorderThickness="0" Foreground="{StaticResource Gray800}"/>
+                                         IsReadOnly="{Binding IsEditing}"
+                                         FontSize="13" Background="Transparent" BorderThickness="0" Foreground="{StaticResource Gray800}">
+                                    <TextBox.Style>
+                                        <Style TargetType="TextBox">
+                                            <Style.Triggers>
+                                                <DataTrigger Binding="{Binding IsEditing}" Value="True">
+                                                    <Setter Property="Opacity" Value="0.6"/>
+                                                </DataTrigger>
+                                            </Style.Triggers>
+                                        </Style>
+                                    </TextBox.Style>
+                                </TextBox>
                             </Border>
 
                             <!-- Tên pizza -->
@@ -534,7 +545,18 @@
                                 <StackPanel Grid.Column="0">
                                     <TextBlock Text="Kích thước *" FontSize="12" FontWeight="SemiBold" Foreground="{StaticResource Gray600}" Margin="0,0,0,6"/>
                                     <ComboBox ItemsSource="{Binding KichThuocOptions}" SelectedItem="{Binding FormKichThuoc}"
-                                              FontSize="13" Padding="14,10"/>
+                                              FontSize="13" Padding="14,10">
+                                        <ComboBox.Style>
+                                            <Style TargetType="ComboBox" BasedOn="{StaticResource {x:Type ComboBox}}">
+                                                <Style.Triggers>
+                                                    <DataTrigger Binding="{Binding IsEditing}" Value="True">
+                                                        <Setter Property="IsEnabled" Value="False"/>
+                                                        <Setter Property="Opacity" Value="0.6"/>
+                                                    </DataTrigger>
+                                                </Style.Triggers>
+                                            </Style>
+                                        </ComboBox.Style>
+                                    </ComboBox>
                                 </StackPanel>
 
                                 <StackPanel Grid.Column="2">
@@ -658,7 +680,7 @@
                         <Grid>
                             <StackPanel Orientation="Horizontal">
                                 <ui:SymbolIcon Symbol="DocumentBulletList24" FontSize="20" VerticalAlignment="Center" Margin="0,0,12,0" Foreground="White"/>
-                                <TextBlock Text="Quản Lý Hóa Đơn Quy Định" FontSize="18" FontWeight="Bold" Foreground="White" VerticalAlignment="Center"/>
+                                <TextBlock Text="Thành phần nguyên liệu của món ăn" FontSize="18" FontWeight="Bold" Foreground="White" VerticalAlignment="Center"/>
                             </StackPanel>
                             <Button HorizontalAlignment="Right" Command="{Binding CloseRecipePopupCommand}" Cursor="Hand" Width="32" Height="32">
                                 <Button.Template>
@@ -694,6 +716,75 @@
                                     <StackPanel Grid.Column="1" HorizontalAlignment="Left">
                                         <TextBlock Text="Kích thước:" FontSize="12" Foreground="{StaticResource Gray500}" Margin="0,0,0,4"/>
                                         <TextBlock Text="{Binding RecipePizza.KichThuoc}" FontSize="14" FontWeight="SemiBold" Foreground="{StaticResource Gray700}"/>
+                                    </StackPanel>
+                                </Grid>
+                            </Border>
+
+                            <!-- Form Thêm/sửa Thành Phần -->
+                            <Border Background="White" BorderBrush="{StaticResource Gray200}" BorderThickness="1" CornerRadius="12" Padding="20" Margin="0,0,0,20">
+                                <Grid>
+                                    <Grid.ColumnDefinitions>
+                                        <ColumnDefinition Width="3*"/>
+                                        <ColumnDefinition Width="3*"/>
+                                        <ColumnDefinition Width="2*"/>
+                                        <ColumnDefinition Width="Auto"/>
+                                    </Grid.ColumnDefinitions>
+                                    
+                                    <StackPanel Grid.Column="0" Margin="0,0,12,0">
+                                        <TextBlock Text="Nguyên liệu (*)" FontSize="12" Foreground="{StaticResource Gray600}" Margin="0,0,0,4"/>
+                                        <ComboBox ItemsSource="{Binding AllNguyenLieus}" SelectedItem="{Binding RecipeSelectedNguyenLieu}" DisplayMemberPath="TenNguyenLieu" Background="White" BorderBrush="{StaticResource Gray200}"/>
+                                    </StackPanel>
+                                    
+                                    <StackPanel Grid.Column="1" Margin="0,0,12,0">
+                                        <TextBlock Text="Số lượng (*)" FontSize="12" Foreground="{StaticResource Gray600}" Margin="0,0,0,4"/>
+                                        <TextBox Text="{Binding RecipeSoLuong, UpdateSourceTrigger=PropertyChanged}" Background="White" BorderBrush="{StaticResource Gray200}"/>
+                                    </StackPanel>
+                                    
+                                    <StackPanel Grid.Column="2" Margin="0,0,16,0">
+                                        <TextBlock Text="Đơn vị" FontSize="12" Foreground="{StaticResource Gray600}" Margin="0,0,0,4"/>
+                                        <ComboBox ItemsSource="{Binding DonViTinhs}" SelectedItem="{Binding RecipeSelectedDonVi}" DisplayMemberPath="TenDonVi" Background="White" BorderBrush="{StaticResource Gray200}"/>
+                                    </StackPanel>
+
+                                    <StackPanel Grid.Column="3" Orientation="Horizontal" VerticalAlignment="Bottom">
+                                        <Button Command="{Binding SaveRecipeItemCommand}" Cursor="Hand" Margin="0,0,8,0">
+                                            <Button.Template>
+                                                <ControlTemplate TargetType="Button">
+                                                    <Border x:Name="saveBorder" Background="{StaticResource PrimaryBlue}" CornerRadius="8" Padding="16,4" MinHeight="32">
+                                                        <TextBlock Foreground="White" FontWeight="Medium" FontSize="13" VerticalAlignment="Center">
+                                                            <TextBlock.Style>
+                                                                <Style TargetType="TextBlock">
+                                                                    <Setter Property="Text" Value="Thêm"/>
+                                                                    <Style.Triggers>
+                                                                        <DataTrigger Binding="{Binding IsRecipeEditing}" Value="True">
+                                                                            <Setter Property="Text" Value="Lưu"/>
+                                                                        </DataTrigger>
+                                                                    </Style.Triggers>
+                                                                </Style>
+                                                            </TextBlock.Style>
+                                                        </TextBlock>
+                                                    </Border>
+                                                    <ControlTemplate.Triggers>
+                                                        <Trigger Property="IsMouseOver" Value="True">
+                                                            <Setter TargetName="saveBorder" Property="Background" Value="#1D4ED8"/>
+                                                        </Trigger>
+                                                    </ControlTemplate.Triggers>
+                                                </ControlTemplate>
+                                            </Button.Template>
+                                        </Button>
+                                        <Button Command="{Binding CancelRecipeEditCommand}" Cursor="Hand" Visibility="{Binding IsRecipeEditing, Converter={StaticResource BoolToVisibilityConverter}}">
+                                            <Button.Template>
+                                                <ControlTemplate TargetType="Button">
+                                                    <Border x:Name="cancelBorder" Background="{StaticResource Gray100}" CornerRadius="8" Padding="16,4" MinHeight="32">
+                                                        <TextBlock Text="Hủy" Foreground="{StaticResource Gray700}" FontWeight="Medium" FontSize="13" VerticalAlignment="Center"/>
+                                                    </Border>
+                                                    <ControlTemplate.Triggers>
+                                                        <Trigger Property="IsMouseOver" Value="True">
+                                                            <Setter TargetName="cancelBorder" Property="Background" Value="{StaticResource Gray200}"/>
+                                                        </Trigger>
+                                                    </ControlTemplate.Triggers>
+                                                </ControlTemplate>
+                                            </Button.Template>
+                                        </Button>
                                     </StackPanel>
                                 </Grid>
                             </Border>
@@ -749,9 +840,23 @@
                                                             <TextBlock Grid.Column="1" Text="{Binding SoLuongFormatted}" FontSize="13" Foreground="{StaticResource Gray700}" VerticalAlignment="Center"/>
                                                             <TextBlock Grid.Column="2" Text="{Binding TenDonVi}" FontSize="13" Foreground="{StaticResource Gray700}" VerticalAlignment="Center"/>
                                                             
-                                                            <!-- Nút Xóa -->
+                                                            <!-- Thao tác (Sửa và Xóa) -->
                                                             <StackPanel Grid.Column="3" Orientation="Horizontal" HorizontalAlignment="Center">
-                                                                <Button Command="{Binding DeleteCommand}" Cursor="Hand" ToolTip="Xóa nguyên liệu" Margin="0,0,8,0">
+                                                                <Button Command="{Binding EditCommand}" Cursor="Hand" ToolTip="Sửa nguyên liệu" Margin="0,0,8,0">
+                                                                    <Button.Template>
+                                                                        <ControlTemplate TargetType="Button">
+                                                                            <Border x:Name="editBorder" Background="#EEF2FF" CornerRadius="8" Width="32" Height="32">
+                                                                                <ui:SymbolIcon Symbol="Edit24" FontSize="14" Foreground="#4338CA" HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                                                                            </Border>
+                                                                            <ControlTemplate.Triggers>
+                                                                                <Trigger Property="IsMouseOver" Value="True">
+                                                                                    <Setter TargetName="editBorder" Property="Background" Value="#E0E7FF"/>
+                                                                                </Trigger>
+                                                                            </ControlTemplate.Triggers>
+                                                                        </ControlTemplate>
+                                                                    </Button.Template>
+                                                                </Button>
+                                                                <Button Command="{Binding DeleteCommand}" Cursor="Hand" ToolTip="Xóa nguyên liệu">
                                                                     <Button.Template>
                                                                         <ControlTemplate TargetType="Button">
                                                                             <Border x:Name="delBorder" Background="#FEE2E2" CornerRadius="8" Width="32" Height="32">

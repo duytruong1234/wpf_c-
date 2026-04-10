@@ -52,6 +52,9 @@
 <DataTemplate DataType="{x:Type vm:PizzaViewModel}">
     <views:PizzaView/>
 </DataTemplate>
+<DataTemplate DataType="{x:Type vm:QuyDinhViewModel}">
+    <views:QuyDinhView/>
+</DataTemplate>
 <DataTemplate DataType="{x:Type vm:SaoLuuViewModel}">
     <views:SaoLuuView/>
 </DataTemplate>
@@ -454,6 +457,29 @@
                                 <ui:SymbolIcon Symbol="FoodPizza24" FontSize="14" Foreground="#9CA3AF" HorizontalAlignment="Center" VerticalAlignment="Center"/>
                             </Border>
                             <TextBlock Text="Quản lý món ăn" VerticalAlignment="Center"/>
+                        </StackPanel>
+                    </Button>
+
+                    <!-- Quy đinh làm bánh -->
+                    <Button Command="{Binding NavigateCommand}"
+                            CommandParameter="QuyDinh"
+                            Visibility="{Binding CanViewPizza, Converter={StaticResource BoolToVisibilityConverter}}">
+                        <Button.Style>
+                            <Style TargetType="Button" BasedOn="{StaticResource ModernSidebarButton}">
+                                <Style.Triggers>
+                                    <DataTrigger Binding="{Binding SelectedMenuItem}" Value="QuyDinh">
+                                        <Setter Property="Background" Value="#374151"/>
+                                        <Setter Property="Foreground" Value="White"/>
+                                        <Setter Property="FontWeight" Value="SemiBold"/>
+                                    </DataTrigger>
+                                </Style.Triggers>
+                            </Style>
+                        </Button.Style>
+                        <StackPanel Orientation="Horizontal">
+                            <Border Width="30" Height="30" CornerRadius="8" Background="#374151" Margin="0,0,10,0">
+                                <ui:SymbolIcon Symbol="Settings24" FontSize="14" Foreground="#9CA3AF" HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                            </Border>
+                            <TextBlock Text="Cấu hình làm bánh" VerticalAlignment="Center"/>
                         </StackPanel>
                     </Button>
 

@@ -130,7 +130,7 @@ public interface IDatabaseService
     Task<List<CT_PhieuNhap>> GetChiTietPhieuNhapAsync(int phieuNhapId);
     Task<bool> DeletePhieuNhapAsync(int phieuNhapId);
     Task<bool> ApprovePhieuNhapAsync(int phieuNhapId, int nguoiDuyetId);
-    Task<bool> CancelPhieuNhapAsync(int phieuNhapId, int nguoiHuyId);
+    Task<bool> CancelPhieuNhapAsync(int phieuNhapId, int nguoiHuyId, string? lyDoHuy = null);
     Task<string> GenerateMaPhieuNhapAsync();
     Task<int> SavePhieuNhapAsync(PhieuNhap phieuNhap, List<CT_PhieuNhap> chiTiets);
     Task<decimal> GetTotalTongTienPhieuNhapAsync(int? nhanVienId = null, int? nhaCungCapId = null, DateTime? tuNgay = null, DateTime? denNgay = null);

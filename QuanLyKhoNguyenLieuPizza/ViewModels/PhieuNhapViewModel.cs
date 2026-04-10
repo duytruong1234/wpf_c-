@@ -57,6 +57,11 @@ public class PhieuNhapViewModel : BaseViewModel
             {
                 OnPropertyChanged(nameof(CanEditDelete));
                 OnPropertyChanged(nameof(CanApprove));
+                OnPropertyChanged(nameof(CanCancel));
+                OnPropertyChanged(nameof(IsCancelVisible));
+                OnPropertyChanged(nameof(IsEditDeleteVisible));
+                OnPropertyChanged(nameof(CanDelete));
+                OnPropertyChanged(nameof(IsDeleteVisible));
             }
         }
     }
@@ -185,6 +190,50 @@ public class PhieuNhapViewModel : BaseViewModel
     }
 
     // Lọc trạng thái
+    public ObservableCollection<string> TrangThaiOptions { get; } = new ObservableCollection<string> 
+    { 
+        "Tất cả", "Chờ duyệt", "Đã duyệt", "Đã hủy" 
+    };
+
+    private string _selectedTrangThaiFilter = "Tất cả";
+    public string SelectedTrangThaiFilter
+    {
+        get => _selectedTrangThaiFilter;
+        set
+        {
+            if (SetProperty(ref _selectedTrangThaiFilter, value) && !IsBatchUpdating)
+            {
+                IsBatchUpdating = true;
+                if (value == "Tất cả")
+                {
+                    FilterChoDuyet = true;
+                    FilterDaDuyet = true;
+                    FilterDaHuy = true;
+                }
+                else if (value == "Chờ duyệt")
+                {
+                    FilterChoDuyet = true;
+                    FilterDaDuyet = false;
+                    FilterDaHuy = false;
+                }
+                else if (value == "Đã duyệt")
+                {
+                    FilterChoDuyet = false;
+                    FilterDaDuyet = true;
+                    FilterDaHuy = false;
+                }
+                else if (value == "Đã hủy")
+                {
+                    FilterChoDuyet = false;
+                    FilterDaDuyet = false;
+                    FilterDaHuy = true;
+                }
+                IsBatchUpdating = false;
+                _ = LoadPhieuNhapsAsync();
+            }
+        }
+    }
+
     private bool _filterChoDuyet = true;
     public bool FilterChoDuyet
     {
@@ -211,7 +260,7 @@ public class PhieuNhapViewModel : BaseViewModel
         }
     }
 
-    private bool _filterDaHuy;
+    private bool _filterDaHuy = true;
     public bool FilterDaHuy
     {
         get => _filterDaHuy;
@@ -223,6 +272,7 @@ public class PhieuNhapViewModel : BaseViewModel
             }
         }
     }
+
 
     private decimal _tongTien;
     public decimal TongTien
@@ -330,13 +380,28 @@ public class PhieuNhapViewModel : BaseViewModel
         set => SetProperty(ref _isLoading, value);
     }
 
-    // Chỉ sửa/xóa phiếu Chờ duyệt và trong ngày
+    // Chỉ sửa phiếu Chờ duyệt và trong vòng 24h
     public bool CanEditDelete => SelectedPhieuNhap != null && 
                                   SelectedPhieuNhap.TrangThai == 1 &&
-                                  SelectedPhieuNhap.NgayNhap.Date == DateTime.Today;
+                                  (DateTime.Now - SelectedPhieuNhap.NgayNhap).TotalHours <= 24;
 
     // Quản lý mới được duyệt phiếu Chờ duyệt
     public bool CanApprove => SelectedPhieuNhap != null && SelectedPhieuNhap.TrangThai == 1 && IsQuanLy;
+
+    // Quyền Hủy phiếu: Quản lý hoặc (Người tạo trong vòng 24h)
+    public bool CanCancel => CanApprove || CanEditDelete;
+
+    // Hiển thị nút Hủy
+    public bool IsCancelVisible => CanCancel;
+
+    // Hiển thị Sửa (chỉ phiếu Chờ duyệt trong 24h)
+    public bool IsEditDeleteVisible => CanEditDelete;
+
+    // Xóa phiếu: chỉ cho phép xóa phiếu đã hủy
+    public bool CanDelete => SelectedPhieuNhap != null && SelectedPhieuNhap.TrangThai == 3;
+
+    // Hiển thị nút Xóa
+    public bool IsDeleteVisible => CanDelete;
 
     public List<string> ThoiGianOptions { get; } = new()
     {
@@ -607,7 +672,8 @@ public class PhieuNhapViewModel : BaseViewModel
             SoPhieuDaDuyet = phieuNhaps.Count(p => p.TrangThai == 2);
             SoPhieuDaHuy = phieuNhaps.Count(p => p.TrangThai == 3);
 
-            TongTien = phieuNhaps.Sum(p => p.TongTien);
+            // 3.1.5: Chỉ tính tổng tiền của phiếu đã duyệt
+            TongTien = phieuNhaps.Where(p => p.TrangThai == 2).Sum(p => p.TongTien);
         }
         catch (Exception ex)
         {
@@ -658,9 +724,10 @@ public class PhieuNhapViewModel : BaseViewModel
             SelectedThoiGian = string.Empty;
             TuNgay = null;
             DenNgay = null;
+            SelectedTrangThaiFilter = "Tất cả";
             FilterChoDuyet = true;
             FilterDaDuyet = true;
-            FilterDaHuy = false;
+            FilterDaHuy = true;
         }
         finally
         {
@@ -821,7 +888,7 @@ public class PhieuNhapViewModel : BaseViewModel
 
     private async Task DeletePhieuNhapAsync(object? parameter)
     {
-        if (SelectedPhieuNhap == null || !CanEditDelete) return;
+        if (SelectedPhieuNhap == null || !CanDelete) return;
 
         try
         {
@@ -874,9 +941,54 @@ public class PhieuNhapViewModel : BaseViewModel
             var currentUser = CurrentUserSession.Instance.CurrentUser;
             if (currentUser?.NhanVienID == null) return;
 
+            // 3.1.4: Yêu cầu nhập lý do hủy
+            var inputDialog = new System.Windows.Window
+            {
+                Title = "Lý do hủy phiếu",
+                Width = 420, Height = 200,
+                WindowStartupLocation = System.Windows.WindowStartupLocation.CenterScreen,
+                ResizeMode = System.Windows.ResizeMode.NoResize
+            };
+            var sp = new System.Windows.Controls.StackPanel { Margin = new System.Windows.Thickness(20) };
+            sp.Children.Add(new System.Windows.Controls.TextBlock 
+            { 
+                Text = "Vui lòng nhập lý do hủy phiếu:", 
+                FontSize = 14, Margin = new System.Windows.Thickness(0, 0, 0, 10) 
+            });
+            var tbInput = new System.Windows.Controls.TextBox 
+            { 
+                FontSize = 13, Padding = new System.Windows.Thickness(8, 6, 8, 6),
+                AcceptsReturn = false 
+            };
+            sp.Children.Add(tbInput);
+            var btnPanel = new System.Windows.Controls.StackPanel 
+            { 
+                Orientation = System.Windows.Controls.Orientation.Horizontal, 
+                HorizontalAlignment = System.Windows.HorizontalAlignment.Right, 
+                Margin = new System.Windows.Thickness(0, 16, 0, 0) 
+            };
+            var btnOk = new System.Windows.Controls.Button 
+            { 
+                Content = "Xác nhận hủy", Width = 120, Height = 32, 
+                Margin = new System.Windows.Thickness(0, 0, 8, 0), IsDefault = true 
+            };
+            btnOk.Click += (s, e) => { inputDialog.DialogResult = true; };
+            var btnCancel = new System.Windows.Controls.Button 
+            { 
+                Content = "Quay lại", Width = 80, Height = 32, IsCancel = true 
+            };
+            btnPanel.Children.Add(btnOk);
+            btnPanel.Children.Add(btnCancel);
+            sp.Children.Add(btnPanel);
+            inputDialog.Content = sp;
+
+            if (inputDialog.ShowDialog() != true || string.IsNullOrWhiteSpace(tbInput.Text)) return;
+            var lyDoHuy = tbInput.Text.Trim();
+
             var result = await _databaseService.CancelPhieuNhapAsync(
                 SelectedPhieuNhap.PhieuNhapID,
-                currentUser.NhanVienID.Value);
+                currentUser.NhanVienID.Value,
+                lyDoHuy.Trim());
                 
             if (result)
             {

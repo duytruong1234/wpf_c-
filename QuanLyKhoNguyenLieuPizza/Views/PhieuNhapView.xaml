@@ -218,6 +218,7 @@
                         <ColumnDefinition Width="*"/>
                         <ColumnDefinition Width="*"/>
                         <ColumnDefinition Width="*"/>
+                        <ColumnDefinition Width="*"/>
                         <ColumnDefinition Width="Auto"/>
                     </Grid.ColumnDefinitions>
                     <Grid.RowDefinitions>
@@ -226,7 +227,7 @@
                     </Grid.RowDefinitions>
 
                     <!-- Filter Tiêu đề -->
-                    <StackPanel Grid.ColumnSpan="5" Orientation="Horizontal" Margin="0,0,0,14">
+                    <StackPanel Grid.ColumnSpan="6" Orientation="Horizontal" Margin="0,0,0,14">
                         <TextBlock Text="&#xE71C;" FontFamily="Segoe MDL2 Assets" FontSize="14" Foreground="{StaticResource Gray500}" VerticalAlignment="Center" Margin="0,0,8,0"/>
                         <TextBlock Text="Bộ lọc" FontSize="14" FontWeight="SemiBold" Foreground="{StaticResource Gray800}"/>
                     </StackPanel>
@@ -261,7 +262,15 @@
                         </Border>
                     </StackPanel>
 
-                    <Button Grid.Row="1" Grid.Column="4" Command="{Binding ClearFilterCommand}" Cursor="Hand" VerticalAlignment="Bottom" Margin="6,0,0,0">
+                    <StackPanel Grid.Row="1" Grid.Column="4" Margin="0,0,10,0">
+                        <TextBlock Text="Trạng thái" FontSize="12" Foreground="{StaticResource Gray500}" Margin="0,0,0,6"/>
+                        <Border Style="{StaticResource ModernInputBorder}">
+                            <ComboBox ItemsSource="{Binding TrangThaiOptions}" SelectedItem="{Binding SelectedTrangThaiFilter}"
+                                      BorderThickness="0" Background="Transparent" FontSize="13"/>
+                        </Border>
+                    </StackPanel>
+
+                    <Button Grid.Row="1" Grid.Column="5" Command="{Binding ClearFilterCommand}" Cursor="Hand" VerticalAlignment="Bottom" Margin="6,0,0,0">
                         <Button.Template>
                             <ControlTemplate TargetType="Button">
                                 <Border x:Name="border" Background="{StaticResource Gray100}" CornerRadius="10" Padding="16,10">
@@ -337,7 +346,7 @@
                                                 </Grid.ColumnDefinitions>
 
                                                 <TextBlock Grid.Column="0" Text="{Binding MaPhieuNhap}" Style="{StaticResource TableCellStyle}" FontWeight="SemiBold"/>
-                                                <TextBlock Grid.Column="1" Text="{Binding NgayNhap, StringFormat=\{0:dd/MM/yyyy\}}" Style="{StaticResource TableCellStyle}"/>
+                                                <TextBlock Grid.Column="1" Text="{Binding NgayNhap, StringFormat=\{0:dd/MM/yyyy HH:mm\}}" Style="{StaticResource TableCellStyle}"/>
                                                 <TextBlock Grid.Column="2" Text="{Binding NhanVienNhap.HoTen}" Style="{StaticResource TableCellStyle}"/>
                                                 <TextBlock Grid.Column="3" Text="{Binding NhaCungCap.TenNCC}" Style="{StaticResource TableCellStyle}"/>
                                                 <TextBlock Grid.Column="4" Text="{Binding TongTien, StringFormat='{}{0:N0} đ'}" Style="{StaticResource TableCellStyle}" Foreground="{StaticResource Gray800}" FontWeight="Bold"/>
@@ -610,7 +619,7 @@
                                                 </Grid.ColumnDefinitions>
 
                                                 <TextBlock Grid.Column="0" Text="{Binding MaPhieuNhap}" Style="{StaticResource TableCellStyle}" FontWeight="SemiBold"/>
-                                                <TextBlock Grid.Column="1" Text="{Binding NgayNhap, StringFormat=\{0:dd/MM/yyyy\}}" Style="{StaticResource TableCellStyle}"/>
+                                                <TextBlock Grid.Column="1" Text="{Binding NgayNhap, StringFormat=\{0:dd/MM/yyyy HH:mm\}}" Style="{StaticResource TableCellStyle}"/>
                                                 <TextBlock Grid.Column="2" Text="{Binding NhanVienNhap.HoTen}" Style="{StaticResource TableCellStyle}"/>
                                                 <TextBlock Grid.Column="3" Text="{Binding NhaCungCap.TenNCC}" Style="{StaticResource TableCellStyle}"/>
                                                 <TextBlock Grid.Column="4" Text="{Binding TongTien, StringFormat='{}{0:N0} đ'}" Style="{StaticResource TableCellStyle}" Foreground="{StaticResource Gray800}" FontWeight="Bold"/>
@@ -695,7 +704,7 @@
         <!-- ========== MANAGER CREATE DIALOG ========== -->
         <Grid Visibility="{Binding IsDialogOpen, Converter={StaticResource BoolToVisibilityConverter}}" Background="#80000000">
             <!-- Manager Dialog -->
-            <Border Background="White" CornerRadius="20" Width="1000" Height="680" VerticalAlignment="Center" HorizontalAlignment="Center" Padding="32"
+            <Border Background="White" CornerRadius="20" Width="1200" Height="680" VerticalAlignment="Center" HorizontalAlignment="Center" Padding="32"
                     Visibility="{Binding IsQuanLy, Converter={StaticResource BoolToVisibilityConverter}}">
                 <Grid>
                     <Grid.RowDefinitions>
@@ -815,14 +824,16 @@
                                             <ColumnDefinition Width="1.5*"/>
                                             <ColumnDefinition Width="Auto"/>
                                             <ColumnDefinition Width="1*"/>
+                                            <ColumnDefinition Width="1*"/>
                                             <ColumnDefinition Width="1.2*"/>
                                             <ColumnDefinition Width="40"/>
                                         </Grid.ColumnDefinitions>
                                         <TextBlock Grid.Column="0" Text="Tên nguyên liệu" Style="{StaticResource TableHeaderStyle}"/>
                                         <TextBlock Grid.Column="1" Text="Số lượng" Style="{StaticResource TableHeaderStyle}"/>
                                         <TextBlock Grid.Column="2" Text="Đơn giá" Style="{StaticResource TableHeaderStyle}"/>
-                                        <TextBlock Grid.Column="3" Text="Thành tiền" Style="{StaticResource TableHeaderStyle}"/>
-                                        <TextBlock Grid.Column="4" Text="" Style="{StaticResource TableHeaderStyle}"/>
+                                        <TextBlock Grid.Column="3" Text="HSD" Style="{StaticResource TableHeaderStyle}"/>
+                                        <TextBlock Grid.Column="4" Text="Thành tiền" Style="{StaticResource TableHeaderStyle}"/>
+                                        <TextBlock Grid.Column="5" Text="" Style="{StaticResource TableHeaderStyle}"/>
                                     </Grid>
                                 </Border>
 
@@ -835,6 +846,7 @@
                                                         <Grid.ColumnDefinitions>
                                                             <ColumnDefinition Width="1.5*"/>
                                                             <ColumnDefinition Width="Auto"/>
+                                                            <ColumnDefinition Width="1*"/>
                                                             <ColumnDefinition Width="1*"/>
                                                             <ColumnDefinition Width="1.2*"/>
                                                             <ColumnDefinition Width="40"/>
@@ -881,9 +893,14 @@
                                                         </StackPanel>
                                                         
                                                         <TextBlock Grid.Column="2" Text="{Binding DonGia, StringFormat='{}{0:N0} đ'}" Style="{StaticResource TableCellStyle}"/>
-                                                        <TextBlock Grid.Column="3" Text="{Binding ThanhTien, StringFormat='{}{0:N0} đ'}" Style="{StaticResource TableCellStyle}" Foreground="{StaticResource Gray800}" FontWeight="SemiBold"/>
+                                                        
+                                                        <DatePicker Grid.Column="3" SelectedDate="{Binding HSD, Mode=TwoWay}" 
+                                                                    BorderThickness="0" Background="Transparent" FontSize="11" 
+                                                                    VerticalAlignment="Center" HorizontalAlignment="Center" Language="vi-VN"/>
+                                                        
+                                                        <TextBlock Grid.Column="4" Text="{Binding ThanhTien, StringFormat='{}{0:N0} đ'}" Style="{StaticResource TableCellStyle}" Foreground="{StaticResource Gray800}" FontWeight="SemiBold"/>
 
-                                                                        <Button Grid.Column="4" Command="{Binding DataContext.RemoveChiTietCommand, RelativeSource={RelativeSource AncestorType=ItemsControl}}"
+                                                                        <Button Grid.Column="5" Command="{Binding DataContext.RemoveChiTietCommand, RelativeSource={RelativeSource AncestorType=ItemsControl}}"
                                                                                 CommandParameter="{Binding}" Cursor="Hand" HorizontalAlignment="Center">
                                                                             <Button.Template>
                                                                                 <ControlTemplate TargetType="Button">
@@ -959,7 +976,7 @@
             </Border>
 
             <!-- Employee Dialog -->
-            <Border Background="White" CornerRadius="20" Width="1000" Height="680" VerticalAlignment="Center" HorizontalAlignment="Center" Padding="32"
+            <Border Background="White" CornerRadius="20" Width="1200" Height="680" VerticalAlignment="Center" HorizontalAlignment="Center" Padding="32"
                     Visibility="{Binding IsNhanVienKho, Converter={StaticResource BoolToVisibilityConverter}}">
                 <Grid>
                     <Grid.RowDefinitions>
@@ -1073,14 +1090,16 @@
                                             <ColumnDefinition Width="1.5*"/>
                                             <ColumnDefinition Width="Auto"/>
                                             <ColumnDefinition Width="1*"/>
+                                            <ColumnDefinition Width="1*"/>
                                             <ColumnDefinition Width="1.2*"/>
                                             <ColumnDefinition Width="Auto"/>
                                         </Grid.ColumnDefinitions>
                                         <TextBlock Grid.Column="0" Text="Tên nguyên liệu" FontSize="12" FontWeight="SemiBold" Foreground="{StaticResource Gray500}" HorizontalAlignment="Center"/>
                                         <TextBlock Grid.Column="1" Text="Số lượng" FontSize="12" FontWeight="SemiBold" Foreground="{StaticResource Gray500}" HorizontalAlignment="Center"/>
                                         <TextBlock Grid.Column="2" Text="Đơn giá" FontSize="12" FontWeight="SemiBold" Foreground="{StaticResource Gray500}" HorizontalAlignment="Center"/>
-                                        <TextBlock Grid.Column="3" Text="Thành tiền" FontSize="12" FontWeight="SemiBold" Foreground="{StaticResource Gray500}" HorizontalAlignment="Center"/>
-                                        <TextBlock Grid.Column="4" Text="" FontSize="12" FontWeight="SemiBold" Foreground="{StaticResource Gray500}" HorizontalAlignment="Center" Width="40"/>
+                                        <TextBlock Grid.Column="3" Text="HSD" FontSize="12" FontWeight="SemiBold" Foreground="{StaticResource Gray500}" HorizontalAlignment="Center"/>
+                                        <TextBlock Grid.Column="4" Text="Thành tiền" FontSize="12" FontWeight="SemiBold" Foreground="{StaticResource Gray500}" HorizontalAlignment="Center"/>
+                                        <TextBlock Grid.Column="5" Text="" FontSize="12" FontWeight="SemiBold" Foreground="{StaticResource Gray500}" HorizontalAlignment="Center" Width="40"/>
                                     </Grid>
                                 </Border>
 
@@ -1093,6 +1112,7 @@
                                                         <Grid.ColumnDefinitions>
                                                             <ColumnDefinition Width="1.5*"/>
                                                             <ColumnDefinition Width="Auto"/>
+                                                            <ColumnDefinition Width="1*"/>
                                                             <ColumnDefinition Width="1*"/>
                                                             <ColumnDefinition Width="1.2*"/>
                                                             <ColumnDefinition Width="Auto"/>
@@ -1140,17 +1160,22 @@
                                                         </StackPanel>
 
                                                         <StackPanel Grid.Column="2" Orientation="Horizontal" HorizontalAlignment="Center" VerticalAlignment="Center">
-                                                            <TextBox Text="{Binding DonGia, UpdateSourceTrigger=LostFocus, StringFormat='{}{0:N0}'}" 
+                                                            <TextBox Text="{Binding DonGia, UpdateSourceTrigger=LostFocus}" 
                                                                      FontSize="12" Foreground="{StaticResource Gray800}" 
-                                                                     MinWidth="60" TextAlignment="Center" Background="Transparent" 
-                                                                     BorderThickness="0" BorderBrush="{StaticResource Gray300}"/>
-                                                            <TextBlock Text=" đ" FontSize="12" Foreground="{StaticResource Gray800}" VerticalAlignment="Center"/>
+                                                                     TextAlignment="Right" Background="White" 
+                                                                     BorderThickness="1" BorderBrush="{StaticResource Gray300}"
+                                                                     Padding="4,2" MinWidth="70"/>
+                                                            <TextBlock Text=" đ" FontSize="12" Foreground="{StaticResource Gray800}" VerticalAlignment="Center" Margin="4,0,0,0"/>
                                                         </StackPanel>
 
-                                                        <TextBlock Grid.Column="3" Text="{Binding ThanhTien, StringFormat='{}{0:N0} đ'}" FontSize="12" Foreground="{StaticResource Gray800}" FontWeight="SemiBold"
+                                                        <DatePicker Grid.Column="3" SelectedDate="{Binding HSD, Mode=TwoWay}" 
+                                                                    BorderThickness="0" Background="Transparent" FontSize="11" 
+                                                                    VerticalAlignment="Center" HorizontalAlignment="Center" Language="vi-VN"/>
+
+                                                        <TextBlock Grid.Column="4" Text="{Binding ThanhTien, StringFormat='{}{0:N0} đ'}" FontSize="12" Foreground="{StaticResource Gray800}" FontWeight="SemiBold"
                                                                    VerticalAlignment="Center" HorizontalAlignment="Center"/>
 
-                                                        <Button Grid.Column="4" Command="{Binding DataContext.RemoveChiTietCommand, RelativeSource={RelativeSource AncestorType=ItemsControl}}"
+                                                        <Button Grid.Column="5" Command="{Binding DataContext.RemoveChiTietCommand, RelativeSource={RelativeSource AncestorType=ItemsControl}}"
                                                                 CommandParameter="{Binding}" Cursor="Hand" HorizontalAlignment="Center">
                                                             <Button.Template>
                                                                 <ControlTemplate TargetType="Button">
@@ -1255,12 +1280,48 @@
                                 </TextBlock>
                                 <TextBlock FontSize="13" Foreground="{StaticResource Gray500}" Margin="0,4,0,0">
                                     <Run Text="Ngày nhập: "/>
-                                    <Run Text="{Binding SelectedPhieuNhap.NgayNhap, StringFormat=\{0:dd/MM/yyyy\}}" FontWeight="SemiBold" Foreground="{StaticResource Gray800}"/>
+                                    <Run Text="{Binding SelectedPhieuNhap.NgayNhap, StringFormat=\{0:dd/MM/yyyy HH:mm\}}" FontWeight="SemiBold" Foreground="{StaticResource Gray800}"/>
                                 </TextBlock>
                                 <TextBlock FontSize="13" Foreground="{StaticResource Gray500}" Margin="0,4,0,0">
                                     <Run Text="Nhà cung cấp: "/>
                                     <Run Text="{Binding SelectedPhieuNhap.NhaCungCap.TenNCC}" FontWeight="SemiBold" Foreground="{StaticResource Gray800}"/>
                                 </TextBlock>
+                                <StackPanel Orientation="Horizontal" Margin="0,4,0,0">
+                                    <TextBlock Text="Trạng thái: " FontSize="13" Foreground="{StaticResource Gray500}" VerticalAlignment="Center"/>
+                                    <Border CornerRadius="8" Padding="10,4" Margin="4,0,0,0">
+                                        <Border.Style>
+                                            <Style TargetType="Border">
+                                                <Setter Property="Background" Value="#FEF3C7"/>
+                                                <Style.Triggers>
+                                                    <DataTrigger Binding="{Binding SelectedPhieuNhap.TrangThai}" Value="2">
+                                                        <Setter Property="Background" Value="#D1FAE5"/>
+                                                    </DataTrigger>
+                                                    <DataTrigger Binding="{Binding SelectedPhieuNhap.TrangThai}" Value="3">
+                                                        <Setter Property="Background" Value="#FEE2E2"/>
+                                                    </DataTrigger>
+                                                </Style.Triggers>
+                                            </Style>
+                                        </Border.Style>
+                                        <TextBlock FontSize="12" FontWeight="SemiBold">
+                                            <TextBlock.Style>
+                                                <Style TargetType="TextBlock">
+                                                    <Setter Property="Text" Value="Chờ duyệt"/>
+                                                    <Setter Property="Foreground" Value="#92400E"/>
+                                                    <Style.Triggers>
+                                                        <DataTrigger Binding="{Binding SelectedPhieuNhap.TrangThai}" Value="2">
+                                                            <Setter Property="Text" Value="Đã duyệt"/>
+                                                            <Setter Property="Foreground" Value="#065F46"/>
+                                                        </DataTrigger>
+                                                        <DataTrigger Binding="{Binding SelectedPhieuNhap.TrangThai}" Value="3">
+                                                            <Setter Property="Text" Value="Đã hủy"/>
+                                                            <Setter Property="Foreground" Value="#991B1B"/>
+                                                        </DataTrigger>
+                                                    </Style.Triggers>
+                                                </Style>
+                                            </TextBlock.Style>
+                                        </TextBlock>
+                                    </Border>
+                                </StackPanel>
                                 <TextBlock FontSize="13" Foreground="{StaticResource Gray500}" Margin="0,4,0,0"
                                            Visibility="{Binding SelectedPhieuNhap.NhanVienDuyet, Converter={StaticResource NullToVisibilityConverter}}">
                                     <Run Text="Người duyệt: "/>
@@ -1273,11 +1334,18 @@
                                 </TextBlock>
                             </StackPanel>
 
-                            <TextBlock Grid.Column="1" VerticalAlignment="Center" HorizontalAlignment="Left">
-                                <Run Text="Tổng tiền: " FontSize="14" Foreground="{StaticResource Gray500}"/>
-                                <Run Text="{Binding SelectedPhieuNhap.TongTien, StringFormat=\{0:N0\}}" FontSize="24" FontWeight="Bold" Foreground="{StaticResource Gray800}"/>
-                                <Run Text=" đ" FontSize="14" Foreground="{StaticResource Gray800}"/>
-                            </TextBlock>
+                            <StackPanel Grid.Column="1" VerticalAlignment="Center" HorizontalAlignment="Left">
+                                <TextBlock>
+                                    <Run Text="Tổng tiền: " FontSize="14" Foreground="{StaticResource Gray500}"/>
+                                    <Run Text="{Binding SelectedPhieuNhap.TongTien, StringFormat=\{0:N0\}}" FontSize="24" FontWeight="Bold" Foreground="{StaticResource Gray800}"/>
+                                    <Run Text=" đ" FontSize="14" Foreground="{StaticResource Gray800}"/>
+                                </TextBlock>
+                                
+                                <TextBlock Margin="0,8,0,0" Visibility="{Binding SelectedPhieuNhap.GhiChu, Converter={StaticResource StringToVisibilityConverter}}" TextWrapping="Wrap">
+                                    <Run Text="Lý do hủy: " FontSize="13" Foreground="{StaticResource Gray500}"/>
+                                    <Run Text="{Binding SelectedPhieuNhap.GhiChu}" FontSize="13" FontWeight="SemiBold" Foreground="#991B1B"/>
+                                </TextBlock>
+                            </StackPanel>
                         </Grid>
                     </StackPanel>
 
@@ -1292,14 +1360,20 @@
                                 <Grid>
                                     <Grid.ColumnDefinitions>
                                         <ColumnDefinition Width="2*"/>
-                                        <ColumnDefinition Width="1*"/>
+                                        <ColumnDefinition Width="0.8*"/>
+                                        <ColumnDefinition Width="0.8*"/>
+                                        <ColumnDefinition Width="0.8*"/>
+                                        <ColumnDefinition Width="0.8*"/>
                                         <ColumnDefinition Width="1*"/>
                                         <ColumnDefinition Width="1*"/>
                                     </Grid.ColumnDefinitions>
                                     <TextBlock Grid.Column="0" Text="Tên nguyên liệu" Style="{StaticResource TableHeaderStyle}"/>
                                     <TextBlock Grid.Column="1" Text="Số lượng" Style="{StaticResource TableHeaderStyle}"/>
-                                    <TextBlock Grid.Column="2" Text="Đơn giá" Style="{StaticResource TableHeaderStyle}"/>
-                                    <TextBlock Grid.Column="3" Text="Thành tiền" Style="{StaticResource TableHeaderStyle}"/>
+                                    <TextBlock Grid.Column="2" Text="Đơn vị" Style="{StaticResource TableHeaderStyle}"/>
+                                    <TextBlock Grid.Column="3" Text="Hệ số" Style="{StaticResource TableHeaderStyle}"/>
+                                    <TextBlock Grid.Column="4" Text="HSD" Style="{StaticResource TableHeaderStyle}"/>
+                                    <TextBlock Grid.Column="5" Text="Đơn giá" Style="{StaticResource TableHeaderStyle}"/>
+                                    <TextBlock Grid.Column="6" Text="Thành tiền" Style="{StaticResource TableHeaderStyle}"/>
                                 </Grid>
                             </Border>
 
@@ -1311,14 +1385,20 @@
                                                 <Grid>
                                                     <Grid.ColumnDefinitions>
                                                         <ColumnDefinition Width="2*"/>
-                                                        <ColumnDefinition Width="1*"/>
+                                                        <ColumnDefinition Width="0.8*"/>
+                                                        <ColumnDefinition Width="0.8*"/>
+                                                        <ColumnDefinition Width="0.8*"/>
+                                                        <ColumnDefinition Width="0.8*"/>
                                                         <ColumnDefinition Width="1*"/>
                                                         <ColumnDefinition Width="1*"/>
                                                     </Grid.ColumnDefinitions>
                                                     <TextBlock Grid.Column="0" Text="{Binding NguyenLieu.TenNguyenLieu}" Style="{StaticResource TableCellStyle}" TextAlignment="Left" Padding="20,16"/>
                                                     <TextBlock Grid.Column="1" Text="{Binding SoLuong, StringFormat=\{0:N0\}}" Style="{StaticResource TableCellStyle}"/>
-                                                    <TextBlock Grid.Column="2" Text="{Binding DonGia, StringFormat='{}{0:N0} đ'}" Style="{StaticResource TableCellStyle}"/>
-                                                    <TextBlock Grid.Column="3" Text="{Binding ThanhTien, StringFormat='{}{0:N0} đ'}" Style="{StaticResource TableCellStyle}" Foreground="{StaticResource Gray800}" FontWeight="SemiBold"/>
+                                                    <TextBlock Grid.Column="2" Text="{Binding TenDonViNhap}" Style="{StaticResource TableCellStyle}"/>
+                                                    <TextBlock Grid.Column="3" Text="{Binding HeSo, StringFormat=\{0:N0\}}" Style="{StaticResource TableCellStyle}"/>
+                                                    <TextBlock Grid.Column="4" Text="{Binding HSD, StringFormat=\{0:dd/MM/yyyy\}, FallbackValue='-'}" Style="{StaticResource TableCellStyle}" FontSize="11"/>
+                                                    <TextBlock Grid.Column="5" Text="{Binding DonGia, StringFormat='{}{0:N0} đ'}" Style="{StaticResource TableCellStyle}"/>
+                                                    <TextBlock Grid.Column="6" Text="{Binding ThanhTien, StringFormat='{}{0:N0} đ'}" Style="{StaticResource TableCellStyle}" Foreground="{StaticResource Gray800}" FontWeight="SemiBold"/>
                                                 </Grid>
                                             </Border>
                                         </DataTemplate>
@@ -1376,9 +1456,9 @@
                             </Button.Template>
                         </Button>
 
-                        <!-- Hủy Phiếu Button - Chỉ Quản Lý và phiếu Chờ duyệt -->
-                        <Button Command="{Binding CancelPhieuNhapCommand}" IsEnabled="{Binding CanApprove}"
-                                Visibility="{Binding IsQuanLy, Converter={StaticResource BoolToVisibilityConverter}}" Cursor="Hand" Margin="0,0,12,0">
+                        <!-- Hủy Phiếu Button -->
+                        <Button Command="{Binding CancelPhieuNhapCommand}" IsEnabled="{Binding CanCancel}"
+                                Visibility="{Binding IsCancelVisible, Converter={StaticResource BoolToVisibilityConverter}}" Cursor="Hand" Margin="0,0,12,0">
                             <Button.Template>
                                 <ControlTemplate TargetType="Button">
                                     <Border x:Name="border" Background="{StaticResource DangerRed}" CornerRadius="10" Padding="28,12">
@@ -1399,9 +1479,9 @@
                             </Button.Template>
                         </Button>
 
-                        <!-- Sửa Phiếu - Chỉ Quản Lý -->
+                        <!-- Sửa Phiếu -->
                         <Button Command="{Binding EditPhieuNhapCommand}" CommandParameter="{Binding SelectedPhieuNhap}" IsEnabled="{Binding CanEditDelete}"
-                                Visibility="{Binding IsQuanLy, Converter={StaticResource BoolToVisibilityConverter}}" Cursor="Hand" Margin="0,0,12,0">
+                                Visibility="{Binding IsEditDeleteVisible, Converter={StaticResource BoolToVisibilityConverter}}" Cursor="Hand" Margin="0,0,12,0">
                             <Button.Template>
                                 <ControlTemplate TargetType="Button">
                                     <Border x:Name="border" CornerRadius="10" Padding="28,12">
@@ -1425,9 +1505,9 @@
                             </Button.Template>
                         </Button>
 
-                        <!-- Xóa Phiếu -->
-                        <Button Command="{Binding DeletePhieuNhapCommand}" CommandParameter="{Binding SelectedPhieuNhap}" IsEnabled="{Binding CanEditDelete}"
-                                Visibility="{Binding IsQuanLy, Converter={StaticResource BoolToVisibilityConverter}}" Cursor="Hand">
+                        <!-- Xóa Phiếu - chỉ cho phiếu đã hủy -->
+                        <Button Command="{Binding DeletePhieuNhapCommand}" CommandParameter="{Binding SelectedPhieuNhap}" IsEnabled="{Binding CanDelete}"
+                                Visibility="{Binding IsDeleteVisible, Converter={StaticResource BoolToVisibilityConverter}}" Cursor="Hand">
                             <Button.Template>
                                 <ControlTemplate TargetType="Button">
                                     <Border x:Name="border" Background="{StaticResource DangerRed}" CornerRadius="10" Padding="28,12">

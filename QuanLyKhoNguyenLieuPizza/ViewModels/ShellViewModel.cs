@@ -1,4 +1,4 @@
-﻿using System.Windows.Input;
+using System.Windows.Input;
 using QuanLyKhoNguyenLieuPizza.Services;
 
 namespace QuanLyKhoNguyenLieuPizza.ViewModels;
@@ -39,6 +39,7 @@ public class ShellViewModel : BaseViewModel
     private BanHangViewModel? _banHangViewModel;
     private DonHangViewModel? _donHangViewModel;
     private PizzaViewModel? _pizzaViewModel;
+    private QuyDinhViewModel? _quyDinhViewModel;
     private ProfileViewModel? _profileViewModel;
     private SaoLuuViewModel? _saoLuuViewModel;
 
@@ -401,6 +402,7 @@ public class ShellViewModel : BaseViewModel
             "BanHang" => _banHangViewModel ??= new BanHangViewModel(),
             "DonHang" => CreateDonHangViewModel(),
             "Pizza" => _pizzaViewModel ??= new PizzaViewModel(),
+            "QuyDinh" => _quyDinhViewModel ??= new QuyDinhViewModel(),
             "SaoLuu" => _saoLuuViewModel ??= new SaoLuuViewModel(),
             _ => _dashboardViewModel ??= new DashboardViewModel()
         };

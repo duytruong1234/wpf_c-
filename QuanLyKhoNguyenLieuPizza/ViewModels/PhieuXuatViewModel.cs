@@ -55,6 +55,11 @@ public class PhieuXuatViewModel : BaseViewModel
             {
                 OnPropertyChanged(nameof(CanEditDelete));
                 OnPropertyChanged(nameof(CanApprove));
+                OnPropertyChanged(nameof(CanCancel));
+                OnPropertyChanged(nameof(IsCancelVisible));
+                OnPropertyChanged(nameof(IsEditDeleteVisible));
+                OnPropertyChanged(nameof(CanDelete));
+                OnPropertyChanged(nameof(IsDeleteVisible));
             }
         }
     }
@@ -182,6 +187,48 @@ public class PhieuXuatViewModel : BaseViewModel
     }
 
     // Trang thai filter
+    public ObservableCollection<string> TrangThaiOptions { get; } = new ObservableCollection<string> 
+    { 
+        "Tất cả", "Chờ duyệt", "Đã duyệt", "Đã hủy" 
+    };
+
+    private string _selectedTrangThaiFilter = "Tất cả";
+    public string SelectedTrangThaiFilter
+    {
+        get => _selectedTrangThaiFilter;
+        set
+        {
+            if (SetProperty(ref _selectedTrangThaiFilter, value))
+            {
+                if (value == "Tất cả")
+                {
+                    FilterChoDuyet = true;
+                    FilterDaDuyet = true;
+                    FilterDaHuy = true;
+                }
+                else if (value == "Chờ duyệt")
+                {
+                    FilterChoDuyet = true;
+                    FilterDaDuyet = false;
+                    FilterDaHuy = false;
+                }
+                else if (value == "Đã duyệt")
+                {
+                    FilterChoDuyet = false;
+                    FilterDaDuyet = true;
+                    FilterDaHuy = false;
+                }
+                else if (value == "Đã hủy")
+                {
+                    FilterChoDuyet = false;
+                    FilterDaDuyet = false;
+                    FilterDaHuy = true;
+                }
+                _ = LoadPhieuXuatsAsync();
+            }
+        }
+    }
+
     private bool _filterChoDuyet = true;
     public bool FilterChoDuyet
     {
@@ -208,7 +255,7 @@ public class PhieuXuatViewModel : BaseViewModel
         }
     }
 
-    private bool _filterDaHuy;
+    private bool _filterDaHuy = true;
     public bool FilterDaHuy
     {
         get => _filterDaHuy;
@@ -270,9 +317,21 @@ public class PhieuXuatViewModel : BaseViewModel
 
     public bool CanEditDelete => SelectedPhieuXuat != null && 
                                   SelectedPhieuXuat.TrangThai == 1 &&
-                                  SelectedPhieuXuat.NgayYeuCau.Date == DateTime.Today;
+                                  (DateTime.Now - SelectedPhieuXuat.NgayYeuCau).TotalHours <= 24;
 
-    public bool CanApprove => SelectedPhieuXuat != null && SelectedPhieuXuat.TrangThai == 1;
+    public bool CanApprove => SelectedPhieuXuat != null && SelectedPhieuXuat.TrangThai == 1 && IsQuanLy;
+
+    public bool CanCancel => CanApprove || CanEditDelete;
+
+    public bool IsCancelVisible => CanCancel;
+
+    public bool IsEditDeleteVisible => CanEditDelete;
+
+    // Xóa phiếu: chỉ cho phép xóa phiếu đã hủy
+    public bool CanDelete => SelectedPhieuXuat != null && SelectedPhieuXuat.TrangThai == 3;
+
+    // Hiển thị nút Xóa
+    public bool IsDeleteVisible => CanDelete;
 
     public List<string> ThoiGianOptions { get; } = new()
     {
@@ -457,9 +516,10 @@ public class PhieuXuatViewModel : BaseViewModel
         SelectedThoiGian = string.Empty;
         TuNgay = null;
         DenNgay = null;
+        SelectedTrangThaiFilter = "Tất cả";
         FilterChoDuyet = true;
         FilterDaDuyet = true;
-        FilterDaHuy = false;
+        FilterDaHuy = true;
     }
 
     private async void OpenCreateDialog()
@@ -599,7 +659,7 @@ public class PhieuXuatViewModel : BaseViewModel
 
     private async Task DeletePhieuXuatAsync(object? parameter)
     {
-        if (SelectedPhieuXuat == null || !CanEditDelete) return;
+        if (SelectedPhieuXuat == null || !CanDelete) return;
 
         try
         {
@@ -640,6 +700,7 @@ public class PhieuXuatViewModel : BaseViewModel
         catch (Exception ex)
         {
             System.Diagnostics.Debug.WriteLine($"Error approving PhieuXuat: {ex.Message}");
+            System.Windows.MessageBox.Show(ex.Message, "Lỗi khi duyệt phiếu", System.Windows.MessageBoxButton.OK, System.Windows.MessageBoxImage.Error);
         }
     }
 
@@ -668,6 +729,25 @@ public class PhieuXuatViewModel : BaseViewModel
         if (!ChiTietForm.Any())
         {
             return;
+        }
+
+        // Ràng buộc kiểm tra tồn kho: Số lượng xuất không được lớn hơn tồn kho
+        var chiTietGroups = ChiTietForm.GroupBy(x => x.NguyenLieuID);
+        foreach (var group in chiTietGroups)
+        {
+            var firstItem = group.First();
+            var tongSoLuongQuyDoi = group.Sum(x => x.SoLuong * x.HeSo);
+            var tonKhoHienTai = firstItem.NguyenLieu?.TonKho?.SoLuongTon ?? 0;
+            
+            if (tongSoLuongQuyDoi > tonKhoHienTai)
+            {
+                System.Windows.MessageBox.Show(
+                    $"Số lượng xuất của '{firstItem.NguyenLieu?.TenNguyenLieu}' ({tongSoLuongQuyDoi:N0}) đang vượt mức tồn kho hiện tại ({tonKhoHienTai:N0} {firstItem.NguyenLieu?.DonViTinh?.TenDonVi}).\nVui lòng kiểm tra và điều chỉnh lại!", 
+                    "Cảnh báo tồn kho", 
+                    System.Windows.MessageBoxButton.OK, 
+                    System.Windows.MessageBoxImage.Warning);
+                return;
+            }
         }
 
         try
