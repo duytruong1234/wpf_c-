@@ -27,8 +27,8 @@ namespace QuanLyKhoNguyenLieuPizza.Services
                 var response = await _httpClient.GetAsync("p/");
                 if (response.IsSuccessStatusCode)
                 {
-                    var json = await response.Content.ReadAsStringAsync();
-                    var provinces = JsonSerializer.Deserialize<List<ApiProvince>>(json, new JsonSerializerOptions { PropertyNameCaseInsensitive = true });
+                    using var stream = await response.Content.ReadAsStreamAsync();
+                    var provinces = await JsonSerializer.DeserializeAsync<List<ApiProvince>>(stream, new JsonSerializerOptions { PropertyNameCaseInsensitive = true });
                     return provinces?.OrderBy(p => p.name).ToList() ?? new List<ApiProvince>();
                 }
             }
@@ -46,8 +46,8 @@ namespace QuanLyKhoNguyenLieuPizza.Services
                 var response = await _httpClient.GetAsync($"p/{provinceCode}?depth=2");
                 if (response.IsSuccessStatusCode)
                 {
-                    var json = await response.Content.ReadAsStringAsync();
-                    var province = JsonSerializer.Deserialize<ApiProvinceResponse>(json, new JsonSerializerOptions { PropertyNameCaseInsensitive = true });
+                    using var stream = await response.Content.ReadAsStreamAsync();
+                    var province = await JsonSerializer.DeserializeAsync<ApiProvinceResponse>(stream, new JsonSerializerOptions { PropertyNameCaseInsensitive = true });
                     return province?.districts?.OrderBy(d => d.name).ToList() ?? new List<ApiDistrict>();
                 }
             }
@@ -65,8 +65,8 @@ namespace QuanLyKhoNguyenLieuPizza.Services
                 var response = await _httpClient.GetAsync($"d/{districtCode}?depth=2");
                 if (response.IsSuccessStatusCode)
                 {
-                    var json = await response.Content.ReadAsStringAsync();
-                    var district = JsonSerializer.Deserialize<ApiDistrictResponse>(json, new JsonSerializerOptions { PropertyNameCaseInsensitive = true });
+                    using var stream = await response.Content.ReadAsStreamAsync();
+                    var district = await JsonSerializer.DeserializeAsync<ApiDistrictResponse>(stream, new JsonSerializerOptions { PropertyNameCaseInsensitive = true });
                     return district?.wards?.OrderBy(w => w.name).ToList() ?? new List<ApiWard>();
                 }
             }
