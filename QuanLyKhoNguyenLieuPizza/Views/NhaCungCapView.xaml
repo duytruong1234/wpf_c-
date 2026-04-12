@@ -7,6 +7,7 @@
              xmlns:vm="clr-namespace:QuanLyKhoNguyenLieuPizza.ViewModels"
              xmlns:converters="clr-namespace:QuanLyKhoNguyenLieuPizza.Converters"
              xmlns:ui="http://schemas.lepo.co/wpfui/2022/xaml"
+             xmlns:views="clr-namespace:QuanLyKhoNguyenLieuPizza.Views"
              mc:Ignorable="d" 
              d:DesignHeight="800" d:DesignWidth="1200">
 
@@ -470,6 +471,8 @@
                             <RowDefinition Height="Auto"/>
                             <RowDefinition Height="16"/>
                             <RowDefinition Height="Auto"/>
+                            <RowDefinition Height="16"/>
+                            <RowDefinition Height="Auto"/>
                         </Grid.RowDefinitions>
                         <Grid.ColumnDefinitions>
                             <ColumnDefinition Width="*"/>
@@ -479,16 +482,28 @@
 
                         <!-- Tên nhà cung cấp -->
                         <StackPanel Grid.Row="0" Grid.ColumnSpan="3">
-                            <TextBlock Text="Tên nhà cung cấp" FontSize="12" FontWeight="Medium" Foreground="{StaticResource Gray500}" Margin="0,0,0,6"/>
-                            <Border Background="White" BorderBrush="{StaticResource Gray200}" BorderThickness="1" CornerRadius="10" Padding="14,12">
+                            <TextBlock Text="Tên nhà cung cấp *" FontSize="12" FontWeight="Medium" Foreground="{StaticResource Gray500}" Margin="0,0,0,6"/>
+                            <Border Background="White" BorderThickness="1" CornerRadius="10" Padding="14,12">
+                                <Border.Style>
+                                    <Style TargetType="Border">
+                                        <Setter Property="BorderBrush" Value="{StaticResource Gray200}"/>
+                                        <Style.Triggers>
+                                            <DataTrigger Binding="{Binding ErrorTenNCC, Converter={StaticResource StringToVisibilityConverter}}" Value="Visible">
+                                                <Setter Property="BorderBrush" Value="{StaticResource DangerRed}"/>
+                                            </DataTrigger>
+                                        </Style.Triggers>
+                                    </Style>
+                                </Border.Style>
                                 <TextBox Text="{Binding FormTenNCC, UpdateSourceTrigger=PropertyChanged}"
                                          BorderThickness="0" Background="Transparent" FontSize="14"/>
                             </Border>
+                            <TextBlock Text="{Binding ErrorTenNCC}" FontSize="11" Foreground="{StaticResource DangerRed}" Margin="2,4,0,0"
+                                       Visibility="{Binding ErrorTenNCC, Converter={StaticResource StringToVisibilityConverter}}"/>
                         </StackPanel>
 
                         <!-- Số điện thoại -->
                         <StackPanel Grid.Row="2" Grid.Column="0">
-                            <TextBlock Text="Số điện thoại" FontSize="12" FontWeight="Medium" Foreground="{StaticResource Gray500}" Margin="0,0,0,6"/>
+                            <TextBlock Text="Số điện thoại *" FontSize="12" FontWeight="Medium" Foreground="{StaticResource Gray500}" Margin="0,0,0,6"/>
                             <Border Background="White" BorderThickness="1" CornerRadius="10" Padding="14,12">
                                 <Border.Style>
                                     <Style TargetType="Border">
@@ -509,7 +524,7 @@
 
                         <!-- Email -->
                         <StackPanel Grid.Row="2" Grid.Column="2">
-                            <TextBlock Text="Email" FontSize="12" FontWeight="Medium" Foreground="{StaticResource Gray500}" Margin="0,0,0,6"/>
+                            <TextBlock Text="Email *" FontSize="12" FontWeight="Medium" Foreground="{StaticResource Gray500}" Margin="0,0,0,6"/>
                             <Border Background="White" BorderThickness="1" CornerRadius="10" Padding="14,12">
                                 <Border.Style>
                                     <Style TargetType="Border">
@@ -529,35 +544,59 @@
                         </StackPanel>
 
                         <!-- Số nhà / đường -->
-                        <StackPanel Grid.Row="4" Grid.Column="0">
-                            <TextBlock Text="Số nhà / Đường / Tòa nhà" FontSize="12" FontWeight="Medium" Foreground="{StaticResource Gray500}" Margin="0,0,0,6"/>
-                            <Border Background="White" BorderBrush="{StaticResource Gray200}" BorderThickness="1" CornerRadius="10" Padding="14,12">
+                        <StackPanel Grid.Row="6" Grid.Column="2">
+                            <TextBlock Text="Số nhà / Đường / Tòa nhà *" FontSize="12" FontWeight="Medium" Foreground="{StaticResource Gray500}" Margin="0,0,0,6"/>
+                            <Border Background="White" BorderThickness="1" CornerRadius="10" Padding="14,12">
+                                <Border.Style>
+                                    <Style TargetType="Border">
+                                        <Setter Property="BorderBrush" Value="{StaticResource Gray200}"/>
+                                        <Style.Triggers>
+                                            <DataTrigger Binding="{Binding ErrorDiaChiChiTiet, Converter={StaticResource StringToVisibilityConverter}}" Value="Visible">
+                                                <Setter Property="BorderBrush" Value="{StaticResource DangerRed}"/>
+                                            </DataTrigger>
+                                        </Style.Triggers>
+                                    </Style>
+                                </Border.Style>
                                 <TextBox Text="{Binding FormDiaChiChiTiet, UpdateSourceTrigger=PropertyChanged}" BorderThickness="0" Background="Transparent" FontSize="14"/>
                             </Border>
+                            <TextBlock Text="{Binding ErrorDiaChiChiTiet}" FontSize="11" Foreground="{StaticResource DangerRed}" Margin="2,4,0,0"
+                                       Visibility="{Binding ErrorDiaChiChiTiet, Converter={StaticResource StringToVisibilityConverter}}"/>
                         </StackPanel>
 
-                        <!-- Quận / Huyện -->
-                        <StackPanel Grid.Row="4" Grid.Column="2">
-                            <TextBlock Text="Quận / Huyện" FontSize="12" FontWeight="Medium" Foreground="{StaticResource Gray500}" Margin="0,0,0,6"/>
-                            <Border Background="White" BorderBrush="{StaticResource Gray200}" BorderThickness="1" CornerRadius="10" Padding="14,12">
-                                <ComboBox ItemsSource="{Binding Districts}" SelectedItem="{Binding SelectedDistrict}" DisplayMemberPath="name" BorderThickness="0" Background="Transparent" FontSize="14"/>
-                            </Border>
-                        </StackPanel>
-
-                        <!-- Phường / Xã -->
+                        <!-- Thôn / Xóm -->
                         <StackPanel Grid.Row="6" Grid.Column="0">
-                            <TextBlock Text="Phường / Xã" FontSize="12" FontWeight="Medium" Foreground="{StaticResource Gray500}" Margin="0,0,0,6"/>
-                            <Border Background="White" BorderBrush="{StaticResource Gray200}" BorderThickness="1" CornerRadius="10" Padding="14,12">
-                                <ComboBox ItemsSource="{Binding Wards}" SelectedItem="{Binding SelectedWard}" DisplayMemberPath="name" BorderThickness="0" Background="Transparent" FontSize="14"/>
+                            <TextBlock Text="Thôn / Xóm *" FontSize="12" FontWeight="Medium" Foreground="{StaticResource Gray500}" Margin="0,0,0,6"/>
+                            <Border Background="White" BorderThickness="1" CornerRadius="10" Padding="14,12">
+                                <Border.Style>
+                                    <Style TargetType="Border">
+                                        <Setter Property="BorderBrush" Value="{StaticResource Gray200}"/>
+                                        <Style.Triggers>
+                                            <DataTrigger Binding="{Binding ErrorThonXom, Converter={StaticResource StringToVisibilityConverter}}" Value="Visible">
+                                                <Setter Property="BorderBrush" Value="{StaticResource DangerRed}"/>
+                                            </DataTrigger>
+                                        </Style.Triggers>
+                                    </Style>
+                                </Border.Style>
+                                <TextBox Text="{Binding FormThonXom, UpdateSourceTrigger=PropertyChanged}" BorderThickness="0" Background="Transparent" FontSize="14"/>
                             </Border>
+                            <TextBlock Text="{Binding ErrorThonXom}" FontSize="11" Foreground="{StaticResource DangerRed}" Margin="2,4,0,0"
+                                       Visibility="{Binding ErrorThonXom, Converter={StaticResource StringToVisibilityConverter}}"/>
                         </StackPanel>
 
                         <!-- Tỉnh / Thành phố -->
-                        <StackPanel Grid.Row="6" Grid.Column="2">
-                            <TextBlock Text="Tỉnh / Thành phố" FontSize="12" FontWeight="Medium" Foreground="{StaticResource Gray500}" Margin="0,0,0,6"/>
-                            <Border Background="White" BorderBrush="{StaticResource Gray200}" BorderThickness="1" CornerRadius="10" Padding="14,12">
-                                <ComboBox ItemsSource="{Binding Provinces}" SelectedItem="{Binding SelectedProvince}" DisplayMemberPath="name" BorderThickness="0" Background="Transparent" FontSize="14"/>
-                            </Border>
+                        <StackPanel Grid.Row="4" Grid.Column="0">
+                            <TextBlock Text="Tỉnh / Thành phố *" FontSize="12" FontWeight="Medium" Foreground="{StaticResource Gray500}" Margin="0,0,0,6"/>
+                            <views:SearchableComboBox ItemsSource="{Binding Provinces}" SelectedItem="{Binding SelectedProvince}" DisplayMemberPath="name" Placeholder="-- Chọn tỉnh/thành phố --" SearchPlaceholder="Tìm tỉnh/thành phố..."/>
+                            <TextBlock Text="{Binding ErrorTinhTP}" FontSize="11" Foreground="{StaticResource DangerRed}" Margin="2,4,0,0"
+                                       Visibility="{Binding ErrorTinhTP, Converter={StaticResource StringToVisibilityConverter}}"/>
+                        </StackPanel>
+
+                        <!-- Phường / Xã -->
+                        <StackPanel Grid.Row="4" Grid.Column="2">
+                            <TextBlock Text="Phường / Xã *" FontSize="12" FontWeight="Medium" Foreground="{StaticResource Gray500}" Margin="0,0,0,6"/>
+                            <views:SearchableComboBox ItemsSource="{Binding Wards}" SelectedItem="{Binding SelectedWard}" DisplayMemberPath="name" Placeholder="-- Chọn phường/xã --" SearchPlaceholder="Tìm phường/xã..."/>
+                            <TextBlock Text="{Binding ErrorPhuongXa}" FontSize="11" Foreground="{StaticResource DangerRed}" Margin="2,4,0,0"
+                                       Visibility="{Binding ErrorPhuongXa, Converter={StaticResource StringToVisibilityConverter}}"/>
                         </StackPanel>
                     </Grid>
 

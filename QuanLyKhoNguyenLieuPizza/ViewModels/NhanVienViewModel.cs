@@ -194,6 +194,13 @@ public class NhanVienViewModel : BaseViewModel
         set => SetProperty(ref _formDiaChiChiTiet, value);
     }
 
+    private string _formThonXom = string.Empty;
+    public string FormThonXom
+    {
+        get => _formThonXom;
+        set => SetProperty(ref _formThonXom, value);
+    }
+
     private string _formSDT = string.Empty;
     public string FormSDT
     {
@@ -229,6 +236,25 @@ public class NhanVienViewModel : BaseViewModel
         set => SetProperty(ref _formTrangThai, value);
     }
 
+    
+    // Error properties
+    private string _errorHoTen = string.Empty;
+    public string ErrorHoTen { get => _errorHoTen; set => SetProperty(ref _errorHoTen, value); }
+    private string _errorNgaySinh = string.Empty;
+    public string ErrorNgaySinh { get => _errorNgaySinh; set => SetProperty(ref _errorNgaySinh, value); }
+    private string _errorChucVu = string.Empty;
+    public string ErrorChucVu { get => _errorChucVu; set => SetProperty(ref _errorChucVu, value); }
+    private string _errorSDT = string.Empty;
+    public string ErrorSDT { get => _errorSDT; set => SetProperty(ref _errorSDT, value); }
+    private string _errorTinhTP = string.Empty;
+    public string ErrorTinhTP { get => _errorTinhTP; set => SetProperty(ref _errorTinhTP, value); }
+    private string _errorPhuongXa = string.Empty;
+    public string ErrorPhuongXa { get => _errorPhuongXa; set => SetProperty(ref _errorPhuongXa, value); }
+    private string _errorThonXom = string.Empty;
+    public string ErrorThonXom { get => _errorThonXom; set => SetProperty(ref _errorThonXom, value); }
+    private string _errorDiaChiChiTiet = string.Empty;
+    public string ErrorDiaChiChiTiet { get => _errorDiaChiChiTiet; set => SetProperty(ref _errorDiaChiChiTiet, value); }
+
     private bool _isProgrammaticAddressUpdate = false;
 
     private ObservableCollection<ApiProvince> _provinces = new();
@@ -263,15 +289,15 @@ public class NhanVienViewModel : BaseViewModel
                 FormTinhTP = value?.name ?? string.Empty;
                 if (!_isProgrammaticAddressUpdate)
                 {
-                    SelectedDistrict = null;
-                    Districts.Clear();
+                    SelectedWard = null;
                     Wards.Clear();
                     if (value != null)
                     {
                         Task.Run(async () => {
-                            var dists = await LocationService.Instance.GetDistrictsAsync(value.code);
+                            var wards = await LocationService.Instance.GetWardsAsync(value.code);
                             System.Windows.Application.Current.Dispatcher.Invoke(() => {
-                                Districts = new ObservableCollection<ApiDistrict>(dists);
+                                Wards.Clear();
+                                foreach (var w in wards) Wards.Add(w);
                             });
                         });
                     }
@@ -298,7 +324,8 @@ public class NhanVienViewModel : BaseViewModel
                         Task.Run(async () => {
                             var wards = await LocationService.Instance.GetWardsAsync(value.code);
                             System.Windows.Application.Current.Dispatcher.Invoke(() => {
-                                Wards = new ObservableCollection<ApiWard>(wards);
+                                Wards.Clear();
+                                foreach (var w in wards) Wards.Add(w);
                             });
                         });
                     }
@@ -584,35 +611,34 @@ public class NhanVienViewModel : BaseViewModel
     {
         _isProgrammaticAddressUpdate = true;
         
-        if (Provinces.Count == 0)
+        try
         {
-            var p = await LocationService.Instance.GetProvincesAsync();
-            Provinces = new ObservableCollection<ApiProvince>(p);
-        }
-
-        var prov = Provinces.FirstOrDefault(x => x.name == provinceName);
-        SelectedProvince = prov;
-        
-        if (prov != null)
-        {
-            var dists = await LocationService.Instance.GetDistrictsAsync(prov.code);
-            Districts = new ObservableCollection<ApiDistrict>(dists);
-            var dist = Districts.FirstOrDefault(x => x.name == districtName);
-            SelectedDistrict = dist;
-            
-            if (dist != null)
+            if (Provinces.Count == 0)
             {
-                var wards = await LocationService.Instance.GetWardsAsync(dist.code);
-                Wards = new ObservableCollection<ApiWard>(wards);
+                var p = await LocationService.Instance.GetProvincesAsync();
+                Provinces.Clear();
+                foreach (var item in p) Provinces.Add(item);
+            }
+
+            var prov = Provinces.FirstOrDefault(x => x.name == provinceName);
+            SelectedProvince = prov;
+            
+            if (prov != null)
+            {
+                var wards = await LocationService.Instance.GetWardsAsync(prov.code);
+                Wards.Clear();
+                foreach (var w in wards) Wards.Add(w);
                 SelectedWard = Wards.FirstOrDefault(x => x.name == wardName);
             }
+            else 
+            {
+                SelectedWard = null;
+                Wards.Clear();
+            }
         }
-        else 
+        catch (Exception ex)
         {
-            SelectedDistrict = null;
-            SelectedWard = null;
-            Districts.Clear();
-            Wards.Clear();
+            System.Diagnostics.Debug.WriteLine($"Error setting up address: {ex.Message}");
         }
         
         _isProgrammaticAddressUpdate = false;
@@ -627,11 +653,13 @@ public class NhanVienViewModel : BaseViewModel
         FormPhuongXa = string.Empty;
         FormQuanHuyen = string.Empty;
         FormDiaChiChiTiet = string.Empty;
+        FormThonXom = string.Empty;
         FormSDT = string.Empty;
         FormEmail = string.Empty;
         FormChucVu = null;
         FormHinhAnh = string.Empty;
         FormTrangThai = true;
+        _ = SetupAddressAsync("", "", "");
         IsDialogOpen = true;
     }
 
@@ -647,13 +675,37 @@ public class NhanVienViewModel : BaseViewModel
             FormPhuongXa = string.Empty;
             FormQuanHuyen = string.Empty;
             FormDiaChiChiTiet = string.Empty;
+            FormThonXom = string.Empty;
             if (!string.IsNullOrWhiteSpace(nv.DiaChi))
             {
                 var parts = nv.DiaChi.Split(new[] { ", " }, StringSplitOptions.RemoveEmptyEntries);
-                if (parts.Length > 0) FormDiaChiChiTiet = parts[0];
-                if (parts.Length > 1) FormQuanHuyen = parts[1];
-                if (parts.Length > 2) FormPhuongXa = parts[2];
-                if (parts.Length > 3) FormTinhTP = string.Join(", ", parts.Skip(3));
+                if (parts.Length >= 5)
+                {
+                    FormDiaChiChiTiet = parts[0];
+                    FormThonXom = parts[1];
+                    FormPhuongXa = parts[2];
+                    FormQuanHuyen = parts[3];
+                    FormTinhTP = string.Join(", ", parts.Skip(4));
+                }
+                else if (parts.Length == 4)
+                {
+                    FormDiaChiChiTiet = parts[0];
+                    FormPhuongXa = parts[1];
+                    FormQuanHuyen = parts[2];
+                    FormTinhTP = parts[3];
+                }
+                else if (parts.Length == 3)
+                {
+                    FormDiaChiChiTiet = parts[0];
+                    FormQuanHuyen = parts[1];
+                    FormTinhTP = parts[2];
+                }
+                else if (parts.Length == 2)
+                {
+                    FormDiaChiChiTiet = parts[0];
+                    FormTinhTP = parts[1];
+                }
+                else if (parts.Length > 0) FormDiaChiChiTiet = parts[0];
             }
             _ = SetupAddressAsync(FormTinhTP, FormQuanHuyen, FormPhuongXa);
             FormSDT = nv.SDT ?? string.Empty;
@@ -665,6 +717,65 @@ public class NhanVienViewModel : BaseViewModel
         }
     }
 
+    
+    private bool ValidateForm()
+    {
+        bool isValid = true;
+        ErrorHoTen = string.Empty;
+        ErrorNgaySinh = string.Empty;
+        ErrorChucVu = string.Empty;
+        ErrorSDT = string.Empty;
+        ErrorTinhTP = string.Empty;
+        ErrorPhuongXa = string.Empty;
+        ErrorThonXom = string.Empty;
+        ErrorDiaChiChiTiet = string.Empty;
+
+        if (string.IsNullOrWhiteSpace(FormHoTen))
+        {
+            ErrorHoTen = "Vui lòng nhập họ tên nhân viên";
+            isValid = false;
+        }
+
+        if (!FormNgaySinh.HasValue)
+        {
+            ErrorNgaySinh = "Vui lòng chọn ngày sinh";
+            isValid = false;
+        }
+        else if (FormNgaySinh.Value.AddYears(16) > DateTime.Today)
+        {
+            ErrorNgaySinh = "Nhân viên phải từ đủ 16 tuổi trở lên";
+            isValid = false;
+        }
+
+        if (FormChucVu == null)
+        {
+            ErrorChucVu = "Vui lòng chọn chức vụ";
+            isValid = false;
+        }
+
+        if (string.IsNullOrWhiteSpace(FormSDT))
+        {
+            ErrorSDT = "Vui lòng nhập số điện thoại";
+            isValid = false;
+        }
+        else
+        {
+            var sdt = FormSDT.Trim();
+            if (sdt.Length != 10 || !sdt.StartsWith("0") || !sdt.All(char.IsDigit))
+            {
+                ErrorSDT = "Số điện thoại phải có 10 chữ số và bắt đầu bằng 0";
+                isValid = false;
+            }
+        }
+
+        if (string.IsNullOrWhiteSpace(FormTinhTP)) { ErrorTinhTP = "Vui lòng chọn Tỉnh/TP"; isValid = false; }
+        if (string.IsNullOrWhiteSpace(FormPhuongXa)) { ErrorPhuongXa = "Vui lòng chọn Phường/Xã"; isValid = false; }
+        if (string.IsNullOrWhiteSpace(FormThonXom)) { ErrorThonXom = "Vui lòng nhập Thôn/Xóm"; isValid = false; }
+        if (string.IsNullOrWhiteSpace(FormDiaChiChiTiet)) { ErrorDiaChiChiTiet = "Vui lòng nhập Số nhà/Đường"; isValid = false; }
+
+        return isValid;
+    }
+
     private async Task SaveNhanVienAsync()
     {
         if (string.IsNullOrWhiteSpace(FormHoTen))
@@ -673,9 +784,27 @@ public class NhanVienViewModel : BaseViewModel
             return;
         }
 
+        if (!FormNgaySinh.HasValue)
+        {
+            System.Windows.MessageBox.Show("Vui lòng chọn ngày sinh.", "Lỗi", System.Windows.MessageBoxButton.OK, System.Windows.MessageBoxImage.Warning);
+            return;
+        }
+
         if (FormNgaySinh.HasValue && FormNgaySinh.Value.AddYears(16) > DateTime.Today)
         {
             System.Windows.MessageBox.Show("Nhân viên phải từ đủ 16 tuổi trở lên.", "Lỗi", System.Windows.MessageBoxButton.OK, System.Windows.MessageBoxImage.Warning);
+            return;
+        }
+
+        if (FormChucVu == null)
+        {
+            System.Windows.MessageBox.Show("Vui lòng chọn chức vụ.", "Lỗi", System.Windows.MessageBoxButton.OK, System.Windows.MessageBoxImage.Warning);
+            return;
+        }
+
+        if (string.IsNullOrWhiteSpace(FormSDT))
+        {
+            System.Windows.MessageBox.Show("Vui lòng nhập số điện thoại.", "Lỗi", System.Windows.MessageBoxButton.OK, System.Windows.MessageBoxImage.Warning);
             return;
         }
 
@@ -687,6 +816,12 @@ public class NhanVienViewModel : BaseViewModel
                 System.Windows.MessageBox.Show("Số điện thoại phải có 10 chữ số và bắt đầu bằng 0.", "Lỗi", System.Windows.MessageBoxButton.OK, System.Windows.MessageBoxImage.Warning);
                 return;
             }
+        }
+
+        if (string.IsNullOrWhiteSpace(FormTinhTP) || string.IsNullOrWhiteSpace(FormPhuongXa) || string.IsNullOrWhiteSpace(FormThonXom) || string.IsNullOrWhiteSpace(FormDiaChiChiTiet))
+        {
+            System.Windows.MessageBox.Show("Vui lòng nhập đầy đủ địa chỉ (Số nhà/Đường, Thôn/Xóm, Phường/Xã, Tỉnh/TP).", "Lỗi", System.Windows.MessageBoxButton.OK, System.Windows.MessageBoxImage.Warning);
+            return;
         }
 
         if (!string.IsNullOrWhiteSpace(FormEmail))
@@ -709,7 +844,7 @@ public class NhanVienViewModel : BaseViewModel
             {
                 HoTen = FormHoTen.Trim(),
                 NgaySinh = FormNgaySinh,
-                DiaChi = string.Join(", ", new[] { FormDiaChiChiTiet, FormQuanHuyen, FormPhuongXa, FormTinhTP }.Where(x => !string.IsNullOrWhiteSpace(x)).Select(x => x.Trim())),
+                DiaChi = string.Join(", ", new[] { FormDiaChiChiTiet, FormThonXom, FormPhuongXa, FormTinhTP }.Where(x => !string.IsNullOrWhiteSpace(x)).Select(x => x.Trim())),
                 SDT = string.IsNullOrWhiteSpace(FormSDT) ? null : FormSDT.Trim(),
                 Email = string.IsNullOrWhiteSpace(FormEmail) ? null : FormEmail.Trim(),
                 ChucVuID = FormChucVu?.ChucVuID,

@@ -1,0 +1,207 @@
+<UserControl x:Class="QuanLyKhoNguyenLieuPizza.Views.SearchableComboBox"
+             xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+             xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+             mc:Ignorable="d"
+             d:DesignHeight="40" d:DesignWidth="220"
+             x:Name="SearchableComboBoxRoot">
+
+    <UserControl.Resources>
+        <SolidColorBrush x:Key="SCB_Gray200" Color="#E2E8F0"/>
+        <SolidColorBrush x:Key="SCB_Gray300" Color="#CBD5E1"/>
+        <SolidColorBrush x:Key="SCB_Gray400" Color="#94A3B8"/>
+        <SolidColorBrush x:Key="SCB_Gray500" Color="#64748B"/>
+        <SolidColorBrush x:Key="SCB_Gray600" Color="#475569"/>
+        <SolidColorBrush x:Key="SCB_Gray800" Color="#1E293B"/>
+        <SolidColorBrush x:Key="SCB_Gray50" Color="#F8FAFC"/>
+        <SolidColorBrush x:Key="SCB_Blue50" Color="#EEF2FF"/>
+        <SolidColorBrush x:Key="SCB_Blue500" Color="#5B6AFF"/>
+        <SolidColorBrush x:Key="SCB_Green500" Color="#22C55E"/>
+    </UserControl.Resources>
+
+    <Grid>
+        <!-- Toggle Button using actual ToggleButton for proper popup behavior -->
+        <ToggleButton x:Name="ToggleBtn"
+                      IsChecked="{Binding IsOpen, ElementName=DropdownPopup, Mode=TwoWay}"
+                      Cursor="Hand">
+            <ToggleButton.Template>
+                <ControlTemplate TargetType="ToggleButton">
+                    <Border x:Name="ToggleBorder"
+                            Background="White"
+                            BorderBrush="{StaticResource SCB_Gray200}"
+                            BorderThickness="1"
+                            CornerRadius="10"
+                            Padding="14,10">
+                        <Grid>
+                            <Grid.ColumnDefinitions>
+                                <ColumnDefinition Width="*"/>
+                                <ColumnDefinition Width="Auto"/>
+                            </Grid.ColumnDefinitions>
+
+                            <!-- Display Text -->
+                            <TextBlock x:Name="PART_DisplayText"
+                                       Grid.Column="0"
+                                       FontSize="14"
+                                       VerticalAlignment="Center"
+                                       TextTrimming="CharacterEllipsis"/>
+
+                            <!-- Arrow -->
+                            <TextBlock Grid.Column="1"
+                                       Text="&#xE70D;"
+                                       FontFamily="Segoe MDL2 Assets"
+                                       FontSize="10"
+                                       Foreground="{StaticResource SCB_Gray400}"
+                                       VerticalAlignment="Center"
+                                       Margin="8,0,0,0"
+                                       RenderTransformOrigin="0.5,0.5">
+                                <TextBlock.RenderTransform>
+                                    <RotateTransform x:Name="ArrowRotation" Angle="0"/>
+                                </TextBlock.RenderTransform>
+                            </TextBlock>
+                        </Grid>
+                    </Border>
+                    <ControlTemplate.Triggers>
+                        <Trigger Property="IsMouseOver" Value="True">
+                            <Setter TargetName="ToggleBorder" Property="BorderBrush" Value="{StaticResource SCB_Gray300}"/>
+                        </Trigger>
+                        <Trigger Property="IsChecked" Value="True">
+                            <Setter TargetName="ToggleBorder" Property="BorderBrush" Value="{StaticResource SCB_Blue500}"/>
+                        </Trigger>
+                    </ControlTemplate.Triggers>
+                </ControlTemplate>
+            </ToggleButton.Template>
+        </ToggleButton>
+
+        <!-- Dropdown Popup -->
+        <Popup x:Name="DropdownPopup"
+               PlacementTarget="{Binding ElementName=ToggleBtn}"
+               Placement="Bottom"
+               StaysOpen="False"
+               AllowsTransparency="True"
+               PopupAnimation="Fade"
+               Opened="DropdownPopup_Opened"
+               Closed="DropdownPopup_Closed">
+            <Border Background="White"
+                    BorderBrush="{StaticResource SCB_Gray200}"
+                    BorderThickness="1"
+                    CornerRadius="12"
+                    Margin="4,4,4,4"
+                    Width="{Binding ActualWidth, ElementName=ToggleBtn}"
+                    MaxHeight="320">
+                <Border.Effect>
+                    <DropShadowEffect BlurRadius="20" ShadowDepth="4" Direction="270" Color="#000000" Opacity="0.12"/>
+                </Border.Effect>
+                <Grid>
+                    <Grid.RowDefinitions>
+                        <RowDefinition Height="Auto"/>
+                        <RowDefinition Height="*"/>
+                    </Grid.RowDefinitions>
+
+                    <!-- Search Box -->
+                    <Border Grid.Row="0" 
+                            Background="{StaticResource SCB_Gray50}"
+                            BorderBrush="{StaticResource SCB_Gray200}"
+                            BorderThickness="0,0,0,1"
+                            CornerRadius="12,12,0,0"
+                            Padding="12,10">
+                        <Grid>
+                            <Grid.ColumnDefinitions>
+                                <ColumnDefinition Width="Auto"/>
+                                <ColumnDefinition Width="*"/>
+                            </Grid.ColumnDefinitions>
+                            <TextBlock Text="&#xE721;"
+                                       FontFamily="Segoe MDL2 Assets"
+                                       FontSize="13"
+                                       Foreground="{StaticResource SCB_Gray400}"
+                                       VerticalAlignment="Center"
+                                       Margin="0,0,8,0"/>
+                            <!-- Placeholder -->
+                            <TextBlock x:Name="SearchPlaceholderText"
+                                       Grid.Column="1"
+                                       FontSize="13"
+                                       Foreground="{StaticResource SCB_Gray400}"
+                                       VerticalAlignment="Center"
+                                       IsHitTestVisible="False"/>
+                            <TextBox x:Name="SearchTextBox"
+                                     Grid.Column="1"
+                                     BorderThickness="0"
+                                     Background="Transparent"
+                                     FontSize="13"
+                                     VerticalAlignment="Center"
+                                     TextChanged="SearchTextBox_TextChanged"/>
+                        </Grid>
+                    </Border>
+
+                    <!-- Items List -->
+                    <ListBox x:Name="ItemsListBox"
+                             Grid.Row="1"
+                             BorderThickness="0"
+                             Background="Transparent"
+                             ScrollViewer.HorizontalScrollBarVisibility="Disabled"
+                             ScrollViewer.VerticalScrollBarVisibility="Auto"
+                             MaxHeight="250"
+                             SelectionChanged="ItemsListBox_SelectionChanged">
+                        <ListBox.ItemContainerStyle>
+                            <Style TargetType="ListBoxItem">
+                                <Setter Property="Padding" Value="14,10"/>
+                                <Setter Property="Cursor" Value="Hand"/>
+                                <Setter Property="Template">
+                                    <Setter.Value>
+                                        <ControlTemplate TargetType="ListBoxItem">
+                                            <Border x:Name="ItemBorder"
+                                                    Background="Transparent"
+                                                    Padding="{TemplateBinding Padding}"
+                                                    BorderBrush="{StaticResource SCB_Gray200}"
+                                                    BorderThickness="0,0,0,0.5">
+                                                <Grid>
+                                                    <Grid.ColumnDefinitions>
+                                                        <ColumnDefinition Width="Auto"/>
+                                                        <ColumnDefinition Width="*"/>
+                                                    </Grid.ColumnDefinitions>
+                                                    <!-- Check Mark -->
+                                                    <TextBlock x:Name="CheckMark"
+                                                               Grid.Column="0"
+                                                               Text="✓"
+                                                               FontSize="14"
+                                                               FontWeight="Bold"
+                                                               Foreground="{StaticResource SCB_Blue500}"
+                                                               VerticalAlignment="Center"
+                                                               Margin="0,0,10,0"
+                                                               Visibility="Collapsed"/>
+                                                    <!-- Content -->
+                                                    <ContentPresenter Grid.Column="1"
+                                                                      VerticalAlignment="Center"/>
+                                                </Grid>
+                                            </Border>
+                                            <ControlTemplate.Triggers>
+                                                <Trigger Property="IsMouseOver" Value="True">
+                                                    <Setter TargetName="ItemBorder" Property="Background" Value="{StaticResource SCB_Blue50}"/>
+                                                </Trigger>
+                                                <Trigger Property="IsSelected" Value="True">
+                                                    <Setter TargetName="ItemBorder" Property="Background" Value="{StaticResource SCB_Blue50}"/>
+                                                    <Setter TargetName="CheckMark" Property="Visibility" Value="Visible"/>
+                                                </Trigger>
+                                            </ControlTemplate.Triggers>
+                                        </ControlTemplate>
+                                    </Setter.Value>
+                                </Setter>
+                            </Style>
+                        </ListBox.ItemContainerStyle>
+                    </ListBox>
+
+                    <!-- Empty State -->
+                    <TextBlock x:Name="EmptyText"
+                               Grid.Row="1"
+                               Text="Không tìm thấy kết quả"
+                               FontSize="13"
+                               Foreground="{StaticResource SCB_Gray400}"
+                               HorizontalAlignment="Center"
+                               VerticalAlignment="Center"
+                               Padding="0,20"
+                               Visibility="Collapsed"/>
+                </Grid>
+            </Border>
+        </Popup>
+    </Grid>
+</UserControl>

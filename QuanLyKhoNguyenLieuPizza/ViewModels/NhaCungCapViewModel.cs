@@ -127,7 +127,11 @@ public class NhaCungCapViewModel : BaseViewModel
     public string FormTenNCC
     {
         get => _formTenNCC;
-        set => SetProperty(ref _formTenNCC, value);
+        set
+        {
+            if (SetProperty(ref _formTenNCC, value))
+                ErrorTenNCC = string.Empty;
+        }
     }
 
     private string _formDiaChi = string.Empty;
@@ -168,18 +172,20 @@ public class NhaCungCapViewModel : BaseViewModel
         {
             if (SetProperty(ref _selectedProvince, value))
             {
-                FormTinhTP = value?.name ?? string.Empty;
+                ErrorTinhTP = string.Empty;
+                if (value != null) FormTinhTP = value.name;
+                
                 if (!_isProgrammaticAddressUpdate)
                 {
-                    SelectedDistrict = null;
-                    Districts.Clear();
+                    SelectedWard = null;
                     Wards.Clear();
                     if (value != null)
                     {
                         Task.Run(async () => {
-                            var dists = await LocationService.Instance.GetDistrictsAsync(value.code);
+                            var wards = await LocationService.Instance.GetWardsAsync(value.code);
                             System.Windows.Application.Current.Dispatcher.Invoke(() => {
-                                Districts = new ObservableCollection<ApiDistrict>(dists);
+                                Wards.Clear();
+                                foreach (var w in wards) Wards.Add(w);
                             });
                         });
                     }
@@ -223,6 +229,7 @@ public class NhaCungCapViewModel : BaseViewModel
         {
             if (SetProperty(ref _selectedWard, value))
             {
+                ErrorPhuongXa = string.Empty;
                 if (value != null) FormPhuongXa = value.name;
             }
         }
@@ -254,7 +261,22 @@ public class NhaCungCapViewModel : BaseViewModel
     public string FormDiaChiChiTiet
     {
         get => _formDiaChiChiTiet;
-        set => SetProperty(ref _formDiaChiChiTiet, value);
+        set
+        {
+            if (SetProperty(ref _formDiaChiChiTiet, value))
+                ErrorDiaChiChiTiet = string.Empty;
+        }
+    }
+
+    private string _formThonXom = string.Empty;
+    public string FormThonXom
+    {
+        get => _formThonXom;
+        set
+        {
+            if (SetProperty(ref _formThonXom, value))
+                ErrorThonXom = string.Empty;
+        }
     }
 
     private string _formSDT = string.Empty;
@@ -291,6 +313,41 @@ public class NhaCungCapViewModel : BaseViewModel
     {
         get => _errorEmail;
         set => SetProperty(ref _errorEmail, value);
+    }
+
+    private string _errorTenNCC = string.Empty;
+    public string ErrorTenNCC
+    {
+        get => _errorTenNCC;
+        set => SetProperty(ref _errorTenNCC, value);
+    }
+
+    private string _errorDiaChiChiTiet = string.Empty;
+    public string ErrorDiaChiChiTiet
+    {
+        get => _errorDiaChiChiTiet;
+        set => SetProperty(ref _errorDiaChiChiTiet, value);
+    }
+
+    private string _errorThonXom = string.Empty;
+    public string ErrorThonXom
+    {
+        get => _errorThonXom;
+        set => SetProperty(ref _errorThonXom, value);
+    }
+
+    private string _errorTinhTP = string.Empty;
+    public string ErrorTinhTP
+    {
+        get => _errorTinhTP;
+        set => SetProperty(ref _errorTinhTP, value);
+    }
+
+    private string _errorPhuongXa = string.Empty;
+    public string ErrorPhuongXa
+    {
+        get => _errorPhuongXa;
+        set => SetProperty(ref _errorPhuongXa, value);
     }
 
     private int _countDangHopTac;
@@ -471,6 +528,7 @@ public class NhaCungCapViewModel : BaseViewModel
         FormPhuongXa = string.Empty;
         FormQuanHuyen = string.Empty;
         FormDiaChiChiTiet = string.Empty;
+        FormThonXom = string.Empty;
         FormSDT = string.Empty;
         _ = SetupAddressAsync("", "", "");
         FormEmail = string.Empty;
@@ -506,7 +564,8 @@ public class NhaCungCapViewModel : BaseViewModel
         if (Provinces.Count == 0)
         {
             var p = await LocationService.Instance.GetProvincesAsync();
-            Provinces = new ObservableCollection<ApiProvince>(p);
+            Provinces.Clear();
+            foreach (var item in p) Provinces.Add(item);
         }
 
         var prov = Provinces.FirstOrDefault(x => x.name == provinceName);
@@ -514,23 +573,14 @@ public class NhaCungCapViewModel : BaseViewModel
         
         if (prov != null)
         {
-            var dists = await LocationService.Instance.GetDistrictsAsync(prov.code);
-            Districts = new ObservableCollection<ApiDistrict>(dists);
-            var dist = Districts.FirstOrDefault(x => x.name == districtName);
-            SelectedDistrict = dist;
-            
-            if (dist != null)
-            {
-                var wards = await LocationService.Instance.GetWardsAsync(dist.code);
-                Wards = new ObservableCollection<ApiWard>(wards);
-                SelectedWard = Wards.FirstOrDefault(x => x.name == wardName);
-            }
+            var wards = await LocationService.Instance.GetWardsAsync(prov.code);
+            Wards.Clear();
+            foreach (var w in wards) Wards.Add(w);
+            SelectedWard = Wards.FirstOrDefault(x => x.name == wardName);
         }
         else 
         {
-            SelectedDistrict = null;
             SelectedWard = null;
-            Districts.Clear();
             Wards.Clear();
         }
         
@@ -543,17 +593,26 @@ public class NhaCungCapViewModel : BaseViewModel
         FormPhuongXa = string.Empty;
         FormQuanHuyen = string.Empty;
         FormDiaChiChiTiet = string.Empty;
+        FormThonXom = string.Empty;
 
         if (string.IsNullOrWhiteSpace(diaChi)) return;
 
-        // Phân tích: "Số nhà/đường, Thôn/Xóm, Phường/Xã, Tỉnh/TP"
+        // Phân tích: "Địa chỉ chi tiết, Thôn/Xóm, Phường/Xã, Quận/Huyện, Tỉnh/TP"
         var parts = diaChi.Split(',').Select(p => p.Trim()).ToArray();
-        if (parts.Length >= 4)
+        if (parts.Length >= 5)
         {
             FormDiaChiChiTiet = parts[0];
-            FormQuanHuyen = parts[1];
+            FormThonXom = parts[1];
             FormPhuongXa = parts[2];
-            FormTinhTP = string.Join(", ", parts.Skip(3));
+            FormQuanHuyen = parts[3];
+            FormTinhTP = string.Join(", ", parts.Skip(4));
+        }
+        else if (parts.Length == 4)
+        {
+            FormDiaChiChiTiet = parts[0];
+            FormPhuongXa = parts[1];
+            FormQuanHuyen = parts[2];
+            FormTinhTP = parts[3];
         }
         else if (parts.Length == 3)
         {
@@ -576,7 +635,7 @@ public class NhaCungCapViewModel : BaseViewModel
     {
         var parts = new List<string>();
         if (!string.IsNullOrWhiteSpace(FormDiaChiChiTiet)) parts.Add(FormDiaChiChiTiet.Trim());
-        if (!string.IsNullOrWhiteSpace(FormQuanHuyen)) parts.Add(FormQuanHuyen.Trim());
+        if (!string.IsNullOrWhiteSpace(FormThonXom)) parts.Add(FormThonXom.Trim());
         if (!string.IsNullOrWhiteSpace(FormPhuongXa)) parts.Add(FormPhuongXa.Trim());
         if (!string.IsNullOrWhiteSpace(FormTinhTP)) parts.Add(FormTinhTP.Trim());
         FormDiaChi = string.Join(", ", parts);
@@ -588,6 +647,7 @@ public class NhaCungCapViewModel : BaseViewModel
         FormPhuongXa = string.Empty;
         FormQuanHuyen = string.Empty;
         FormDiaChiChiTiet = string.Empty;
+        FormThonXom = string.Empty;
         FormDiaChi = string.Empty;
     }
 
@@ -633,8 +693,51 @@ public class NhaCungCapViewModel : BaseViewModel
     {
         bool isValid = true;
 
+        ErrorSDT = string.Empty;
+        ErrorEmail = string.Empty;
+        ErrorTenNCC = string.Empty;
+        ErrorDiaChiChiTiet = string.Empty;
+        ErrorThonXom = string.Empty;
+        ErrorTinhTP = string.Empty;
+        ErrorPhuongXa = string.Empty;
+
+        if (string.IsNullOrWhiteSpace(FormTenNCC))
+        {
+            ErrorTenNCC = "Vui lòng nhập tên nhà cung cấp";
+            isValid = false;
+        }
+
+        if (string.IsNullOrWhiteSpace(FormDiaChiChiTiet))
+        {
+            ErrorDiaChiChiTiet = "Vui lòng nhập số nhà, đường";
+            isValid = false;
+        }
+
+        if (string.IsNullOrWhiteSpace(FormThonXom))
+        {
+            ErrorThonXom = "Vui lòng nhập thôn xóm";
+            isValid = false;
+        }
+
+        if (SelectedProvince == null)
+        {
+            ErrorTinhTP = "Vui lòng chọn tỉnh thành phố";
+            isValid = false;
+        }
+
+        if (SelectedWard == null)
+        {
+            ErrorPhuongXa = "Vui lòng chọn phường xã";
+            isValid = false;
+        }
+
         // Kiểm tra SĐT
-        if (!string.IsNullOrWhiteSpace(FormSDT))
+        if (string.IsNullOrWhiteSpace(FormSDT))
+        {
+            ErrorSDT = "Vui lòng nhập số điện thoại";
+            isValid = false;
+        }
+        else
         {
             var sdt = FormSDT.Trim();
             if (!Regex.IsMatch(sdt, @"^\d+$"))
@@ -650,7 +753,12 @@ public class NhaCungCapViewModel : BaseViewModel
         }
 
         // Kiểm tra Email
-        if (!string.IsNullOrWhiteSpace(FormEmail))
+        if (string.IsNullOrWhiteSpace(FormEmail))
+        {
+            ErrorEmail = "Vui lòng nhập email";
+            isValid = false;
+        }
+        else
         {
             var email = FormEmail.Trim();
             if (!Regex.IsMatch(email, @"^[^@\s]+@[^@\s]+\.[^@\s]+$"))
@@ -666,11 +774,6 @@ public class NhaCungCapViewModel : BaseViewModel
     private async Task SaveNhaCungCapAsync()
     {
         ComposeDiaChi();
-
-        if (string.IsNullOrWhiteSpace(FormTenNCC))
-        {
-            return;
-        }
 
         if (!ValidateForm())
         {
@@ -753,6 +856,7 @@ public class NhaCungCapViewModel : BaseViewModel
         FormPhuongXa = string.Empty;
         FormQuanHuyen = string.Empty;
         FormDiaChiChiTiet = string.Empty;
+        FormThonXom = string.Empty;
         FormSDT = string.Empty;
         _ = SetupAddressAsync("", "", "");
         FormEmail = string.Empty;

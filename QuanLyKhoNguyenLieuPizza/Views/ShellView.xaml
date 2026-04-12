@@ -843,7 +843,7 @@
                 <MouseBinding MouseAction="LeftClick" Command="{Binding ProfileViewModel.CloseCommand}"/>
             </Grid.InputBindings>
             
-            <Border Width="420" 
+            <Border Width="540" 
                     MaxHeight="750"
                     VerticalAlignment="Center"
                     HorizontalAlignment="Center"
