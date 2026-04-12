@@ -1,4 +1,4 @@
-﻿using System.Collections.ObjectModel;
+using System.Collections.ObjectModel;
 using System.Windows.Input;
 using QuanLyKhoNguyenLieuPizza.Core.Interfaces;
 using QuanLyKhoNguyenLieuPizza.Models;
@@ -325,21 +325,21 @@ public class PizzaViewModel : BaseViewModel
     #endregion
 
     #region Lệnh
-    public ICommand LoadDataCommand { get; private set; }
-    public ICommand OpenAddPopupCommand { get; private set; }
-    public ICommand ClosePopupCommand { get; private set; }
-    public ICommand SaveCommand { get; private set; }
-    public ICommand ClearFiltersCommand { get; private set; }
-    public ICommand BrowseImageCommand { get; private set; }
+    public ICommand LoadDataCommand { get; private set; } = null!;
+    public ICommand OpenAddPopupCommand { get; private set; } = null!;
+    public ICommand ClosePopupCommand { get; private set; } = null!;
+    public ICommand SaveCommand { get; private set; } = null!;
+    public ICommand ClearFiltersCommand { get; private set; } = null!;
+    public ICommand BrowseImageCommand { get; private set; } = null!;
 
     // Lệnh công thức
-    public ICommand CloseRecipePopupCommand { get; private set; }
-    public ICommand SaveRecipeItemCommand { get; private set; }
-    public ICommand CancelRecipeEditCommand { get; private set; }
+    public ICommand CloseRecipePopupCommand { get; private set; } = null!;
+    public ICommand SaveRecipeItemCommand { get; private set; } = null!;
+    public ICommand CancelRecipeEditCommand { get; private set; } = null!;
 
     // Lệnh hộp thoại trạng thái
-    public ICommand CloseStatusDialogCommand { get; private set; }
-    public ICommand ConfirmToggleStatusCommand { get; private set; }
+    public ICommand CloseStatusDialogCommand { get; private set; } = null!;
+    public ICommand ConfirmToggleStatusCommand { get; private set; } = null!;
     #endregion
 
     public PizzaViewModel()
