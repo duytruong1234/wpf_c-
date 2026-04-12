@@ -833,6 +833,12 @@ public class NhaCungCapViewModel : BaseViewModel
     {
         if (parameter is not NhaCungCap ncc) return;
 
+        var confirmed = await ShowDeleteConfirmation(
+            ncc.TenNCC ?? "",
+            "Xóa nhà cung cấp",
+            $"Bạn có chắc chắn muốn xóa nhà cung cấp \"{ncc.TenNCC}\"?\nTất cả dữ liệu liên quan sẽ bị xóa theo.");
+        if (!confirmed) return;
+
         try
         {
             var result = await _databaseService.DeleteNhaCungCapAsync(ncc.NhaCungCapID);
@@ -919,6 +925,12 @@ public class NhaCungCapViewModel : BaseViewModel
     {
         if (SelectedNhaCungCap == null) return;
         if (parameter is not NguyenLieu nl) return;
+
+        var confirmed = await ShowDeleteConfirmation(
+            nl.TenNguyenLieu,
+            "Xóa nguyên liệu",
+            $"Bạn có chắc chắn muốn xóa \"{nl.TenNguyenLieu}\" khỏi nhà cung cấp \"{SelectedNhaCungCap.TenNCC}\"?");
+        if (!confirmed) return;
 
         try
         {

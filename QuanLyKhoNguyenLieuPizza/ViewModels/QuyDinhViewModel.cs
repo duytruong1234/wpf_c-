@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Collections.ObjectModel;
 using System.Linq;
 using System.Threading.Tasks;
@@ -160,6 +160,12 @@ public class QuyDinhViewModel : BaseViewModel
 
     private async Task DeleteBotAsync(QuyDinh_Bot item)
     {
+        var confirmed = await ShowDeleteConfirmation(
+            $"{item.SizeID} - {item.LoaiCotBanh}",
+            "Xóa cấu hình bột",
+            $"Bạn có chắc chắn muốn xóa cấu hình bột \"{item.SizeID} - {item.LoaiCotBanh}\"?\nHành động này không thể hoàn tác.");
+        if (!confirmed) return;
+
         if (await _databaseService.DeleteQuyDinhBotAsync(item.SizeID, item.LoaiCotBanh))
         {
             await RefreshBotGridAsync();
@@ -208,6 +214,12 @@ public class QuyDinhViewModel : BaseViewModel
 
     private async Task DeleteVienAsync(QuyDinh_Vien item)
     {
+        var confirmed = await ShowDeleteConfirmation(
+            $"{item.MaDeBanh} - {item.SizeID}",
+            "Xóa cấu hình viên",
+            $"Bạn có chắc chắn muốn xóa cấu hình viên \"{item.MaDeBanh} - {item.SizeID}\"?\nHành động này không thể hoàn tác.");
+        if (!confirmed) return;
+
         if (await _databaseService.DeleteQuyDinhVienAsync(item.MaDeBanh, item.SizeID, item.NguyenLieuID))
         {
             await RefreshVienGridAsync();

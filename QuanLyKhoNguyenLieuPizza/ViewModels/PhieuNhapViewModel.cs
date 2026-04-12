@@ -890,6 +890,12 @@ public class PhieuNhapViewModel : BaseViewModel
     {
         if (SelectedPhieuNhap == null || !CanDelete) return;
 
+        var confirmed = await ShowDeleteConfirmation(
+            SelectedPhieuNhap.MaPhieuNhap ?? "",
+            "Xóa phiếu nhập",
+            $"Bạn có chắc chắn muốn xóa phiếu nhập \"{SelectedPhieuNhap.MaPhieuNhap}\"?\nHành động này không thể hoàn tác.");
+        if (!confirmed) return;
+
         try
         {
             var result = await _databaseService.DeletePhieuNhapAsync(SelectedPhieuNhap.PhieuNhapID);

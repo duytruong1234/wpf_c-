@@ -96,7 +96,25 @@
                     </StackPanel>
 
                     <!-- Nút Làm mới -->
-                    <Button Grid.Column="1" Command="{Binding RefreshCommand}" Cursor="Hand" VerticalAlignment="Center">
+                    <!-- Cụm bộ lọc thời gian và Nút Làm mới -->
+                    <StackPanel Grid.Column="1" Orientation="Horizontal" VerticalAlignment="Center">
+                        <!-- Bộ lọc theo ngày tháng năm -->
+                        <StackPanel Orientation="Horizontal" Margin="0,0,16,0" VerticalAlignment="Center">
+                            <Border Background="White" BorderBrush="{StaticResource Gray200}" BorderThickness="1" CornerRadius="8" Padding="6,2" Margin="0,0,12,0">
+                                <StackPanel Orientation="Horizontal">
+                                    <TextBlock Text="Từ:" VerticalAlignment="Center" Margin="4,0,8,0" Foreground="{StaticResource Gray500}" FontSize="12" FontWeight="SemiBold"/>
+                                    <DatePicker SelectedDate="{Binding NgayBatDau, UpdateSourceTrigger=PropertyChanged}" Width="110" BorderThickness="0" Background="Transparent" VerticalContentAlignment="Center"/>
+                                </StackPanel>
+                            </Border>
+                            <Border Background="White" BorderBrush="{StaticResource Gray200}" BorderThickness="1" CornerRadius="8" Padding="6,2">
+                                <StackPanel Orientation="Horizontal">
+                                    <TextBlock Text="Đến:" VerticalAlignment="Center" Margin="4,0,8,0" Foreground="{StaticResource Gray500}" FontSize="12" FontWeight="SemiBold"/>
+                                    <DatePicker SelectedDate="{Binding NgayKetThuc, UpdateSourceTrigger=PropertyChanged}" Width="110" BorderThickness="0" Background="Transparent" VerticalContentAlignment="Center"/>
+                                </StackPanel>
+                            </Border>
+                        </StackPanel>
+
+                        <Button Command="{Binding RefreshCommand}" Cursor="Hand" VerticalAlignment="Center">
                         <Button.Template>
                             <ControlTemplate TargetType="Button">
                                 <Border x:Name="border" Background="White" BorderBrush="{StaticResource Gray200}" 
@@ -116,6 +134,7 @@
                             </ControlTemplate>
                         </Button.Template>
                     </Button>
+                    </StackPanel>
                 </Grid>
 
                 <!-- ═══════════ THẺ THỐNG KÊ ROW 1: KHO ═══════════ -->

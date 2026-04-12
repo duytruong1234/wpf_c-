@@ -898,6 +898,12 @@ public class NhanVienViewModel : BaseViewModel
     {
         if (parameter is NhanVien nv)
         {
+            var confirmed = await ShowDeleteConfirmation(
+                nv.HoTen ?? "",
+                "Xóa nhân viên",
+                $"Bạn có chắc chắn muốn xóa nhân viên \"{nv.HoTen}\"?\nTài khoản và dữ liệu liên quan sẽ bị xóa theo.");
+            if (!confirmed) return;
+
             try
             {
                 await _databaseService.DeleteNhanVienAsync(nv.NhanVienID);
@@ -984,6 +990,12 @@ public class NhanVienViewModel : BaseViewModel
     {
         if (parameter is ChucVu cv)
         {
+            var confirmed = await ShowDeleteConfirmation(
+                cv.TenChucVu ?? "",
+                "Xóa chức vụ",
+                $"Bạn có chắc chắn muốn xóa chức vụ \"{cv.TenChucVu}\"?\nHành động này không thể hoàn tác.");
+            if (!confirmed) return;
+
             try
             {
                 var result = await _databaseService.DeleteChucVuAsync(cv.ChucVuID);

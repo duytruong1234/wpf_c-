@@ -1,5 +1,6 @@
-﻿using System.ComponentModel;
+using System.ComponentModel;
 using System.Runtime.CompilerServices;
+using System.Windows.Input;
 
 namespace QuanLyKhoNguyenLieuPizza.ViewModels;
 
@@ -26,6 +27,26 @@ public abstract class BaseViewModel : INotifyPropertyChanged
     /// CancellationTokenSource dùng cho debounce tìm kiếm.
     /// </summary>
     private CancellationTokenSource? _debounceCts;
+
+    #region Delete Confirmation System
+
+    /// <summary>
+    /// Hiển thị popup xác nhận xóa hiện đại. Trả về true nếu user đồng ý.
+    /// </summary>
+    protected Task<bool> ShowDeleteConfirmation(string itemName, string? title = null, string? message = null)
+    {
+        var finalTitle = title ?? "Xác nhận xóa";
+        var finalMessage = message ?? $"Bạn có chắc chắn muốn xóa \"{itemName}\"?\nHành động này không thể hoàn tác.";
+
+        var window = new Views.DeleteConfirmWindow(finalTitle, finalMessage);
+        window.Owner = System.Windows.Application.Current.MainWindow;
+        var result = window.ShowDialog() == true;
+
+        return Task.FromResult(result);
+    }
+
+    #endregion
+
 
     protected virtual void OnPropertyChanged([CallerMemberName] string? propertyName = null)
     {

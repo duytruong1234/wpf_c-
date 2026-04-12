@@ -563,6 +563,12 @@ public class PizzaViewModel : BaseViewModel
         if (string.IsNullOrEmpty(item.MaPizza))
             return;
 
+        var confirmed = await ShowDeleteConfirmation(
+            item.TenPizza ?? item.MaPizza,
+            "Xóa pizza",
+            $"Bạn có chắc chắn muốn xóa pizza \"{item.TenPizza}\"?\nTất cả công thức liên quan sẽ bị xóa theo.");
+        if (!confirmed) return;
+
         var success = await _databaseService.DeletePizzaByMaAsync(item.MaPizza);
 
         if (success)
@@ -706,18 +712,24 @@ public class PizzaViewModel : BaseViewModel
     private async Task SaveRecipeItemAsync()
     {
         if (RecipePizza == null || string.IsNullOrEmpty(RecipePizza.MaPizza) || string.IsNullOrEmpty(RecipePizza.SizeID))
+        {
+            System.Windows.MessageBox.Show("Món ăn này chưa có kích thước hợp lệ, vui lòng cập nhật kích thước trước.", "Lỗi", System.Windows.MessageBoxButton.OK, System.Windows.MessageBoxImage.Warning);
             return;
+        }
 
         if (RecipeSelectedNguyenLieu == null)
+        {
+            System.Windows.MessageBox.Show("Vui lòng chọn nguyên liệu cần thêm.", "Thiếu thông tin", System.Windows.MessageBoxButton.OK, System.Windows.MessageBoxImage.Warning);
             return;
+        }
 
         double soLuong = 0;
-        if (!string.IsNullOrWhiteSpace(RecipeSoLuong))
+        if (string.IsNullOrWhiteSpace(RecipeSoLuong) || !double.TryParse(RecipeSoLuong.Replace(",", "."), 
+                System.Globalization.NumberStyles.Any, 
+                System.Globalization.CultureInfo.InvariantCulture, out soLuong) || soLuong <= 0)
         {
-            double.TryParse(RecipeSoLuong.Replace(",", "."),
-                System.Globalization.NumberStyles.Any,
-                System.Globalization.CultureInfo.InvariantCulture,
-                out soLuong);
+            System.Windows.MessageBox.Show("Vui lòng nhập định lượng hợp lệ (lớn hơn 0).", "Thiếu thông tin", System.Windows.MessageBoxButton.OK, System.Windows.MessageBoxImage.Warning);
+            return;
         }
 
         var congThuc = new CongThuc_Pizza
@@ -746,6 +758,12 @@ public class PizzaViewModel : BaseViewModel
     {
         if (RecipePizza == null)
             return;
+
+        var confirmed = await ShowDeleteConfirmation(
+            $"{item.TenNguyenLieu} ({item.SizeID})",
+            "Xóa nguyên liệu khỏi công thức",
+            $"Bạn có chắc chắn muốn xóa \"{item.TenNguyenLieu}\" khỏi công thức?\nHành động này không thể hoàn tác.");
+        if (!confirmed) return;
 
         var success = await _databaseService.DeleteCongThucPizzaAsync(item.MaHangHoa, item.SizeID, item.NguyenLieuID);
         if (success)

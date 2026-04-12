@@ -278,7 +278,36 @@ public class QuyDoiDonViViewModel : BaseViewModel
 
     private void AddNewRow()
     {
-        if (SelectedNguyenLieu == null || SelectedNewDonVi == null) return;
+        if (SelectedNguyenLieu == null)
+        {
+            MessageBox.Show(
+                "Vui lòng chọn nguyên liệu trước!",
+                "Thiếu thông tin",
+                MessageBoxButton.OK,
+                MessageBoxImage.Warning);
+            return;
+        }
+
+        if (SelectedNewDonVi == null)
+        {
+            MessageBox.Show(
+                "Vui lòng chọn đơn vị quy đổi muốn thêm!",
+                "Thiếu thông tin",
+                MessageBoxButton.OK,
+                MessageBoxImage.Warning);
+            return;
+        }
+
+        // Kiểm tra đơn vị trùng với đơn vị gốc
+        if (SelectedNguyenLieu.DonViID.HasValue && SelectedNewDonVi.DonViID == SelectedNguyenLieu.DonViID.Value)
+        {
+            MessageBox.Show(
+                "Đơn vị quy đổi không được trùng với đơn tính gốc của nguyên liệu!",
+                "Lỗi đơn vị trùng",
+                MessageBoxButton.OK,
+                MessageBoxImage.Warning);
+            return;
+        }
 
         // Kiểm tra trùng lặp
         if (QuyDoiRows.Any(r => r.DonViID == SelectedNewDonVi.DonViID))
@@ -293,12 +322,12 @@ public class QuyDoiDonViViewModel : BaseViewModel
 
         var newRow = new QuyDoiRowItem
         {
-            QuyDoiID = 0, // Mới, chưa lưu
+            QuyDoiID = 0,
             NguyenLieuID = SelectedNguyenLieu.NguyenLieuID,
             DonViID = SelectedNewDonVi.DonViID,
             TenDonVi = SelectedNewDonVi.TenDonVi,
             HeSoText = "1",
-            LaDonViChuan = !QuyDoiRows.Any() // Nếu chưa có row nào thì tự set làm chuẩn
+            LaDonViChuan = !QuyDoiRows.Any()
         };
         newRow.DeleteCommand = new AsyncRelayCommand(async _ => await DeleteRowAsync(newRow));
         QuyDoiRows.Add(newRow);
@@ -348,12 +377,12 @@ public class QuyDoiDonViViewModel : BaseViewModel
             }
 
             MessageBox.Show(
-                "Lưu hệ số quy đổi thành công!",
+                "Đã lưu hệ số quy đổi thành công!",
                 "Thành công",
                 MessageBoxButton.OK,
                 MessageBoxImage.Information);
 
-            // Reload lại để cập nhật QuyDoiID mới
+            // Reload lại để cập nhật QuyDoiID mới và tránh trùng lặp
             await LoadQuyDoiForSelectedAsync();
         }
         catch (Exception ex)
@@ -368,17 +397,14 @@ public class QuyDoiDonViViewModel : BaseViewModel
 
     private async Task DeleteRowAsync(QuyDoiRowItem row)
     {
+        var confirmed = await ShowDeleteConfirmation(
+            row.TenDonVi,
+            "Xóa đơn vị quy đổi",
+            $"Bạn có chắc chắn muốn xóa đơn vị \"{row.TenDonVi}\" khỏi bảng quy đổi?\nHành động này không thể hoàn tác.");
+        if (!confirmed) return;
+
         if (row.QuyDoiID > 0)
         {
-            // Đã lưu trong DB, cần xóa
-            var confirm = MessageBox.Show(
-                $"Bạn có chắc muốn xóa đơn vị '{row.TenDonVi}' khỏi bảng quy đổi?",
-                "Xác nhận xóa",
-                MessageBoxButton.YesNo,
-                MessageBoxImage.Question);
-
-            if (confirm != MessageBoxResult.Yes) return;
-
             await _databaseService.DeleteQuyDoiDonViAsync(row.QuyDoiID);
         }
 

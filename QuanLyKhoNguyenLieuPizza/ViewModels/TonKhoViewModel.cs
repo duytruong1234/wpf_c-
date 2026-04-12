@@ -630,10 +630,31 @@ public class TonKhoViewModel : BaseViewModel
     {
         if (SelectedNguyenLieu == null) return;
 
+        // Validate: phải có ít nhất 1 đơn vị chuẩn
+        if (QuyDoiDonVis.Any() && !QuyDoiDonVis.Any(r => r.LaDonViChuan))
+        {
+            System.Windows.MessageBox.Show(
+                "Phải có ít nhất 1 đơn vị được chọn làm ĐV Chuẩn (đơn vị lưu tồn kho)!",
+                "Thiếu đơn vị chuẩn",
+                System.Windows.MessageBoxButton.OK,
+                System.Windows.MessageBoxImage.Warning);
+            return;
+        }
+
         try
         {
             foreach (var qd in QuyDoiDonVis)
             {
+                if (qd.HeSo <= 0)
+                {
+                    System.Windows.MessageBox.Show(
+                        $"Hệ số của đơn vị '{qd.TenDonVi}' không hợp lệ! Phải là số dương.",
+                        "Lỗi hệ số",
+                        System.Windows.MessageBoxButton.OK,
+                        System.Windows.MessageBoxImage.Warning);
+                    return;
+                }
+
                 var quyDoi = new QuyDoiDonVi
                 {
                     QuyDoiID = qd.QuyDoiID,
@@ -645,37 +666,96 @@ public class TonKhoViewModel : BaseViewModel
                 
                 await _databaseService.SaveQuyDoiDonViAsync(quyDoi);
             }
+
+            System.Windows.MessageBox.Show(
+                "Đã lưu hệ số thành công!",
+                "Thành công",
+                System.Windows.MessageBoxButton.OK,
+                System.Windows.MessageBoxImage.Information);
             
             IsEditing = false;
+
+            // Reload lại để cập nhật QuyDoiID mới và tránh trùng lặp
+            await LoadQuyDoiDonViAsync();
         }
         catch (Exception ex)
         {
             System.Diagnostics.Debug.WriteLine($"Error saving: {ex.Message}");
+            System.Windows.MessageBox.Show(
+                $"Lỗi khi lưu: {ex.Message}",
+                "Lỗi",
+                System.Windows.MessageBoxButton.OK,
+                System.Windows.MessageBoxImage.Error);
         }
     }
 
     private async Task ExecuteSaveNewQuyDoiAsync()
     {
-        System.Diagnostics.Debug.WriteLine($"=== ExecuteSaveNewQuyDoiAsync called ===");
-        System.Diagnostics.Debug.WriteLine($"SelectedNguyenLieu: {SelectedNguyenLieu?.TenNguyenLieu ?? "NULL"}");
-        System.Diagnostics.Debug.WriteLine($"SelectedDonViXuat: {SelectedDonViXuat?.TenDonVi ?? "NULL"} (DonViID: {SelectedDonViXuat?.DonViID})");
-        System.Diagnostics.Debug.WriteLine($"HeSoNhap: '{HeSoNhap}'");
-
-        if (SelectedNguyenLieu == null || SelectedDonViXuat == null)
+        // Validate: phải chọn nguyên liệu
+        if (SelectedNguyenLieu == null)
         {
-            System.Diagnostics.Debug.WriteLine("=== RETURN: SelectedNguyenLieu or SelectedDonViXuat is null ===");
+            System.Windows.MessageBox.Show(
+                "Vui lòng chọn nguyên liệu trước!",
+                "Thiếu thông tin",
+                System.Windows.MessageBoxButton.OK,
+                System.Windows.MessageBoxImage.Warning);
             return;
         }
-        
-        // Hỗ trợ cả dấu chấm và dấu phẩy cho phân cách thập phân
+
+        // Validate: phải chọn đơn vị quy đổi
+        if (SelectedDonViXuat == null)
+        {
+            System.Windows.MessageBox.Show(
+                "Vui lòng chọn đơn vị quy đổi!",
+                "Thiếu thông tin",
+                System.Windows.MessageBoxButton.OK,
+                System.Windows.MessageBoxImage.Warning);
+            return;
+        }
+
+        // Validate: đơn vị gốc và đơn vị quy đổi không được giống nhau
+        var donViGoc = DonViTinhs.FirstOrDefault(d => d.TenDonVi == SelectedNguyenLieu.DonViTinh);
+        if (donViGoc != null && donViGoc.DonViID == SelectedDonViXuat.DonViID)
+        {
+            System.Windows.MessageBox.Show(
+                "Đơn vị quy đổi không được trùng với đơn tính gốc của nguyên liệu!",
+                "Lỗi đơn vị trùng",
+                System.Windows.MessageBoxButton.OK,
+                System.Windows.MessageBoxImage.Warning);
+            return;
+        }
+
+        // Validate: kiểm tra trùng lặp trong danh sách hiện tại
+        if (QuyDoiDonVis.Any(qd => qd.DonViID == SelectedDonViXuat.DonViID))
+        {
+            System.Windows.MessageBox.Show(
+                $"Đơn vị '{SelectedDonViXuat.TenDonVi}' đã tồn tại trong bảng quy đổi!",
+                "Trùng lặp",
+                System.Windows.MessageBoxButton.OK,
+                System.Windows.MessageBoxImage.Warning);
+            return;
+        }
+
+        // Validate: hệ số phải là số dương
         var heSoText = HeSoNhap?.Replace(",", ".") ?? "";
+        if (string.IsNullOrWhiteSpace(HeSoNhap))
+        {
+            System.Windows.MessageBox.Show(
+                "Vui lòng nhập hệ số quy đổi!",
+                "Thiếu thông tin",
+                System.Windows.MessageBoxButton.OK,
+                System.Windows.MessageBoxImage.Warning);
+            return;
+        }
         if (!decimal.TryParse(heSoText, System.Globalization.NumberStyles.Any, System.Globalization.CultureInfo.InvariantCulture, out decimal heSo) || heSo <= 0)
         {
-            System.Diagnostics.Debug.WriteLine($"=== RETURN: HeSo parse failed or <= 0. Text: '{HeSoNhap}' ===");
+            System.Windows.MessageBox.Show(
+                "Hệ số phải là một số dương hợp lệ!",
+                "Lỗi hệ số",
+                System.Windows.MessageBoxButton.OK,
+                System.Windows.MessageBoxImage.Warning);
             return;
         }
-
-        System.Diagnostics.Debug.WriteLine($"=== Parsed HeSo: {heSo} ===");
 
         try
         {
@@ -689,32 +769,31 @@ public class TonKhoViewModel : BaseViewModel
             };
             
             var success = await _databaseService.SaveQuyDoiDonViAsync(quyDoi);
-            System.Diagnostics.Debug.WriteLine($"=== SaveQuyDoiDonViAsync result: {success} ===");
             
             if (success)
             {
-                // Thêm vào danh sách
-                QuyDoiDonVis.Add(new QuyDoiDonViItemViewModel
-                {
-                    QuyDoiID = 0,
-                    DonViID = SelectedDonViXuat.DonViID,
-                    TenDonVi = SelectedDonViXuat.TenDonVi,
-                    HeSo = heSo,
-                    LaDonViChuan = false,
-                    EditCommand = EditQuyDoiCommand,
-                    DeleteCommand = DeleteQuyDoiCommand,
-                    SetDonViChuanCommand = SetDonViChuanCommand
-                });
-                
                 IsAddQuyDoiPopupOpen = false;
                 HeSoNhap = string.Empty;
                 SelectedDonViXuat = null;
+
+                // Reload lại danh sách từ DB để tránh trùng lặp
+                await LoadQuyDoiDonViAsync();
+
+                System.Windows.MessageBox.Show(
+                    "Đã thêm hệ số quy đổi thành công!",
+                    "Thành công",
+                    System.Windows.MessageBoxButton.OK,
+                    System.Windows.MessageBoxImage.Information);
             }
         }
         catch (Exception ex)
         {
             System.Diagnostics.Debug.WriteLine($"Error saving new QuyDoi: {ex.Message}");
-            System.Diagnostics.Debug.WriteLine($"Stack trace: {ex.StackTrace}");
+            System.Windows.MessageBox.Show(
+                $"Lỗi khi thêm quy đổi: {ex.Message}",
+                "Lỗi",
+                System.Windows.MessageBoxButton.OK,
+                System.Windows.MessageBoxImage.Error);
         }
     }
 
@@ -738,28 +817,24 @@ public class TonKhoViewModel : BaseViewModel
     {
         if (parameter is TonKhoItemViewModel item)
         {
+            var confirmed = await ShowDeleteConfirmation(
+                item.TenNguyenLieu,
+                "Xóa nguyên liệu",
+                $"Bạn có chắc chắn muốn xóa nguyên liệu \"{item.TenNguyenLieu}\"?\nTất cả dữ liệu liên quan sẽ bị xóa theo.");
+            if (!confirmed) return;
+
             try
             {
-                System.Diagnostics.Debug.WriteLine($"Delete item: {item.TenNguyenLieu} (ID: {item.NguyenLieuID})");
-                
-                // Xóa từ cơ sở dữ liệu
                 var success = await _databaseService.DeleteNguyenLieuAsync(item.NguyenLieuID);
                 
                 if (success)
                 {
-                    // Xóa khỏi giao diện
                     System.Windows.Application.Current.Dispatcher.Invoke(() =>
                     {
                         TonKhoItems.Remove(item);
                         FilteredNguyenLieus.Remove(item);
                         SoNguyenLieuTonKho = TonKhoItems.Count;
                     });
-                    
-                    System.Diagnostics.Debug.WriteLine($"Successfully deleted item: {item.TenNguyenLieu}");
-                }
-                else
-                {
-                    System.Diagnostics.Debug.WriteLine($"Failed to delete item: {item.TenNguyenLieu}");
                 }
             }
             catch (Exception ex)
@@ -797,19 +872,14 @@ public class TonKhoViewModel : BaseViewModel
     {
         if (parameter is QuyDoiDonViItemViewModel quyDoi)
         {
+            var confirmed = await ShowDeleteConfirmation(
+                quyDoi.TenDonVi,
+                "Xóa hệ số quy đổi",
+                $"Bạn có chắc chắn muốn xóa hệ số quy đổi \"{quyDoi.TenDonVi}\"?\nHành động này không thể hoàn tác.");
+            if (!confirmed) return;
+
             try
             {
-                var result = System.Windows.MessageBox.Show(
-                    $"Bạn có chắc chắn muốn xóa hệ số quy đổi: {quyDoi.TenDonVi}?",
-                    "Xác nhận xóa",
-                    System.Windows.MessageBoxButton.YesNo,
-                    System.Windows.MessageBoxImage.Question);
-
-                if (result != System.Windows.MessageBoxResult.Yes)
-                {
-                    return;
-                }
-
                 if (quyDoi.QuyDoiID > 0)
                 {
                     var success = await _databaseService.DeleteQuyDoiDonViAsync(quyDoi.QuyDoiID);
@@ -820,16 +890,6 @@ public class TonKhoViewModel : BaseViewModel
                         {
                             QuyDoiDonVis.Remove(quyDoi);
                         });
-                        
-                        System.Diagnostics.Debug.WriteLine($"Successfully deleted quy doi: {quyDoi.TenDonVi}");
-                    }
-                    else
-                    {
-                        System.Windows.MessageBox.Show(
-                            "Không thể xóa hệ số quy đổi này từ cơ sở dữ liệu. Vui lòng thử lại!",
-                            "Lỗi",
-                            System.Windows.MessageBoxButton.OK,
-                            System.Windows.MessageBoxImage.Error);
                     }
                 }
                 else
@@ -843,11 +903,6 @@ public class TonKhoViewModel : BaseViewModel
             catch (Exception ex)
             {
                 System.Diagnostics.Debug.WriteLine($"Error deleting quy doi: {ex.Message}");
-                System.Windows.MessageBox.Show(
-                    $"Đã xảy ra lỗi khi xóa: {ex.Message}",
-                    "Lỗi",
-                    System.Windows.MessageBoxButton.OK,
-                    System.Windows.MessageBoxImage.Error);
             }
         }
     }

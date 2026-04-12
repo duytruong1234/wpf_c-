@@ -88,13 +88,25 @@ public class DashboardViewModel : BaseViewModel
     public DateTime? NgayBatDau
     {
         get => _ngayBatDau;
-        set => SetProperty(ref _ngayBatDau, value);
+        set 
+        {
+            if (SetProperty(ref _ngayBatDau, value))
+            {
+                SafeInitializeAsync(LoadDataAsync);
+            }
+        }
     }
 
     public DateTime? NgayKetThuc
     {
         get => _ngayKetThuc;
-        set => SetProperty(ref _ngayKetThuc, value);
+        set 
+        {
+            if (SetProperty(ref _ngayKetThuc, value))
+            {
+                SafeInitializeAsync(LoadDataAsync);
+            }
+        }
     }
 
     public bool IsLoading
@@ -271,6 +283,10 @@ public class DashboardViewModel : BaseViewModel
         var currentUser = CurrentUserSession.Instance.CurrentUser;
         TenNguoiDung = currentUser?.NhanVien?.HoTen ?? currentUser?.Username ?? "Người dùng";
 
+        // Khởi tạo ngày mặc định
+        _ngayBatDau = new DateTime(DateTime.Today.Year, DateTime.Today.Month, 1);
+        _ngayKetThuc = DateTime.Today;
+
         // ⚡ SafeInitializeAsync thay vì fire-and-forget
         SafeInitializeAsync(LoadDataAsync);
     }
@@ -284,6 +300,10 @@ public class DashboardViewModel : BaseViewModel
         RefreshCommand = new AsyncRelayCommand(async _ => await LoadDataAsync());
         ShowStatusDetailCommand = new AsyncRelayCommand(async p => await LoadStatusDetailAsync(p));
         CloseStatusPopupCommand = new RelayCommand(_ => IsStatusPopupOpen = false);
+
+        // Khởi tạo ngày mặc định
+        _ngayBatDau = new DateTime(DateTime.Today.Year, DateTime.Today.Month, 1);
+        _ngayKetThuc = DateTime.Today;
 
         SafeInitializeAsync(LoadDataAsync);
     }
@@ -303,27 +323,24 @@ public class DashboardViewModel : BaseViewModel
         try
         {
             var today = DateTime.Today;
-            var firstDayOfMonth = new DateTime(today.Year, today.Month, 1);
-            // Lấy dữ liệu từ tất cả thời gian để hiện tổng doanh thu
-            var allTimeStart = new DateTime(2020, 1, 1);
-
+            var fromDate = NgayBatDau ?? new DateTime(today.Year, today.Month, 1);
+            var toDate = NgayKetThuc ?? today;
+            var toDateQuery = toDate.Date.AddDays(1).AddTicks(-1);
+            
             // Đợt 1: Chạy tất cả truy vấn độc lập song song
             var tongNguyenLieuTask = _databaseService.GetTotalNguyenLieuCountAsync();
             var tonKhoTask = _databaseService.GetTotalTonKhoCountAsync();
             var lowStockTask = _databaseService.GetLowStockCountAsync(20);
             var nearExpiryTask = _databaseService.GetNearExpiryCountAsync(7);
             var expiredTask = _databaseService.GetExpiredCountAsync();
-            var doanhThuTodayTask = _databaseService.GetDoanhThuBanHangAsync(today, today);
-            var tongDonTodayTask = _databaseService.GetTotalPhieuBanCountAsync(today, today);
-            // Doanh thu tháng: thử tháng này trước 
-            var doanhThuMonthTask = _databaseService.GetDoanhThuBanHangAsync(firstDayOfMonth, today);
-            var tongDonMonthTask = _databaseService.GetTotalPhieuBanCountAsync(firstDayOfMonth, today);
-            // Tổng doanh thu tất cả thời gian (fallback nếu tháng này = 0)
-            var doanhThuAllTimeTask = _databaseService.GetDoanhThuBanHangAsync(allTimeStart, today);
-            var tongDonAllTimeTask = _databaseService.GetTotalPhieuBanCountAsync(allTimeStart, today);
-            var loiNhuanTask = _databaseService.GetTotalLoiNhuanAsync(allTimeStart, today);
-            var chiPhiTask = _databaseService.GetChiPhiNguyenLieuAsync(allTimeStart, today);
-            var topPizzasTask = _databaseService.GetTopPizzasAsync(allTimeStart, today, 5);
+            var doanhThuTodayTask = _databaseService.GetDoanhThuBanHangAsync(today, today.Date.AddDays(1).AddTicks(-1));
+            var tongDonTodayTask = _databaseService.GetTotalPhieuBanCountAsync(today, today.Date.AddDays(1).AddTicks(-1));
+            // Doanh thu theo lọc
+            var doanhThuMonthTask = _databaseService.GetDoanhThuBanHangAsync(fromDate, toDateQuery);
+            var tongDonMonthTask = _databaseService.GetTotalPhieuBanCountAsync(fromDate, toDateQuery);
+            var loiNhuanTask = _databaseService.GetTotalLoiNhuanAsync(fromDate, toDateQuery);
+            var chiPhiTask = _databaseService.GetChiPhiNguyenLieuAsync(fromDate, toDateQuery);
+            var topPizzasTask = _databaseService.GetTopPizzasAsync(fromDate, toDateQuery, 5);
             var recentOrdersTask = _databaseService.GetRecentDonHangsAsync(8);
 
             // Doanh thu 7 ngày gần nhất
@@ -339,7 +356,6 @@ public class DashboardViewModel : BaseViewModel
             await Task.WhenAll(
                 tongNguyenLieuTask, tonKhoTask, lowStockTask, nearExpiryTask, expiredTask,
                 doanhThuTodayTask, tongDonTodayTask, doanhThuMonthTask, tongDonMonthTask,
-                doanhThuAllTimeTask, tongDonAllTimeTask,
                 loiNhuanTask, chiPhiTask, topPizzasTask, recentOrdersTask);
 
             await Task.WhenAll(dailyRevenueTasks);
@@ -354,17 +370,13 @@ public class DashboardViewModel : BaseViewModel
             // Tính số lượng hết hàng
             SoLuongHetHang = Math.Max(0, TongSoNguyenLieu - SoLuongTonKho);
             
-            // Nếu tháng này chưa có doanh thu, hiện tổng doanh thu tất cả thời gian
+            // Doanh thu theo bộ lọc
             var monthRevenue = doanhThuMonthTask.Result;
             var monthOrders = tongDonMonthTask.Result;
-            DoanhThuHomNay = doanhThuTodayTask.Result > 0 
-                ? doanhThuTodayTask.Result 
-                : doanhThuAllTimeTask.Result;
-            TongDonHomNay = tongDonTodayTask.Result > 0 
-                ? tongDonTodayTask.Result 
-                : tongDonAllTimeTask.Result;
-            DoanhThuThang = monthRevenue > 0 ? monthRevenue : doanhThuAllTimeTask.Result;
-            TongDonThang = monthOrders > 0 ? monthOrders : tongDonAllTimeTask.Result;
+            DoanhThuHomNay = doanhThuTodayTask.Result;
+            TongDonHomNay = tongDonTodayTask.Result;
+            DoanhThuThang = monthRevenue;
+            TongDonThang = monthOrders;
             LoiNhuanThang = loiNhuanTask.Result;
             ChiPhiNguyenLieuThang = chiPhiTask.Result;
 

@@ -661,6 +661,12 @@ public class PhieuXuatViewModel : BaseViewModel
     {
         if (SelectedPhieuXuat == null || !CanDelete) return;
 
+        var confirmed = await ShowDeleteConfirmation(
+            SelectedPhieuXuat.MaPhieuXuat ?? "",
+            "Xóa phiếu xuất",
+            $"Bạn có chắc chắn muốn xóa phiếu xuất \"{SelectedPhieuXuat.MaPhieuXuat}\"?\nHành động này không thể hoàn tác.");
+        if (!confirmed) return;
+
         try
         {
             var result = await _databaseService.DeletePhieuXuatAsync(SelectedPhieuXuat.PhieuXuatID);
@@ -732,17 +738,30 @@ public class PhieuXuatViewModel : BaseViewModel
         }
 
         // Ràng buộc kiểm tra tồn kho: Số lượng xuất không được lớn hơn tồn kho
+        // Tồn kho lưu theo đơn vị chuẩn → cần quy đổi số lượng xuất về cùng đơn vị chuẩn
         var chiTietGroups = ChiTietForm.GroupBy(x => x.NguyenLieuID);
         foreach (var group in chiTietGroups)
         {
             var firstItem = group.First();
-            var tongSoLuongQuyDoi = group.Sum(x => x.SoLuong * x.HeSo);
             var tonKhoHienTai = firstItem.NguyenLieu?.TonKho?.SoLuongTon ?? 0;
+
+            // Tìm hệ số của đơn vị chuẩn (đơn vị lưu tồn kho)
+            decimal donViChuanHeSo = 1m;
+            if (firstItem.DonViOptions != null && firstItem.DonViOptions.Any())
+            {
+                // Đơn vị chuẩn = đơn vị có DonViID trùng với đơn vị gốc của nguyên liệu
+                var donViGoc = firstItem.DonViOptions.FirstOrDefault(o => o.DonViID == (firstItem.NguyenLieu?.DonViID ?? 0));
+                if (donViGoc != null && donViGoc.HeSo > 0)
+                    donViChuanHeSo = donViGoc.HeSo;
+            }
+
+            // Quy đổi tổng số lượng xuất về đơn vị chuẩn
+            var tongSoLuongChuanHoa = group.Sum(x => x.SoLuong * x.HeSo / donViChuanHeSo);
             
-            if (tongSoLuongQuyDoi > tonKhoHienTai)
+            if (tongSoLuongChuanHoa > tonKhoHienTai)
             {
                 System.Windows.MessageBox.Show(
-                    $"Số lượng xuất của '{firstItem.NguyenLieu?.TenNguyenLieu}' ({tongSoLuongQuyDoi:N0}) đang vượt mức tồn kho hiện tại ({tonKhoHienTai:N0} {firstItem.NguyenLieu?.DonViTinh?.TenDonVi}).\nVui lòng kiểm tra và điều chỉnh lại!", 
+                    $"Số lượng xuất của '{firstItem.NguyenLieu?.TenNguyenLieu}' ({tongSoLuongChuanHoa:N2} {firstItem.NguyenLieu?.DonViTinh?.TenDonVi}) đang vượt mức tồn kho hiện tại ({tonKhoHienTai:N2} {firstItem.NguyenLieu?.DonViTinh?.TenDonVi}).\nVui lòng kiểm tra và điều chỉnh lại!", 
                     "Cảnh báo tồn kho", 
                     System.Windows.MessageBoxButton.OK, 
                     System.Windows.MessageBoxImage.Warning);
