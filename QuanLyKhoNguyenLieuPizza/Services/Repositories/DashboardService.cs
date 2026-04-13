@@ -14,49 +14,73 @@ public class DashboardService : DatabaseContext
         await ExecuteScalarValueAsync("SELECT COUNT(*) FROM NguyenLieu WHERE TrangThai = 1", 0);
 
     public async Task<int> GetTotalTonKhoCountAsync() =>
-        await ExecuteScalarValueAsync("SELECT COUNT(*) FROM TonKho WHERE SoLuongTon > 0", 0);
+        await ExecuteScalarValueAsync("SELECT COUNT(*) FROM TonKho tk INNER JOIN NguyenLieu nl ON tk.NguyenLieuID = nl.NguyenLieuID WHERE tk.SoLuongTon > 0 AND nl.TrangThai = 1", 0);
 
     public async Task<int> GetLowStockCountAsync(decimal threshold = 20) =>
         await ExecuteScalarValueAsync(
-            "SELECT COUNT(*) FROM TonKho WHERE SoLuongTon > 0 AND SoLuongTon < @Threshold", 0,
+            "SELECT COUNT(*) FROM TonKho tk INNER JOIN NguyenLieu nl ON tk.NguyenLieuID = nl.NguyenLieuID WHERE tk.SoLuongTon > 0 AND tk.SoLuongTon < @Threshold AND nl.TrangThai = 1", 0,
             new SqlParameter("@Threshold", threshold));
 
     public async Task<int> GetNearExpiryCountAsync(int days = 7) =>
         await ExecuteScalarValueAsync(
             @"SELECT COUNT(*) FROM TonKho tk
               INNER JOIN NguyenLieu nl ON tk.NguyenLieuID = nl.NguyenLieuID
+              OUTER APPLY (
+                  SELECT TOP 1 ctp.HSD
+                  FROM CT_PhieuNhap ctp
+                  INNER JOIN PhieuNhap pn ON ctp.PhieuNhapID = pn.PhieuNhapID
+                  WHERE ctp.NguyenLieuID = nl.NguyenLieuID AND pn.TrangThai = 2 AND ctp.HSD IS NOT NULL
+                  ORDER BY pn.NgayNhap DESC
+              ) phieu
               WHERE tk.SoLuongTon > 0 
-              AND nl.HanSuDung IS NOT NULL 
-              AND nl.HanSuDung <= DATEADD(DAY, @Days, GETDATE())
-              AND nl.HanSuDung > GETDATE()", 0,
+              AND nl.TrangThai = 1
+              AND phieu.HSD IS NOT NULL 
+              AND phieu.HSD <= DATEADD(DAY, @Days, GETDATE())
+              AND phieu.HSD > GETDATE()", 0,
             new SqlParameter("@Days", days));
 
     public async Task<int> GetExpiredCountAsync() =>
         await ExecuteScalarValueAsync(
             @"SELECT COUNT(*) FROM TonKho tk
               INNER JOIN NguyenLieu nl ON tk.NguyenLieuID = nl.NguyenLieuID
+              OUTER APPLY (
+                  SELECT TOP 1 ctp.HSD
+                  FROM CT_PhieuNhap ctp
+                  INNER JOIN PhieuNhap pn ON ctp.PhieuNhapID = pn.PhieuNhapID
+                  WHERE ctp.NguyenLieuID = nl.NguyenLieuID AND pn.TrangThai = 2 AND ctp.HSD IS NOT NULL
+                  ORDER BY pn.NgayNhap DESC
+              ) phieu
               WHERE tk.SoLuongTon > 0 
-              AND nl.HanSuDung IS NOT NULL 
-              AND nl.HanSuDung <= GETDATE()", 0);
+              AND nl.TrangThai = 1
+              AND phieu.HSD IS NOT NULL 
+              AND phieu.HSD <= GETDATE()", 0);
 
-    public async Task<List<(string TenNguyenLieu, decimal SoLuongTon, string DonVi)>> GetLowStockItemsAsync(decimal threshold = 20)
+    public async Task<List<(string TenNguyenLieu, decimal SoLuongTon, string DonVi, DateTime? HanSuDung)>> GetLowStockItemsAsync(decimal threshold = 20)
     {
-        var result = new List<(string, decimal, string)>();
+        var result = new List<(string, decimal, string, DateTime?)>();
         try
         {
             using var conn = GetConnection();
             await conn.OpenAsync();
-            var sql = @"SELECT nl.TenNguyenLieu, tk.SoLuongTon, ISNULL(dv.TenDonVi, '')
+            var sql = @"SELECT ISNULL(nl.TenNguyenLieu, N'Không tên'), ISNULL(tk.SoLuongTon, 0), ISNULL(dv.TenDonVi, ''), phieu.HSD
                         FROM TonKho tk
                         INNER JOIN NguyenLieu nl ON tk.NguyenLieuID = nl.NguyenLieuID
                         LEFT JOIN DonViTinh dv ON nl.DonViID = dv.DonViID
+                        OUTER APPLY (
+                            SELECT TOP 1 ctp.HSD
+                            FROM CT_PhieuNhap ctp
+                            INNER JOIN PhieuNhap pn ON ctp.PhieuNhapID = pn.PhieuNhapID
+                            WHERE ctp.NguyenLieuID = nl.NguyenLieuID AND pn.TrangThai = 2 AND ctp.HSD IS NOT NULL
+                            ORDER BY pn.NgayNhap DESC
+                        ) phieu
                         WHERE tk.SoLuongTon > 0 AND tk.SoLuongTon < @Threshold
+                        AND nl.TrangThai = 1
                         ORDER BY tk.SoLuongTon ASC";
             using var cmd = new SqlCommand(sql, conn);
             cmd.Parameters.AddWithValue("@Threshold", threshold);
             using var reader = await cmd.ExecuteReaderAsync();
             while (await reader.ReadAsync())
-                result.Add((reader.GetString(0), reader.GetDecimal(1), reader.GetString(2)));
+                result.Add((reader[0]?.ToString() ?? "", Convert.ToDecimal(reader[1]), reader[2]?.ToString() ?? "", reader.IsDBNull(3) ? null : Convert.ToDateTime(reader[3])));
         }
         catch (Exception ex) { System.Diagnostics.Debug.WriteLine($"Error GetLowStockItems: {ex.Message}"); }
         return result;
@@ -69,20 +93,28 @@ public class DashboardService : DatabaseContext
         {
             using var conn = GetConnection();
             await conn.OpenAsync();
-            var sql = @"SELECT nl.TenNguyenLieu, tk.SoLuongTon, ISNULL(dv.TenDonVi, ''), nl.HanSuDung
+            var sql = @"SELECT ISNULL(nl.TenNguyenLieu, N'Không tên'), ISNULL(tk.SoLuongTon, 0), ISNULL(dv.TenDonVi, ''), phieu.HSD
                         FROM TonKho tk
                         INNER JOIN NguyenLieu nl ON tk.NguyenLieuID = nl.NguyenLieuID
                         LEFT JOIN DonViTinh dv ON nl.DonViID = dv.DonViID
+                        OUTER APPLY (
+                            SELECT TOP 1 ctp.HSD
+                            FROM CT_PhieuNhap ctp
+                            INNER JOIN PhieuNhap pn ON ctp.PhieuNhapID = pn.PhieuNhapID
+                            WHERE ctp.NguyenLieuID = nl.NguyenLieuID AND pn.TrangThai = 2 AND ctp.HSD IS NOT NULL
+                            ORDER BY pn.NgayNhap DESC
+                        ) phieu
                         WHERE tk.SoLuongTon > 0 
-                        AND nl.HanSuDung IS NOT NULL 
-                        AND nl.HanSuDung <= DATEADD(DAY, @Days, GETDATE())
-                        AND nl.HanSuDung > GETDATE()
-                        ORDER BY nl.HanSuDung ASC";
+                        AND nl.TrangThai = 1
+                        AND phieu.HSD IS NOT NULL 
+                        AND phieu.HSD <= DATEADD(DAY, @Days, GETDATE())
+                        AND phieu.HSD > GETDATE()
+                        ORDER BY phieu.HSD ASC";
             using var cmd = new SqlCommand(sql, conn);
             cmd.Parameters.AddWithValue("@Days", days);
             using var reader = await cmd.ExecuteReaderAsync();
             while (await reader.ReadAsync())
-                result.Add((reader.GetString(0), reader.GetDecimal(1), reader.GetString(2), reader.IsDBNull(3) ? null : reader.GetDateTime(3)));
+                result.Add((reader[0]?.ToString() ?? "", Convert.ToDecimal(reader[1]), reader[2]?.ToString() ?? "", reader.IsDBNull(3) ? null : Convert.ToDateTime(reader[3])));
         }
         catch (Exception ex) { System.Diagnostics.Debug.WriteLine($"Error GetNearExpiryItems: {ex.Message}"); }
         return result;
@@ -95,63 +127,85 @@ public class DashboardService : DatabaseContext
         {
             using var conn = GetConnection();
             await conn.OpenAsync();
-            var sql = @"SELECT nl.TenNguyenLieu, tk.SoLuongTon, ISNULL(dv.TenDonVi, ''), nl.HanSuDung
+            var sql = @"SELECT ISNULL(nl.TenNguyenLieu, N'Không tên'), ISNULL(tk.SoLuongTon, 0), ISNULL(dv.TenDonVi, ''), phieu.HSD
                         FROM TonKho tk
                         INNER JOIN NguyenLieu nl ON tk.NguyenLieuID = nl.NguyenLieuID
                         LEFT JOIN DonViTinh dv ON nl.DonViID = dv.DonViID
+                        OUTER APPLY (
+                            SELECT TOP 1 ctp.HSD
+                            FROM CT_PhieuNhap ctp
+                            INNER JOIN PhieuNhap pn ON ctp.PhieuNhapID = pn.PhieuNhapID
+                            WHERE ctp.NguyenLieuID = nl.NguyenLieuID AND pn.TrangThai = 2 AND ctp.HSD IS NOT NULL
+                            ORDER BY pn.NgayNhap DESC
+                        ) phieu
                         WHERE tk.SoLuongTon > 0 
-                        AND nl.HanSuDung IS NOT NULL 
-                        AND nl.HanSuDung <= GETDATE()
-                        ORDER BY nl.HanSuDung ASC";
+                        AND nl.TrangThai = 1
+                        AND phieu.HSD IS NOT NULL 
+                        AND phieu.HSD <= GETDATE()
+                        ORDER BY phieu.HSD ASC";
             using var cmd = new SqlCommand(sql, conn);
             using var reader = await cmd.ExecuteReaderAsync();
             while (await reader.ReadAsync())
-                result.Add((reader.GetString(0), reader.GetDecimal(1), reader.GetString(2), reader.IsDBNull(3) ? null : reader.GetDateTime(3)));
+                result.Add((reader[0]?.ToString() ?? "", Convert.ToDecimal(reader[1]), reader[2]?.ToString() ?? "", reader.IsDBNull(3) ? null : Convert.ToDateTime(reader[3])));
         }
         catch (Exception ex) { System.Diagnostics.Debug.WriteLine($"Error GetExpiredItems: {ex.Message}"); }
         return result;
     }
 
-    public async Task<List<(string TenNguyenLieu, decimal SoLuongTon, string DonVi)>> GetNormalStockItemsAsync(decimal lowThreshold = 20)
+    public async Task<List<(string TenNguyenLieu, decimal SoLuongTon, string DonVi, DateTime? HanSuDung)>> GetNormalStockItemsAsync(decimal lowThreshold = 20)
     {
-        var result = new List<(string, decimal, string)>();
+        var result = new List<(string, decimal, string, DateTime?)>();
         try
         {
             using var conn = GetConnection();
             await conn.OpenAsync();
-            var sql = @"SELECT nl.TenNguyenLieu, tk.SoLuongTon, ISNULL(dv.TenDonVi, '')
+            var sql = @"SELECT ISNULL(nl.TenNguyenLieu, N'Không tên'), ISNULL(tk.SoLuongTon, 0), ISNULL(dv.TenDonVi, ''), phieu.HSD
                         FROM TonKho tk
                         INNER JOIN NguyenLieu nl ON tk.NguyenLieuID = nl.NguyenLieuID
                         LEFT JOIN DonViTinh dv ON nl.DonViID = dv.DonViID
+                        OUTER APPLY (
+                            SELECT TOP 1 ctp.HSD
+                            FROM CT_PhieuNhap ctp
+                            INNER JOIN PhieuNhap pn ON ctp.PhieuNhapID = pn.PhieuNhapID
+                            WHERE ctp.NguyenLieuID = nl.NguyenLieuID AND pn.TrangThai = 2 AND ctp.HSD IS NOT NULL
+                            ORDER BY pn.NgayNhap DESC
+                        ) phieu
                         WHERE tk.SoLuongTon >= @Threshold
-                        AND (nl.HanSuDung IS NULL OR nl.HanSuDung > GETDATE())
+                        AND nl.TrangThai = 1
                         ORDER BY nl.TenNguyenLieu ASC";
             using var cmd = new SqlCommand(sql, conn);
             cmd.Parameters.AddWithValue("@Threshold", lowThreshold);
             using var reader = await cmd.ExecuteReaderAsync();
             while (await reader.ReadAsync())
-                result.Add((reader.GetString(0), reader.GetDecimal(1), reader.GetString(2)));
+                result.Add((reader[0]?.ToString() ?? "", Convert.ToDecimal(reader[1]), reader[2]?.ToString() ?? "", reader.IsDBNull(3) ? null : Convert.ToDateTime(reader[3])));
         }
         catch (Exception ex) { System.Diagnostics.Debug.WriteLine($"Error GetNormalStockItems: {ex.Message}"); }
         return result;
     }
-    public async Task<List<(string TenNguyenLieu, decimal SoLuongTon, string DonVi)>> GetOutOfStockItemsAsync()
+    public async Task<List<(string TenNguyenLieu, decimal SoLuongTon, string DonVi, DateTime? HanSuDung)>> GetOutOfStockItemsAsync()
     {
-        var result = new List<(string, decimal, string)>();
+        var result = new List<(string, decimal, string, DateTime?)>();
         try
         {
             using var conn = GetConnection();
             await conn.OpenAsync();
-            var sql = @"SELECT nl.TenNguyenLieu, ISNULL(tk.SoLuongTon, 0), ISNULL(dv.TenDonVi, '')
+            var sql = @"SELECT ISNULL(nl.TenNguyenLieu, N'Không tên'), ISNULL(tk.SoLuongTon, 0), ISNULL(dv.TenDonVi, ''), phieu.HSD
                         FROM NguyenLieu nl
                         LEFT JOIN TonKho tk ON nl.NguyenLieuID = tk.NguyenLieuID
                         LEFT JOIN DonViTinh dv ON nl.DonViID = dv.DonViID
+                        OUTER APPLY (
+                            SELECT TOP 1 ctp.HSD
+                            FROM CT_PhieuNhap ctp
+                            INNER JOIN PhieuNhap pn ON ctp.PhieuNhapID = pn.PhieuNhapID
+                            WHERE ctp.NguyenLieuID = nl.NguyenLieuID AND pn.TrangThai = 2 AND ctp.HSD IS NOT NULL
+                            ORDER BY pn.NgayNhap DESC
+                        ) phieu
                         WHERE (tk.TonKhoID IS NULL OR tk.SoLuongTon <= 0) AND nl.TrangThai = 1
                         ORDER BY nl.TenNguyenLieu ASC";
             using var cmd = new SqlCommand(sql, conn);
             using var reader = await cmd.ExecuteReaderAsync();
             while (await reader.ReadAsync())
-                result.Add((reader.GetString(0), reader.GetDecimal(1), reader.GetString(2)));
+                result.Add((reader[0]?.ToString() ?? "", Convert.ToDecimal(reader[1]), reader[2]?.ToString() ?? "", reader.IsDBNull(3) ? null : Convert.ToDateTime(reader[3])));
         }
         catch (Exception ex) { System.Diagnostics.Debug.WriteLine($"Error GetOutOfStockItems: {ex.Message}"); }
         return result;
@@ -523,3 +577,4 @@ public class DashboardService : DatabaseContext
         return total;
     }
 }
+

@@ -138,8 +138,14 @@
                     <StackPanel>
                         <Grid Margin="0,0,0,12">
                             <TextBlock Text="Tổng đơn hàng" FontSize="12" Foreground="{StaticResource Gray500}"/>
-                            <Border Background="{StaticResource LightBlue}" CornerRadius="8" Width="32" Height="32" HorizontalAlignment="Right">
-                                <ui:SymbolIcon Symbol="Cart24" FontSize="14" Foreground="{StaticResource PrimaryBlue}" HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                            <Border CornerRadius="8" Width="32" Height="32" HorizontalAlignment="Right">
+                                <Border.Background>
+                                    <LinearGradientBrush StartPoint="0,0" EndPoint="1,1">
+                                        <GradientStop Color="#5B6AFF" Offset="0"/>
+                                        <GradientStop Color="#818CF8" Offset="1"/>
+                                    </LinearGradientBrush>
+                                </Border.Background>
+                                <ui:SymbolIcon Symbol="Cart24" FontSize="16" Foreground="White" HorizontalAlignment="Center" VerticalAlignment="Center"/>
                             </Border>
                         </Grid>
                         <TextBlock Text="{Binding TongDonHang}" FontSize="32" FontWeight="Bold" Foreground="{StaticResource Gray900}"/>
@@ -153,10 +159,12 @@
                             <TextBlock Text="Doanh thu" FontSize="12" Foreground="{StaticResource Gray500}"/>
                             <Border CornerRadius="8" Width="32" Height="32" HorizontalAlignment="Right">
                                 <Border.Background>
-                                    <SolidColorBrush Color="#D1FAE5"/>
+                                    <LinearGradientBrush StartPoint="0,0" EndPoint="1,1">
+                                        <GradientStop Color="#10B981" Offset="0"/>
+                                        <GradientStop Color="#34D399" Offset="1"/>
+                                    </LinearGradientBrush>
                                 </Border.Background>
-                                <ui:SymbolIcon Symbol="Document24" FontSize="16" 
-                                           Foreground="#059669" HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                                <ui:SymbolIcon Symbol="Money24" FontSize="16" Foreground="White" HorizontalAlignment="Center" VerticalAlignment="Center"/>
                             </Border>
                         </Grid>
                         <TextBlock Text="{Binding TongDoanhThu, StringFormat='{}{0:N0}đ'}" FontSize="22" FontWeight="Bold" Foreground="#059669"/>
@@ -170,10 +178,12 @@
                             <TextBlock Text="NV bán chạy nhất" FontSize="12" Foreground="{StaticResource Gray500}"/>
                             <Border CornerRadius="8" Width="32" Height="32" HorizontalAlignment="Right">
                                 <Border.Background>
-                                    <SolidColorBrush Color="#FFEDD5"/>
+                                    <LinearGradientBrush StartPoint="0,0" EndPoint="1,1">
+                                        <GradientStop Color="#F59E0B" Offset="0"/>
+                                        <GradientStop Color="#FBBF24" Offset="1"/>
+                                    </LinearGradientBrush>
                                 </Border.Background>
-                                <ui:SymbolIcon Symbol="Star24" FontSize="16" 
-                                           Foreground="#EA580C" HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                                <ui:SymbolIcon Symbol="Star24" FontSize="16" Foreground="White" HorizontalAlignment="Center" VerticalAlignment="Center"/>
                             </Border>
                         </Grid>
                         <TextBlock Text="{Binding TopNhanVienName}" FontSize="16" FontWeight="Bold" Foreground="#9A3412" TextTrimming="CharacterEllipsis"/>

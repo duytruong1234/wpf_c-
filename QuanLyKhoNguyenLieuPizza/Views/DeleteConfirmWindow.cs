@@ -12,26 +12,43 @@ public class DeleteConfirmWindow : Window
 
     public DeleteConfirmWindow(string title, string message)
     {
+        var owner = Application.Current?.MainWindow;
+        if (owner != null)
+        {
+            Owner = owner;
+            Width = owner.ActualWidth;
+            Height = owner.ActualHeight;
+            Top = owner.Top;
+            Left = owner.Left;
+            WindowStartupLocation = WindowStartupLocation.Manual;
+        }
+        else
+        {
+            Width = SystemParameters.PrimaryScreenWidth;
+            Height = SystemParameters.PrimaryScreenHeight;
+            WindowStartupLocation = WindowStartupLocation.CenterScreen;
+        }
+
         Title = "";
-        Width = SystemParameters.PrimaryScreenWidth;
-        Height = SystemParameters.PrimaryScreenHeight;
-        WindowStartupLocation = WindowStartupLocation.CenterScreen;
         WindowStyle = WindowStyle.None;
         AllowsTransparency = true;
         Background = new SolidColorBrush(Color.FromArgb(128, 0, 0, 0));
         ResizeMode = ResizeMode.NoResize;
-        Topmost = true;
         ShowInTaskbar = false;
 
         // Click overlay → cancel
         MouseLeftButtonDown += (s, e) => { Result = false; DialogResult = false; };
 
-        // Card
-        var card = new Border
+        var cardContainer = new Grid
         {
             Width = 440,
             VerticalAlignment = VerticalAlignment.Center,
-            HorizontalAlignment = HorizontalAlignment.Center,
+            HorizontalAlignment = HorizontalAlignment.Center
+        };
+
+        // Card
+        var card = new Border
+        {
             Background = Brushes.White,
             CornerRadius = new CornerRadius(20),
             Effect = new DropShadowEffect
@@ -42,6 +59,7 @@ public class DeleteConfirmWindow : Window
         };
         // Stop click from propagating to overlay
         card.MouseLeftButtonDown += (s, e) => e.Handled = true;
+        cardContainer.Children.Add(card);
 
         var stack = new StackPanel();
 
@@ -162,7 +180,18 @@ public class DeleteConfirmWindow : Window
         stack.Children.Add(btnGrid);
         card.Child = stack;
 
-        Content = card;
+        var closeButton = new Button
+        {
+            Cursor = Cursors.Hand,
+            HorizontalAlignment = HorizontalAlignment.Right,
+            VerticalAlignment = VerticalAlignment.Top,
+            Margin = new Thickness(0, -16, -16, 0)
+        };
+        closeButton.SetResourceReference(StyleProperty, "CircularCloseButtonStyle");
+        closeButton.Click += (s, e) => { Result = false; DialogResult = false; };
+        cardContainer.Children.Add(closeButton);
+
+        Content = cardContainer;
     }
 
     private static SolidColorBrush Brush(string hex)

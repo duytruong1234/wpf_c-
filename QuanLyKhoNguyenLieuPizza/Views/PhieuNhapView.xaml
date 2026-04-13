@@ -174,14 +174,36 @@
 
                 <Border Grid.Column="0" Background="#EEF2FF" BorderBrush="#C7D2FE" BorderThickness="1.5" MinHeight="110" Style="{StaticResource CardStyle}" Margin="0,0,10,0">
                     <StackPanel>
-                        <TextBlock Text="Tổng phiếu nhập" FontSize="12" Foreground="{StaticResource Gray500}" Margin="0,0,0,12"/>
+                        <Grid Margin="0,0,0,12">
+                            <TextBlock Text="Tổng phiếu nhập" FontSize="12" Foreground="{StaticResource Gray500}"/>
+                            <Border CornerRadius="8" Width="32" Height="32" HorizontalAlignment="Right">
+                                <Border.Background>
+                                    <LinearGradientBrush StartPoint="0,0" EndPoint="1,1">
+                                        <GradientStop Color="#5B6AFF" Offset="0"/>
+                                        <GradientStop Color="#818CF8" Offset="1"/>
+                                    </LinearGradientBrush>
+                                </Border.Background>
+                                <ui:SymbolIcon Symbol="Archive24" FontSize="16" Foreground="White" HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                            </Border>
+                        </Grid>
                         <TextBlock Text="{Binding PhieuNhaps.Count}" FontSize="32" FontWeight="Bold" Foreground="{StaticResource Gray900}"/>
                     </StackPanel>
                 </Border>
 
                 <Border Grid.Column="1" Background="#ECFDF5" BorderBrush="#A7F3D0" BorderThickness="1.5" MinHeight="110" Style="{StaticResource CardStyle}" Margin="5,0,5,0">
                     <StackPanel>
-                        <TextBlock Text="Tổng tiền nhập" FontSize="12" Foreground="{StaticResource Gray500}" Margin="0,0,0,12"/>
+                        <Grid Margin="0,0,0,12">
+                            <TextBlock Text="Tổng tiền nhập" FontSize="12" Foreground="{StaticResource Gray500}"/>
+                            <Border CornerRadius="8" Width="32" Height="32" HorizontalAlignment="Right">
+                                <Border.Background>
+                                    <LinearGradientBrush StartPoint="0,0" EndPoint="1,1">
+                                        <GradientStop Color="#10B981" Offset="0"/>
+                                        <GradientStop Color="#34D399" Offset="1"/>
+                                    </LinearGradientBrush>
+                                </Border.Background>
+                                <ui:SymbolIcon Symbol="Money24" FontSize="16" Foreground="White" HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                            </Border>
+                        </Grid>
                         <TextBlock FontSize="32" FontWeight="Bold" Foreground="{StaticResource SuccessGreen}">
                             <Run Text="{Binding TongTien, StringFormat=\{0:N0\}}"/>
                             <Run Text=" đ" FontSize="20"/>
@@ -191,7 +213,18 @@
 
                 <Border Grid.Column="2" Background="#FFF7ED" BorderBrush="#FED7AA" BorderThickness="1.5" MinHeight="110" Style="{StaticResource CardStyle}" Margin="10,0,0,0">
                     <StackPanel>
-                        <TextBlock Text="Trạng thái phiếu" FontSize="12" Foreground="{StaticResource Gray500}" Margin="0,0,0,12"/>
+                        <Grid Margin="0,0,0,12">
+                            <TextBlock Text="Trạng thái phiếu" FontSize="12" Foreground="{StaticResource Gray500}"/>
+                            <Border CornerRadius="8" Width="32" Height="32" HorizontalAlignment="Right">
+                                <Border.Background>
+                                    <LinearGradientBrush StartPoint="0,0" EndPoint="1,1">
+                                        <GradientStop Color="#F59E0B" Offset="0"/>
+                                        <GradientStop Color="#FBBF24" Offset="1"/>
+                                    </LinearGradientBrush>
+                                </Border.Background>
+                                <ui:SymbolIcon Symbol="ChartMultiple24" FontSize="16" Foreground="White" HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                            </Border>
+                        </Grid>
                         <UniformGrid Columns="3">
                             <StackPanel HorizontalAlignment="Center">
                                 <TextBlock Text="{Binding SoPhieuChoDuyet}" FontSize="28" FontWeight="Bold" Foreground="{StaticResource WarningOrange}" HorizontalAlignment="Center"/>
@@ -716,21 +749,7 @@
 
                     <Grid Grid.Row="0" Margin="0,0,0,16">
                         <TextBlock FontSize="26" FontWeight="Bold" Foreground="{StaticResource Gray800}" HorizontalAlignment="Center" Text="Tạo phiếu nhập mới"/>
-                        <Button HorizontalAlignment="Right" Command="{Binding CancelDialogCommand}" Cursor="Hand">
-                            <Button.Template>
-                                <ControlTemplate TargetType="Button">
-                                    <Border x:Name="border" Background="{StaticResource Gray100}" CornerRadius="8" Width="32" Height="32">
-                                        <TextBlock Text="&#xE711;" FontFamily="Segoe MDL2 Assets" FontSize="12" Foreground="{StaticResource Gray500}"
-                                                   HorizontalAlignment="Center" VerticalAlignment="Center"/>
-                                    </Border>
-                                    <ControlTemplate.Triggers>
-                                        <Trigger Property="IsMouseOver" Value="True">
-                                            <Setter TargetName="border" Property="Background" Value="{StaticResource Gray200}"/>
-                                        </Trigger>
-                                    </ControlTemplate.Triggers>
-                                </ControlTemplate>
-                            </Button.Template>
-                        </Button>
+                        <Button Style="{StaticResource CircularCloseButtonStyle}" Command="{Binding CancelDialogCommand}" Margin="0,-16,-16,0" Panel.ZIndex="10"/>
                     </Grid>
 
                     <!-- NCC Selection -->
@@ -988,21 +1007,7 @@
 
                     <Grid Grid.Row="0" Margin="0,0,0,16">
                         <TextBlock Text="Tạo phiếu nhập" FontSize="26" FontWeight="Bold" Foreground="{StaticResource Gray800}"/>
-                        <Button HorizontalAlignment="Right" Command="{Binding CancelDialogCommand}" Cursor="Hand">
-                            <Button.Template>
-                                <ControlTemplate TargetType="Button">
-                                    <Border x:Name="border" Background="{StaticResource Gray100}" CornerRadius="8" Width="32" Height="32">
-                                        <TextBlock Text="&#xE711;" FontFamily="Segoe MDL2 Assets" FontSize="12" Foreground="{StaticResource Gray500}"
-                                                   HorizontalAlignment="Center" VerticalAlignment="Center"/>
-                                    </Border>
-                                    <ControlTemplate.Triggers>
-                                        <Trigger Property="IsMouseOver" Value="True">
-                                            <Setter TargetName="border" Property="Background" Value="{StaticResource Gray200}"/>
-                                        </Trigger>
-                                    </ControlTemplate.Triggers>
-                                </ControlTemplate>
-                            </Button.Template>
-                        </Button>
+                        <Button Style="{StaticResource CircularCloseButtonStyle}" Command="{Binding CancelDialogCommand}" Margin="0,-16,-16,0" Panel.ZIndex="10"/>
                     </Grid>
 
                     <!-- NCC Selection -->
@@ -1245,21 +1250,7 @@
                         <RowDefinition Height="Auto"/>
                     </Grid.RowDefinitions>
 
-                    <Button Grid.Row="0" Command="{Binding CloseDetailDialogCommand}" HorizontalAlignment="Right" Cursor="Hand">
-                        <Button.Template>
-                            <ControlTemplate TargetType="Button">
-                                <Border x:Name="border" Background="{StaticResource Gray100}" CornerRadius="8" Width="32" Height="32">
-                                    <TextBlock Text="&#xE711;" FontFamily="Segoe MDL2 Assets" FontSize="12" Foreground="{StaticResource Gray500}"
-                                               HorizontalAlignment="Center" VerticalAlignment="Center"/>
-                                </Border>
-                                <ControlTemplate.Triggers>
-                                    <Trigger Property="IsMouseOver" Value="True">
-                                        <Setter TargetName="border" Property="Background" Value="{StaticResource Gray200}"/>
-                                    </Trigger>
-                                </ControlTemplate.Triggers>
-                            </ControlTemplate>
-                        </Button.Template>
-                    </Button>
+                    <Button Style="{StaticResource CircularCloseButtonStyle}" Command="{Binding CloseDetailDialogCommand}" Margin="0,-16,-16,0" Panel.ZIndex="10"/>
 
                     <StackPanel Grid.Row="1" Margin="0,0,0,20">
                         <TextBlock FontSize="26" FontWeight="Bold" Foreground="{StaticResource Gray800}" HorizontalAlignment="Center">

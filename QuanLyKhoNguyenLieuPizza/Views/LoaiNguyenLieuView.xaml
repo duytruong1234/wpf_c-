@@ -277,21 +277,7 @@
                                 </Style>
                             </TextBlock.Style>
                         </TextBlock>
-                        <Button HorizontalAlignment="Right" Command="{Binding ClosePopupCommand}" Cursor="Hand">
-                            <Button.Template>
-                                <ControlTemplate TargetType="Button">
-                                    <Border x:Name="border" Background="{StaticResource Gray100}" CornerRadius="8" Width="32" Height="32">
-                                        <ui:SymbolIcon Symbol="Dismiss24" FontSize="14" Foreground="{StaticResource Gray500}"
-                                                   HorizontalAlignment="Center" VerticalAlignment="Center"/>
-                                    </Border>
-                                    <ControlTemplate.Triggers>
-                                        <Trigger Property="IsMouseOver" Value="True">
-                                            <Setter TargetName="border" Property="Background" Value="{StaticResource Gray200}"/>
-                                        </Trigger>
-                                    </ControlTemplate.Triggers>
-                                </ControlTemplate>
-                            </Button.Template>
-                        </Button>
+                        <Button Style="{StaticResource CircularCloseButtonStyle}" Command="{Binding ClosePopupCommand}" Margin="0,-16,-16,0" Panel.ZIndex="10"/>
                     </Grid>
 
                     <!-- Nội dung Biểu mẫu -->

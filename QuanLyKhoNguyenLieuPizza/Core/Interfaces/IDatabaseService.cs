@@ -47,11 +47,11 @@ public interface IDatabaseService
     Task<int> GetLowStockCountAsync(decimal threshold = 20);
     Task<int> GetNearExpiryCountAsync(int days = 7);
     Task<int> GetExpiredCountAsync();
-    Task<List<(string TenNguyenLieu, decimal SoLuongTon, string DonVi)>> GetLowStockItemsAsync(decimal threshold = 20);
+    Task<List<(string TenNguyenLieu, decimal SoLuongTon, string DonVi, DateTime? HanSuDung)>> GetLowStockItemsAsync(decimal threshold = 20);
     Task<List<(string TenNguyenLieu, decimal SoLuongTon, string DonVi, DateTime? HanSuDung)>> GetNearExpiryItemsAsync(int days = 7);
     Task<List<(string TenNguyenLieu, decimal SoLuongTon, string DonVi, DateTime? HanSuDung)>> GetExpiredItemsAsync();
-    Task<List<(string TenNguyenLieu, decimal SoLuongTon, string DonVi)>> GetNormalStockItemsAsync(decimal lowThreshold = 20);
-    Task<List<(string TenNguyenLieu, decimal SoLuongTon, string DonVi)>> GetOutOfStockItemsAsync();
+    Task<List<(string TenNguyenLieu, decimal SoLuongTon, string DonVi, DateTime? HanSuDung)>> GetNormalStockItemsAsync(decimal lowThreshold = 20);
+    Task<List<(string TenNguyenLieu, decimal SoLuongTon, string DonVi, DateTime? HanSuDung)>> GetOutOfStockItemsAsync();
 
     // Quản lý người dùng
     Task<List<NhanVien>> GetNhanViensAsync();

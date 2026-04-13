@@ -280,8 +280,14 @@
                         <StackPanel>
                             <Grid Margin="0,0,0,12">
                                 <TextBlock Text="Tổng nguyên liệu" FontSize="12" Foreground="{StaticResource Gray500}"/>
-                                <Border Background="{StaticResource LightBlue}" CornerRadius="8" Width="32" Height="32" HorizontalAlignment="Right">
-                                    <ui:SymbolIcon Symbol="DataBarVertical24" FontSize="14" Foreground="{StaticResource PrimaryBlue}" HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                                <Border CornerRadius="8" Width="32" Height="32" HorizontalAlignment="Right">
+                                <Border.Background>
+                                    <LinearGradientBrush StartPoint="0,0" EndPoint="1,1">
+                                        <GradientStop Color="#5B6AFF" Offset="0"/>
+                                        <GradientStop Color="#818CF8" Offset="1"/>
+                                    </LinearGradientBrush>
+                                </Border.Background>
+                                    <ui:SymbolIcon Symbol="DataBarVertical24" FontSize="16" Foreground="White" HorizontalAlignment="Center" VerticalAlignment="Center"/>
                                 </Border>
                             </Grid>
                             <TextBlock Text="{Binding TotalNguyenLieu}" FontSize="32" FontWeight="Bold" Foreground="{StaticResource Gray900}"/>
@@ -292,8 +298,14 @@
                         <StackPanel>
                             <Grid Margin="0,0,0,12">
                                 <TextBlock Text="Đang sử dụng" FontSize="12" Foreground="{StaticResource Gray500}"/>
-                                <Border Background="#F0FDF4" CornerRadius="8" Width="32" Height="32" HorizontalAlignment="Right">
-                                    <ui:SymbolIcon Symbol="Edit24" FontSize="16" Foreground="{StaticResource SuccessGreen}" HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                                <Border CornerRadius="8" Width="32" Height="32" HorizontalAlignment="Right">
+                                <Border.Background>
+                                    <LinearGradientBrush StartPoint="0,0" EndPoint="1,1">
+                                        <GradientStop Color="#10B981" Offset="0"/>
+                                        <GradientStop Color="#34D399" Offset="1"/>
+                                    </LinearGradientBrush>
+                                </Border.Background>
+                                    <ui:SymbolIcon Symbol="Edit24" FontSize="16" Foreground="White" HorizontalAlignment="Center" VerticalAlignment="Center"/>
                                 </Border>
                             </Grid>
                             <TextBlock Text="{Binding CountDangSuDung}" FontSize="32" FontWeight="Bold" Foreground="#16A34A"/>
@@ -304,8 +316,14 @@
                         <StackPanel>
                             <Grid Margin="0,0,0,12">
                                 <TextBlock Text="Ngừng sử dụng" FontSize="12" Foreground="{StaticResource Gray500}"/>
-                                <Border Background="#FEF2F2" CornerRadius="8" Width="32" Height="32" HorizontalAlignment="Right">
-                                    <ui:SymbolIcon Symbol="Warning24" FontSize="16" Foreground="{StaticResource DangerRed}" HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                                <Border CornerRadius="8" Width="32" Height="32" HorizontalAlignment="Right">
+                                <Border.Background>
+                                    <LinearGradientBrush StartPoint="0,0" EndPoint="1,1">
+                                        <GradientStop Color="#EF4444" Offset="0"/>
+                                        <GradientStop Color="#F87171" Offset="1"/>
+                                    </LinearGradientBrush>
+                                </Border.Background>
+                                    <ui:SymbolIcon Symbol="Warning24" FontSize="16" Foreground="White" HorizontalAlignment="Center" VerticalAlignment="Center"/>
                                 </Border>
                             </Grid>
                             <TextBlock Text="{Binding CountNgungSuDung}" FontSize="32" FontWeight="Bold" Foreground="#DC2626"/>
@@ -658,21 +676,7 @@
                                     </Style>
                                 </TextBlock.Style>
                             </TextBlock>
-                            <Button HorizontalAlignment="Right" Command="{Binding ClosePopupCommand}" Cursor="Hand">
-                                <Button.Template>
-                                    <ControlTemplate TargetType="Button">
-                                        <Border x:Name="border" Background="{StaticResource Gray100}" CornerRadius="8" Width="32" Height="32">
-                                            <ui:SymbolIcon Symbol="Dismiss24" FontSize="14" Foreground="{StaticResource Gray500}"
-                                                       HorizontalAlignment="Center" VerticalAlignment="Center"/>
-                                        </Border>
-                                        <ControlTemplate.Triggers>
-                                            <Trigger Property="IsMouseOver" Value="True">
-                                                <Setter TargetName="border" Property="Background" Value="{StaticResource Gray200}"/>
-                                            </Trigger>
-                                        </ControlTemplate.Triggers>
-                                    </ControlTemplate>
-                                </Button.Template>
-                            </Button>
+                            <Button Style="{StaticResource CircularCloseButtonStyle}" Command="{Binding ClosePopupCommand}" Margin="0,-16,-16,0" Panel.ZIndex="10"/>
                         </Grid>
 
                         <!-- Nội dung Biểu mẫu -->
@@ -892,21 +896,7 @@
                     <!-- Tiêu đề -->
                     <Grid Grid.Row="0" Margin="0,0,0,24">
                         <TextBlock Text="Trạng thái nguyên liệu" FontSize="22" FontWeight="Bold" Foreground="#1E293B" HorizontalAlignment="Center"/>
-                        <Button HorizontalAlignment="Right" Command="{Binding CloseStatusDialogCommand}" Cursor="Hand">
-                            <Button.Template>
-                                <ControlTemplate TargetType="Button">
-                                    <Border x:Name="border" Background="{StaticResource Gray100}" CornerRadius="8" Width="32" Height="32">
-                                        <TextBlock Text="&#xE711;" FontFamily="Segoe MDL2 Assets" FontSize="12" Foreground="{StaticResource Gray500}"
-                                                   HorizontalAlignment="Center" VerticalAlignment="Center"/>
-                                    </Border>
-                                    <ControlTemplate.Triggers>
-                                        <Trigger Property="IsMouseOver" Value="True">
-                                            <Setter TargetName="border" Property="Background" Value="{StaticResource Gray200}"/>
-                                        </Trigger>
-                                    </ControlTemplate.Triggers>
-                                </ControlTemplate>
-                            </Button.Template>
-                        </Button>
+                        <Button Style="{StaticResource CircularCloseButtonStyle}" Command="{Binding CloseStatusDialogCommand}" Margin="0,-16,-16,0" Panel.ZIndex="10"/>
                     </Grid>
 
                     <!-- Info -->
@@ -1301,20 +1291,7 @@
                     <Border Grid.Row="0" BorderBrush="{StaticResource Gray200}" BorderThickness="0,0,0,1" Padding="24,20">
                         <Grid>
                             <TextBlock Text="Thông tin các nguồn hàng" FontSize="18" FontWeight="SemiBold" Foreground="{StaticResource PrimaryBlue}" HorizontalAlignment="Center"/>
-                            <Button HorizontalAlignment="Right" Command="{Binding CloseNguonHangCommand}" Cursor="Hand">
-                                <Button.Template>
-                                    <ControlTemplate TargetType="Button">
-                                        <Border x:Name="border" Background="{StaticResource Gray100}" CornerRadius="8" Width="32" Height="32">
-                                            <ui:SymbolIcon Symbol="Dismiss24" FontSize="16" Foreground="{StaticResource Gray600}" HorizontalAlignment="Center" VerticalAlignment="Center"/>
-                                        </Border>
-                                        <ControlTemplate.Triggers>
-                                            <Trigger Property="IsMouseOver" Value="True">
-                                                <Setter TargetName="border" Property="Background" Value="{StaticResource Gray200}"/>
-                                            </Trigger>
-                                        </ControlTemplate.Triggers>
-                                    </ControlTemplate>
-                                </Button.Template>
-                            </Button>
+                            <Button Style="{StaticResource CircularCloseButtonStyle}" Command="{Binding CloseNguonHangCommand}" Margin="0,-16,-16,0" Panel.ZIndex="10"/>
                         </Grid>
                     </Border>
                     

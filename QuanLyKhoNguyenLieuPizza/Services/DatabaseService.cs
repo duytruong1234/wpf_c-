@@ -123,15 +123,15 @@ public class DatabaseService : IDatabaseService
         => _dashboard.GetNearExpiryCountAsync(days);
     public Task<int> GetExpiredCountAsync()
         => _dashboard.GetExpiredCountAsync();
-    public Task<List<(string TenNguyenLieu, decimal SoLuongTon, string DonVi)>> GetLowStockItemsAsync(decimal threshold = 20)
+    public Task<List<(string TenNguyenLieu, decimal SoLuongTon, string DonVi, DateTime? HanSuDung)>> GetLowStockItemsAsync(decimal threshold = 20)
         => _dashboard.GetLowStockItemsAsync(threshold);
     public Task<List<(string TenNguyenLieu, decimal SoLuongTon, string DonVi, DateTime? HanSuDung)>> GetNearExpiryItemsAsync(int days = 7)
         => _dashboard.GetNearExpiryItemsAsync(days);
     public Task<List<(string TenNguyenLieu, decimal SoLuongTon, string DonVi, DateTime? HanSuDung)>> GetExpiredItemsAsync()
         => _dashboard.GetExpiredItemsAsync();
-    public Task<List<(string TenNguyenLieu, decimal SoLuongTon, string DonVi)>> GetNormalStockItemsAsync(decimal lowThreshold = 20)
+    public Task<List<(string TenNguyenLieu, decimal SoLuongTon, string DonVi, DateTime? HanSuDung)>> GetNormalStockItemsAsync(decimal lowThreshold = 20)
         => _dashboard.GetNormalStockItemsAsync(lowThreshold);
-    public Task<List<(string TenNguyenLieu, decimal SoLuongTon, string DonVi)>> GetOutOfStockItemsAsync()
+    public Task<List<(string TenNguyenLieu, decimal SoLuongTon, string DonVi, DateTime? HanSuDung)>> GetOutOfStockItemsAsync()
         => _dashboard.GetOutOfStockItemsAsync();
 
     // ═══════════════ NHÂN VIÊN ═══════════════

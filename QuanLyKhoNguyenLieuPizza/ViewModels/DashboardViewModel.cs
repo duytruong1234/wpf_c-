@@ -1,4 +1,4 @@
-﻿using System.Collections.ObjectModel;
+using System.Collections.ObjectModel;
 using System.Windows.Input;
 using QuanLyKhoNguyenLieuPizza.Core.Interfaces;
 using QuanLyKhoNguyenLieuPizza.Models;
@@ -86,29 +86,6 @@ public class DashboardViewModel : BaseViewModel
         set => SetProperty(ref _selectedNguyenLieu, value);
     }
 
-    public DateTime? NgayBatDau
-    {
-        get => _ngayBatDau;
-        set 
-        {
-            if (SetProperty(ref _ngayBatDau, value))
-            {
-                SafeInitializeAsync(LoadDataAsync);
-            }
-        }
-    }
-
-    public DateTime? NgayKetThuc
-    {
-        get => _ngayKetThuc;
-        set 
-        {
-            if (SetProperty(ref _ngayKetThuc, value))
-            {
-                SafeInitializeAsync(LoadDataAsync);
-            }
-        }
-    }
 
     public bool IsLoading
     {
@@ -324,8 +301,8 @@ public class DashboardViewModel : BaseViewModel
         try
         {
             var today = DateTime.Today;
-            var fromDate = NgayBatDau ?? new DateTime(today.Year, today.Month, 1);
-            var toDate = NgayKetThuc ?? today;
+            var fromDate = _ngayBatDau ?? new DateTime(today.Year, today.Month, 1);
+            var toDate = _ngayKetThuc ?? today;
             var toDateQuery = toDate.Date.AddDays(1).AddTicks(-1);
             
             // Đợt 1: Chạy tất cả truy vấn độc lập song song
@@ -434,7 +411,7 @@ public class DashboardViewModel : BaseViewModel
                 StatusPopupColor = "#5B6AFF";
                 var normalItems = await _databaseService.GetNormalStockItemsAsync(20);
                 foreach (var item in normalItems)
-                    StatusDetailItems.Add(new StockDetailItem { TenNguyenLieu = item.TenNguyenLieu, SoLuongTon = item.SoLuongTon, DonVi = item.DonVi });
+                    StatusDetailItems.Add(new StockDetailItem { TenNguyenLieu = item.TenNguyenLieu, SoLuongTon = item.SoLuongTon, DonVi = item.DonVi, HanSuDung = item.HanSuDung });
                 break;
 
             case "TonThap":
@@ -442,7 +419,7 @@ public class DashboardViewModel : BaseViewModel
                 StatusPopupColor = "#F59E0B";
                 var lowItems = await _databaseService.GetLowStockItemsAsync(20);
                 foreach (var item in lowItems)
-                    StatusDetailItems.Add(new StockDetailItem { TenNguyenLieu = item.TenNguyenLieu, SoLuongTon = item.SoLuongTon, DonVi = item.DonVi });
+                    StatusDetailItems.Add(new StockDetailItem { TenNguyenLieu = item.TenNguyenLieu, SoLuongTon = item.SoLuongTon, DonVi = item.DonVi, HanSuDung = item.HanSuDung });
                 break;
 
             case "SapHetHan":
@@ -466,7 +443,7 @@ public class DashboardViewModel : BaseViewModel
                 StatusPopupColor = "#64748B";
                 var outOfStockItems = await _databaseService.GetOutOfStockItemsAsync();
                 foreach (var item in outOfStockItems)
-                    StatusDetailItems.Add(new StockDetailItem { TenNguyenLieu = item.TenNguyenLieu, SoLuongTon = item.SoLuongTon, DonVi = item.DonVi });
+                    StatusDetailItems.Add(new StockDetailItem { TenNguyenLieu = item.TenNguyenLieu, SoLuongTon = item.SoLuongTon, DonVi = item.DonVi, HanSuDung = item.HanSuDung });
                 break;
         }
 

@@ -96,25 +96,7 @@
                     </StackPanel>
 
                     <!-- Nút Làm mới -->
-                    <!-- Cụm bộ lọc thời gian và Nút Làm mới -->
-                    <StackPanel Grid.Column="1" Orientation="Horizontal" VerticalAlignment="Center">
-                        <!-- Bộ lọc theo ngày tháng năm -->
-                        <StackPanel Orientation="Horizontal" Margin="0,0,16,0" VerticalAlignment="Center">
-                            <Border Background="White" BorderBrush="{StaticResource Gray200}" BorderThickness="1" CornerRadius="8" Padding="6,2" Margin="0,0,12,0">
-                                <StackPanel Orientation="Horizontal">
-                                    <TextBlock Text="Từ:" VerticalAlignment="Center" Margin="4,0,8,0" Foreground="{StaticResource Gray500}" FontSize="12" FontWeight="SemiBold"/>
-                                    <DatePicker SelectedDate="{Binding NgayBatDau, UpdateSourceTrigger=PropertyChanged}" Width="110" BorderThickness="0" Background="Transparent" VerticalContentAlignment="Center"/>
-                                </StackPanel>
-                            </Border>
-                            <Border Background="White" BorderBrush="{StaticResource Gray200}" BorderThickness="1" CornerRadius="8" Padding="6,2">
-                                <StackPanel Orientation="Horizontal">
-                                    <TextBlock Text="Đến:" VerticalAlignment="Center" Margin="4,0,8,0" Foreground="{StaticResource Gray500}" FontSize="12" FontWeight="SemiBold"/>
-                                    <DatePicker SelectedDate="{Binding NgayKetThuc, UpdateSourceTrigger=PropertyChanged}" Width="110" BorderThickness="0" Background="Transparent" VerticalContentAlignment="Center"/>
-                                </StackPanel>
-                            </Border>
-                        </StackPanel>
-
-                        <Button Command="{Binding RefreshCommand}" Cursor="Hand" VerticalAlignment="Center">
+                    <Button Grid.Column="1" Command="{Binding RefreshCommand}" Cursor="Hand" VerticalAlignment="Center">
                         <Button.Template>
                             <ControlTemplate TargetType="Button">
                                 <Border x:Name="border" Background="White" BorderBrush="{StaticResource Gray200}" 
@@ -134,7 +116,6 @@
                             </ControlTemplate>
                         </Button.Template>
                     </Button>
-                    </StackPanel>
                 </Grid>
 
                 <!-- ═══════════ THẺ THỐNG KÊ ROW 1: KHO ═══════════ -->
@@ -154,8 +135,14 @@
                         <StackPanel>
                             <Grid Margin="0,0,0,12">
                                 <TextBlock Text="Tổng nguyên liệu" FontSize="12" Foreground="{StaticResource Gray500}"/>
-                                <Border Background="{StaticResource LightBlue}" CornerRadius="8" Width="32" Height="32" HorizontalAlignment="Right">
-                                    <ui:SymbolIcon Symbol="Archive24" FontSize="14" Foreground="{StaticResource PrimaryBlue}" HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                                <Border CornerRadius="8" Width="32" Height="32" HorizontalAlignment="Right">
+                                    <Border.Background>
+                                        <LinearGradientBrush StartPoint="0,0" EndPoint="1,1">
+                                            <GradientStop Color="#5B6AFF" Offset="0"/>
+                                            <GradientStop Color="#818CF8" Offset="1"/>
+                                        </LinearGradientBrush>
+                                    </Border.Background>
+                                    <ui:SymbolIcon Symbol="Box24" FontSize="16" Foreground="White" HorizontalAlignment="Center" VerticalAlignment="Center"/>
                                 </Border>
                             </Grid>
                             <TextBlock Text="{Binding TongSoNguyenLieu}" FontSize="32" FontWeight="Bold" Foreground="{StaticResource Gray900}"/>
@@ -170,8 +157,14 @@
                         <StackPanel>
                             <Grid Margin="0,0,0,12">
                                 <TextBlock Text="Tồn kho thấp" FontSize="12" Foreground="{StaticResource Gray500}"/>
-                                <Border Background="{StaticResource WarningOrangeLight}" CornerRadius="8" Width="32" Height="32" HorizontalAlignment="Right">
-                                    <ui:SymbolIcon Symbol="Warning24" FontSize="14" Foreground="{StaticResource WarningOrange}" HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                                <Border CornerRadius="8" Width="32" Height="32" HorizontalAlignment="Right">
+                                    <Border.Background>
+                                        <LinearGradientBrush StartPoint="0,0" EndPoint="1,1">
+                                            <GradientStop Color="#F59E0B" Offset="0"/>
+                                            <GradientStop Color="#FBBF24" Offset="1"/>
+                                        </LinearGradientBrush>
+                                    </Border.Background>
+                                    <ui:SymbolIcon Symbol="Warning24" FontSize="16" Foreground="White" HorizontalAlignment="Center" VerticalAlignment="Center"/>
                                 </Border>
                             </Grid>
                             <TextBlock Text="{Binding SoLuongTonKhoThap}" FontSize="32" FontWeight="Bold" Foreground="{StaticResource Gray900}"/>
@@ -186,8 +179,14 @@
                         <StackPanel>
                             <Grid Margin="0,0,0,12">
                                 <TextBlock Text="Sắp hết hạn" FontSize="12" Foreground="{StaticResource Gray500}"/>
-                                <Border Background="{StaticResource InfoCyanLight}" CornerRadius="8" Width="32" Height="32" HorizontalAlignment="Right">
-                                    <ui:SymbolIcon Symbol="Clock24" FontSize="14" Foreground="{StaticResource InfoCyan}" HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                                <Border CornerRadius="8" Width="32" Height="32" HorizontalAlignment="Right">
+                                    <Border.Background>
+                                        <LinearGradientBrush StartPoint="0,0" EndPoint="1,1">
+                                            <GradientStop Color="#0891B2" Offset="0"/>
+                                            <GradientStop Color="#22D3EE" Offset="1"/>
+                                        </LinearGradientBrush>
+                                    </Border.Background>
+                                    <ui:SymbolIcon Symbol="Clock24" FontSize="16" Foreground="White" HorizontalAlignment="Center" VerticalAlignment="Center"/>
                                 </Border>
                             </Grid>
                             <TextBlock Text="{Binding SoLuongSapHetHan}" FontSize="32" FontWeight="Bold" Foreground="{StaticResource Gray900}"/>
@@ -202,8 +201,14 @@
                         <StackPanel>
                             <Grid Margin="0,0,0,12">
                                 <TextBlock Text="Đã hết hạn" FontSize="12" Foreground="{StaticResource Gray500}"/>
-                                <Border Background="{StaticResource DangerRedLight}" CornerRadius="8" Width="32" Height="32" HorizontalAlignment="Right">
-                                    <ui:SymbolIcon Symbol="CalendarCancel24" FontSize="14" Foreground="{StaticResource DangerRed}" HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                                <Border CornerRadius="8" Width="32" Height="32" HorizontalAlignment="Right">
+                                    <Border.Background>
+                                        <LinearGradientBrush StartPoint="0,0" EndPoint="1,1">
+                                            <GradientStop Color="#EF4444" Offset="0"/>
+                                            <GradientStop Color="#F87171" Offset="1"/>
+                                        </LinearGradientBrush>
+                                    </Border.Background>
+                                    <ui:SymbolIcon Symbol="CalendarCancel24" FontSize="16" Foreground="White" HorizontalAlignment="Center" VerticalAlignment="Center"/>
                                 </Border>
                             </Grid>
                             <TextBlock Text="{Binding SoLuongHetHan}" FontSize="32" FontWeight="Bold" Foreground="{StaticResource Gray900}"/>
@@ -349,8 +354,14 @@
                         <StackPanel>
                             <Grid Margin="0,0,0,12">
                                 <TextBlock Text="Doanh thu bán hàng" FontSize="12" Foreground="{StaticResource Gray500}"/>
-                                <Border Background="{StaticResource SuccessGreenLight}" CornerRadius="8" Width="32" Height="32" HorizontalAlignment="Right">
-                                    <ui:SymbolIcon Symbol="DataTrending24" FontSize="14" Foreground="{StaticResource SuccessGreen}" HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                                <Border CornerRadius="8" Width="32" Height="32" HorizontalAlignment="Right">
+                                    <Border.Background>
+                                        <LinearGradientBrush StartPoint="0,0" EndPoint="1,1">
+                                            <GradientStop Color="#10B981" Offset="0"/>
+                                            <GradientStop Color="#34D399" Offset="1"/>
+                                        </LinearGradientBrush>
+                                    </Border.Background>
+                                    <ui:SymbolIcon Symbol="DataTrending24" FontSize="14" Foreground="White" HorizontalAlignment="Center" VerticalAlignment="Center"/>
                                 </Border>
                             </Grid>
                             <TextBlock Text="{Binding DoanhThuThang, StringFormat='{}{0:N0}đ'}" FontSize="24" FontWeight="Bold" Foreground="{StaticResource Gray900}"/>
@@ -368,8 +379,14 @@
                         <StackPanel>
                             <Grid Margin="0,0,0,12">
                                 <TextBlock Text="Chi phí NL tiêu hao" FontSize="12" Foreground="{StaticResource Gray500}"/>
-                                <Border Background="{StaticResource DangerRedLight}" CornerRadius="8" Width="32" Height="32" HorizontalAlignment="Right">
-                                    <ui:SymbolIcon Symbol="Archive24" FontSize="14" Foreground="{StaticResource DangerRed}" HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                                <Border CornerRadius="8" Width="32" Height="32" HorizontalAlignment="Right">
+                                    <Border.Background>
+                                        <LinearGradientBrush StartPoint="0,0" EndPoint="1,1">
+                                            <GradientStop Color="#EF4444" Offset="0"/>
+                                            <GradientStop Color="#F87171" Offset="1"/>
+                                        </LinearGradientBrush>
+                                    </Border.Background>
+                                    <ui:SymbolIcon Symbol="Archive24" FontSize="14" Foreground="White" HorizontalAlignment="Center" VerticalAlignment="Center"/>
                                 </Border>
                             </Grid>
                             <TextBlock Text="{Binding ChiPhiNguyenLieuThang, StringFormat='{}{0:N0}đ'}" FontSize="24" FontWeight="Bold" Foreground="#DC2626"/>
