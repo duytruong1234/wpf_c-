@@ -168,12 +168,18 @@
 
             <!-- Tiêu đề -->
             <StackPanel Grid.Column="0" Orientation="Horizontal" VerticalAlignment="Center">
-                <Border Background="#FFF1F0" CornerRadius="12" Width="44" Height="44" Margin="0,0,14,0">
-                    <ui:SymbolIcon Symbol="Archive24" FontSize="22" Foreground="#E74C3C" HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                <Border CornerRadius="14" Width="48" Height="48" Margin="0,0,16,0">
+                    <Border.Background>
+                        <LinearGradientBrush StartPoint="0,0" EndPoint="1,1">
+                            <GradientStop Color="#5B6AFF" Offset="0"/>
+                            <GradientStop Color="#818CF8" Offset="1"/>
+                        </LinearGradientBrush>
+                    </Border.Background>
+                    <ui:SymbolIcon Symbol="Archive24" FontSize="22" Foreground="White" HorizontalAlignment="Center" VerticalAlignment="Center"/>
                 </Border>
                 <StackPanel VerticalAlignment="Center">
-                    <TextBlock Text="Quản lý tồn kho" FontSize="22" FontWeight="Bold" Foreground="{StaticResource Gray900}"/>
-                    <TextBlock Text="Theo dõi nguyên liệu và tối ưu hóa kho hàng" FontSize="12" Foreground="{StaticResource Gray400}" Margin="0,2,0,0"/>
+                    <TextBlock Text="Quản lý tồn kho" FontSize="24" FontWeight="Bold" Foreground="{StaticResource Gray900}"/>
+                    <TextBlock Text="Theo dõi nguyên liệu và tối ưu hóa kho hàng" FontSize="13" Foreground="{StaticResource Gray400}" Margin="0,4,0,0"/>
                 </StackPanel>
             </StackPanel>
 

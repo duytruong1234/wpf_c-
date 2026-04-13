@@ -412,7 +412,7 @@
                         </Button.Style>
                         <StackPanel Orientation="Horizontal">
                             <Border Width="30" Height="30" CornerRadius="8" Background="#374151" Margin="0,0,10,0">
-                                <ui:SymbolIcon Symbol="Food24" FontSize="14" Foreground="#9CA3AF" HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                                <ui:SymbolIcon Symbol="FoodApple24" FontSize="14" Foreground="#9CA3AF" HorizontalAlignment="Center" VerticalAlignment="Center"/>
                             </Border>
                             <TextBlock Text="Quản lý nguyên liệu" VerticalAlignment="Center"/>
                         </StackPanel>

@@ -70,8 +70,8 @@
                 </Button>
 
                 <StackPanel Grid.Column="1" HorizontalAlignment="Center" VerticalAlignment="Center">
-                    <TextBlock Text="Danh sách loại nguyên liệu" FontSize="22" FontWeight="Bold" Foreground="{StaticResource Gray900}" HorizontalAlignment="Center"/>
-                    <TextBlock Text="Quản lý phân loại nguyên liệu" FontSize="12" Foreground="{StaticResource Gray400}" HorizontalAlignment="Center" Margin="0,2,0,0"/>
+                    <TextBlock Text="Danh sách loại nguyên liệu" FontSize="24" FontWeight="Bold" Foreground="{StaticResource Gray900}" HorizontalAlignment="Center"/>
+                    <TextBlock Text="Quản lý phân loại nguyên liệu" FontSize="13" Foreground="{StaticResource Gray400}" HorizontalAlignment="Center" Margin="0,4,0,0"/>
                 </StackPanel>
 
                 <Button Grid.Column="2" Command="{Binding OpenAddPopupCommand}" Cursor="Hand" VerticalAlignment="Center">

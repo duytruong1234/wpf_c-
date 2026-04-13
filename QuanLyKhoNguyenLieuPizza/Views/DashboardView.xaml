@@ -77,7 +77,7 @@
                     </Grid.ColumnDefinitions>
 
                     <StackPanel Grid.Column="0" Orientation="Horizontal" VerticalAlignment="Center">
-                        <Border CornerRadius="12" Width="44" Height="44" Margin="0,0,14,0">
+                        <Border CornerRadius="14" Width="48" Height="48" Margin="0,0,16,0">
                             <Border.Background>
                                 <LinearGradientBrush StartPoint="0,0" EndPoint="1,1">
                                     <GradientStop Color="#5B6AFF" Offset="0"/>
@@ -89,9 +89,9 @@
                                        HorizontalAlignment="Center" VerticalAlignment="Center"/>
                         </Border>
                         <StackPanel VerticalAlignment="Center">
-                            <TextBlock Text="Tổng quan hệ thống" FontSize="22" FontWeight="Bold" Foreground="{StaticResource Gray900}"/>
-                            <TextBlock Text="Theo dõi tình trạng kho nguyên liệu và doanh thu" FontSize="12" 
-                                       Foreground="{StaticResource Gray400}" Margin="0,2,0,0"/>
+                            <TextBlock Text="Tổng quan hệ thống" FontSize="24" FontWeight="Bold" Foreground="{StaticResource Gray900}"/>
+                            <TextBlock Text="Theo dõi tình trạng kho nguyên liệu và doanh thu" FontSize="13" 
+                                       Foreground="{StaticResource Gray400}" Margin="0,4,0,0"/>
                         </StackPanel>
                     </StackPanel>
 
