@@ -108,8 +108,7 @@
                             <StackPanel Orientation="Horizontal">
                                 <Border Width="36" Height="36" CornerRadius="10" 
                                         Background="#EEF2FF" Margin="0,0,12,0">
-                                    <TextBlock Text="🍕" FontSize="16" HorizontalAlignment="Center" 
-                                               VerticalAlignment="Center"/>
+                                    <ui:SymbolIcon Symbol="FoodPizza24" FontSize="20" Foreground="#4550E6" HorizontalAlignment="Center" VerticalAlignment="Center"/>
                                 </Border>
                                 <StackPanel VerticalAlignment="Center">
                                     <TextBlock Text="Trọng lượng bột" FontSize="16" FontWeight="Bold" 
@@ -132,17 +131,21 @@
 
                                 <StackPanel Grid.Column="0">
                                     <TextBlock Text="Size bánh" Style="{StaticResource FieldLabel}"/>
-                                    <ComboBox ItemsSource="{Binding Sizes}" 
-                                              SelectedItem="{Binding BotSelectedSize}"
-                                              DisplayMemberPath="TenSize"
-                                              Style="{StaticResource ModernCombo}"/>
+                                    <Border Background="White" BorderBrush="{StaticResource Border}" BorderThickness="1" CornerRadius="10" Padding="12,10" Height="40">
+                                        <ComboBox ItemsSource="{Binding Sizes}" 
+                                                  SelectedItem="{Binding BotSelectedSize}"
+                                                  DisplayMemberPath="TenSize"
+                                                  BorderThickness="0" Background="Transparent" FontSize="13" Padding="0"/>
+                                    </Border>
                                 </StackPanel>
                                 <StackPanel Grid.Column="2">
                                     <TextBlock Text="Loại cốt bánh" Style="{StaticResource FieldLabel}"/>
-                                    <ComboBox ItemsSource="{Binding DeBanhs}" 
-                                              SelectedItem="{Binding BotSelectedDe}"
-                                              DisplayMemberPath="LoaiCotBanh"
-                                              Style="{StaticResource ModernCombo}"/>
+                                    <Border Background="White" BorderBrush="{StaticResource Border}" BorderThickness="1" CornerRadius="10" Padding="12,10" Height="40">
+                                        <ComboBox ItemsSource="{Binding DeBanhs}" 
+                                                  SelectedItem="{Binding BotSelectedDe}"
+                                                  DisplayMemberPath="LoaiCotBanh"
+                                                  BorderThickness="0" Background="Transparent" FontSize="13" Padding="0"/>
+                                    </Border>
                                 </StackPanel>
                             </Grid>
 
@@ -156,15 +159,19 @@
 
                                 <StackPanel Grid.Column="0">
                                     <TextBlock Text="Trọng lượng (g)" Style="{StaticResource FieldLabel}"/>
-                                    <TextBox Text="{Binding BotTrongLuong, UpdateSourceTrigger=PropertyChanged}" 
-                                             Style="{StaticResource ModernInput}"/>
+                                    <Border Background="White" BorderBrush="{StaticResource Border}" BorderThickness="1" CornerRadius="10" Padding="12,10" Height="40">
+                                        <TextBox Text="{Binding BotTrongLuong, UpdateSourceTrigger=PropertyChanged}" 
+                                                 BorderThickness="0" Background="Transparent" FontSize="13" Padding="0" VerticalContentAlignment="Center"/>
+                                    </Border>
                                 </StackPanel>
                                 <StackPanel Grid.Column="2">
                                     <TextBlock Text="Đơn vị" Style="{StaticResource FieldLabel}"/>
-                                    <ComboBox ItemsSource="{Binding DonVis}" 
-                                              SelectedItem="{Binding BotSelectedDonVi}"
-                                              DisplayMemberPath="TenDonVi"
-                                              Style="{StaticResource ModernCombo}"/>
+                                    <Border Background="White" BorderBrush="{StaticResource Border}" BorderThickness="1" CornerRadius="10" Padding="12,10" Height="40">
+                                        <ComboBox ItemsSource="{Binding DonVis}" 
+                                                  SelectedItem="{Binding BotSelectedDonVi}"
+                                                  DisplayMemberPath="TenDonVi"
+                                                  BorderThickness="0" Background="Transparent" FontSize="13" Padding="0"/>
+                                    </Border>
                                 </StackPanel>
                             </Grid>
 
@@ -352,8 +359,7 @@
                             <StackPanel Orientation="Horizontal">
                                 <Border Width="36" Height="36" CornerRadius="10" 
                                         Background="#FEF3C7" Margin="0,0,12,0">
-                                    <TextBlock Text="🧀" FontSize="16" HorizontalAlignment="Center" 
-                                               VerticalAlignment="Center"/>
+                                    <ui:SymbolIcon Symbol="Cube24" FontSize="20" Foreground="#D97706" HorizontalAlignment="Center" VerticalAlignment="Center"/>
                                 </Border>
                                 <StackPanel VerticalAlignment="Center">
                                     <TextBlock Text="Nguyên liệu viên" FontSize="16" FontWeight="Bold" 
@@ -376,27 +382,33 @@
 
                                 <StackPanel Grid.Column="0">
                                     <TextBlock Text="Đế bánh" Style="{StaticResource FieldLabel}"/>
-                                    <ComboBox ItemsSource="{Binding DeBanhs}" 
-                                              SelectedItem="{Binding VienSelectedDe}"
-                                              DisplayMemberPath="TenDeBanh"
-                                              Style="{StaticResource ModernCombo}"/>
+                                    <Border Background="White" BorderBrush="{StaticResource Border}" BorderThickness="1" CornerRadius="10" Padding="12,10" Height="40">
+                                        <ComboBox ItemsSource="{Binding DeBanhs}" 
+                                                  SelectedItem="{Binding VienSelectedDe}"
+                                                  DisplayMemberPath="TenDeBanh"
+                                                  BorderThickness="0" Background="Transparent" FontSize="13" Padding="0"/>
+                                    </Border>
                                 </StackPanel>
                                 <StackPanel Grid.Column="2">
                                     <TextBlock Text="Size bánh" Style="{StaticResource FieldLabel}"/>
-                                    <ComboBox ItemsSource="{Binding Sizes}" 
-                                              SelectedItem="{Binding VienSelectedSize}"
-                                              DisplayMemberPath="TenSize"
-                                              Style="{StaticResource ModernCombo}"/>
+                                    <Border Background="White" BorderBrush="{StaticResource Border}" BorderThickness="1" CornerRadius="10" Padding="12,10" Height="40">
+                                        <ComboBox ItemsSource="{Binding Sizes}" 
+                                                  SelectedItem="{Binding VienSelectedSize}"
+                                                  DisplayMemberPath="TenSize"
+                                                  BorderThickness="0" Background="Transparent" FontSize="13" Padding="0"/>
+                                    </Border>
                                 </StackPanel>
                             </Grid>
 
                             <!-- Row 2: Nguyên liệu viên -->
                             <StackPanel Margin="0,14,0,0">
                                 <TextBlock Text="Nguyên liệu viên" Style="{StaticResource FieldLabel}"/>
-                                <ComboBox ItemsSource="{Binding NguyenLieus}" 
-                                          SelectedItem="{Binding VienSelectedNguyenLieu}"
-                                          DisplayMemberPath="TenNguyenLieu"
-                                          Style="{StaticResource ModernCombo}"/>
+                                <Border Background="White" BorderBrush="{StaticResource Border}" BorderThickness="1" CornerRadius="10" Padding="12,10" Height="40">
+                                    <ComboBox ItemsSource="{Binding NguyenLieus}" 
+                                              SelectedItem="{Binding VienSelectedNguyenLieu}"
+                                              DisplayMemberPath="TenNguyenLieu"
+                                              BorderThickness="0" Background="Transparent" FontSize="13" Padding="0"/>
+                                </Border>
                             </StackPanel>
 
                             <!-- Row 3: Định mức + Đơn vị -->
@@ -409,15 +421,19 @@
 
                                 <StackPanel Grid.Column="0">
                                     <TextBlock Text="Định mức" Style="{StaticResource FieldLabel}"/>
-                                    <TextBox Text="{Binding VienSoLuong, UpdateSourceTrigger=PropertyChanged}" 
-                                             Style="{StaticResource ModernInput}"/>
+                                    <Border Background="White" BorderBrush="{StaticResource Border}" BorderThickness="1" CornerRadius="10" Padding="12,10" Height="40">
+                                        <TextBox Text="{Binding VienSoLuong, UpdateSourceTrigger=PropertyChanged}" 
+                                                 BorderThickness="0" Background="Transparent" FontSize="13" Padding="0" VerticalContentAlignment="Center"/>
+                                    </Border>
                                 </StackPanel>
                                 <StackPanel Grid.Column="2">
                                     <TextBlock Text="Đơn vị" Style="{StaticResource FieldLabel}"/>
-                                    <ComboBox ItemsSource="{Binding DonVis}" 
-                                              SelectedItem="{Binding VienSelectedDonVi}"
-                                              DisplayMemberPath="TenDonVi"
-                                              Style="{StaticResource ModernCombo}"/>
+                                    <Border Background="White" BorderBrush="{StaticResource Border}" BorderThickness="1" CornerRadius="10" Padding="12,10" Height="40">
+                                        <ComboBox ItemsSource="{Binding DonVis}" 
+                                                  SelectedItem="{Binding VienSelectedDonVi}"
+                                                  DisplayMemberPath="TenDonVi"
+                                                  BorderThickness="0" Background="Transparent" FontSize="13" Padding="0"/>
+                                    </Border>
                                 </StackPanel>
                             </Grid>
 
