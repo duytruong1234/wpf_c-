@@ -162,7 +162,8 @@
                                                     <!-- Check Mark -->
                                                     <TextBlock x:Name="CheckMark"
                                                                Grid.Column="0"
-                                                               Text="✓"
+                                                               Text="&#xE73E;"
+                                                               FontFamily="Segoe MDL2 Assets"
                                                                FontSize="14"
                                                                FontWeight="Bold"
                                                                Foreground="{StaticResource SCB_Blue500}"

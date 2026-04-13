@@ -187,7 +187,7 @@
                                                     Padding="{TemplateBinding Padding}" 
                                                     Height="{TemplateBinding Height}">
                                                 <StackPanel Orientation="Horizontal" VerticalAlignment="Center">
-                                                    <TextBlock Text="✕" FontSize="11" Foreground="{StaticResource TextSecondary}" 
+                                                    <ui:SymbolIcon Symbol="Dismiss24" FontSize="11" Foreground="{StaticResource TextSecondary}" 
                                                                Margin="0,0,6,0" VerticalAlignment="Center"/>
                                                     <TextBlock Text="Hủy" FontSize="13" FontWeight="SemiBold" 
                                                                Foreground="{StaticResource TextSecondary}"/>
@@ -216,7 +216,7 @@
                                                     </LinearGradientBrush>
                                                 </Border.Background>
                                                 <StackPanel Orientation="Horizontal" VerticalAlignment="Center">
-                                                    <TextBlock Text="💾" FontSize="12" Margin="0,0,8,0" 
+                                                    <ui:SymbolIcon Symbol="Save24" FontSize="12" Foreground="White" Margin="0,0,8,0" 
                                                                VerticalAlignment="Center"/>
                                                     <TextBlock Text="Lưu cấu hình" FontSize="13" FontWeight="SemiBold" 
                                                                Foreground="White"/>
@@ -317,13 +317,13 @@
                                                         <Border Width="30" Height="30" CornerRadius="8" 
                                                                 Background="#EEF2FF" Cursor="Hand" Margin="0,0,6,0"
                                                                 MouseLeftButtonDown="EditBot_Click" Tag="{Binding}">
-                                                            <TextBlock Text="✏️" FontSize="12" 
+                                                            <ui:SymbolIcon Symbol="Edit24" FontSize="12" Foreground="#4F46E5"
                                                                        HorizontalAlignment="Center" VerticalAlignment="Center"/>
                                                         </Border>
                                                         <Border Width="30" Height="30" CornerRadius="8" 
                                                                 Background="#FEE2E2" Cursor="Hand"
                                                                 MouseLeftButtonDown="DeleteBot_Click" Tag="{Binding}">
-                                                            <TextBlock Text="🗑" FontSize="12" 
+                                                            <ui:SymbolIcon Symbol="Delete24" FontSize="12" Foreground="#DC2626"
                                                                        HorizontalAlignment="Center" VerticalAlignment="Center"/>
                                                         </Border>
                                                     </StackPanel>
@@ -449,7 +449,7 @@
                                                     Padding="{TemplateBinding Padding}" 
                                                     Height="{TemplateBinding Height}">
                                                 <StackPanel Orientation="Horizontal" VerticalAlignment="Center">
-                                                    <TextBlock Text="✕" FontSize="11" Foreground="{StaticResource TextSecondary}" 
+                                                    <ui:SymbolIcon Symbol="Dismiss24" FontSize="11" Foreground="{StaticResource TextSecondary}" 
                                                                Margin="0,0,6,0" VerticalAlignment="Center"/>
                                                     <TextBlock Text="Hủy" FontSize="13" FontWeight="SemiBold" 
                                                                Foreground="{StaticResource TextSecondary}"/>
@@ -478,7 +478,7 @@
                                                     </LinearGradientBrush>
                                                 </Border.Background>
                                                 <StackPanel Orientation="Horizontal" VerticalAlignment="Center">
-                                                    <TextBlock Text="💾" FontSize="12" Margin="0,0,8,0" 
+                                                    <ui:SymbolIcon Symbol="Save24" FontSize="12" Foreground="White" Margin="0,0,8,0" 
                                                                VerticalAlignment="Center"/>
                                                     <TextBlock Text="Lưu cấu hình" FontSize="13" FontWeight="SemiBold" 
                                                                Foreground="White"/>
@@ -592,13 +592,13 @@
                                                         <Border Width="30" Height="30" CornerRadius="8" 
                                                                 Background="#EEF2FF" Cursor="Hand" Margin="0,0,6,0"
                                                                 MouseLeftButtonDown="EditVien_Click" Tag="{Binding}">
-                                                            <TextBlock Text="✏️" FontSize="12" 
+                                                            <ui:SymbolIcon Symbol="Edit24" FontSize="12" Foreground="#4F46E5"
                                                                        HorizontalAlignment="Center" VerticalAlignment="Center"/>
                                                         </Border>
                                                         <Border Width="30" Height="30" CornerRadius="8" 
                                                                 Background="#FEE2E2" Cursor="Hand"
                                                                 MouseLeftButtonDown="DeleteVien_Click" Tag="{Binding}">
-                                                            <TextBlock Text="🗑" FontSize="12" 
+                                                            <ui:SymbolIcon Symbol="Delete24" FontSize="12" Foreground="#DC2626"
                                                                        HorizontalAlignment="Center" VerticalAlignment="Center"/>
                                                         </Border>
                                                     </StackPanel>

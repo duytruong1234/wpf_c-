@@ -620,7 +620,7 @@
                                                             <Border Background="White" CornerRadius="8" Width="32" Height="32" Margin="0,0,10,0"
                                                                     BorderBrush="{StaticResource Gray200}" BorderThickness="1" ClipToBounds="True">
                                                                 <Grid>
-                                                                    <TextBlock Text="🍕" FontSize="14" HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                                                                    <ui:SymbolIcon Symbol="FoodPizza24" FontSize="14" Foreground="#94A3B8" HorizontalAlignment="Center" VerticalAlignment="Center"/>
                                                                     <Image Source="{Binding Pizza.HinhAnh, Converter={StaticResource ImagePathConverter}}" Stretch="UniformToFill"/>
                                                                 </Grid>
                                                             </Border>

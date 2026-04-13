@@ -1,4 +1,4 @@
-﻿<?xml version="1.0" encoding="utf-8"?>
+<?xml version="1.0" encoding="utf-8"?>
 <UserControl x:Class="QuanLyKhoNguyenLieuPizza.Views.SaoLuuView"
          xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
          xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
@@ -174,19 +174,19 @@
                         <!-- Checklist -->
                         <StackPanel Margin="0,8,0,24">
                             <StackPanel Orientation="Horizontal" Margin="0,4">
-                                <TextBlock Text="✓" Foreground="#10B981" FontWeight="Bold" FontSize="13" Width="20"/>
+                                <ui:SymbolIcon Symbol="Checkmark24" FontSize="13" Foreground="#10B981" Width="20"/>
                                 <TextBlock Text="Hóa đơn, đơn hàng" FontSize="13" Foreground="#475569"/>
                             </StackPanel>
                             <StackPanel Orientation="Horizontal" Margin="0,4">
-                                <TextBlock Text="✓" Foreground="#10B981" FontWeight="Bold" FontSize="13" Width="20"/>
+                                <ui:SymbolIcon Symbol="Checkmark24" FontSize="13" Foreground="#10B981" Width="20"/>
                                 <TextBlock Text="Thông tin nguyên liệu, kho" FontSize="13" Foreground="#475569"/>
                             </StackPanel>
                             <StackPanel Orientation="Horizontal" Margin="0,4">
-                                <TextBlock Text="✓" Foreground="#10B981" FontWeight="Bold" FontSize="13" Width="20"/>
+                                <ui:SymbolIcon Symbol="Checkmark24" FontSize="13" Foreground="#10B981" Width="20"/>
                                 <TextBlock Text="Nhân viên, nhà cung cấp" FontSize="13" Foreground="#475569"/>
                             </StackPanel>
                             <StackPanel Orientation="Horizontal" Margin="0,4">
-                                <TextBlock Text="✓" Foreground="#10B981" FontWeight="Bold" FontSize="13" Width="20"/>
+                                <ui:SymbolIcon Symbol="Checkmark24" FontSize="13" Foreground="#10B981" Width="20"/>
                                 <TextBlock Text="Phiếu nhập, phiếu xuất" FontSize="13" Foreground="#475569"/>
                             </StackPanel>
                         </StackPanel>
@@ -267,19 +267,19 @@
                         <!-- Warning list -->
                         <StackPanel Margin="0,8,0,24">
                             <StackPanel Orientation="Horizontal" Margin="0,4">
-                                <TextBlock Text="⚠" Foreground="#F59E0B" FontWeight="Bold" FontSize="13" Width="20"/>
+                                <ui:SymbolIcon Symbol="Warning24" FontSize="13" Foreground="#F59E0B" Width="20"/>
                                 <TextBlock Text="Sẽ GHI ĐÈ dữ liệu hiện tại" FontSize="13" Foreground="#475569"/>
                             </StackPanel>
                             <StackPanel Orientation="Horizontal" Margin="0,4">
-                                <TextBlock Text="⚠" Foreground="#F59E0B" FontWeight="Bold" FontSize="13" Width="20"/>
+                                <ui:SymbolIcon Symbol="Warning24" FontSize="13" Foreground="#F59E0B" Width="20"/>
                                 <TextBlock Text="Không thể hoàn tác sau khi phục hồi" FontSize="13" Foreground="#475569"/>
                             </StackPanel>
                             <StackPanel Orientation="Horizontal" Margin="0,4">
-                                <TextBlock Text="💡" FontSize="13" Width="20"/>
+                                <ui:SymbolIcon Symbol="LightbulbFilament24" FontSize="13" Foreground="#D97706" Width="20"/>
                                 <TextBlock Text="Nên sao lưu trước khi phục hồi" FontSize="13" Foreground="#475569"/>
                             </StackPanel>
                             <StackPanel Orientation="Horizontal" Margin="0,4">
-                                <TextBlock Text="💡" FontSize="13" Width="20"/>
+                                <ui:SymbolIcon Symbol="LightbulbFilament24" FontSize="13" Foreground="#D97706" Width="20"/>
                                 <TextBlock Text="Khởi động lại app sau khi phục hồi" FontSize="13" Foreground="#475569"/>
                             </StackPanel>
                         </StackPanel>
@@ -333,7 +333,7 @@
                     BorderThickness="1">
                 <StackPanel>
                     <StackPanel Orientation="Horizontal" Margin="0,0,0,10">
-                        <TextBlock Text="💡" FontSize="16" Margin="0,0,8,0"/>
+                        <ui:SymbolIcon Symbol="LightbulbFilament24" FontSize="16" Foreground="#D97706" Margin="0,0,8,0"/>
                         <TextBlock Text="Mẹo bảo vệ dữ liệu"
                                    FontSize="15"
                                    FontWeight="SemiBold"

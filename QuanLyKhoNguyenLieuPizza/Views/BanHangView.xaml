@@ -209,7 +209,7 @@
                                                             <!-- Product Hình ảnh -->
                                                             <Border Grid.Row="0" CornerRadius="14,14,0,0" Background="{StaticResource Gray100}" ClipToBounds="True">
                                                                 <Grid>
-                                                                    <TextBlock Text="🍕" FontSize="40" HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                                                                    <ui:SymbolIcon Symbol="FoodPizza24" FontSize="40" Foreground="#94A3B8" HorizontalAlignment="Center" VerticalAlignment="Center"/>
                                                                     <Image Source="{Binding HinhAnh, Converter={StaticResource ImagePathConverter}}"
                                                                            Stretch="UniformToFill"/>
                                                                     <!-- Lớp mờ khi hết hàng -->
@@ -276,7 +276,7 @@
                         <!-- Trống -->
                         <StackPanel Grid.Row="2" HorizontalAlignment="Center" VerticalAlignment="Center"
                                     Visibility="{Binding HangHoas.Count, Converter={StaticResource IntToVisibilityConverter}}">
-                            <TextBlock Text="🍕" FontSize="40" HorizontalAlignment="Center"/>
+                            <ui:SymbolIcon Symbol="FoodPizza24" FontSize="40" Foreground="#94A3B8" HorizontalAlignment="Center"/>
                             <TextBlock Text="Chưa có sản phẩm nào" FontSize="16" Foreground="{StaticResource Gray400}" HorizontalAlignment="Center" Margin="0,8,0,0"/>
                         </StackPanel>
                     </Grid>
