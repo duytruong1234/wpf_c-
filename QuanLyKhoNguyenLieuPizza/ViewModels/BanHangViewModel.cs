@@ -1,4 +1,4 @@
-﻿using System.Collections.ObjectModel;
+using System.Collections.ObjectModel;
 using System.Windows;
 using System.Windows.Input;
 using QuanLyKhoNguyenLieuPizza.Core.Commands;
@@ -552,11 +552,16 @@ public class BanHangViewModel : BaseViewModel
             }
         }
 
-        var result = MessageBox.Show(
-            $"Xác nhận thanh toán đơn hàng?\nTổng tiền: {TongTienGioHang:N0} d",
-            "Xác nhận thanh toán", MessageBoxButton.YesNo, MessageBoxImage.Question);
-
-        if (result != MessageBoxResult.Yes) return;
+        var msgBox = new Wpf.Ui.Controls.MessageBox
+        {
+            Title = "Xác nhận thanh toán",
+            Content = $"Xác nhận thanh toán đơn hàng?\nTổng tiền: {TongTienGioHang:N0} đ",
+            PrimaryButtonText = "Thanh toán",
+            CloseButtonText = "Hủy"
+        };
+        
+        var result = await msgBox.ShowDialogAsync();
+        if (result != Wpf.Ui.Controls.MessageBoxResult.Primary) return;
 
         IsLoading = true;
         try
@@ -588,8 +593,13 @@ public class BanHangViewModel : BaseViewModel
             var savedMa = await _db.SavePhieuBanHangAsync(phieuBan, chiTiets);
             if (!string.IsNullOrEmpty(savedMa))
             {
-                MessageBox.Show($"Thanh toán thành công!\nMã phiếu: {savedMa}\nTổng tiền: {TongTienGioHang:N0} d",
-                    "Thành công", MessageBoxButton.OK, MessageBoxImage.Information);
+                var successMsg = new Wpf.Ui.Controls.MessageBox
+                {
+                    Title = "Thành công",
+                    Content = $"Thanh toán thành công!\nMã phiếu: {savedMa}\nTổng tiền: {TongTienGioHang:N0} đ",
+                    CloseButtonText = "Đóng"
+                };
+                await successMsg.ShowDialogAsync();
                 CartItems.Clear();
                 GhiChu = string.Empty;
                 SelectedPhuongThucTT = "Tiền mặt";
@@ -602,12 +612,24 @@ public class BanHangViewModel : BaseViewModel
             }
             else
             {
-                MessageBox.Show("Có lỗi xảy ra khi tạo phiếu bán!", "Lỗi", MessageBoxButton.OK, MessageBoxImage.Error);
+                var errorMsg = new Wpf.Ui.Controls.MessageBox
+                {
+                    Title = "Lỗi",
+                    Content = "Có lỗi xảy ra khi tạo phiếu bán!",
+                    CloseButtonText = "Đóng"
+                };
+                await errorMsg.ShowDialogAsync();
             }
         }
         catch (Exception ex)
         {
-            MessageBox.Show($"Có lỗi xảy ra: {ex.Message}", "Lỗi", MessageBoxButton.OK, MessageBoxImage.Error);
+            var catchMsg = new Wpf.Ui.Controls.MessageBox
+            {
+                Title = "Lỗi",
+                Content = $"Có lỗi xảy ra: {ex.Message}",
+                CloseButtonText = "Đóng"
+            };
+            await catchMsg.ShowDialogAsync();
             await RefreshStockStatusAsync();
             FilterHangHoas();
         }

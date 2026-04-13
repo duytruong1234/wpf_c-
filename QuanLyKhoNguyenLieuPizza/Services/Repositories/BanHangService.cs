@@ -1,4 +1,4 @@
-using System.Text;
+﻿using System.Text;
 using System.Globalization;
 using Microsoft.Data.SqlClient;
 using System.Data;
@@ -732,8 +732,8 @@ public class BanHangService : DatabaseContext
                 var insufficient = await GetInsufficientIngredientsAsync(conn, transaction, requiredMap);
                 if (insufficient.Count > 0)
                 {
-                    var message = "KhÃ´ng Ä‘á»§ nguyÃªn liá»‡u: " +
-                                  string.Join(", ", insufficient.Select(i => $"{i.Name} (cÃ²n {i.Available:N2})"));
+                    var message = "Không đủ nguyên liệu: " +
+                                  string.Join(", ", insufficient.Select(i => $"{i.Name} (còn {i.Available:N2})"));
                     throw new Exception(message);
                 }
             }
@@ -781,7 +781,7 @@ public class BanHangService : DatabaseContext
                 var rows = await deductCmd.ExecuteNonQueryAsync();
                 if (rows == 0)
                 {
-                    throw new Exception($"NguyÃªn liá»‡u khÃ´ng Ä‘á»§ tá»“n kho (ID {kvp.Key})");
+                    throw new Exception($"Nguyên liệu không đủ tồn kho (ID {kvp.Key})");
                 }
             }
 

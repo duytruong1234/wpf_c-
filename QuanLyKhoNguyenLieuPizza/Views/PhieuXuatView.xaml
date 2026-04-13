@@ -90,7 +90,7 @@
             </Grid.RowDefinitions>
 
             <!-- Page Tiêu đề + Actions -->
-            <Grid Grid.Row="0" Margin="0,0,80,20">
+            <Grid Grid.Row="0" Margin="0,0,0,20">
                 <Grid.ColumnDefinitions>
                     <ColumnDefinition Width="Auto"/>
                     <ColumnDefinition Width="*"/>
