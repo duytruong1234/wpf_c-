@@ -2,6 +2,10 @@ using System.IO;
 using System.Globalization;
 using System.Windows;
 using System.Windows.Markup;
+using Microsoft.Extensions.DependencyInjection;
+using QuanLyKhoNguyenLieuPizza.Core.Interfaces;
+using QuanLyKhoNguyenLieuPizza.Services;
+using QuanLyKhoNguyenLieuPizza.ViewModels;
 using QuanLyKhoNguyenLieuPizza.Views;
 
 namespace QuanLyKhoNguyenLieuPizza
@@ -14,6 +18,11 @@ namespace QuanLyKhoNguyenLieuPizza
         private static readonly string CrashLogPath = Path.Combine(
             AppDomain.CurrentDomain.BaseDirectory, "crash.log");
 
+        /// <summary>
+        /// DI Container — truy cập toàn cục qua App.Services
+        /// </summary>
+        public static IServiceProvider Services { get; private set; } = null!;
+
         public static void LogToFile(string message)
         {
             try
@@ -24,9 +33,42 @@ namespace QuanLyKhoNguyenLieuPizza
             catch { }
         }
 
+        private static IServiceProvider ConfigureServices()
+        {
+            var services = new ServiceCollection();
+
+            // ── Core Services (Singleton) ──
+            services.AddSingleton<DatabaseService>();
+            services.AddSingleton<IDatabaseService>(sp => sp.GetRequiredService<DatabaseService>());
+
+            // ── ViewModels (Transient — mỗi lần resolve tạo instance mới) ──
+            services.AddTransient<LoginViewModel>();
+            services.AddTransient<VerifyInfoViewModel>();
+            services.AddTransient<ChangePasswordViewModel>();
+            services.AddTransient<DashboardViewModel>();
+            services.AddTransient<TonKhoViewModel>();
+            services.AddTransient<PhieuNhapViewModel>();
+            services.AddTransient<PhieuXuatViewModel>();
+            services.AddTransient<NhaCungCapViewModel>();
+            services.AddTransient<NhanVienViewModel>();
+            services.AddTransient<BanHangViewModel>();
+            services.AddTransient<DonHangViewModel>();
+            services.AddTransient<NguyenLieuViewModel>();
+            services.AddTransient<LoaiNguyenLieuViewModel>();
+            services.AddTransient<QuyDoiDonViViewModel>();
+            services.AddTransient<PizzaViewModel>();
+            services.AddTransient<QuyDinhViewModel>();
+            services.AddTransient<ProfileViewModel>();
+
+            return services.BuildServiceProvider();
+        }
+
         protected override async void OnStartup(StartupEventArgs e)
         {
             base.OnStartup(e);
+
+            // Khởi tạo DI Container
+            Services = ConfigureServices();
 
             // Migrate hình ảnh cũ sang AppData nếu cần
             Helpers.ImageStorageHelper.MigrateImagesFromBaseDirectory();
@@ -92,7 +134,4 @@ namespace QuanLyKhoNguyenLieuPizza
             mainWindow.Show();
         }
     }
-
 }
-
-

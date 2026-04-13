@@ -1,8 +1,8 @@
-using System.Collections.ObjectModel;
+ï»¿using System.Collections.ObjectModel;
 using System.Windows.Input;
 using QuanLyKhoNguyenLieuPizza.Models;
 using QuanLyKhoNguyenLieuPizza.Services;
-using QuanLyKhoNguyenLieuPizza.Core.Interfaces;
+using Microsoft.Extensions.DependencyInjection;
 
 namespace QuanLyKhoNguyenLieuPizza.ViewModels;
 
@@ -17,12 +17,12 @@ public class LoaiNguyenLieuItemViewModel : BaseViewModel
 
 public class LoaiNguyenLieuViewModel : BaseViewModel
 {
-    private readonly IDatabaseService _databaseService;
+    private readonly DatabaseService _databaseService;
     
     private ObservableCollection<LoaiNguyenLieuItemViewModel> _loaiNguyenLieus = new();
     private bool _isLoading;
     
-    // Popup thêm/s?a
+    // Popup thï¿½m/s?a
     private bool _isAddEditPopupOpen;
     private bool _isEditing;
     private LoaiNguyenLieuItemViewModel? _selectedLoaiNguyenLieu;
@@ -78,7 +78,7 @@ public class LoaiNguyenLieuViewModel : BaseViewModel
     
     public LoaiNguyenLieuViewModel()
     {
-        _databaseService = ServiceLocator.Instance.GetService<IDatabaseService>();
+        _databaseService = App.Services.GetRequiredService<DatabaseService>();
         
         LoadDataCommand = new AsyncRelayCommand(async _ => await LoadDataAsync());
         OpenAddPopupCommand = new RelayCommand(_ => OpenAddPopup());

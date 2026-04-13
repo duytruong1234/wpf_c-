@@ -1,10 +1,11 @@
-using System.IO;
+﻿using System.IO;
 using System.Windows.Input;
 using System.Windows;
 using System.Collections.ObjectModel;
 using Microsoft.Win32;
 using QuanLyKhoNguyenLieuPizza.Core.Interfaces;
 using QuanLyKhoNguyenLieuPizza.Services;
+using Microsoft.Extensions.DependencyInjection;
 
 namespace QuanLyKhoNguyenLieuPizza.ViewModels;
 
@@ -147,7 +148,7 @@ public class ProfileViewModel : BaseViewModel
 
     public ProfileViewModel()
     {
-        _databaseService = new DatabaseService();
+        _databaseService = App.Services.GetRequiredService<DatabaseService>();
         _locationService = LocationService.Instance;
         
         CloseCommand = new RelayCommand(_ => OnClose?.Invoke());

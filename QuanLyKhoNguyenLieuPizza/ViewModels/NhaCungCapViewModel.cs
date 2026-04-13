@@ -1,9 +1,10 @@
-using System.Collections.ObjectModel;
+﻿using System.Collections.ObjectModel;
 using System.Text.RegularExpressions;
 using System.Windows.Input;
 using QuanLyKhoNguyenLieuPizza.Core.Interfaces;
 using QuanLyKhoNguyenLieuPizza.Models;
 using QuanLyKhoNguyenLieuPizza.Services;
+using Microsoft.Extensions.DependencyInjection;
 
 namespace QuanLyKhoNguyenLieuPizza.ViewModels;
 
@@ -438,7 +439,7 @@ public class NhaCungCapViewModel : BaseViewModel
 
     public NhaCungCapViewModel()
     {
-        _databaseService = new DatabaseService();
+        _databaseService = App.Services.GetRequiredService<DatabaseService>();
 
         LoadDataCommand = new AsyncRelayCommand(async _ => await LoadDataAsync());
         CreateNhaCungCapCommand = new RelayCommand(_ => OpenCreateDialog());

@@ -1,8 +1,8 @@
-using System.Collections.ObjectModel;
+﻿using System.Collections.ObjectModel;
 using System.Windows.Input;
 using QuanLyKhoNguyenLieuPizza.Models;
 using QuanLyKhoNguyenLieuPizza.Services;
-using QuanLyKhoNguyenLieuPizza.Core.Interfaces;
+using Microsoft.Extensions.DependencyInjection;
 
 namespace QuanLyKhoNguyenLieuPizza.ViewModels;
 
@@ -27,7 +27,7 @@ public class NguyenLieuItemViewModel : BaseViewModel
 
 public class NguyenLieuViewModel : BaseViewModel
 {
-    private readonly IDatabaseService _databaseService;
+    private readonly DatabaseService _databaseService;
     
     private ObservableCollection<NguyenLieuItemViewModel> _nguyenLieus = new();
     private ObservableCollection<NguyenLieuItemViewModel> _filteredNguyenLieus = new();
@@ -294,7 +294,7 @@ public class NguyenLieuViewModel : BaseViewModel
     
     public NguyenLieuViewModel()
     {
-        _databaseService = ServiceLocator.Instance.GetService<IDatabaseService>();
+        _databaseService = App.Services.GetRequiredService<DatabaseService>();
         
         LoaiNguyenLieuVM = new LoaiNguyenLieuViewModel();
         LoaiNguyenLieuVM.OnBack += () =>

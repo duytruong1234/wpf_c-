@@ -2,15 +2,15 @@
 using System.Windows;
 using System.Windows.Input;
 using QuanLyKhoNguyenLieuPizza.Core.Commands;
-using QuanLyKhoNguyenLieuPizza.Core.Interfaces;
 using QuanLyKhoNguyenLieuPizza.Models;
 using QuanLyKhoNguyenLieuPizza.Services;
+using Microsoft.Extensions.DependencyInjection;
 
 namespace QuanLyKhoNguyenLieuPizza.ViewModels;
 
 public class DonHangViewModel : BaseViewModel
 {
-    private readonly IDatabaseService _db;
+    private readonly DatabaseService _db;
 
     private ObservableCollection<DonHang> _donHangs = [];
     private ObservableCollection<CT_DonHang> _chiTietDonHangs = [];
@@ -161,7 +161,7 @@ public class DonHangViewModel : BaseViewModel
 
     public DonHangViewModel()
     {
-        _db = ServiceLocator.Instance.GetService<IDatabaseService>();
+        _db = App.Services.GetRequiredService<DatabaseService>();
 
         RefreshCommand = new AsyncRelayCommand(async _ => await LoadDataAsync());
         ViewDetailCommand = new RelayCommand(ExecuteViewDetail);

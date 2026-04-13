@@ -1,10 +1,11 @@
-using System;
+﻿using System;
 using System.Collections.ObjectModel;
 using System.Linq;
 using System.Threading.Tasks;
 using System.Windows.Input;
 using QuanLyKhoNguyenLieuPizza.Models;
 using QuanLyKhoNguyenLieuPizza.Services;
+using Microsoft.Extensions.DependencyInjection;
 
 namespace QuanLyKhoNguyenLieuPizza.ViewModels;
 
@@ -65,7 +66,7 @@ public class QuyDinhViewModel : BaseViewModel
 
     public QuyDinhViewModel()
     {
-        _databaseService = new DatabaseService();
+        _databaseService = App.Services.GetRequiredService<DatabaseService>();
         LoadDataCommand = new AsyncRelayCommand(async _ => await LoadDataAsync());
         
         SaveBotCommand = new AsyncRelayCommand(async _ => await SaveBotAsync());

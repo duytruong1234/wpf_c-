@@ -1,9 +1,10 @@
-using System.Collections.ObjectModel;
+﻿using System.Collections.ObjectModel;
 using System.Windows.Input;
 using QuanLyKhoNguyenLieuPizza.Models;
 using QuanLyKhoNguyenLieuPizza.Services;
 using QuanLyKhoNguyenLieuPizza.Core.Interfaces;
 using QuanLyKhoNguyenLieuPizza.Utilities;
+using Microsoft.Extensions.DependencyInjection;
 
 namespace QuanLyKhoNguyenLieuPizza.ViewModels;
 
@@ -273,11 +274,11 @@ public class TonKhoViewModel : BaseViewModel
     {
         try
         {
-            _databaseService = new DatabaseService();
+            _databaseService = App.Services.GetRequiredService<DatabaseService>();
         }
         catch
         {
-            _databaseService = new DatabaseService();
+            _databaseService = App.Services.GetRequiredService<DatabaseService>();
         }
         
         InitializeCommands();

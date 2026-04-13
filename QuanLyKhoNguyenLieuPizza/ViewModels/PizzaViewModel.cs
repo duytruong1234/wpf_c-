@@ -1,8 +1,8 @@
 using System.Collections.ObjectModel;
 using System.Windows.Input;
-using QuanLyKhoNguyenLieuPizza.Core.Interfaces;
 using QuanLyKhoNguyenLieuPizza.Models;
 using QuanLyKhoNguyenLieuPizza.Services;
+using Microsoft.Extensions.DependencyInjection;
 
 namespace QuanLyKhoNguyenLieuPizza.ViewModels;
 
@@ -53,7 +53,7 @@ public class PizzaItemViewModel : BaseViewModel
 
 public class PizzaViewModel : BaseViewModel
 {
-    private readonly IDatabaseService _databaseService;
+    private readonly DatabaseService _databaseService;
 
     private ObservableCollection<PizzaItemViewModel> _pizzas = new();
     private ObservableCollection<PizzaItemViewModel> _filteredPizzas = new();
@@ -344,12 +344,12 @@ public class PizzaViewModel : BaseViewModel
 
     public PizzaViewModel()
     {
-        _databaseService = ServiceLocator.Instance.GetService<IDatabaseService>();
+        _databaseService = App.Services.GetRequiredService<DatabaseService>();
         InitializeCommands();
         SafeInitializeAsync(LoadDataAsync);
     }
 
-    public PizzaViewModel(IDatabaseService databaseService)
+    public PizzaViewModel(DatabaseService databaseService)
     {
         _databaseService = databaseService;
         InitializeCommands();

@@ -1,9 +1,9 @@
-using System.Collections.ObjectModel;
+﻿using System.Collections.ObjectModel;
 using System.Windows;
 using System.Windows.Input;
 using QuanLyKhoNguyenLieuPizza.Models;
 using QuanLyKhoNguyenLieuPizza.Services;
-using QuanLyKhoNguyenLieuPizza.Core.Interfaces;
+using Microsoft.Extensions.DependencyInjection;
 
 namespace QuanLyKhoNguyenLieuPizza.ViewModels;
 
@@ -63,7 +63,7 @@ public class QuyDoiRowItem : BaseViewModel
 
 public class QuyDoiDonViViewModel : BaseViewModel
 {
-    private readonly IDatabaseService _databaseService;
+    private readonly DatabaseService _databaseService;
 
     private bool _isOpen;
     private bool _isLoading;
@@ -158,7 +158,7 @@ public class QuyDoiDonViViewModel : BaseViewModel
 
     public QuyDoiDonViViewModel()
     {
-        _databaseService = ServiceLocator.Instance.GetService<IDatabaseService>();
+        _databaseService = App.Services.GetRequiredService<DatabaseService>();
 
         CloseCommand = new RelayCommand(_ => Close());
         SaveCommand = new AsyncRelayCommand(async _ => await SaveAllAsync());

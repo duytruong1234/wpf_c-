@@ -1,10 +1,11 @@
-using System.Collections.ObjectModel;
+ï»¿using System.Collections.ObjectModel;
 using System.Windows;
 using System.Windows.Input;
 using QuanLyKhoNguyenLieuPizza.Models;
 using QuanLyKhoNguyenLieuPizza.Core.Interfaces;
 using QuanLyKhoNguyenLieuPizza.Services;
 using QuanLyKhoNguyenLieuPizza.Core.Commands;
+using Microsoft.Extensions.DependencyInjection;
 
 namespace QuanLyKhoNguyenLieuPizza.ViewModels;
 
@@ -59,18 +60,18 @@ public class VerifyInfoViewModel : BaseViewModel
     public ICommand VerifyCommand { get; }
     public ICommand BackCommand { get; }
 
-    public event Action<string>? OnVerifySuccess; // Truy?n email khi verify thành công
+    public event Action<string>? OnVerifySuccess; // Truy?n email khi verify thï¿½nh cï¿½ng
     public event Action? OnBack;
 
     public VerifyInfoViewModel()
     {
         try
         {
-            _databaseService = new DatabaseService();
+            _databaseService = App.Services.GetRequiredService<DatabaseService>();
         }
         catch
         {
-            _databaseService = new DatabaseService();
+            _databaseService = App.Services.GetRequiredService<DatabaseService>();
         }
 
         VerifyCommand = new AsyncRelayCommand(ExecuteVerifyAsync, CanExecuteVerify);
@@ -78,7 +79,7 @@ public class VerifyInfoViewModel : BaseViewModel
     }
 
     /// <summary>
-    /// G?i m?i khi navigate d?n view này d? load/reload danh sách ch?c v?
+    /// G?i m?i khi navigate d?n view nï¿½y d? load/reload danh sï¿½ch ch?c v?
     /// </summary>
     public async Task ReloadChucVusAsync()
     {
@@ -93,7 +94,7 @@ public class VerifyInfoViewModel : BaseViewModel
             var chucVus = await _databaseService.GetChucVusAsync();
             System.Diagnostics.Debug.WriteLine($"LoadChucVusAsync: Got {chucVus.Count} items from DB");
 
-            // Ð?m b?o c?p nh?t ObservableCollection trên UI thread
+            // ï¿½?m b?o c?p nh?t ObservableCollection trï¿½n UI thread
             if (Application.Current?.Dispatcher != null && !Application.Current.Dispatcher.CheckAccess())
             {
                 Application.Current.Dispatcher.Invoke(() =>
@@ -118,7 +119,7 @@ public class VerifyInfoViewModel : BaseViewModel
 
             if (ChucVus.Count == 0)
             {
-                ErrorMessage = "Chua có d? li?u ch?c v?. Vui lòng thêm ch?c v? trong m?c Qu?n lý nhân viên.";
+                ErrorMessage = "Chua cï¿½ d? li?u ch?c v?. Vui lï¿½ng thï¿½m ch?c v? trong m?c Qu?n lï¿½ nhï¿½n viï¿½n.";
             }
             else
             {
@@ -127,7 +128,7 @@ public class VerifyInfoViewModel : BaseViewModel
         }
         catch (Exception ex)
         {
-            ErrorMessage = "Không t?i du?c danh sách ch?c v?. Vui lòng ki?m tra k?t n?i co s? d? li?u.";
+            ErrorMessage = "Khï¿½ng t?i du?c danh sï¿½ch ch?c v?. Vui lï¿½ng ki?m tra k?t n?i co s? d? li?u.";
             System.Diagnostics.Debug.WriteLine($"Error loading ChucVus: {ex.Message}");
             System.Diagnostics.Debug.WriteLine($"Error loading ChucVus Stack: {ex.StackTrace}");
         }
@@ -153,7 +154,7 @@ public class VerifyInfoViewModel : BaseViewModel
         {
             if (!NgaySinh.HasValue || SelectedChucVu == null)
             {
-                ErrorMessage = "Vui lòng nh?p d?y d? thông tin!";
+                ErrorMessage = "Vui lï¿½ng nh?p d?y d? thï¿½ng tin!";
                 return;
             }
 
@@ -166,7 +167,7 @@ public class VerifyInfoViewModel : BaseViewModel
             }
             else
             {
-                ErrorMessage = "Thông tin không chính xác!";
+                ErrorMessage = "Thï¿½ng tin khï¿½ng chï¿½nh xï¿½c!";
             }
         }
         catch (Exception ex)

@@ -3,6 +3,7 @@ using QuanLyKhoNguyenLieuPizza.Core.Commands;
 using QuanLyKhoNguyenLieuPizza.Core.Interfaces;
 using QuanLyKhoNguyenLieuPizza.Services;
 using QuanLyKhoNguyenLieuPizza.Utilities;
+using Microsoft.Extensions.DependencyInjection;
 
 namespace QuanLyKhoNguyenLieuPizza.ViewModels;
 
@@ -56,11 +57,11 @@ public class LoginViewModel : BaseViewModel
     {
         try
         {
-            _databaseService = new DatabaseService();
+            _databaseService = App.Services.GetRequiredService<DatabaseService>();
         }
         catch
         {
-            _databaseService = new DatabaseService();
+            _databaseService = App.Services.GetRequiredService<DatabaseService>();
         }
         
         _preferencesService = UserPreferencesService.Instance;

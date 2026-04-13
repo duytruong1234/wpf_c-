@@ -4,12 +4,12 @@ using System.Windows.Input;
 using QuanLyKhoNguyenLieuPizza.Models;
 using QuanLyKhoNguyenLieuPizza.Services;
 using QuanLyKhoNguyenLieuPizza.Core.Interfaces;
+using Microsoft.Extensions.DependencyInjection;
 
 namespace QuanLyKhoNguyenLieuPizza.ViewModels;
 
 public class PhieuNhapViewModel : BaseViewModel
 {
-    // ⚡ Sử dụng interface thay vì concrete class — dùng chung singleton từ ServiceLocator
     private readonly DatabaseService _databaseService;
 
     #region Thuộc tính
@@ -434,15 +434,7 @@ public class PhieuNhapViewModel : BaseViewModel
 
     public PhieuNhapViewModel()
     {
-        // ⚡ Dùng ServiceLocator thay vì new DatabaseService() — dùng chung singleton
-        try
-        {
-            _databaseService = new DatabaseService();
-        }
-        catch
-        {
-            _databaseService = new DatabaseService();
-        }
+        _databaseService = App.Services.GetRequiredService<DatabaseService>();
 
         // Phát hiện người dùng hiện tại là nhân viên kho
         var currentUser = CurrentUserSession.Instance.CurrentUser;

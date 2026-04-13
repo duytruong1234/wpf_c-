@@ -2,6 +2,7 @@
 using QuanLyKhoNguyenLieuPizza.Core.Commands;
 using QuanLyKhoNguyenLieuPizza.Core.Interfaces;
 using QuanLyKhoNguyenLieuPizza.Services;
+using Microsoft.Extensions.DependencyInjection;
 
 namespace QuanLyKhoNguyenLieuPizza.ViewModels;
 
@@ -116,11 +117,11 @@ public class ChangePasswordViewModel : BaseViewModel
     {
         try
         {
-            _databaseService = new DatabaseService();
+            _databaseService = App.Services.GetRequiredService<DatabaseService>();
         }
         catch
         {
-            _databaseService = new DatabaseService();
+            _databaseService = App.Services.GetRequiredService<DatabaseService>();
         }
 
         ChangePasswordCommand = new AsyncRelayCommand(ExecuteChangePasswordAsync, CanExecuteChangePassword);

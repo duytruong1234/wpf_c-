@@ -1,8 +1,9 @@
-using System.Collections.ObjectModel;
+﻿using System.Collections.ObjectModel;
 using System.Windows.Input;
 using QuanLyKhoNguyenLieuPizza.Core.Interfaces;
 using QuanLyKhoNguyenLieuPizza.Models;
 using QuanLyKhoNguyenLieuPizza.Services;
+using Microsoft.Extensions.DependencyInjection;
 
 namespace QuanLyKhoNguyenLieuPizza.ViewModels;
 
@@ -364,7 +365,7 @@ public class PhieuXuatViewModel : BaseViewModel
 
     public PhieuXuatViewModel()
     {
-        _databaseService = new DatabaseService();
+        _databaseService = App.Services.GetRequiredService<DatabaseService>();
 
         // Nhận biết người dùng hiện tại là nhân viên (không phải quản lý)
         var currentUser = CurrentUserSession.Instance.CurrentUser;

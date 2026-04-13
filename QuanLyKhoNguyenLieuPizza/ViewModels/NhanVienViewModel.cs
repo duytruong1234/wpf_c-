@@ -1,10 +1,11 @@
-using System.Collections.ObjectModel;
+﻿using System.Collections.ObjectModel;
 using System.IO;
 using System.Windows.Input;
 using Microsoft.Win32;
 using QuanLyKhoNguyenLieuPizza.Models;
 using QuanLyKhoNguyenLieuPizza.Core.Interfaces;
 using QuanLyKhoNguyenLieuPizza.Services;
+using Microsoft.Extensions.DependencyInjection;
 
 namespace QuanLyKhoNguyenLieuPizza.ViewModels;
 
@@ -450,7 +451,7 @@ public class NhanVienViewModel : BaseViewModel
 
     public NhanVienViewModel()
     {
-        _databaseService = new DatabaseService();
+        _databaseService = App.Services.GetRequiredService<DatabaseService>();
 
         LoadDataCommand = new AsyncRelayCommand(async _ => await LoadDataAsync());
         CreateNhanVienCommand = new RelayCommand(_ => OpenCreateDialog());

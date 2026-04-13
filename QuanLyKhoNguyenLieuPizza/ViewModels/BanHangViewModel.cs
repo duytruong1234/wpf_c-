@@ -1,10 +1,10 @@
-using System.Collections.ObjectModel;
+﻿using System.Collections.ObjectModel;
 using System.Windows;
 using System.Windows.Input;
 using QuanLyKhoNguyenLieuPizza.Core.Commands;
-using QuanLyKhoNguyenLieuPizza.Core.Interfaces;
 using QuanLyKhoNguyenLieuPizza.Models;
 using QuanLyKhoNguyenLieuPizza.Services;
+using Microsoft.Extensions.DependencyInjection;
 
 namespace QuanLyKhoNguyenLieuPizza.ViewModels;
 
@@ -34,7 +34,7 @@ public class CartItem : BaseViewModel
 
 public class BanHangViewModel : BaseViewModel
 {
-    private readonly IDatabaseService _db;
+    private readonly DatabaseService _db;
 
     // Trạng thái hiển thị
     private bool _isMainView = true;
@@ -257,7 +257,7 @@ public class BanHangViewModel : BaseViewModel
 
     public BanHangViewModel()
     {
-        _db = ServiceLocator.Instance.GetService<IDatabaseService>();
+        _db = App.Services.GetRequiredService<DatabaseService>();
 
         // Lệnh điều hướng
         ShowPOSCommand = new RelayCommand(_ => NavigateTo("POS"));
