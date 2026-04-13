@@ -83,6 +83,7 @@
                     </Border>
 
                     <!-- Khối xem trước giá (Thẻ tổng kết) -->
+
                     <Border Background="#EEF2FF" BorderBrush="#E0E7FF" BorderThickness="1" CornerRadius="12" Padding="16">
                         <StackPanel>
                             <Grid Margin="0,0,0,6">

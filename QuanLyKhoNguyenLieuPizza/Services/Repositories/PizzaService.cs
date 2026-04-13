@@ -489,20 +489,25 @@ public class PizzaService : DatabaseContext
 
             var sql = $@"
                 SELECT req.MaHangHoa,
+                       req.SizeID,
+                       req.MaDeBanh,
                        req.NguyenLieuID,
                        req.SoLuong,
                        req.DonViID,
                        req.TenNguyenLieu,
                        req.SoLuongTon
                 FROM (
-                    -- NguyÃªn liá»‡u nhÃ¢n bÃ¡nh
+                    -- Nguyên liệu nhân bánh
                     SELECT gs.MaHangHoa,
+                           gs.SizeID,
+                           gtd.MaDeBanh,
                            ctp.NguyenLieuID,
                            CAST(ctp.SoLuong AS decimal(18,4)) AS SoLuong,
                            ctp.DonViID,
                            nl.TenNguyenLieu,
                            ISNULL(tk.SoLuongTon, 0) AS SoLuongTon
                     FROM GiaTheo_Size gs
+                    INNER JOIN GiaTheo_De gtd ON gs.SizeID = gtd.SizeID
                     INNER JOIN CongThuc_Pizza ctp
                         ON gs.MaHangHoa = ctp.MaHangHoa
                        AND gs.SizeID = ctp.SizeID
@@ -514,8 +519,10 @@ public class PizzaService : DatabaseContext
 
                     UNION ALL
 
-                    -- NguyÃªn liá»‡u bá»™t theo size + Ä‘áº¿
+                    -- Nguyên liệu bột theo size + đế
                     SELECT gs.MaHangHoa,
+                           gs.SizeID,
+                           gtd.MaDeBanh,
                            botNl.NguyenLieuID,
                            CAST(qb.TrongLuongBot AS decimal(18,4)) AS SoLuong,
                            qb.DonViID,
@@ -532,8 +539,8 @@ public class PizzaService : DatabaseContext
                     CROSS APPLY (
                         SELECT TOP 1 nl.NguyenLieuID, nl.TenNguyenLieu
                         FROM NguyenLieu nl
-                        WHERE nl.TenNguyenLieu LIKE N'%Bá»™t mÃ¬%'
-                           OR nl.TenNguyenLieu LIKE N'%Bot mi%'
+                        WHERE (nl.TenNguyenLieu LIKE N'%Bột mì%'
+                           OR nl.TenNguyenLieu LIKE N'%Bot mi%')
                     ) botNl
                     LEFT JOIN TonKho tk
                         ON botNl.NguyenLieuID = tk.NguyenLieuID
@@ -541,8 +548,10 @@ public class PizzaService : DatabaseContext
 
                     UNION ALL
 
-                    -- NguyÃªn liá»‡u viá»n theo size + Ä‘áº¿
+                    -- Nguyên liệu viền theo size + đế
                     SELECT gs.MaHangHoa,
+                           gs.SizeID,
+                           gtd.MaDeBanh,
                            qv.NguyenLieuID,
                            CAST(qv.SoLuongVien AS decimal(18,4)) AS SoLuong,
                            qv.DonViID,
@@ -561,7 +570,7 @@ public class PizzaService : DatabaseContext
                     WHERE gs.MaHangHoa IN ({inClause})
                 ) req";
 
-            var rows = new List<(string MaHangHoa, int NguyenLieuId, decimal Required, int? DonViId, string TenNguyenLieu, decimal SoLuongTon)>();
+            var rows = new List<(string MaHangHoa, string SizeID, string MaDeBanh, int NguyenLieuId, decimal Required, int? DonViId, string TenNguyenLieu, decimal SoLuongTon)>();
 
             using var cmd = CreateCommand(sql, conn);
             cmd.Parameters.AddRange(parameters);
@@ -572,17 +581,23 @@ public class PizzaService : DatabaseContext
                 {
                     rows.Add((
                         reader.GetString(0),
-                        reader.GetInt32(1),
-                        reader.IsDBNull(2) ? 0m : reader.GetDecimal(2),
-                        reader.IsDBNull(3) ? null : reader.GetInt32(3),
-                        reader.IsDBNull(4) ? string.Empty : reader.GetString(4),
-                        reader.IsDBNull(5) ? 0m : reader.GetDecimal(5)));
+                        reader.GetString(1),
+                        reader.GetString(2),
+                        reader.GetInt32(3),
+                        reader.IsDBNull(4) ? 0m : reader.GetDecimal(4),
+                        reader.IsDBNull(5) ? null : reader.GetInt32(5),
+                        reader.IsDBNull(6) ? string.Empty : reader.GetString(6),
+                        reader.IsDBNull(7) ? 0m : reader.GetDecimal(7)));
                 }
             }
 
             var unitContextCache = new Dictionary<int, IngredientUnitContext>();
             var unitNameCache = new Dictionary<int, string>();
             var missingMap = new Dictionary<string, HashSet<string>>(StringComparer.OrdinalIgnoreCase);
+
+            var comboReqs = new Dictionary<string, Dictionary<int, decimal>>();
+            var nguyenLieuInfo = new Dictionary<int, (string Name, decimal Stock)>();
+            var comboMaHangHoa = new Dictionary<string, string>(); // To trace "MaHangHoa|SizeID|MaDeBanh" -> MaHangHoa
 
             foreach (var row in rows)
             {
@@ -592,28 +607,49 @@ public class PizzaService : DatabaseContext
                 try
                 {
                     var normalizedRequired = await ConvertAmountToStockUnitAsync(
-                        conn,
-                        null,
-                        row.NguyenLieuId,
-                        row.Required,
-                        row.DonViId,
-                        unitContextCache,
-                        unitNameCache);
+                        conn, null, row.NguyenLieuId, row.Required, row.DonViId, unitContextCache, unitNameCache);
 
-                    if (normalizedRequired > row.SoLuongTon)
+                    var key = $"{row.MaHangHoa}|{row.SizeID}|{row.MaDeBanh}";
+                    comboMaHangHoa[key] = row.MaHangHoa;
+
+                    if (!comboReqs.TryGetValue(key, out var reqList))
                     {
-                        if (!missingMap.TryGetValue(row.MaHangHoa, out var missingIngredients))
-                        {
-                            missingIngredients = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
-                            missingMap[row.MaHangHoa] = missingIngredients;
-                        }
-
-                        missingIngredients.Add(row.TenNguyenLieu);
+                        reqList = new Dictionary<int, decimal>();
+                        comboReqs[key] = reqList;
                     }
+
+                    if (!reqList.ContainsKey(row.NguyenLieuId))
+                        reqList[row.NguyenLieuId] = 0;
+                    
+                    reqList[row.NguyenLieuId] += normalizedRequired;
+                    nguyenLieuInfo[row.NguyenLieuId] = (row.TenNguyenLieu, row.SoLuongTon);
                 }
                 catch (Exception ex)
                 {
                     System.Diagnostics.Debug.WriteLine($"Skip stock pre-check for '{row.TenNguyenLieu}': {ex.Message}");
+                }
+            }
+
+            // Check each combination against stock
+            foreach (var kvp in comboReqs)
+            {
+                var maHangHoa = comboMaHangHoa[kvp.Key];
+                foreach (var req in kvp.Value)
+                {
+                    var nlId = req.Key;
+                    var totalRequired = req.Value;
+                    var info = nguyenLieuInfo[nlId];
+
+                    if (totalRequired > info.Stock)
+                    {
+                        if (!missingMap.TryGetValue(maHangHoa, out var missingIngredients))
+                        {
+                            missingIngredients = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
+                            missingMap[maHangHoa] = missingIngredients;
+                        }
+
+                        missingIngredients.Add(info.Name);
+                    }
                 }
             }
 

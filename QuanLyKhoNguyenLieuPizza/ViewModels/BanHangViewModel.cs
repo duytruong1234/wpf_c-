@@ -591,6 +591,11 @@ public class BanHangViewModel : BaseViewModel
             }).ToList();
 
             var savedMa = await _db.SavePhieuBanHangAsync(phieuBan, chiTiets);
+            
+            // Tắt hiệu ứng loading trước khi hiển thị popup
+            IsLoading = false;
+            await Task.Delay(150); // Đợi WPF cập nhật giao diện (ẩn overlay)
+
             if (!string.IsNullOrEmpty(savedMa))
             {
                 var successMsg = new Wpf.Ui.Controls.MessageBox
@@ -623,6 +628,9 @@ public class BanHangViewModel : BaseViewModel
         }
         catch (Exception ex)
         {
+            IsLoading = false;
+            await Task.Delay(150);
+            
             var catchMsg = new Wpf.Ui.Controls.MessageBox
             {
                 Title = "Lỗi",

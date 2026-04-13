@@ -732,8 +732,31 @@ public class BanHangService : DatabaseContext
                 var insufficient = await GetInsufficientIngredientsAsync(conn, transaction, requiredMap);
                 if (insufficient.Count > 0)
                 {
-                    var message = "Không đủ nguyên liệu: " +
-                                  string.Join(", ", insufficient.Select(i => $"{i.Name} (còn {i.Available:N2})"));
+                    var details = new List<string>();
+                    var hasFlourShortage = false;
+
+                    foreach (var item in insufficient)
+                    {
+                        var unitContext = await GetIngredientUnitContextAsync(conn, transaction, item.Id, unitContextCache);
+                        var unitSuffix = string.IsNullOrWhiteSpace(unitContext.StockUnitName)
+                            ? string.Empty
+                            : $" {unitContext.StockUnitName}";
+
+                        details.Add($"{item.Name} (cần {item.Required:N2}{unitSuffix}, còn {item.Available:N2}{unitSuffix})");
+
+                        if (item.Name.Contains("bột mì", StringComparison.CurrentCultureIgnoreCase) ||
+                            item.Name.Contains("bot mi", StringComparison.CurrentCultureIgnoreCase))
+                        {
+                            hasFlourShortage = true;
+                        }
+                    }
+
+                    var message = "Không đủ nguyên liệu: " + string.Join(", ", details);
+                    if (hasFlourShortage)
+                    {
+                        message += ". Lưu ý: Bột mì được tính thêm từ quy định bột theo size/đế bánh, không chỉ từ công thức topping.";
+                    }
+
                     throw new Exception(message);
                 }
             }
