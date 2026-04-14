@@ -774,8 +774,8 @@
 
                     <Grid Grid.Row="2">
                         <Grid.ColumnDefinitions>
-                            <ColumnDefinition Width="1.2*"/>
-                            <ColumnDefinition Width="*"/>
+                            <ColumnDefinition Width="0.9*"/>
+                            <ColumnDefinition Width="1.3*"/>
                         </Grid.ColumnDefinitions>
 
                         <Border Grid.Column="0" Background="{StaticResource LightBlue}" CornerRadius="20" Padding="20" Margin="0,0,16,0">
@@ -921,7 +921,7 @@
                                                         
                                                         <DatePicker Grid.Column="3" SelectedDate="{Binding HSD, Mode=TwoWay}" 
                                                                     BorderThickness="0" Background="Transparent" FontSize="11" 
-                                                                    VerticalAlignment="Center" HorizontalAlignment="Center" Language="vi-VN"/>
+                                                                    VerticalAlignment="Center" HorizontalAlignment="Stretch" Language="vi-VN"/>
                                                         
                                                         <TextBlock Grid.Column="4" Text="{Binding ThanhTien, StringFormat='{}{0:N0} đ'}" Style="{StaticResource TableCellStyle}" Foreground="{StaticResource Gray800}" FontWeight="SemiBold"/>
 
@@ -1031,8 +1031,8 @@
 
                     <Grid Grid.Row="2">
                         <Grid.ColumnDefinitions>
-                            <ColumnDefinition Width="1.2*"/>
-                            <ColumnDefinition Width="*"/>
+                            <ColumnDefinition Width="0.9*"/>
+                            <ColumnDefinition Width="1.3*"/>
                         </Grid.ColumnDefinitions>
 
                         <Border Grid.Column="0" Background="#F4F7FB" CornerRadius="20" Padding="20" Margin="0,0,16,0">
@@ -1181,7 +1181,7 @@
 
                                                         <DatePicker Grid.Column="3" SelectedDate="{Binding HSD, Mode=TwoWay}" 
                                                                     BorderThickness="0" Background="Transparent" FontSize="11" 
-                                                                    VerticalAlignment="Center" HorizontalAlignment="Center" Language="vi-VN"/>
+                                                                    VerticalAlignment="Center" HorizontalAlignment="Stretch" Language="vi-VN"/>
 
                                                         <TextBlock Grid.Column="4" Text="{Binding ThanhTien, StringFormat='{}{0:N0} đ'}" FontSize="12" Foreground="{StaticResource Gray800}" FontWeight="SemiBold"
                                                                    VerticalAlignment="Center" HorizontalAlignment="Center"/>

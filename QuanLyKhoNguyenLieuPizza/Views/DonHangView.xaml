@@ -367,25 +367,43 @@
                                             </Border>
 
                                             <!-- Thao tác -->
-                                            <Button Grid.Column="5" Command="{Binding DataContext.ViewDetailCommand, RelativeSource={RelativeSource AncestorType=ItemsControl}}"
-                                                    CommandParameter="{Binding}" Cursor="Hand" VerticalAlignment="Center" HorizontalAlignment="Center"
-                                                    ToolTip="Xem chi tiết đơn hàng">
-                                                <Button.Template>
-                                                    <ControlTemplate TargetType="Button">
-                                                        <Border x:Name="btnBorder" Background="{StaticResource LightBlue}" CornerRadius="10" Padding="12,7">
-                                                            <StackPanel Orientation="Horizontal">
+                                            <StackPanel Grid.Column="5" Orientation="Horizontal" HorizontalAlignment="Center" VerticalAlignment="Center">
+                                                <Button Command="{Binding DataContext.ViewDetailCommand, RelativeSource={RelativeSource AncestorType=ItemsControl}}"
+                                                        CommandParameter="{Binding}" Cursor="Hand" Margin="0,0,6,0"
+                                                        ToolTip="Xem chi tiết đơn hàng">
+                                                    <Button.Template>
+                                                        <ControlTemplate TargetType="Button">
+                                                            <Border x:Name="btnBorder" Background="{StaticResource LightBlue}" CornerRadius="10" Padding="8,7" Width="36">
                                                                 <ui:SymbolIcon x:Name="btnIcon" Symbol="Eye24" FontSize="13" Foreground="{StaticResource PrimaryBlue}" HorizontalAlignment="Center" VerticalAlignment="Center"/>
-                                                            </StackPanel>
-                                                        </Border>
-                                                        <ControlTemplate.Triggers>
-                                                            <Trigger Property="IsMouseOver" Value="True">
-                                                                <Setter TargetName="btnBorder" Property="Background" Value="{StaticResource PrimaryBlue}"/>
-                                                                <Setter TargetName="btnIcon" Property="Foreground" Value="White"/>
-                                                            </Trigger>
-                                                        </ControlTemplate.Triggers>
-                                                    </ControlTemplate>
-                                                </Button.Template>
-                                            </Button>
+                                                            </Border>
+                                                            <ControlTemplate.Triggers>
+                                                                <Trigger Property="IsMouseOver" Value="True">
+                                                                    <Setter TargetName="btnBorder" Property="Background" Value="{StaticResource PrimaryBlue}"/>
+                                                                    <Setter TargetName="btnIcon" Property="Foreground" Value="White"/>
+                                                                </Trigger>
+                                                            </ControlTemplate.Triggers>
+                                                        </ControlTemplate>
+                                                    </Button.Template>
+                                                </Button>
+                                                
+                                                <Button Command="{Binding DataContext.DeleteDonHangCommand, RelativeSource={RelativeSource AncestorType=ItemsControl}}"
+                                                        CommandParameter="{Binding}" Cursor="Hand"
+                                                        ToolTip="Xóa đơn hàng">
+                                                    <Button.Template>
+                                                        <ControlTemplate TargetType="Button">
+                                                            <Border x:Name="btnDelBorder" Background="{StaticResource DangerRedLight}" CornerRadius="10" Padding="8,7" Width="36">
+                                                                <ui:SymbolIcon x:Name="btnDelIcon" Symbol="Delete24" FontSize="13" Foreground="{StaticResource DangerRed}" HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                                                            </Border>
+                                                            <ControlTemplate.Triggers>
+                                                                <Trigger Property="IsMouseOver" Value="True">
+                                                                    <Setter TargetName="btnDelBorder" Property="Background" Value="{StaticResource DangerRed}"/>
+                                                                    <Setter TargetName="btnDelIcon" Property="Foreground" Value="White"/>
+                                                                </Trigger>
+                                                            </ControlTemplate.Triggers>
+                                                        </ControlTemplate>
+                                                    </Button.Template>
+                                                </Button>
+                                            </StackPanel>
                                         </Grid>
                                     </Border>
                                 </DataTemplate>
@@ -697,6 +715,107 @@
                     </Border>
                 </Grid>
             </Border>
+        </Grid>
+        <!-- DELETE CONFIRMATION OVERLAY -->
+        <Grid Visibility="{Binding IsDeleteDialogOpen, Converter={StaticResource BoolToVisibilityConverter}}" Panel.ZIndex="100">
+            <Border Background="#66111827">
+                <Border.InputBindings>
+                    <MouseBinding MouseAction="LeftClick" Command="{Binding CloseDeleteDialogCommand}"/>
+                </Border.InputBindings>
+            </Border>
+            <Grid VerticalAlignment="Center" HorizontalAlignment="Center">
+                <Border Background="White" Width="400" CornerRadius="20" Padding="0">
+                    <Border.Effect>
+                        <DropShadowEffect BlurRadius="40" ShadowDepth="8" Direction="270" Color="Black" Opacity="0.18"/>
+                    </Border.Effect>
+                    <StackPanel>
+                        <!-- Icon -->
+                        <Border Width="72" Height="72" CornerRadius="36" Background="#FEE2E2" HorizontalAlignment="Center" Margin="0,32,0,16">
+                            <Border Width="50" Height="50" CornerRadius="25" Background="#FECACA" HorizontalAlignment="Center" VerticalAlignment="Center">
+                                <TextBlock Text="🗑️" FontSize="24" HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                            </Border>
+                        </Border>
+                        
+                        <!-- Title -->
+                        <TextBlock Text="Xóa đơn hàng" FontSize="20" FontWeight="Bold" Foreground="#1E293B" HorizontalAlignment="Center" Margin="32,0,32,12"/>
+                        
+                        <!-- Message -->
+                        <TextBlock FontSize="13" Foreground="#64748B" TextWrapping="Wrap" TextAlignment="Center" MaxWidth="340" LineHeight="20" Margin="32,0,32,28" HorizontalAlignment="Center">
+                            <Run Text="Bạn có chắc chắn muốn xóa đơn hàng "/>
+                            <Run Text="{Binding DeletingDonHang.MaDonHang}" FontWeight="Bold" Foreground="#1E293B"/>
+                            <Run Text=" không?"/><LineBreak/>
+                            <Run Text="Hành động này sẽ cập nhật lại số lượng hàng hóa và không thể hoàn tác."/>
+                        </TextBlock>
+                        
+                        <!-- Buttons -->
+                        <Grid Margin="32,0,32,28" Height="44">
+                            <Grid.ColumnDefinitions>
+                                <ColumnDefinition Width="*"/>
+                                <ColumnDefinition Width="16"/>
+                                <ColumnDefinition Width="*"/>
+                            </Grid.ColumnDefinitions>
+                            
+                            <Button Grid.Column="0" Command="{Binding CloseDeleteDialogCommand}" Cursor="Hand" HorizontalAlignment="Stretch" VerticalAlignment="Stretch">
+                                <Button.Template>
+                                    <ControlTemplate TargetType="Button">
+                                        <Border x:Name="cancelBorder" Background="#F1F5F9" CornerRadius="12" BorderBrush="#E2E8F0" BorderThickness="1" HorizontalAlignment="Stretch" VerticalAlignment="Stretch">
+                                            <TextBlock Text="Hủy bỏ" FontSize="14" FontWeight="SemiBold" Foreground="#64748B" HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                                        </Border>
+                                        <ControlTemplate.Triggers>
+                                            <Trigger Property="IsMouseOver" Value="True">
+                                                <Setter TargetName="cancelBorder" Property="Background" Value="#E2E8F0"/>
+                                            </Trigger>
+                                        </ControlTemplate.Triggers>
+                                    </ControlTemplate>
+                                </Button.Template>
+                            </Button>
+                            
+                            <Button Grid.Column="2" Command="{Binding ConfirmDeleteDonHangCommand}" Cursor="Hand" HorizontalAlignment="Stretch" VerticalAlignment="Stretch">
+                                <Button.Template>
+                                    <ControlTemplate TargetType="Button">
+                                        <Border x:Name="deleteBorder" CornerRadius="12" HorizontalAlignment="Stretch" VerticalAlignment="Stretch">
+                                            <Border.Background>
+                                                <LinearGradientBrush StartPoint="0,0" EndPoint="1,0">
+                                                    <GradientStop Color="#EF4444" Offset="0"/>
+                                                    <GradientStop Color="#DC2626" Offset="1"/>
+                                                </LinearGradientBrush>
+                                            </Border.Background>
+                                            <Border.Effect>
+                                                <DropShadowEffect BlurRadius="12" ShadowDepth="2" Direction="270" Color="#EF4444" Opacity="0.3"/>
+                                            </Border.Effect>
+                                            <StackPanel Orientation="Horizontal" HorizontalAlignment="Center" VerticalAlignment="Center">
+                                                <TextBlock Text="🗑" FontSize="13" Foreground="White" Margin="0,0,8,0" VerticalAlignment="Center"/>
+                                                <TextBlock Text="Xóa" FontSize="14" FontWeight="SemiBold" Foreground="White" VerticalAlignment="Center"/>
+                                            </StackPanel>
+                                        </Border>
+                                        <ControlTemplate.Triggers>
+                                            <Trigger Property="IsMouseOver" Value="True">
+                                                <Setter TargetName="deleteBorder" Property="Opacity" Value="0.9"/>
+                                            </Trigger>
+                                        </ControlTemplate.Triggers>
+                                    </ControlTemplate>
+                                </Button.Template>
+                            </Button>
+                        </Grid>
+                    </StackPanel>
+                </Border>
+                
+                <!-- Close Button -->
+                <Button Command="{Binding CloseDeleteDialogCommand}" HorizontalAlignment="Right" VerticalAlignment="Top" Margin="0,16,16,0" Cursor="Hand" Width="30" Height="30" Padding="0">
+                    <Button.Template>
+                        <ControlTemplate TargetType="Button">
+                            <Border x:Name="closeBg" Background="#E2E8F0" CornerRadius="15">
+                                <TextBlock Text="✕" FontSize="14" Foreground="#64748B" HorizontalAlignment="Center" VerticalAlignment="Center" Margin="0,0,0,2"/>
+                            </Border>
+                            <ControlTemplate.Triggers>
+                                <Trigger Property="IsMouseOver" Value="True">
+                                    <Setter TargetName="closeBg" Property="Background" Value="#CBD5E1"/>
+                                </Trigger>
+                            </ControlTemplate.Triggers>
+                        </ControlTemplate>
+                    </Button.Template>
+                </Button>
+            </Grid>
         </Grid>
     </Grid>
 </UserControl>

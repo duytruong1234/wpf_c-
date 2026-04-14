@@ -12,15 +12,15 @@ public class DeleteConfirmWindow : Window
 
     public DeleteConfirmWindow(string title, string message)
     {
+        Style = null; // Xóa style mặc định (Wpf.Ui) để tránh bị padding/margin sai lệch form
+
         var owner = Application.Current?.MainWindow;
         if (owner != null)
         {
             Owner = owner;
             Width = owner.ActualWidth;
             Height = owner.ActualHeight;
-            Top = owner.Top;
-            Left = owner.Left;
-            WindowStartupLocation = WindowStartupLocation.Manual;
+            WindowStartupLocation = WindowStartupLocation.CenterOwner;
         }
         else
         {
@@ -185,7 +185,7 @@ public class DeleteConfirmWindow : Window
             Cursor = Cursors.Hand,
             HorizontalAlignment = HorizontalAlignment.Right,
             VerticalAlignment = VerticalAlignment.Top,
-            Margin = new Thickness(0, -16, -16, 0)
+            Margin = new Thickness(0, 16, 16, 0)
         };
         closeButton.SetResourceReference(StyleProperty, "CircularCloseButtonStyle");
         closeButton.Click += (s, e) => { Result = false; DialogResult = false; };

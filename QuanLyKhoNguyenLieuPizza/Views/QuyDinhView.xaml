@@ -141,9 +141,8 @@
                                 <StackPanel Grid.Column="2">
                                     <TextBlock Text="Loại cốt bánh" Style="{StaticResource FieldLabel}"/>
                                     <Border Background="White" BorderBrush="{StaticResource Border}" BorderThickness="1" CornerRadius="10" Padding="12,10" Height="40">
-                                        <ComboBox ItemsSource="{Binding DeBanhs}" 
-                                                  SelectedItem="{Binding BotSelectedDe}"
-                                                  DisplayMemberPath="LoaiCotBanh"
+                                        <ComboBox ItemsSource="{Binding LoaiCotBanhs}" 
+                                                  SelectedItem="{Binding BotSelectedLoaiCotBanh}"
                                                   BorderThickness="0" Background="Transparent" FontSize="13" Padding="0"/>
                                     </Border>
                                 </StackPanel>

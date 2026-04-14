@@ -1,4 +1,4 @@
-﻿using System.Collections.ObjectModel;
+using System.Collections.ObjectModel;
 using System.Windows.Input;
 using QuanLyKhoNguyenLieuPizza.Core.Interfaces;
 using QuanLyKhoNguyenLieuPizza.Models;
@@ -647,12 +647,75 @@ public class PhieuXuatViewModel : BaseViewModel
 
         IsCreateMode = false;
         
-        var chiTiets = await _databaseService.GetChiTietPhieuXuatAsync(SelectedPhieuXuat.PhieuXuatID);
-        ChiTietForm = new ObservableCollection<CT_PhieuXuat>(chiTiets);
-        
-        // Tải lại nguyên liệu
+        // Tải lại nguyên liệu trước
         var nguyenLieus = await _databaseService.GetNguyenLieusWithTonKhoAsync();
         NguyenLieus = new ObservableCollection<NguyenLieu>(nguyenLieus);
+
+        var chiTiets = await _databaseService.GetChiTietPhieuXuatAsync(SelectedPhieuXuat.PhieuXuatID);
+        
+        // Tái tạo lại tham chiếu NguyenLieu và DonViOptions cho form
+        foreach (var ct in chiTiets)
+        {
+            var matchingNl = NguyenLieus.FirstOrDefault(n => n.NguyenLieuID == ct.NguyenLieuID);
+            if (matchingNl != null)
+            {
+                ct.NguyenLieu = matchingNl;
+                
+                var donViOptions = new System.Collections.ObjectModel.ObservableCollection<DonViOption>();
+                var defaultOption = new DonViOption
+                {
+                    DonViID = matchingNl.DonViID ?? 0,
+                    TenDonVi = matchingNl.DonViTinh?.TenDonVi ?? "",
+                    HeSo = 1
+                };
+
+                try
+                {
+                    var quyDois = await _databaseService.GetQuyDoiDonVisAsync(matchingNl.NguyenLieuID);
+                    var donViXuat = quyDois.FirstOrDefault(q => q.LaDonViChuan);
+                    if (donViXuat != null)
+                    {
+                        defaultOption = new DonViOption
+                        {
+                            DonViID = donViXuat.DonViID ?? 0,
+                            TenDonVi = donViXuat.DonViTinh?.TenDonVi ?? "",
+                            HeSo = donViXuat.HeSo
+                        };
+                    }
+
+                    donViOptions.Add(defaultOption);
+                    foreach (var qd in quyDois)
+                    {
+                        if (qd.DonViID == defaultOption.DonViID) continue;
+                        donViOptions.Add(new DonViOption
+                        {
+                            DonViID = qd.DonViID ?? 0,
+                            TenDonVi = qd.DonViTinh?.TenDonVi ?? "",
+                            HeSo = qd.HeSo
+                        });
+                    }
+                }
+                catch
+                {
+                    if (!donViOptions.Any()) donViOptions.Add(defaultOption);
+                }
+
+                ct.DonViOptions = donViOptions;
+                var currentDonViOption = donViOptions.FirstOrDefault(d => d.DonViID == ct.DonViID);
+                if (currentDonViOption != null)
+                {
+                    ct.SelectedDonVi = currentDonViOption;
+                }
+                else
+                {
+                    ct.SelectedDonVi = defaultOption;
+                    ct.DonViID = defaultOption.DonViID;
+                    ct.HeSo = defaultOption.HeSo;
+                }
+            }
+        }
+        
+        ChiTietForm = new ObservableCollection<CT_PhieuXuat>(chiTiets);
         
         IsDetailDialogOpen = false;
         IsDialogOpen = true;
@@ -744,7 +807,10 @@ public class PhieuXuatViewModel : BaseViewModel
         foreach (var group in chiTietGroups)
         {
             var firstItem = group.First();
-            var tonKhoHienTai = firstItem.NguyenLieu?.TonKho?.SoLuongTon ?? 0;
+            
+            // Tìm kiếm đối tượng NguyenLieu có chứa Tồn Kho mới nhất 
+            var nl = NguyenLieus.FirstOrDefault(n => n.NguyenLieuID == firstItem.NguyenLieuID) ?? firstItem.NguyenLieu;
+            var tonKhoHienTai = nl?.TonKho?.SoLuongTon ?? 0;
 
             // Tìm hệ số của đơn vị chuẩn (đơn vị lưu tồn kho)
             decimal donViChuanHeSo = 1m;
@@ -762,7 +828,7 @@ public class PhieuXuatViewModel : BaseViewModel
             if (tongSoLuongChuanHoa > tonKhoHienTai)
             {
                 System.Windows.MessageBox.Show(
-                    $"Số lượng xuất của '{firstItem.NguyenLieu?.TenNguyenLieu}' ({tongSoLuongChuanHoa:N2} {firstItem.NguyenLieu?.DonViTinh?.TenDonVi}) đang vượt mức tồn kho hiện tại ({tonKhoHienTai:N2} {firstItem.NguyenLieu?.DonViTinh?.TenDonVi}).\nVui lòng kiểm tra và điều chỉnh lại!", 
+                    $"Số lượng xuất của '{nl?.TenNguyenLieu}' ({tongSoLuongChuanHoa:N2} {nl?.DonViTinh?.TenDonVi}) đang vượt mức tồn kho hiện tại ({tonKhoHienTai:N2} {nl?.DonViTinh?.TenDonVi}).\nVui lòng kiểm tra và điều chỉnh lại!", 
                     "Cảnh báo tồn kho", 
                     System.Windows.MessageBoxButton.OK, 
                     System.Windows.MessageBoxImage.Warning);

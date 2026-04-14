@@ -1,4 +1,4 @@
-﻿using System.Windows.Input;
+using System.Windows.Input;
 using QuanLyKhoNguyenLieuPizza.Core.Commands;
 using QuanLyKhoNguyenLieuPizza.Core.Interfaces;
 using QuanLyKhoNguyenLieuPizza.Services;
@@ -157,10 +157,10 @@ public class ChangePasswordViewModel : BaseViewModel
         PasswordStrength = strength;
         PasswordStrengthText = strength switch
         {
-            1 => "Yáº¿u",
+            1 => "Yếu",
             2 => "Trung bình",
-            3 => "Máº¡nh",
-            4 => "R?t Máº¡nh",
+            3 => "Mạnh",
+            4 => "Rất mạnh",
             _ => string.Empty
         };
     }
@@ -173,7 +173,7 @@ public class ChangePasswordViewModel : BaseViewModel
         if (ShowPasswordMatch)
         {
             PasswordsMatch = NewPassword == ConfirmPassword;
-            PasswordMatchText = PasswordsMatch ? "Máº­t kháº©u khá»›p" : "Máº­t kháº©u khÃ´ng khá»›p";
+            PasswordMatchText = PasswordsMatch ? "Mật khẩu khớp" : "Mật khẩu không khớp";
         }
     }
 
@@ -195,7 +195,7 @@ public class ChangePasswordViewModel : BaseViewModel
         {
             if (string.IsNullOrEmpty(Email))
             {
-                ErrorMessage = "Email không h?p l?!";
+                ErrorMessage = "Email không hợp lệ!";
                 return;
             }
 
@@ -207,7 +207,7 @@ public class ChangePasswordViewModel : BaseViewModel
             }
             else
             {
-                ErrorMessage = "Không th? d?i m?t kh?u. Vui lòng th? Lá»—i!";
+                ErrorMessage = "Không thể đổi mật khẩu. Vui lòng thử lại!";
             }
         }
         catch (Exception ex)

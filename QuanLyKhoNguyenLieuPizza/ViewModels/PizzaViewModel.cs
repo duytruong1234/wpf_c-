@@ -524,15 +524,41 @@ public class PizzaViewModel : BaseViewModel
 
     private async Task SaveAsync()
     {
+        // Validate tất cả các trường bắt buộc
+        var errors = new System.Collections.Generic.List<string>();
+
+        if (string.IsNullOrWhiteSpace(FormMaPizza))
+            errors.Add("Mã món ăn");
         if (string.IsNullOrWhiteSpace(FormTenPizza))
-        {
-            return;
-        }
+            errors.Add("Tên món ăn");
+        if (FormLoaiMonAn == null)
+            errors.Add("Loại món ăn");
+        if (FormDonViTinh == null)
+            errors.Add("Đơn vị tính");
+        if (string.IsNullOrWhiteSpace(FormKichThuoc))
+            errors.Add("Kích thước");
 
         decimal giaBan = 0;
-        if (!string.IsNullOrWhiteSpace(FormGiaBan))
+        if (string.IsNullOrWhiteSpace(FormGiaBan))
         {
-            decimal.TryParse(FormGiaBan.Replace(",", "").Replace(".", ""), out giaBan);
+            errors.Add("Giá bán");
+        }
+        else if (!decimal.TryParse(FormGiaBan.Replace(",", "").Replace(".", ""), out giaBan) || giaBan <= 0)
+        {
+            errors.Add("Giá bán (phải là số lớn hơn 0)");
+        }
+
+        if (string.IsNullOrWhiteSpace(FormHinhAnh))
+            errors.Add("Hình ảnh");
+
+        if (errors.Count > 0)
+        {
+            System.Windows.MessageBox.Show(
+                $"Vui lòng điền đầy đủ các trường bắt buộc:\n• {string.Join("\n• ", errors)}",
+                "Thiếu thông tin",
+                System.Windows.MessageBoxButton.OK,
+                System.Windows.MessageBoxImage.Warning);
+            return;
         }
 
         var pizza = new Pizza

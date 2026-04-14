@@ -1,4 +1,4 @@
-﻿using System.Collections.ObjectModel;
+using System.Collections.ObjectModel;
 using System.Windows.Input;
 using QuanLyKhoNguyenLieuPizza.Models;
 using QuanLyKhoNguyenLieuPizza.Services;
@@ -468,13 +468,24 @@ public class NguyenLieuViewModel : BaseViewModel
     
     private async Task SaveAsync()
     {
-        // Validate tất cả trường bắt buộc (trừ mã và hình ảnh)
-        if (string.IsNullOrWhiteSpace(FormTenNguyenLieu) ||
-            FormLoaiNguyenLieu == null ||
-            FormDonViTinh == null)
+        // Validate tất cả trường bắt buộc
+        var errors = new System.Collections.Generic.List<string>();
+
+        if (string.IsNullOrWhiteSpace(FormMaNguyenLieu))
+            errors.Add("Mã nguyên liệu");
+        if (string.IsNullOrWhiteSpace(FormTenNguyenLieu))
+            errors.Add("Tên nguyên liệu");
+        if (string.IsNullOrWhiteSpace(FormHinhAnh))
+            errors.Add("Hình ảnh");
+        if (FormLoaiNguyenLieu == null)
+            errors.Add("Loại nguyên liệu");
+        if (FormDonViTinh == null)
+            errors.Add("Đơn vị tính");
+
+        if (errors.Count > 0)
         {
             System.Windows.MessageBox.Show(
-                "Vui lòng nhập đầy đủ các trường bắt buộc (*)",
+                $"Vui lòng điền đầy đủ các trường bắt buộc:\n• {string.Join("\n• ", errors)}",
                 "Thiếu thông tin",
                 System.Windows.MessageBoxButton.OK,
                 System.Windows.MessageBoxImage.Warning);

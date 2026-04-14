@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Collections.ObjectModel;
 using System.Linq;
 using System.Threading.Tasks;
@@ -18,15 +18,19 @@ public class QuyDinhViewModel : BaseViewModel
 
     public ObservableCollection<DoanhMuc_Size> Sizes { get; } = new();
     public ObservableCollection<DoanhMuc_De> DeBanhs { get; } = new();
+    public ObservableCollection<string> LoaiCotBanhs { get; } = new();
     public ObservableCollection<DonViTinh> DonVis { get; } = new();
     public ObservableCollection<NguyenLieu> NguyenLieus { get; } = new();
+
+    private QuyDinh_Bot? _editingBot;
+    private QuyDinh_Vien? _editingVien;
 
     // Form Quy Ð?nh B?t
     private DoanhMuc_Size? _botSelectedSize;
     public DoanhMuc_Size? BotSelectedSize { get => _botSelectedSize; set => SetProperty(ref _botSelectedSize, value); }
     
-    private DoanhMuc_De? _botSelectedDe;
-    public DoanhMuc_De? BotSelectedDe { get => _botSelectedDe; set => SetProperty(ref _botSelectedDe, value); }
+    private string _botSelectedLoaiCotBanh = string.Empty;
+    public string BotSelectedLoaiCotBanh { get => _botSelectedLoaiCotBanh; set => SetProperty(ref _botSelectedLoaiCotBanh, value); }
 
     private string _botTrongLuong = string.Empty;
     public string BotTrongLuong { get => _botTrongLuong; set => SetProperty(ref _botTrongLuong, value); }
@@ -92,7 +96,15 @@ public class QuyDinhViewModel : BaseViewModel
 
         var des = await _databaseService.GetDoanhMucDesAsync();
         DeBanhs.Clear();
-        foreach (var d in des) DeBanhs.Add(d);
+        LoaiCotBanhs.Clear();
+        foreach (var d in des)
+        {
+            DeBanhs.Add(d);
+            if (!string.IsNullOrWhiteSpace(d.LoaiCotBanh) && !LoaiCotBanhs.Contains(d.LoaiCotBanh))
+            {
+                LoaiCotBanhs.Add(d.LoaiCotBanh);
+            }
+        }
 
         var donvis = await _databaseService.GetDonViTinhsAsync();
         DonVis.Clear();
@@ -125,32 +137,53 @@ public class QuyDinhViewModel : BaseViewModel
     private void ClearBotForm()
     {
         BotSelectedSize = null;
-        BotSelectedDe = null;
+        BotSelectedLoaiCotBanh = string.Empty;
         BotTrongLuong = string.Empty;
         BotSelectedDonVi = null;
+        _editingBot = null;
     }
 
     private void EditBot(QuyDinh_Bot item)
     {
+        _editingBot = item;
         BotSelectedSize = Sizes.FirstOrDefault(s => s.SizeID == item.SizeID);
-        BotSelectedDe = DeBanhs.FirstOrDefault(d => d.LoaiCotBanh == item.LoaiCotBanh);
+        BotSelectedLoaiCotBanh = item.LoaiCotBanh;
         BotTrongLuong = item.TrongLuongBot?.ToString("G") ?? "";
         BotSelectedDonVi = DonVis.FirstOrDefault(d => d.DonViID == item.DonViID);
     }
 
     private async Task SaveBotAsync()
     {
-        if (BotSelectedSize == null || BotSelectedDe == null || string.IsNullOrWhiteSpace(BotSelectedDe.LoaiCotBanh)) return;
+        if (BotSelectedSize == null || string.IsNullOrWhiteSpace(BotSelectedLoaiCotBanh)) return;
         
+        // Ngăn thêm mới bị trùng (ghi đè vô ý)
+        if (_editingBot == null)
+        {
+            if (QuyDinhBots.Any(b => b.SizeID == BotSelectedSize.SizeID && b.LoaiCotBanh == BotSelectedLoaiCotBanh))
+            {
+                System.Windows.MessageBox.Show(
+                    $"Cấu hình trọng lượng bột cho Size {BotSelectedSize.SizeID} và Cốt {BotSelectedLoaiCotBanh} đã tồn tại.\n\nBạn không thể thêm 2 cấu hình trùng lặp. Vui lòng bấm vào biểu tượng bút chì (sửa) ở danh sách bên dưới nếu muốn cập nhật thông số.",
+                    "Cấu hình đã tồn tại",
+                    System.Windows.MessageBoxButton.OK,
+                    System.Windows.MessageBoxImage.Warning);
+                return;
+            }
+        }
+
         double.TryParse(BotTrongLuong.Replace(",", "."), System.Globalization.NumberStyles.Any, System.Globalization.CultureInfo.InvariantCulture, out double tl);
         
         var bot = new QuyDinh_Bot
         {
             SizeID = BotSelectedSize.SizeID,
-            LoaiCotBanh = BotSelectedDe.LoaiCotBanh,
+            LoaiCotBanh = BotSelectedLoaiCotBanh,
             TrongLuongBot = tl,
             DonViID = BotSelectedDonVi?.DonViID
         };
+
+        if (_editingBot != null && (_editingBot.SizeID != bot.SizeID || _editingBot.LoaiCotBanh != bot.LoaiCotBanh))
+        {
+            await _databaseService.DeleteQuyDinhBotAsync(_editingBot.SizeID, _editingBot.LoaiCotBanh);
+        }
 
         if (await _databaseService.SaveQuyDinhBotAsync(bot))
         {
@@ -180,10 +213,12 @@ public class QuyDinhViewModel : BaseViewModel
         VienSelectedNguyenLieu = null;
         VienSoLuong = string.Empty;
         VienSelectedDonVi = null;
+        _editingVien = null;
     }
 
     private void EditVien(QuyDinh_Vien item)
     {
+        _editingVien = item;
         VienSelectedDe = DeBanhs.FirstOrDefault(d => d.MaDeBanh == item.MaDeBanh);
         VienSelectedSize = Sizes.FirstOrDefault(s => s.SizeID == item.SizeID);
         VienSelectedNguyenLieu = NguyenLieus.FirstOrDefault(n => n.NguyenLieuID == item.NguyenLieuID);
@@ -195,6 +230,20 @@ public class QuyDinhViewModel : BaseViewModel
     {
         if (VienSelectedDe == null || VienSelectedSize == null || VienSelectedNguyenLieu == null) return;
 
+        // Ngăn thêm mới bị trùng (ghi đè vô ý)
+        if (_editingVien == null)
+        {
+            if (QuyDinhViens.Any(v => v.MaDeBanh == VienSelectedDe.MaDeBanh && v.SizeID == VienSelectedSize.SizeID && v.NguyenLieuID == VienSelectedNguyenLieu.NguyenLieuID))
+            {
+                System.Windows.MessageBox.Show(
+                    $"Cấu hình nguyên liệu {VienSelectedNguyenLieu.TenNguyenLieu} cho Đế {VienSelectedDe.TenDeBanh} (Size {VienSelectedSize.SizeID}) đã tồn tại.\n\nBạn không thể thêm 2 cấu hình trùng lặp. Vui lòng bấm vào biểu tượng bút chì (sửa) ở danh sách dưới nếu muốn cập nhật số lượng.",
+                    "Cấu hình đã tồn tại",
+                    System.Windows.MessageBoxButton.OK,
+                    System.Windows.MessageBoxImage.Warning);
+                return;
+            }
+        }
+
         double.TryParse(VienSoLuong.Replace(",", "."), System.Globalization.NumberStyles.Any, System.Globalization.CultureInfo.InvariantCulture, out double sl);
 
         var vien = new QuyDinh_Vien
@@ -205,6 +254,11 @@ public class QuyDinhViewModel : BaseViewModel
             SoLuongVien = sl,
             DonViID = VienSelectedDonVi?.DonViID
         };
+
+        if (_editingVien != null && (_editingVien.MaDeBanh != vien.MaDeBanh || _editingVien.SizeID != vien.SizeID || _editingVien.NguyenLieuID != vien.NguyenLieuID))
+        {
+            await _databaseService.DeleteQuyDinhVienAsync(_editingVien.MaDeBanh, _editingVien.SizeID, _editingVien.NguyenLieuID);
+        }
 
         if (await _databaseService.SaveQuyDinhVienAsync(vien))
         {
