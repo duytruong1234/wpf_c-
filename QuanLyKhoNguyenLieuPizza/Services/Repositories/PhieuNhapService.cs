@@ -553,22 +553,29 @@ public class PhieuNhapService : DatabaseContext
             }
             
             // Láº¥y chi tiáº¿t phiáº¿u nháº­p Ä‘á»ƒ cáº­p nháº­t Tá»“nKho
-            var getSql = "SELECT NguyenLieuID, SoLuong, HeSo FROM CT_PhieuNhap WHERE PhieuNhapID = @PhieuNhapID";
+            var getSql = "SELECT NguyenLieuID, SoLuong, DonViID FROM CT_PhieuNhap WHERE PhieuNhapID = @PhieuNhapID";
             using var getCmd = new SqlCommand(getSql, conn, transaction);
             getCmd.Parameters.AddWithValue("@PhieuNhapID", phieuNhapId);
             
-            var chiTiets = new List<(int NguyenLieuID, decimal SoLuong, decimal HeSo)>();
+            var chiTiets = new List<(int NguyenLieuID, decimal SoLuong, int? DonViID)>();
             using var reader = await getCmd.ExecuteReaderAsync();
             while (await reader.ReadAsync())
             {
-                chiTiets.Add((reader.GetInt32(0), reader.GetDecimal(1), reader.GetDecimal(2)));
+                chiTiets.Add((reader.GetInt32(0), reader.GetDecimal(1), reader.IsDBNull(2) ? null : reader.GetInt32(2)));
             }
             reader.Close();
             
             // Cáº­p nháº­t Tá»“nKho
+            var contextCache = new Dictionary<int, IngredientUnitContext>();
+            var unitNameCache = new Dictionary<int, string>();
+            
             foreach (var ct in chiTiets)
             {
-                await UpdateTonKhoOnNhapAsync(conn, transaction, ct.NguyenLieuID, ct.SoLuong * ct.HeSo);
+                var soLuongCong = await ConvertAmountToStockUnitAsync(
+                    conn, transaction, ct.NguyenLieuID, ct.SoLuong, ct.DonViID,
+                    contextCache, unitNameCache);
+
+                await UpdateTonKhoOnNhapAsync(conn, transaction, ct.NguyenLieuID, soLuongCong);
             }
             
             transaction.Commit();
@@ -646,27 +653,34 @@ public class PhieuNhapService : DatabaseContext
         try
         {
             // Láº¥y chi tiáº¿t Ä‘á»ƒ hoÃ n tÃ¡c Tá»“nKho
-            var chiTiets = new List<(int NguyenLieuID, decimal SoLuong, decimal HeSo)>();
+            var chiTiets = new List<(int NguyenLieuID, decimal SoLuong, int? DonViID)>();
             
-            var getSql = "SELECT NguyenLieuID, SoLuong, HeSo FROM CT_PhieuNhap WHERE PhieuNhapID = @PhieuNhapID";
+            var getSql = "SELECT NguyenLieuID, SoLuong, DonViID FROM CT_PhieuNhap WHERE PhieuNhapID = @PhieuNhapID";
             using var getCmd = new SqlCommand(getSql, conn, transaction);
             getCmd.Parameters.AddWithValue("@PhieuNhapID", phieuNhapId);
             
             using var reader = await getCmd.ExecuteReaderAsync();
             while (await reader.ReadAsync())
             {
-                chiTiets.Add((reader.GetInt32(0), reader.GetDecimal(1), reader.GetDecimal(2)));
+                chiTiets.Add((reader.GetInt32(0), reader.GetDecimal(1), reader.IsDBNull(2) ? null : reader.GetInt32(2)));
             }
             reader.Close();
             
             // HoÃ n tÃ¡c Tá»“n kho
+            var contextCache = new Dictionary<int, IngredientUnitContext>();
+            var unitNameCache = new Dictionary<int, string>();
+
             foreach (var ct in chiTiets)
             {
+                var soLuongHoanTac = await ConvertAmountToStockUnitAsync(
+                    conn, transaction, ct.NguyenLieuID, ct.SoLuong, ct.DonViID,
+                    contextCache, unitNameCache);
+
                 var updateSql = @"UPDATE TonKho 
                                  SET SoLuongTon = SoLuongTon - @SoLuong, NgayCapNhat = GETDATE()
                                  WHERE NguyenLieuID = @NguyenLieuID";
                 using var updateCmd = new SqlCommand(updateSql, conn, transaction);
-                updateCmd.Parameters.AddWithValue("@SoLuong", ct.SoLuong * ct.HeSo);
+                updateCmd.Parameters.AddWithValue("@SoLuong", soLuongHoanTac);
                 updateCmd.Parameters.AddWithValue("@NguyenLieuID", ct.NguyenLieuID);
                 await updateCmd.ExecuteNonQueryAsync();
             }

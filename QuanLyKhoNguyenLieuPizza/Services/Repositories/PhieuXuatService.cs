@@ -349,24 +349,33 @@ public class PhieuXuatService : DatabaseContext
         
         try
         {
-            // Láº¥y chi tiáº¿t Ä‘á»ƒ cáº­p nháº­t Tá»“nKho
-            var chiTiets = new List<(int NguyenLieuID, decimal SoLuong, decimal HeSo)>();
+            // Lay chi tiet de cap nhat TonKho
+            var chiTiets = new List<(int NguyenLieuID, decimal SoLuong, int? DonViID)>();
             
-            var getSql = "SELECT NguyenLieuID, SoLuong, HeSo FROM CT_PhieuXuat WHERE PhieuXuatID = @PhieuXuatID";
+            var getSql = "SELECT NguyenLieuID, SoLuong, DonViID FROM CT_PhieuXuat WHERE PhieuXuatID = @PhieuXuatID";
             using var getCmd = new SqlCommand(getSql, conn, transaction);
             getCmd.Parameters.AddWithValue("@PhieuXuatID", phieuXuatId);
             
             using var reader = await getCmd.ExecuteReaderAsync();
             while (await reader.ReadAsync())
             {
-                chiTiets.Add((reader.GetInt32(0), reader.GetDecimal(1), reader.GetDecimal(2)));
+                chiTiets.Add((
+                    reader.GetInt32(0), 
+                    reader.GetDecimal(1),
+                    reader.IsDBNull(2) ? null : reader.GetInt32(2)));
             }
             reader.Close();
             
-            // Cáº­p nháº­t Tá»“nKho (trá»«)
+            // Cap nhat TonKho (tru)
+            var contextCache = new Dictionary<int, IngredientUnitContext>();
+            var unitNameCache = new Dictionary<int, string>();
+            
             foreach (var ct in chiTiets)
             {
-                var soLuongTru = ct.SoLuong * ct.HeSo;
+                // Quy doi so luong xuat ve don vi chuan (don vi luu ton kho)
+                var soLuongTru = await ConvertAmountToStockUnitAsync(
+                    conn, transaction, ct.NguyenLieuID, ct.SoLuong, ct.DonViID,
+                    contextCache, unitNameCache);
                 
                 var checkSql = "SELECT ISNULL(SoLuongTon, 0) FROM TonKho WHERE NguyenLieuID = @NguyenLieuID";
                 using var checkCmd = new SqlCommand(checkSql, conn, transaction);
@@ -375,7 +384,7 @@ public class PhieuXuatService : DatabaseContext
                 
                 if (currentTon < soLuongTru)
                 {
-                    throw new Exception("Sá»‘ lÆ°á»£ng tá»“n kho khÃ´ng Ä‘á»§ Ä‘á»ƒ trá»«. (Tá»“n kho khÃ´ng Ä‘Æ°á»£c phÃ©p nhá» hÆ¡n 0)");
+                    throw new Exception($"So luong ton kho khong du de tru. (Ton: {currentTon:N2}, Can xuat: {soLuongTru:N2})");
                 }
 
                 var updateSql = @"UPDATE TonKho 
@@ -387,7 +396,7 @@ public class PhieuXuatService : DatabaseContext
                 await updateCmd.ExecuteNonQueryAsync();
             }
             
-            // Cáº­p nháº­t tráº¡ng thÃ¡i Phiáº¿uXuáº¥t
+            // Cap nhat trang thai PhieuXuat
             var sql = @"UPDATE PhieuXuat 
                        SET TrangThai = 2, NhanVienDuyetID = @NhanVienDuyetID, NgayDuyet = GETDATE()
                        WHERE PhieuXuatID = @PhieuXuatID";
@@ -405,7 +414,7 @@ public class PhieuXuatService : DatabaseContext
         {
             transaction.Rollback();
             System.Diagnostics.Debug.WriteLine($"Error approving PhieuXuat: {ex.Message}");
-            return false;
+            throw;
         }
     }
 

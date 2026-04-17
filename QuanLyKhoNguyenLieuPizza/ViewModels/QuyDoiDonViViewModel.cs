@@ -1,4 +1,4 @@
-﻿using System.Collections.ObjectModel;
+using System.Collections.ObjectModel;
 using System.Windows;
 using System.Windows.Input;
 using QuanLyKhoNguyenLieuPizza.Models;
@@ -352,6 +352,10 @@ public class QuyDoiDonViViewModel : BaseViewModel
 
         try
         {
+            // Lấy trạng thái cũ từ DB TRƯỚC KHI lưu để phát hiện thay đổi đơn vị chuẩn
+            var oldQuyDois = await _databaseService.GetQuyDoiDonVisAsync(SelectedNguyenLieu.NguyenLieuID);
+            var oldDonViChuan = oldQuyDois.FirstOrDefault(qd => qd.LaDonViChuan);
+
             foreach (var row in QuyDoiRows)
             {
                 if (!decimal.TryParse(row.HeSoText, out decimal heSo) || heSo <= 0)
@@ -374,6 +378,69 @@ public class QuyDoiDonViViewModel : BaseViewModel
                 };
 
                 await _databaseService.SaveQuyDoiDonViAsync(quyDoi);
+            }
+
+            // So sánh đơn vị chuẩn CŨ (từ DB) với đơn vị chuẩn MỚI (từ UI)
+            var newDonViChuan = QuyDoiRows.FirstOrDefault(r => r.LaDonViChuan);
+            if (newDonViChuan?.DonViID != null &&
+                (oldDonViChuan == null || oldDonViChuan.DonViID != newDonViChuan.DonViID))
+            {
+                // Quy đổi số lượng tồn kho theo đơn vị chuẩn mới
+                // ⚡ BUG FIX: Lấy hệ số cũ từ giao diện (QuyDoiRows) thay vì từ DB (oldDonViChuan)
+                var uiOldDonVi = QuyDoiRows.FirstOrDefault(r => r.DonViID == oldDonViChuan?.DonViID);
+                decimal oldHeSo = 1m;
+                if (uiOldDonVi != null && decimal.TryParse(uiOldDonVi.HeSoText, out decimal parsedOldHeSo))
+                {
+                    oldHeSo = parsedOldHeSo;
+                }
+                else if (oldDonViChuan != null)
+                {
+                    oldHeSo = oldDonViChuan.HeSo;
+                }
+
+                if (decimal.TryParse(newDonViChuan.HeSoText, out decimal newHeSo) && oldHeSo > 0 && newHeSo > 0)
+                {
+                    var tonKho = await _databaseService.GetTonKhoByNguyenLieuIdAsync(SelectedNguyenLieu.NguyenLieuID);
+                    if (tonKho != null)
+                    {
+                        decimal GetWeight(string unit) => unit switch { "g" => 0.001m, "kg" => 1m, "mg" => 0.000001m, _ => 0m };
+                        decimal GetVolume(string unit) => unit switch { "ml" => 0.001m, "l" => 1m, "lit" => 1m, _ => 0m };
+                        
+                        decimal GetReliableFactor(string unitName, decimal dbFactor)
+                        {
+                            var lowerUnit = unitName?.ToLower() ?? "";
+                            var w = GetWeight(lowerUnit);
+                            if (w > 0) return w;
+                            var v = GetVolume(lowerUnit);
+                            if (v > 0) return v;
+                            return dbFactor;
+                        }
+
+                        var oldName = oldDonViChuan?.DonViTinh?.TenDonVi;
+                        var newName = newDonViChuan.TenDonVi;
+
+                        var reliableOldHeSo = GetReliableFactor(oldName, oldHeSo);
+                        var reliableNewHeSo = GetReliableFactor(newName, newHeSo);
+
+                        if (reliableOldHeSo > 0 && reliableNewHeSo > 0)
+                        {
+                            decimal conversionFactor = reliableOldHeSo / reliableNewHeSo;
+                            decimal newSoLuongTon = tonKho.SoLuongTon * conversionFactor;
+
+                            await _databaseService.UpdateTonKhoAsync(SelectedNguyenLieu.NguyenLieuID, newSoLuongTon);
+                        }
+                    }
+                }
+                
+                // Cập nhật DonViID trong bảng NguyenLieu
+                var nguyenLieu = await _databaseService.GetNguyenLieuByIdAsync(SelectedNguyenLieu.NguyenLieuID);
+                if (nguyenLieu != null)
+                {
+                    nguyenLieu.DonViID = newDonViChuan.DonViID;
+                    await _databaseService.SaveNguyenLieuAsync(nguyenLieu);
+                    SelectedNguyenLieu.DonViChinh = newDonViChuan.TenDonVi;
+                    SelectedNguyenLieu.DonViID = newDonViChuan.DonViID;
+                }
             }
 
             MessageBox.Show(

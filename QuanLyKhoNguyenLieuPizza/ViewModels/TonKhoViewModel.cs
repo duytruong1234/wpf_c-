@@ -1,4 +1,4 @@
-﻿using System.Collections.ObjectModel;
+using System.Collections.ObjectModel;
 using System.Windows.Input;
 using QuanLyKhoNguyenLieuPizza.Models;
 using QuanLyKhoNguyenLieuPizza.Services;
@@ -644,6 +644,10 @@ public class TonKhoViewModel : BaseViewModel
 
         try
         {
+            // Lấy trạng thái cũ từ DB TRƯỚC KHI lưu để phát hiện thay đổi đơn vị chuẩn
+            var oldQuyDois = await _databaseService.GetQuyDoiDonVisAsync(SelectedNguyenLieu.NguyenLieuID);
+            var oldDonViChuan = oldQuyDois.FirstOrDefault(qd => qd.LaDonViChuan);
+
             foreach (var qd in QuyDoiDonVis)
             {
                 if (qd.HeSo <= 0)
@@ -668,6 +672,62 @@ public class TonKhoViewModel : BaseViewModel
                 await _databaseService.SaveQuyDoiDonViAsync(quyDoi);
             }
 
+            // So sánh đơn vị chuẩn CŨ (từ DB) với đơn vị chuẩn MỚI (từ UI)
+            var newDonViChuan = QuyDoiDonVis.FirstOrDefault(qd => qd.LaDonViChuan);
+            if (newDonViChuan?.DonViID != null && 
+                (oldDonViChuan == null || oldDonViChuan.DonViID != newDonViChuan.DonViID))
+            {
+                // Quy đổi số lượng tồn kho theo đơn vị chuẩn mới
+                // ⚡ BUG FIX: Lấy hệ số cũ từ giao diện (QuyDoiDonVis) thay vì từ DB (oldDonViChuan)
+                // Vì người dùng có thể đang sửa cả hệ số cũ trong cùng 1 lần lưu!
+                var uiOldDonVi = QuyDoiDonVis.FirstOrDefault(qd => qd.DonViID == oldDonViChuan?.DonViID);
+                decimal oldHeSo = uiOldDonVi?.HeSo ?? oldDonViChuan?.HeSo ?? 1m;
+                decimal newHeSo = newDonViChuan.HeSo;
+                
+                if (oldHeSo > 0 && newHeSo > 0)
+                {
+                    decimal GetWeight(string unit) => unit switch { "g" => 0.001m, "kg" => 1m, "mg" => 0.000001m, _ => 0m };
+                    decimal GetVolume(string unit) => unit switch { "ml" => 0.001m, "l" => 1m, "lit" => 1m, _ => 0m };
+                    
+                    decimal GetReliableFactor(string unitName, decimal dbFactor)
+                    {
+                        var lowerUnit = unitName?.ToLower() ?? "";
+                        var w = GetWeight(lowerUnit);
+                        if (w > 0) return w;
+                        var v = GetVolume(lowerUnit);
+                        if (v > 0) return v;
+                        return dbFactor;
+                    }
+
+                    var oldName = oldDonViChuan?.DonViTinh?.TenDonVi;
+                    var newName = newDonViChuan.TenDonVi;
+
+                    var reliableOldHeSo = GetReliableFactor(oldName, oldHeSo);
+                    var reliableNewHeSo = GetReliableFactor(newName, newHeSo);
+
+                    if (reliableOldHeSo > 0 && reliableNewHeSo > 0)
+                    {
+                        decimal conversionFactor = reliableOldHeSo / reliableNewHeSo;
+                        decimal newSoLuongTon = SelectedNguyenLieu.SoLuongTon * conversionFactor;
+
+                        await _databaseService.UpdateTonKhoAsync(SelectedNguyenLieu.NguyenLieuID, newSoLuongTon);
+                        
+                        // ⚡ BUG FIX: Cập nhật lại số lượng tồn trên UI để người dùng thấy ngay kết quả
+                        SelectedNguyenLieu.SoLuongTon = newSoLuongTon;
+                        SelectedNguyenLieu.MucDoTonKho = GetMucDoTonKho(newSoLuongTon);
+                    }
+                }
+                
+                // Cập nhật DonViID trong bảng NguyenLieu
+                var nguyenLieu = await _databaseService.GetNguyenLieuByIdAsync(SelectedNguyenLieu.NguyenLieuID);
+                if (nguyenLieu != null)
+                {
+                    nguyenLieu.DonViID = newDonViChuan.DonViID;
+                    await _databaseService.SaveNguyenLieuAsync(nguyenLieu);
+                    SelectedNguyenLieu.DonViTinh = newDonViChuan.TenDonVi;
+                }
+            }
+
             System.Windows.MessageBox.Show(
                 "Đã lưu hệ số thành công!",
                 "Thành công",
@@ -678,6 +738,9 @@ public class TonKhoViewModel : BaseViewModel
 
             // Reload lại để cập nhật QuyDoiID mới và tránh trùng lặp
             await LoadQuyDoiDonViAsync();
+            
+            // Reload bảng tồn kho để hiển thị đơn vị mới
+            await LoadTonKhoAsync();
         }
         catch (Exception ex)
         {

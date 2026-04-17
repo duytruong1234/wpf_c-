@@ -1,4 +1,4 @@
-﻿using System.Collections.ObjectModel;
+using System.Collections.ObjectModel;
 using System.ComponentModel;
 using System.Runtime.CompilerServices;
 
@@ -20,8 +20,7 @@ public class CT_PhieuNhap : INotifyPropertyChanged
             {
                 _soLuong = value;
                 OnPropertyChanged();
-                // Tự động tính lại thành tiền
-                ThanhTien = _soLuong * HeSo * DonGia;
+                RecalculateThanhTien();
             }
         }
     }
@@ -38,7 +37,7 @@ public class CT_PhieuNhap : INotifyPropertyChanged
             {
                 _heSo = value;
                 OnPropertyChanged();
-                ThanhTien = SoLuong * _heSo * DonGia;
+                RecalculateThanhTien();
             }
         }
     }
@@ -53,7 +52,7 @@ public class CT_PhieuNhap : INotifyPropertyChanged
             {
                 _donGia = value;
                 OnPropertyChanged();
-                ThanhTien = SoLuong * HeSo * _donGia;
+                RecalculateThanhTien();
             }
         }
     }
@@ -96,15 +95,30 @@ public class CT_PhieuNhap : INotifyPropertyChanged
         {
             if (!ReferenceEquals(_selectedDonViNhap, value))
             {
+                var oldHeSo = _heSo;
+                if (oldHeSo <= 0) oldHeSo = 1m;
+
                 _selectedDonViNhap = value;
 
                 if (value != null)
                 {
+                    var newHeSo = value.HeSo <= 0 ? 1m : value.HeSo;
+
+                    // Quy đổi Đơn giá theo tỷ lệ thuận với Hệ số
+                    // Vì HeSo giờ chuẩn rồi: kg = 1, g = 0.001, Bao = 25
+                    if (_donGia > 0 && oldHeSo != newHeSo)
+                    {
+                        _donGia = _donGia * newHeSo / oldHeSo;
+                        OnPropertyChanged(nameof(DonGia));
+                    }
+
                     DonViID = value.DonViID;
                     DonViTinh = value.DonViTinh;
-                    HeSo = value.HeSo <= 0 ? 1m : value.HeSo;
+                    _heSo = newHeSo;
+                    OnPropertyChanged(nameof(HeSo));
                 }
 
+                RecalculateThanhTien();
                 OnPropertyChanged();
                 OnPropertyChanged(nameof(TenDonViNhap));
             }
@@ -117,6 +131,12 @@ public class CT_PhieuNhap : INotifyPropertyChanged
     public virtual PhieuNhap? PhieuNhap { get; set; }
     public virtual NguyenLieu? NguyenLieu { get; set; }
     public virtual DonViTinh? DonViTinh { get; set; }
+
+    private void RecalculateThanhTien()
+    {
+        // ThanhTien = SoLuong * DonGia
+        ThanhTien = _soLuong * _donGia;
+    }
 
     public event PropertyChangedEventHandler? PropertyChanged;
     protected void OnPropertyChanged([CallerMemberName] string? name = null)

@@ -517,15 +517,21 @@ public class PhieuNhapViewModel : BaseViewModel
             });
         }
 
-        AddOption(
-            nguyenLieu.DonViID ?? selectedDonViId,
-            1m,
-            nguyenLieu.DonViTinh ?? selectedDonViTinh,
-            true);
-
+        // Them tu QuyDoiDonVi TRUOC (co HeSo thuc tu DB)
         foreach (var quyDoi in quyDois)
         {
             AddOption(quyDoi.DonViID, quyDoi.HeSo, quyDoi.DonViTinh, quyDoi.LaDonViChuan);
+        }
+
+        // Fallback: neu don vi ton kho chua co trong danh sach, them vao voi HeSo=1
+        var stockDonViId = nguyenLieu.DonViID ?? selectedDonViId;
+        if (stockDonViId.HasValue && !options.Any(o => o.DonViID == stockDonViId.Value))
+        {
+            AddOption(
+                stockDonViId,
+                1m,
+                nguyenLieu.DonViTinh ?? selectedDonViTinh,
+                true);
         }
 
         if (selectedDonViId.HasValue && !options.Any(o => o.DonViID == selectedDonViId.Value))
@@ -814,7 +820,7 @@ public class PhieuNhapViewModel : BaseViewModel
 
     public void UpdateChiTietThanhTien(CT_PhieuNhap chiTiet)
     {
-        chiTiet.ThanhTien = chiTiet.SoLuong * chiTiet.HeSo * chiTiet.DonGia;
+        chiTiet.ThanhTien = chiTiet.SoLuong * chiTiet.DonGia;
         CalculateTongTienForm();
     }
 

@@ -181,9 +181,24 @@ public abstract class DatabaseContext
         return context;
     }
 
+    private static decimal GetReliableFactor(int unitId, string? unitName, Dictionary<int, decimal> dbFactors)
+    {
+        if (TryGetWeightFactorToKilogram(unitName, out var weightFactor))
+            return weightFactor;
+            
+        if (TryGetVolumeFactorToLiter(unitName, out var volumeFactor))
+            return volumeFactor;
+            
+        if (dbFactors.TryGetValue(unitId, out var factor) && factor > 0)
+            return factor;
+            
+        return 0m;
+    }
+
     protected static bool TryConvertByConfiguredFactors(
         IngredientUnitContext context,
         int sourceUnitId,
+        string? sourceUnitName,
         decimal amount,
         out decimal convertedAmount)
     {
@@ -192,71 +207,14 @@ public abstract class DatabaseContext
         if (context.StockUnitId is not int stockUnitId)
             return false;
 
-        if (!context.UnitFactors.TryGetValue(sourceUnitId, out var sourceFactor) || sourceFactor <= 0)
-            return false;
+        var sourceFactor = GetReliableFactor(sourceUnitId, sourceUnitName, context.UnitFactors);
+        if (sourceFactor <= 0) return false;
 
-        if (!context.UnitFactors.TryGetValue(stockUnitId, out var stockFactor) || stockFactor <= 0)
-            return false;
+        var stockFactor = GetReliableFactor(stockUnitId, context.StockUnitName, context.UnitFactors);
+        if (stockFactor <= 0) return false;
 
         convertedAmount = amount * sourceFactor / stockFactor;
         return true;
-    }
-
-    protected static bool TryConvertByMetricUnits(
-        string? sourceUnitName,
-        string? stockUnitName,
-        decimal amount,
-        out decimal convertedAmount)
-    {
-        convertedAmount = 0m;
-
-        if (TryGetWeightFactorToKilogram(sourceUnitName, out var sourceWeight) &&
-            TryGetWeightFactorToKilogram(stockUnitName, out var stockWeight))
-        {
-            convertedAmount = amount * sourceWeight / stockWeight;
-            return true;
-        }
-
-        if (TryGetVolumeFactorToLiter(sourceUnitName, out var sourceVolume) &&
-            TryGetVolumeFactorToLiter(stockUnitName, out var stockVolume))
-        {
-            convertedAmount = amount * sourceVolume / stockVolume;
-            return true;
-        }
-
-        return false;
-    }
-
-    protected static bool TryConvertByPackageFallback(
-        IngredientUnitContext context,
-        string? sourceUnitName,
-        decimal amount,
-        out decimal convertedAmount)
-    {
-        convertedAmount = 0m;
-
-        if (context.StockUnitId is not int stockUnitId)
-            return false;
-
-        if (!context.UnitFactors.TryGetValue(stockUnitId, out var stockFactor) || stockFactor <= 0)
-            return false;
-
-        if (!IsPackageLikeUnit(context.StockUnitName) && context.UnitFactors.Count == 0)
-            return false;
-
-        if (TryGetWeightFactorToKilogram(sourceUnitName, out var sourceWeight))
-        {
-            convertedAmount = amount * sourceWeight / stockFactor;
-            return true;
-        }
-
-        if (TryGetVolumeFactorToLiter(sourceUnitName, out var sourceVolume))
-        {
-            convertedAmount = amount * sourceVolume / stockFactor;
-            return true;
-        }
-
-        return false;
     }
 
     protected async Task<decimal> ConvertAmountToStockUnitAsync(
@@ -276,14 +234,8 @@ public abstract class DatabaseContext
         if (sourceUnitId == null || context.StockUnitId == null || sourceUnitId == context.StockUnitId)
             return amount;
 
-        if (TryConvertByConfiguredFactors(context, sourceUnitId.Value, amount, out var convertedAmount))
-            return convertedAmount;
-
         var sourceUnitName = await GetUnitNameAsync(conn, transaction, sourceUnitId, unitNameCache);
-        if (TryConvertByMetricUnits(sourceUnitName, context.StockUnitName, amount, out convertedAmount))
-            return convertedAmount;
-
-        if (TryConvertByPackageFallback(context, sourceUnitName, amount, out convertedAmount))
+        if (TryConvertByConfiguredFactors(context, sourceUnitId.Value, sourceUnitName, amount, out var convertedAmount))
             return convertedAmount;
 
         throw new InvalidOperationException(

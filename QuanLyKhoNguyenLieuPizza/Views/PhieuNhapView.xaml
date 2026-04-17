@@ -846,19 +846,21 @@
                                 <Border Background="{StaticResource Gray50}" CornerRadius="12,12,0,0">
                                     <Grid>
                                         <Grid.ColumnDefinitions>
-                                            <ColumnDefinition Width="1.5*"/>
+                                            <ColumnDefinition Width="1.3*"/>
                                             <ColumnDefinition Width="Auto"/>
+                                            <ColumnDefinition Width="0.9*"/>
+                                            <ColumnDefinition Width="0.9*"/>
                                             <ColumnDefinition Width="1*"/>
                                             <ColumnDefinition Width="1*"/>
-                                            <ColumnDefinition Width="1.2*"/>
                                             <ColumnDefinition Width="40"/>
                                         </Grid.ColumnDefinitions>
                                         <TextBlock Grid.Column="0" Text="Tên nguyên liệu" Style="{StaticResource TableHeaderStyle}"/>
                                         <TextBlock Grid.Column="1" Text="Số lượng" Style="{StaticResource TableHeaderStyle}"/>
-                                        <TextBlock Grid.Column="2" Text="Đơn giá" Style="{StaticResource TableHeaderStyle}"/>
-                                        <TextBlock Grid.Column="3" Text="HSD" Style="{StaticResource TableHeaderStyle}"/>
-                                        <TextBlock Grid.Column="4" Text="Thành tiền" Style="{StaticResource TableHeaderStyle}"/>
-                                        <TextBlock Grid.Column="5" Text="" Style="{StaticResource TableHeaderStyle}"/>
+                                        <TextBlock Grid.Column="2" Text="Đơn vị" Style="{StaticResource TableHeaderStyle}"/>
+                                        <TextBlock Grid.Column="3" Text="Đơn giá" Style="{StaticResource TableHeaderStyle}"/>
+                                        <TextBlock Grid.Column="4" Text="HSD" Style="{StaticResource TableHeaderStyle}"/>
+                                        <TextBlock Grid.Column="5" Text="Thành tiền" Style="{StaticResource TableHeaderStyle}"/>
+                                        <TextBlock Grid.Column="6" Text="" Style="{StaticResource TableHeaderStyle}"/>
                                     </Grid>
                                 </Border>
 
@@ -869,11 +871,12 @@
                                                 <Border BorderBrush="#F1F5F9" BorderThickness="0,0,0,1" Padding="8,12">
                                                     <Grid>
                                                         <Grid.ColumnDefinitions>
-                                                            <ColumnDefinition Width="1.5*"/>
+                                                            <ColumnDefinition Width="1.3*"/>
                                                             <ColumnDefinition Width="Auto"/>
+                                                            <ColumnDefinition Width="0.9*"/>
+                                                            <ColumnDefinition Width="0.9*"/>
                                                             <ColumnDefinition Width="1*"/>
                                                             <ColumnDefinition Width="1*"/>
-                                                            <ColumnDefinition Width="1.2*"/>
                                                             <ColumnDefinition Width="40"/>
                                                         </Grid.ColumnDefinitions>
                                                         
@@ -917,15 +920,19 @@
                                                             </Button>
                                                         </StackPanel>
                                                         
-                                                        <TextBlock Grid.Column="2" Text="{Binding DonGia, StringFormat='{}{0:N0} đ'}" Style="{StaticResource TableCellStyle}"/>
+                                                        <ComboBox Grid.Column="2" ItemsSource="{Binding DonViNhapOptions}" SelectedItem="{Binding SelectedDonViNhap}"
+                                                                  DisplayMemberPath="DonViTinh.TenDonVi" BorderThickness="0" Background="Transparent"
+                                                                  FontSize="12" VerticalAlignment="Center" HorizontalAlignment="Stretch" Cursor="Hand"/>
                                                         
-                                                        <DatePicker Grid.Column="3" SelectedDate="{Binding HSD, Mode=TwoWay}" 
+                                                        <TextBlock Grid.Column="3" Text="{Binding DonGia, StringFormat='{}{0:N0} đ'}" Style="{StaticResource TableCellStyle}"/>
+                                                        
+                                                        <DatePicker Grid.Column="4" SelectedDate="{Binding HSD, Mode=TwoWay}" 
                                                                     BorderThickness="0" Background="Transparent" FontSize="11" 
                                                                     VerticalAlignment="Center" HorizontalAlignment="Stretch" Language="vi-VN"/>
                                                         
-                                                        <TextBlock Grid.Column="4" Text="{Binding ThanhTien, StringFormat='{}{0:N0} đ'}" Style="{StaticResource TableCellStyle}" Foreground="{StaticResource Gray800}" FontWeight="SemiBold"/>
+                                                        <TextBlock Grid.Column="5" Text="{Binding ThanhTien, StringFormat='{}{0:N0} đ'}" Style="{StaticResource TableCellStyle}" Foreground="{StaticResource Gray800}" FontWeight="SemiBold"/>
 
-                                                                        <Button Grid.Column="5" Command="{Binding DataContext.RemoveChiTietCommand, RelativeSource={RelativeSource AncestorType=ItemsControl}}"
+                                                                        <Button Grid.Column="6" Command="{Binding DataContext.RemoveChiTietCommand, RelativeSource={RelativeSource AncestorType=ItemsControl}}"
                                                                                 CommandParameter="{Binding}" Cursor="Hand" HorizontalAlignment="Center">
                                                                             <Button.Template>
                                                                                 <ControlTemplate TargetType="Button">
@@ -1098,19 +1105,21 @@
                                 <Border Grid.Row="0" Background="{StaticResource Gray50}" CornerRadius="14,14,0,0">
                                     <Grid Margin="8,12">
                                         <Grid.ColumnDefinitions>
-                                            <ColumnDefinition Width="1.5*"/>
+                                            <ColumnDefinition Width="1.3*"/>
                                             <ColumnDefinition Width="Auto"/>
+                                            <ColumnDefinition Width="0.9*"/>
+                                            <ColumnDefinition Width="0.9*"/>
                                             <ColumnDefinition Width="1*"/>
                                             <ColumnDefinition Width="1*"/>
-                                            <ColumnDefinition Width="1.2*"/>
                                             <ColumnDefinition Width="Auto"/>
                                         </Grid.ColumnDefinitions>
                                         <TextBlock Grid.Column="0" Text="Tên nguyên liệu" FontSize="12" FontWeight="SemiBold" Foreground="{StaticResource Gray500}" HorizontalAlignment="Center"/>
                                         <TextBlock Grid.Column="1" Text="Số lượng" FontSize="12" FontWeight="SemiBold" Foreground="{StaticResource Gray500}" HorizontalAlignment="Center"/>
-                                        <TextBlock Grid.Column="2" Text="Đơn giá" FontSize="12" FontWeight="SemiBold" Foreground="{StaticResource Gray500}" HorizontalAlignment="Center"/>
-                                        <TextBlock Grid.Column="3" Text="HSD" FontSize="12" FontWeight="SemiBold" Foreground="{StaticResource Gray500}" HorizontalAlignment="Center"/>
-                                        <TextBlock Grid.Column="4" Text="Thành tiền" FontSize="12" FontWeight="SemiBold" Foreground="{StaticResource Gray500}" HorizontalAlignment="Center"/>
-                                        <TextBlock Grid.Column="5" Text="" FontSize="12" FontWeight="SemiBold" Foreground="{StaticResource Gray500}" HorizontalAlignment="Center" Width="40"/>
+                                        <TextBlock Grid.Column="2" Text="Đơn vị" FontSize="12" FontWeight="SemiBold" Foreground="{StaticResource Gray500}" HorizontalAlignment="Center"/>
+                                        <TextBlock Grid.Column="3" Text="Đơn giá" FontSize="12" FontWeight="SemiBold" Foreground="{StaticResource Gray500}" HorizontalAlignment="Center"/>
+                                        <TextBlock Grid.Column="4" Text="HSD" FontSize="12" FontWeight="SemiBold" Foreground="{StaticResource Gray500}" HorizontalAlignment="Center"/>
+                                        <TextBlock Grid.Column="5" Text="Thành tiền" FontSize="12" FontWeight="SemiBold" Foreground="{StaticResource Gray500}" HorizontalAlignment="Center"/>
+                                        <TextBlock Grid.Column="6" Text="" FontSize="12" FontWeight="SemiBold" Foreground="{StaticResource Gray500}" HorizontalAlignment="Center" Width="40"/>
                                     </Grid>
                                 </Border>
 
@@ -1121,11 +1130,12 @@
                                                 <Border BorderBrush="{StaticResource Gray100}" BorderThickness="0,0,0,1" Padding="8,12">
                                                     <Grid>
                                                         <Grid.ColumnDefinitions>
-                                                            <ColumnDefinition Width="1.5*"/>
+                                                            <ColumnDefinition Width="1.3*"/>
                                                             <ColumnDefinition Width="Auto"/>
+                                                            <ColumnDefinition Width="0.9*"/>
+                                                            <ColumnDefinition Width="0.9*"/>
                                                             <ColumnDefinition Width="1*"/>
                                                             <ColumnDefinition Width="1*"/>
-                                                            <ColumnDefinition Width="1.2*"/>
                                                             <ColumnDefinition Width="Auto"/>
                                                         </Grid.ColumnDefinitions>
 
@@ -1170,7 +1180,11 @@
                                                             </Button>
                                                         </StackPanel>
 
-                                                        <StackPanel Grid.Column="2" Orientation="Horizontal" HorizontalAlignment="Center" VerticalAlignment="Center">
+                                                        <ComboBox Grid.Column="2" ItemsSource="{Binding DonViNhapOptions}" SelectedItem="{Binding SelectedDonViNhap}"
+                                                                  DisplayMemberPath="DonViTinh.TenDonVi" BorderThickness="0" Background="Transparent"
+                                                                  FontSize="12" VerticalAlignment="Center" HorizontalAlignment="Stretch" Cursor="Hand"/>
+
+                                                        <StackPanel Grid.Column="3" Orientation="Horizontal" HorizontalAlignment="Center" VerticalAlignment="Center">
                                                             <TextBox Text="{Binding DonGia, UpdateSourceTrigger=LostFocus}" 
                                                                      FontSize="12" Foreground="{StaticResource Gray800}" 
                                                                      TextAlignment="Right" Background="White" 
@@ -1179,14 +1193,14 @@
                                                             <TextBlock Text=" đ" FontSize="12" Foreground="{StaticResource Gray800}" VerticalAlignment="Center" Margin="4,0,0,0"/>
                                                         </StackPanel>
 
-                                                        <DatePicker Grid.Column="3" SelectedDate="{Binding HSD, Mode=TwoWay}" 
+                                                        <DatePicker Grid.Column="4" SelectedDate="{Binding HSD, Mode=TwoWay}" 
                                                                     BorderThickness="0" Background="Transparent" FontSize="11" 
                                                                     VerticalAlignment="Center" HorizontalAlignment="Stretch" Language="vi-VN"/>
 
-                                                        <TextBlock Grid.Column="4" Text="{Binding ThanhTien, StringFormat='{}{0:N0} đ'}" FontSize="12" Foreground="{StaticResource Gray800}" FontWeight="SemiBold"
+                                                        <TextBlock Grid.Column="5" Text="{Binding ThanhTien, StringFormat='{}{0:N0} đ'}" FontSize="12" Foreground="{StaticResource Gray800}" FontWeight="SemiBold"
                                                                    VerticalAlignment="Center" HorizontalAlignment="Center"/>
 
-                                                        <Button Grid.Column="5" Command="{Binding DataContext.RemoveChiTietCommand, RelativeSource={RelativeSource AncestorType=ItemsControl}}"
+                                                        <Button Grid.Column="6" Command="{Binding DataContext.RemoveChiTietCommand, RelativeSource={RelativeSource AncestorType=ItemsControl}}"
                                                                 CommandParameter="{Binding}" Cursor="Hand" HorizontalAlignment="Center">
                                                             <Button.Template>
                                                                 <ControlTemplate TargetType="Button">
