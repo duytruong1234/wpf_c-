@@ -70,6 +70,9 @@ namespace QuanLyKhoNguyenLieuPizza
             // Khởi tạo DI Container
             Services = ConfigureServices();
 
+            // Tự động tạo Database nếu chưa tồn tại (lần đầu chạy trên máy mới)
+            await DatabaseInitializer.EnsureDatabaseCreatedAsync();
+
             // Migrate hình ảnh cũ sang AppData nếu cần
             Helpers.ImageStorageHelper.MigrateImagesFromBaseDirectory();
 

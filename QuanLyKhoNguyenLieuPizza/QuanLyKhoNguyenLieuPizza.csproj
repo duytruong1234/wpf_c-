@@ -41,4 +41,10 @@
     <Resource Include="Resources\Images\app.ico" />
   </ItemGroup>
 
+  <ItemGroup>
+    <Content Include="Resources\Database\QuanLyKhoNguyenLieuPizza.sql">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </Content>
+  </ItemGroup>
+
 </Project>
