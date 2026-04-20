@@ -8,6 +8,7 @@
              xmlns:views="clr-namespace:QuanLyKhoNguyenLieuPizza.Views"
              xmlns:converters="clr-namespace:QuanLyKhoNguyenLieuPizza.Converters"
          xmlns:ui="http://schemas.lepo.co/wpfui/2022/xaml"
+         xmlns:behaviors="clr-namespace:QuanLyKhoNguyenLieuPizza.Behaviors"
              mc:Ignorable="d" 
              d:DesignHeight="750" d:DesignWidth="1100">
     
@@ -1168,7 +1169,7 @@
                                                             <!-- Hệ số (editable) -->
                                                             <Border Grid.Column="1" Background="White" BorderBrush="{StaticResource Gray200}" BorderThickness="1" 
                                                                     CornerRadius="6" Margin="4,4" Padding="6,4">
-                                                                <TextBox Text="{Binding HeSoText, UpdateSourceTrigger=PropertyChanged}" 
+                                                                <TextBox Text="{Binding HeSoText, UpdateSourceTrigger=PropertyChanged}" behaviors:NumericInputBehavior.IsDecimalOnly="True"
                                                                          BorderThickness="0" Background="Transparent" FontSize="13" 
                                                                          HorizontalContentAlignment="Center" VerticalContentAlignment="Center"/>
                                                             </Border>

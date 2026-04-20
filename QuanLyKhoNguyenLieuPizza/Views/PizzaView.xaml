@@ -6,9 +6,10 @@
              xmlns:d="http://schemas.microsoft.com/expression/blend/2008" 
              xmlns:vm="clr-namespace:QuanLyKhoNguyenLieuPizza.ViewModels"
              xmlns:converters="clr-namespace:QuanLyKhoNguyenLieuPizza.Converters"
+             xmlns:behaviors="clr-namespace:QuanLyKhoNguyenLieuPizza.Behaviors"
          xmlns:ui="http://schemas.lepo.co/wpfui/2022/xaml"
              mc:Ignorable="d" 
-             d:DesignHeight="900" d:DesignWidth="1200">
+             d:DesignHeight="800" d:DesignWidth="1200">
     
     <d:UserControl.DataContext>
         <vm:PizzaViewModel/>
@@ -566,7 +567,7 @@
                                     <TextBlock Text="Giá bán *" FontSize="12" FontWeight="SemiBold" Foreground="{StaticResource Gray600}" Margin="0,0,0,6"/>
                                     <Border Background="{StaticResource Gray50}" CornerRadius="10" BorderBrush="{StaticResource Gray200}" BorderThickness="1" Padding="14,10">
                                         <TextBox Text="{Binding FormGiaBan, UpdateSourceTrigger=PropertyChanged}" 
-                                                 PreviewTextInput="NumberOnly_PreviewTextInput"
+                                                 behaviors:NumericInputBehavior.IsNumericOnly="True"
                                                  FontSize="13" Background="Transparent" BorderThickness="0" Foreground="{StaticResource Gray800}"/>
                                     </Border>
                                 </StackPanel>
@@ -728,7 +729,7 @@
                                     
                                     <StackPanel Grid.Column="1" Margin="0,0,12,0">
                                         <TextBlock Text="Số lượng (*)" FontSize="12" Foreground="{StaticResource Gray600}" Margin="0,0,0,4"/>
-                                        <TextBox Text="{Binding RecipeSoLuong, UpdateSourceTrigger=PropertyChanged}" PreviewTextInput="NumberOnly_PreviewTextInput" Background="White" BorderBrush="{StaticResource Gray200}"/>
+                                        <TextBox Text="{Binding RecipeSoLuong, UpdateSourceTrigger=PropertyChanged}" behaviors:NumericInputBehavior.IsDecimalOnly="True" Background="White" BorderBrush="{StaticResource Gray200}"/>
                                     </StackPanel>
                                     
                                     <StackPanel Grid.Column="2" Margin="0,0,16,0">

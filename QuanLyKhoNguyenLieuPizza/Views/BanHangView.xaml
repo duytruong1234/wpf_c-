@@ -8,6 +8,7 @@
              xmlns:converters="clr-namespace:QuanLyKhoNguyenLieuPizza.Converters"
          xmlns:ui="http://schemas.lepo.co/wpfui/2022/xaml"
          xmlns:banhang="clr-namespace:QuanLyKhoNguyenLieuPizza.Views.BanHang"
+         xmlns:behaviors="clr-namespace:QuanLyKhoNguyenLieuPizza.Behaviors"
              mc:Ignorable="d" 
              d:DesignHeight="800" d:DesignWidth="1200">
 
@@ -455,7 +456,7 @@
                                 <Grid Margin="0,0,0,12">
                                     <TextBlock Text="Giảm giá" FontSize="14" Foreground="{StaticResource Gray600}" VerticalAlignment="Center"/>
                                     <Border Background="White" BorderBrush="{StaticResource Gray200}" BorderThickness="1" CornerRadius="8" Width="100" HorizontalAlignment="Right" Padding="8,6">
-                                        <TextBox Text="{Binding GiamGia, UpdateSourceTrigger=PropertyChanged, TargetNullValue=''}" BorderThickness="0" Background="Transparent" FontSize="14" Foreground="{StaticResource Gray900}" TextAlignment="Right"/>
+                                        <TextBox Text="{Binding GiamGia, UpdateSourceTrigger=PropertyChanged, TargetNullValue=''}" BorderThickness="0" Background="Transparent" FontSize="14" Foreground="{StaticResource Gray900}" TextAlignment="Right" behaviors:NumericInputBehavior.IsNumericOnly="True" InputMethod.IsInputMethodEnabled="False"/>
                                     </Border>
                                 </Grid>
 
@@ -513,7 +514,7 @@
                                     <Grid Margin="0,0,0,8">
                                         <TextBlock Text="Khách thanh toán" FontSize="14" Foreground="{StaticResource Gray600}" VerticalAlignment="Center"/>
                                         <Border Background="White" BorderBrush="{StaticResource Gray200}" BorderThickness="1" CornerRadius="8" Width="100" HorizontalAlignment="Right" Padding="8,6">
-                                            <TextBox Text="{Binding TienKhachDua, UpdateSourceTrigger=PropertyChanged, TargetNullValue=''}" BorderThickness="0" Background="Transparent" FontSize="14" Foreground="{StaticResource Gray900}" TextAlignment="Right"/>
+                                            <TextBox Text="{Binding TienKhachDua, UpdateSourceTrigger=PropertyChanged, TargetNullValue=''}" BorderThickness="0" Background="Transparent" FontSize="14" Foreground="{StaticResource Gray900}" TextAlignment="Right" behaviors:NumericInputBehavior.IsNumericOnly="True" InputMethod.IsInputMethodEnabled="False"/>
                                         </Border>
                                     </Grid>
                                     
@@ -804,6 +805,7 @@
         <banhang:SizeDeSelectionDialog DataContext="{Binding}"/>
         <banhang:OrderDetailDialog DataContext="{Binding}"/>
         <banhang:EditDeleteDialogs DataContext="{Binding}"/>
+        <banhang:CheckoutDialogs DataContext="{Binding}"/>
 
         <Grid Visibility="{Binding IsLoading, Converter={StaticResource BoolToVisibilityConverter}}" Panel.ZIndex="999">
             <!-- Nền mờ mỏng nhẹ -->

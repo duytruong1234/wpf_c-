@@ -5,6 +5,7 @@
              xmlns:d="http://schemas.microsoft.com/expression/blend/2008" 
              xmlns:vm="clr-namespace:QuanLyKhoNguyenLieuPizza.ViewModels"
              xmlns:converters="clr-namespace:QuanLyKhoNguyenLieuPizza.Converters"
+             xmlns:behaviors="clr-namespace:QuanLyKhoNguyenLieuPizza.Behaviors"
              xmlns:ui="http://schemas.lepo.co/wpfui/2022/xaml"
              mc:Ignorable="d" 
              d:DesignHeight="800" d:DesignWidth="1200">
@@ -900,7 +901,7 @@
                                                                 </Button.Template>
                                                             </Button>
                                                             <TextBox Text="{Binding SoLuong, UpdateSourceTrigger=PropertyChanged}"
-                                                                     Width="40" TextAlignment="Center" BorderThickness="0"
+                                                                     Width="40" TextAlignment="Center" BorderThickness="0" behaviors:NumericInputBehavior.IsDecimalOnly="True"
                                                                      FontSize="14" FontWeight="SemiBold" VerticalContentAlignment="Center" Background="Transparent"/>
                                                             <Button Command="{Binding DataContext.IncreaseQuantityCommand, RelativeSource={RelativeSource AncestorType=ItemsControl}}"
                                                                     CommandParameter="{Binding}" Cursor="Hand">
@@ -925,7 +926,7 @@
                                                                   FontSize="12" VerticalAlignment="Center" HorizontalAlignment="Stretch" Cursor="Hand"/>
                                                         
                                                         <Border Grid.Column="3" BorderBrush="{StaticResource Gray200}" BorderThickness="1" CornerRadius="6" Padding="4,2" Margin="4,0" VerticalAlignment="Center">
-                                                            <TextBox Text="{Binding DonGia, UpdateSourceTrigger=LostFocus, StringFormat=N0}" 
+                                                            <TextBox Text="{Binding DonGia, UpdateSourceTrigger=LostFocus, StringFormat=N0}" behaviors:NumericInputBehavior.IsNumericOnly="True"
                                                                      BorderThickness="0" Background="Transparent" FontSize="13" TextAlignment="Center" 
                                                                      VerticalContentAlignment="Center" HorizontalContentAlignment="Center"/>
                                                         </Border>
@@ -1163,7 +1164,7 @@
                                                                     </ControlTemplate>
                                                                 </Button.Template>
                                                             </Button>
-                                                            <TextBox Text="{Binding SoLuong, UpdateSourceTrigger=PropertyChanged}"
+                                                            <TextBox Text="{Binding SoLuong, UpdateSourceTrigger=PropertyChanged}" behaviors:NumericInputBehavior.IsDecimalOnly="True"
                                                                      Width="45" TextAlignment="Center" BorderThickness="0" Background="Transparent"
                                                                      FontSize="14" FontWeight="SemiBold" VerticalContentAlignment="Center" Margin="4,0"/>
                                                             <Button Command="{Binding DataContext.IncreaseQuantityCommand, RelativeSource={RelativeSource AncestorType=ItemsControl}}"
@@ -1189,7 +1190,7 @@
                                                                   FontSize="12" VerticalAlignment="Center" HorizontalAlignment="Stretch" Cursor="Hand"/>
 
                                                         <StackPanel Grid.Column="3" Orientation="Horizontal" HorizontalAlignment="Center" VerticalAlignment="Center">
-                                                            <TextBox Text="{Binding DonGia, UpdateSourceTrigger=LostFocus}" 
+                                                            <TextBox Text="{Binding DonGia, UpdateSourceTrigger=LostFocus}" behaviors:NumericInputBehavior.IsNumericOnly="True"
                                                                      FontSize="12" Foreground="{StaticResource Gray800}" 
                                                                      TextAlignment="Right" Background="White" 
                                                                      BorderThickness="1" BorderBrush="{StaticResource Gray300}"

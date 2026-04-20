@@ -8,6 +8,7 @@
          xmlns:converters="clr-namespace:QuanLyKhoNguyenLieuPizza.Converters"
          xmlns:ui="http://schemas.lepo.co/wpfui/2022/xaml"
          xmlns:views="clr-namespace:QuanLyKhoNguyenLieuPizza.Views"
+         xmlns:behaviors="clr-namespace:QuanLyKhoNguyenLieuPizza.Behaviors"
          mc:Ignorable="d" 
          d:DesignHeight="620" d:DesignWidth="540">
 
@@ -274,7 +275,7 @@
                             <StackPanel Grid.Column="1" VerticalAlignment="Center">
                                 <TextBlock Text="Số điện thoại *" FontSize="11" Foreground="{StaticResource Gray400}" Margin="0,0,0,3"/>
                                 <TextBlock Text="{Binding SDT, TargetNullValue='Chưa cập nhật'}" FontSize="14" FontWeight="SemiBold" Foreground="{StaticResource Gray900}" Visibility="{Binding IsNotEditing, Converter={StaticResource BoolToVisibilityConverter}}"/>
-                                <TextBox Text="{Binding SDT, UpdateSourceTrigger=PropertyChanged}" FontSize="14" FontWeight="SemiBold" Foreground="{StaticResource Gray900}" BorderThickness="0" Background="Transparent" Padding="0" Margin="0" Visibility="{Binding IsEditing, Converter={StaticResource BoolToVisibilityConverter}}"/>
+                                <TextBox Text="{Binding SDT, UpdateSourceTrigger=PropertyChanged}" behaviors:NumericInputBehavior.IsNumericOnly="True" FontSize="14" FontWeight="SemiBold" Foreground="{StaticResource Gray900}" BorderThickness="0" Background="Transparent" Padding="0" Margin="0" Visibility="{Binding IsEditing, Converter={StaticResource BoolToVisibilityConverter}}"/>
                                 <TextBlock Text="{Binding ErrorSDT}" FontSize="11" Foreground="{StaticResource DangerRed}" Margin="0,4,0,0" Visibility="{Binding ErrorSDT, Converter={StaticResource StringToVisibilityConverter}}"/>
                             </StackPanel>
                         </Grid>

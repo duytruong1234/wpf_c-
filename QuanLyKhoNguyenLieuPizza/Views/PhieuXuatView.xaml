@@ -5,6 +5,7 @@
              xmlns:d="http://schemas.microsoft.com/expression/blend/2008" 
              xmlns:vm="clr-namespace:QuanLyKhoNguyenLieuPizza.ViewModels"
              xmlns:converters="clr-namespace:QuanLyKhoNguyenLieuPizza.Converters"
+             xmlns:behaviors="clr-namespace:QuanLyKhoNguyenLieuPizza.Behaviors"
              xmlns:ui="http://schemas.lepo.co/wpfui/2022/xaml"
              mc:Ignorable="d" 
              d:DesignHeight="800" d:DesignWidth="1200">
@@ -848,7 +849,7 @@
                                                                     </ControlTemplate>
                                                                 </Button.Template>
                                                             </Button>
-                                                            <TextBox Text="{Binding SoLuong, UpdateSourceTrigger=PropertyChanged}"
+                                                            <TextBox Text="{Binding SoLuong, UpdateSourceTrigger=PropertyChanged}" behaviors:NumericInputBehavior.IsDecimalOnly="True"
                                                                      Width="45" TextAlignment="Center" BorderThickness="0" Background="Transparent"
                                                                      FontSize="14" FontWeight="SemiBold" VerticalContentAlignment="Center" Margin="4,0"/>
                                                             <Button Command="{Binding DataContext.IncreaseQuantityCommand, RelativeSource={RelativeSource AncestorType=ItemsControl}}"
@@ -1114,7 +1115,7 @@
                                                                     </ControlTemplate>
                                                                 </Button.Template>
                                                             </Button>
-                                                            <TextBox Text="{Binding SoLuong, UpdateSourceTrigger=PropertyChanged}"
+                                                            <TextBox Text="{Binding SoLuong, UpdateSourceTrigger=PropertyChanged}" behaviors:NumericInputBehavior.IsDecimalOnly="True"
                                                                      Width="45" TextAlignment="Center" BorderThickness="0" Background="Transparent"
                                                                      FontSize="14" FontWeight="SemiBold" VerticalContentAlignment="Center" Margin="4,0"/>
                                                             <Button Command="{Binding DataContext.IncreaseQuantityCommand, RelativeSource={RelativeSource AncestorType=ItemsControl}}"

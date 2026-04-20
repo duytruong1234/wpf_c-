@@ -1,0 +1,175 @@
+<UserControl x:Class="QuanLyKhoNguyenLieuPizza.Views.BanHang.CheckoutDialogs"
+             xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:ui="http://schemas.lepo.co/wpfui/2022/xaml"
+             xmlns:converters="clr-namespace:QuanLyKhoNguyenLieuPizza.Converters">
+
+    <UserControl.Resources>
+        <converters:BoolToVisibilityConverter x:Key="BoolToVisibilityConverter"/>
+    </UserControl.Resources>
+
+    <Grid>
+        <!-- XÁC NHẬN THANH TOÁN DIALOG -->
+        <Grid Visibility="{Binding IsCheckoutConfirmOpen, Converter={StaticResource BoolToVisibilityConverter}}" Background="#800F172A" Panel.ZIndex="1000">
+            <Border Background="White" CornerRadius="18" Width="400"
+                    VerticalAlignment="Center" HorizontalAlignment="Center">
+                <Border.Effect>
+                    <DropShadowEffect BlurRadius="40" ShadowDepth="8" Direction="270" Color="#000000" Opacity="0.2"/>
+                </Border.Effect>
+                <Grid Margin="24,24,24,24">
+                    <Grid.RowDefinitions>
+                        <RowDefinition Height="Auto"/>
+                        <RowDefinition Height="Auto"/>
+                        <RowDefinition Height="Auto"/>
+                    </Grid.RowDefinitions>
+
+                    <!-- Icon và Tiêu đề -->
+                    <StackPanel Grid.Row="0" HorizontalAlignment="Center" Margin="0,0,0,16">
+                        <Border Background="#EFF6FF" Width="64" Height="64" CornerRadius="32" Margin="0,0,0,16">
+                            <ui:SymbolIcon Symbol="Wallet24" FontSize="32" Foreground="#3B82F6" HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                        </Border>
+                        <TextBlock Text="Xác Nhận Thanh Toán" FontSize="20" FontWeight="Black" Foreground="#1E293B" HorizontalAlignment="Center"/>
+                        <TextBlock Text="Bạn có chắc chắn muốn thanh toán đơn hàng này?" FontSize="14" Foreground="#64748B" HorizontalAlignment="Center" Margin="0,8,0,0" TextWrapping="Wrap" TextAlignment="Center"/>
+                    </StackPanel>
+
+                    <!-- Thông tin chi tiết -->
+                    <Border Grid.Row="1" Background="#F8FAFC" BorderBrush="#E2E8F0" BorderThickness="1.5" CornerRadius="12" Padding="16" Margin="0,0,0,24">
+                        <StackPanel>
+                            <Grid Margin="0,0,0,8">
+                                <TextBlock Text="Phương thức:" FontSize="14" FontWeight="SemiBold" Foreground="#64748B"/>
+                                <TextBlock Text="{Binding SelectedPhuongThucTT}" FontSize="14" FontWeight="Bold" Foreground="#334155" HorizontalAlignment="Right"/>
+                            </Grid>
+                            <Grid>
+                                <TextBlock Text="Tổng cần trả:" FontSize="16" FontWeight="Black" Foreground="#1E293B" VerticalAlignment="Center"/>
+                                <TextBlock Text="{Binding KhachCanTra, StringFormat={}{0:N0} đ}" FontSize="20" FontWeight="Black" Foreground="#4F46E5" HorizontalAlignment="Right"/>
+                            </Grid>
+                        </StackPanel>
+                    </Border>
+
+                    <!-- Buttons -->
+                    <Grid Grid.Row="2">
+                        <Grid.ColumnDefinitions>
+                            <ColumnDefinition Width="*"/>
+                            <ColumnDefinition Width="12"/>
+                            <ColumnDefinition Width="*"/>
+                        </Grid.ColumnDefinitions>
+
+                        <!-- Nút Hủy -->
+                        <Button Grid.Column="0" Command="{Binding CancelCheckoutCommand}" Cursor="Hand" HorizontalAlignment="Stretch">
+                            <Button.Template>
+                                <ControlTemplate TargetType="Button">
+                                    <Border x:Name="border" Background="#F1F5F9" CornerRadius="12" Padding="0,12">
+                                        <TextBlock Text="Hủy Bỏ" FontSize="15" FontWeight="Bold" Foreground="#64748B" HorizontalAlignment="Center"/>
+                                    </Border>
+                                    <ControlTemplate.Triggers>
+                                        <Trigger Property="IsMouseOver" Value="True">
+                                            <Setter TargetName="border" Property="Background" Value="#E2E8F0"/>
+                                        </Trigger>
+                                        <Trigger Property="IsPressed" Value="True">
+                                            <Setter TargetName="border" Property="Background" Value="#CBD5E1"/>
+                                        </Trigger>
+                                    </ControlTemplate.Triggers>
+                                </ControlTemplate>
+                            </Button.Template>
+                        </Button>
+
+                        <!-- Nút Xác Nhận -->
+                        <Button Grid.Column="2" Command="{Binding ConfirmCheckoutCommand}" Cursor="Hand" HorizontalAlignment="Stretch">
+                            <Button.Template>
+                                <ControlTemplate TargetType="Button">
+                                    <Border x:Name="border" CornerRadius="12" Padding="0,12">
+                                        <Border.Background>
+                                            <LinearGradientBrush StartPoint="0,0" EndPoint="1,1">
+                                                <GradientStop Color="#3B82F6" Offset="0"/>
+                                                <GradientStop Color="#2563EB" Offset="1"/>
+                                            </LinearGradientBrush>
+                                        </Border.Background>
+                                        <Border.Effect>
+                                            <DropShadowEffect BlurRadius="15" ShadowDepth="4" Direction="270" Color="#2563EB" Opacity="0.4"/>
+                                        </Border.Effect>
+                                        <TextBlock Text="Thanh Toán" FontSize="15" FontWeight="Black" Foreground="White" HorizontalAlignment="Center"/>
+                                    </Border>
+                                    <ControlTemplate.Triggers>
+                                        <Trigger Property="IsMouseOver" Value="True">
+                                            <Setter TargetName="border" Property="Opacity" Value="0.95"/>
+                                        </Trigger>
+                                        <Trigger Property="IsPressed" Value="True">
+                                            <Setter TargetName="border" Property="Opacity" Value="0.85"/>
+                                        </Trigger>
+                                    </ControlTemplate.Triggers>
+                                </ControlTemplate>
+                            </Button.Template>
+                        </Button>
+                    </Grid>
+                </Grid>
+            </Border>
+        </Grid>
+
+        <!-- THÀNH CÔNG DIALOG -->
+        <Grid Visibility="{Binding IsCheckoutSuccessOpen, Converter={StaticResource BoolToVisibilityConverter}}" Background="#800F172A" Panel.ZIndex="1000">
+            <Border Background="White" CornerRadius="18" Width="380"
+                    VerticalAlignment="Center" HorizontalAlignment="Center">
+                <Border.Effect>
+                    <DropShadowEffect BlurRadius="40" ShadowDepth="8" Direction="270" Color="#000000" Opacity="0.2"/>
+                </Border.Effect>
+                <Grid Margin="24,24,24,24">
+                    <Grid.RowDefinitions>
+                        <RowDefinition Height="Auto"/>
+                        <RowDefinition Height="Auto"/>
+                        <RowDefinition Height="Auto"/>
+                    </Grid.RowDefinitions>
+
+                    <!-- Icon và Tiêu đề -->
+                    <StackPanel Grid.Row="0" HorizontalAlignment="Center" Margin="0,0,0,16">
+                        <Border Background="#DCFCE7" Width="72" Height="72" CornerRadius="36" Margin="0,0,0,16">
+                            <ui:SymbolIcon Symbol="CheckmarkCircle24" FontSize="40" Foreground="#16A34A" HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                        </Border>
+                        <TextBlock Text="Thanh Toán Thành Công!" FontSize="20" FontWeight="Black" Foreground="#1E293B" HorizontalAlignment="Center"/>
+                    </StackPanel>
+
+                    <!-- Thông tin phiếu -->
+                    <Border Grid.Row="1" Background="#F8FAFC" BorderBrush="#E2E8F0" BorderThickness="1.5" CornerRadius="12" Padding="16" Margin="0,0,0,24">
+                        <StackPanel>
+                            <Grid Margin="0,0,0,8">
+                                <TextBlock Text="Mã Phiếu:" FontSize="14" FontWeight="SemiBold" Foreground="#64748B"/>
+                                <TextBlock Text="{Binding SavedMaPhieuBan}" FontSize="15" FontWeight="Black" Foreground="#10B981" HorizontalAlignment="Right"/>
+                            </Grid>
+                            <Grid>
+                                <TextBlock Text="Tổng Thu:" FontSize="14" FontWeight="SemiBold" Foreground="#64748B" VerticalAlignment="Center"/>
+                                <TextBlock Text="{Binding KhachCanTra, StringFormat={}{0:N0} đ}" FontSize="16" FontWeight="Bold" Foreground="#334155" HorizontalAlignment="Right"/>
+                            </Grid>
+                        </StackPanel>
+                    </Border>
+
+                    <!-- Button Đóng -->
+                    <Button Grid.Row="2" Command="{Binding CloseCheckoutSuccessCommand}" Cursor="Hand" HorizontalAlignment="Stretch">
+                        <Button.Template>
+                            <ControlTemplate TargetType="Button">
+                                <Border x:Name="border" CornerRadius="12" Padding="0,12">
+                                    <Border.Background>
+                                        <LinearGradientBrush StartPoint="0,0" EndPoint="1,1">
+                                            <GradientStop Color="#10B981" Offset="0"/>
+                                            <GradientStop Color="#059669" Offset="1"/>
+                                        </LinearGradientBrush>
+                                    </Border.Background>
+                                    <Border.Effect>
+                                        <DropShadowEffect BlurRadius="15" ShadowDepth="4" Direction="270" Color="#059669" Opacity="0.4"/>
+                                    </Border.Effect>
+                                    <TextBlock Text="Hoàn Tất" FontSize="15" FontWeight="Black" Foreground="White" HorizontalAlignment="Center"/>
+                                </Border>
+                                <ControlTemplate.Triggers>
+                                    <Trigger Property="IsMouseOver" Value="True">
+                                        <Setter TargetName="border" Property="Opacity" Value="0.95"/>
+                                    </Trigger>
+                                    <Trigger Property="IsPressed" Value="True">
+                                        <Setter TargetName="border" Property="Opacity" Value="0.85"/>
+                                    </Trigger>
+                                </ControlTemplate.Triggers>
+                            </ControlTemplate>
+                        </Button.Template>
+                    </Button>
+                </Grid>
+            </Border>
+        </Grid>
+    </Grid>
+</UserControl>

@@ -198,6 +198,15 @@ public class BanHangViewModel : BaseViewModel
     public ObservableCollection<CT_PhieuBan> SelectedChiTiets { get => _selectedChiTiets; set { SetProperty(ref _selectedChiTiets, value); } }
     public PhieuBanHang? DeletingPhieuBan { get => _deletingPhieuBan; set { SetProperty(ref _deletingPhieuBan, value); } }
 
+    private bool _isCheckoutConfirmOpen;
+    public bool IsCheckoutConfirmOpen { get => _isCheckoutConfirmOpen; set { SetProperty(ref _isCheckoutConfirmOpen, value); } }
+
+    private bool _isCheckoutSuccessOpen;
+    public bool IsCheckoutSuccessOpen { get => _isCheckoutSuccessOpen; set { SetProperty(ref _isCheckoutSuccessOpen, value); } }
+
+    private string _savedMaPhieuBan = "";
+    public string SavedMaPhieuBan { get => _savedMaPhieuBan; set { SetProperty(ref _savedMaPhieuBan, value); } }
+
     public DateTime FilterFromDate { get => _filterFromDate; set { if (SetProperty(ref _filterFromDate, value)) _ = LoadPhieuBanHangsAsync(); } }
     public DateTime FilterToDate { get => _filterToDate; set { if (SetProperty(ref _filterToDate, value)) _ = LoadPhieuBanHangsAsync(); } }
     public string SearchText
@@ -251,6 +260,9 @@ public class BanHangViewModel : BaseViewModel
     public ICommand IncreaseQuantityCommand { get; }
     public ICommand DecreaseQuantityCommand { get; }
     public ICommand CheckoutCommand { get; }
+    public ICommand CancelCheckoutCommand { get; }
+    public ICommand ConfirmCheckoutCommand { get; }
+    public ICommand CloseCheckoutSuccessCommand { get; }
     public ICommand ClearCartCommand { get; }
     public ICommand PrintTamTinhCommand { get; }
 
@@ -300,7 +312,10 @@ public class BanHangViewModel : BaseViewModel
         RemoveFromCartCommand = new RelayCommand(ExecuteRemoveFromCart);
         IncreaseQuantityCommand = new RelayCommand(ExecuteIncreaseQuantity);
         DecreaseQuantityCommand = new RelayCommand(ExecuteDecreaseQuantity);
-        CheckoutCommand = new AsyncRelayCommand(ExecuteCheckoutAsync);
+        CheckoutCommand = new RelayCommand(ExecuteOpenCheckoutDialog);
+        CancelCheckoutCommand = new RelayCommand(_ => IsCheckoutConfirmOpen = false);
+        ConfirmCheckoutCommand = new AsyncRelayCommand(ExecuteConfirmCheckoutAsync);
+        CloseCheckoutSuccessCommand = new RelayCommand(ExecuteCloseCheckoutSuccess);
         ClearCartCommand = new RelayCommand(_ => { CartItems.Clear(); RefreshCartTotals(); });
         PrintTamTinhCommand = new RelayCommand(_ => ExecutePrintTamTinh());
 
@@ -579,25 +594,19 @@ public class BanHangViewModel : BaseViewModel
         PrintService.PrintHoaDonBanHang(tempDonHang, chiTiets);
     }
 
-    private async Task ExecuteCheckoutAsync(object? parameter)
+    private void ExecuteOpenCheckoutDialog(object? parameter)
     {
         if (!CartItems.Any())
         {
             MessageBox.Show("Giỏ hàng trống!", "Thông báo", MessageBoxButton.OK, MessageBoxImage.Warning);
             return;
         }
+        IsCheckoutConfirmOpen = true;
+    }
 
-        var msgBox = new Wpf.Ui.Controls.MessageBox
-        {
-            Title = "Xác nhận thanh toán",
-            Content = $"Xác nhận thanh toán đơn hàng?\nTổng tiền cần trả: {KhachCanTra:N0}",
-            PrimaryButtonText = "Thanh toán",
-            CloseButtonText = "Hủy"
-        };
-        
-        var result = await msgBox.ShowDialogAsync();
-        if (result != Wpf.Ui.Controls.MessageBoxResult.Primary) return;
-
+    private async Task ExecuteConfirmCheckoutAsync(object? parameter)
+    {
+        IsCheckoutConfirmOpen = false;
         IsLoading = true;
         try
         {
@@ -633,53 +642,36 @@ public class BanHangViewModel : BaseViewModel
 
             if (!string.IsNullOrEmpty(savedMa))
             {
-                var successMsg = new Wpf.Ui.Controls.MessageBox
-                {
-                    Title = "Thành công",
-                    Content = $"Thanh toán thành công!\nMã phiếu: {savedMa}\nTổng tiền đã thu: {KhachCanTra:N0}",
-                    CloseButtonText = "Đóng"
-                };
-                await successMsg.ShowDialogAsync();
-                CartItems.Clear();
-                GhiChu = string.Empty;
-                SelectedPhuongThucTT = "Tiền mặt";
-                GiamGia = null;
-                TienKhachDua = null;
-                RefreshCartTotals();
-                await LoadStatsAsync();
-                await RefreshStockStatusAsync();
-                FilterHangHoas();
+                SavedMaPhieuBan = savedMa;
+                IsCheckoutSuccessOpen = true;
             }
             else
             {
-                var errorMsg = new Wpf.Ui.Controls.MessageBox
-                {
-                    Title = "Lỗi",
-                    Content = "Có lỗi xảy ra khi tạo phiếu bán!",
-                    CloseButtonText = "Đóng"
-                };
-                await errorMsg.ShowDialogAsync();
+                MessageBox.Show("Có lỗi xảy ra khi tạo phiếu bán!", "Lỗi", MessageBoxButton.OK, MessageBoxImage.Error);
             }
         }
         catch (Exception ex)
         {
-            IsLoading = false;
-            await Task.Delay(150);
-            
-            var catchMsg = new Wpf.Ui.Controls.MessageBox
-            {
-                Title = "Lỗi",
-                Content = $"Có lỗi xảy ra: {ex.Message}",
-                CloseButtonText = "Đóng"
-            };
-            await catchMsg.ShowDialogAsync();
-            await RefreshStockStatusAsync();
-            FilterHangHoas();
+            MessageBox.Show($"Lỗi thanh toán: {ex.Message}", "Lỗi", MessageBoxButton.OK, MessageBoxImage.Error);
         }
         finally
         {
             IsLoading = false;
         }
+    }
+
+    private void ExecuteCloseCheckoutSuccess(object? parameter)
+    {
+        IsCheckoutSuccessOpen = false;
+        CartItems.Clear();
+        GhiChu = string.Empty;
+        SelectedPhuongThucTT = "Tiền mặt";
+        GiamGia = null;
+        TienKhachDua = null;
+        RefreshCartTotals();
+        _ = LoadStatsAsync();
+        _ = RefreshStockStatusAsync();
+        FilterHangHoas();
     }
     #endregion
 

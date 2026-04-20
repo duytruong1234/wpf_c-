@@ -6,6 +6,7 @@
              xmlns:d="http://schemas.microsoft.com/expression/blend/2008" 
              xmlns:vm="clr-namespace:QuanLyKhoNguyenLieuPizza.ViewModels"
              xmlns:converters="clr-namespace:QuanLyKhoNguyenLieuPizza.Converters"
+             xmlns:behaviors="clr-namespace:QuanLyKhoNguyenLieuPizza.Behaviors"
              xmlns:ui="http://schemas.lepo.co/wpfui/2022/xaml"
              xmlns:views="clr-namespace:QuanLyKhoNguyenLieuPizza.Views"
              mc:Ignorable="d" 
@@ -801,7 +802,7 @@
                                 <TextBlock Text="Số điện thoại *" FontSize="12" FontWeight="Medium" Foreground="{StaticResource Gray500}" Margin="0,0,0,6"/>
                                 <Border Background="White" BorderBrush="{StaticResource Gray200}" BorderThickness="1" CornerRadius="10" Padding="14,12">
                                     <Grid>
-                                        <TextBox x:Name="SdtTextBox" Text="{Binding FormSDT, UpdateSourceTrigger=PropertyChanged}" BorderThickness="0" Background="Transparent" FontSize="14"/>
+                                        <TextBox x:Name="SdtTextBox" Text="{Binding FormSDT, UpdateSourceTrigger=PropertyChanged}" behaviors:NumericInputBehavior.IsNumericOnly="True" BorderThickness="0" Background="Transparent" FontSize="14"/>
                                         <TextBlock Text="VD: 0xxx xxx xxx" FontSize="13" Foreground="{StaticResource Gray300}" VerticalAlignment="Center" IsHitTestVisible="False">
                                             <TextBlock.Style>
                                                 <Style TargetType="TextBlock">

@@ -7,6 +7,7 @@
          xmlns:vm="clr-namespace:QuanLyKhoNguyenLieuPizza.ViewModels"
          xmlns:converters="clr-namespace:QuanLyKhoNguyenLieuPizza.Converters"
          xmlns:ui="http://schemas.lepo.co/wpfui/2022/xaml"
+         xmlns:behaviors="clr-namespace:QuanLyKhoNguyenLieuPizza.Behaviors"
          mc:Ignorable="d" 
          d:DesignHeight="750" d:DesignWidth="1100">
 
@@ -912,7 +913,7 @@
                                                                         CornerRadius="6"
                                                                         Padding="8,4"
                                                                         HorizontalAlignment="Center">
-                                                                    <TextBox Text="{Binding HeSo, UpdateSourceTrigger=PropertyChanged}" 
+                                                                    <TextBox Text="{Binding HeSo, UpdateSourceTrigger=PropertyChanged}" behaviors:NumericInputBehavior.IsDecimalOnly="True"
                                                                              Background="Transparent"
                                                                              BorderThickness="0"
                                                                              FontWeight="SemiBold"

@@ -493,6 +493,27 @@ public class PhieuNhapViewModel : BaseViewModel
         return DonViTinhs.FirstOrDefault(d => d.DonViID == donViId.Value);
     }
 
+    /// <summary>
+    /// Chuẩn hóa HeSo để dùng nhất quán: 1 đơn vị = HeSo × đơn vị chuẩn (kg/l).
+    /// DB lưu g=1000 (1000g=1kg), nhưng cần chuyển thành 0.001 (1g=0.001kg).
+    /// Các đơn vị đóng gói (Bao=25 → 1 Bao=25kg) giữ nguyên.
+    /// </summary>
+    private static decimal NormalizeHeSoForPricing(decimal dbHeSo, string? tenDonVi)
+    {
+        if (string.IsNullOrWhiteSpace(tenDonVi))
+            return dbHeSo <= 0 ? 1m : dbHeSo;
+
+        var normalized = tenDonVi.Trim().ToLowerInvariant();
+        return normalized switch
+        {
+            "g" => 0.001m,
+            "kg" => 1m,
+            "ml" => 0.001m,
+            "l" or "lit" => 1m,
+            _ => dbHeSo <= 0 ? 1m : dbHeSo
+        };
+    }
+
     private ObservableCollection<QuyDoiDonVi> BuildDonViNhapOptions(
         NguyenLieu nguyenLieu,
         IEnumerable<QuyDoiDonVi> quyDois,
@@ -507,13 +528,16 @@ public class PhieuNhapViewModel : BaseViewModel
             if (!donViId.HasValue || options.Any(o => o.DonViID == donViId.Value))
                 return;
 
+            var resolvedDonVi = ResolveDonViTinh(donViId, donViTinh);
+            var normalizedHeSo = NormalizeHeSoForPricing(heSo, resolvedDonVi?.TenDonVi);
+
             options.Add(new QuyDoiDonVi
             {
                 NguyenLieuID = nguyenLieu.NguyenLieuID,
                 DonViID = donViId,
-                HeSo = heSo <= 0 ? 1m : heSo,
+                HeSo = normalizedHeSo,
                 LaDonViChuan = laDonViChuan,
-                DonViTinh = ResolveDonViTinh(donViId, donViTinh)
+                DonViTinh = resolvedDonVi
             });
         }
 

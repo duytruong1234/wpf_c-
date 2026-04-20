@@ -7,6 +7,7 @@
              xmlns:vm="clr-namespace:QuanLyKhoNguyenLieuPizza.ViewModels"
              xmlns:converters="clr-namespace:QuanLyKhoNguyenLieuPizza.Converters"
              xmlns:ui="http://schemas.lepo.co/wpfui/2022/xaml"
+             xmlns:behaviors="clr-namespace:QuanLyKhoNguyenLieuPizza.Behaviors"
              xmlns:views="clr-namespace:QuanLyKhoNguyenLieuPizza.Views"
              mc:Ignorable="d" 
              d:DesignHeight="800" d:DesignWidth="1200">
@@ -525,7 +526,7 @@
                                         </Style.Triggers>
                                     </Style>
                                 </Border.Style>
-                                <TextBox Text="{Binding FormSDT, UpdateSourceTrigger=PropertyChanged}"
+                                <TextBox Text="{Binding FormSDT, UpdateSourceTrigger=PropertyChanged}" behaviors:NumericInputBehavior.IsNumericOnly="True"
                                          BorderThickness="0" Background="Transparent" FontSize="14"/>
                             </Border>
                             <TextBlock Text="{Binding ErrorSDT}" FontSize="11" Foreground="{StaticResource DangerRed}" Margin="2,4,0,0"
@@ -970,7 +971,7 @@
 
                         <TextBlock Text="Giá nhập (đ)" FontSize="12" FontWeight="SemiBold" Foreground="#64748B" Margin="0,0,0,8"/>
                         <Border Background="White" BorderBrush="#E2E8F0" BorderThickness="1" CornerRadius="8" Padding="12,10">
-                            <TextBox Text="{Binding FormGiaNhap, UpdateSourceTrigger=PropertyChanged}" BorderThickness="0" Background="Transparent" FontSize="14" Foreground="#1E293B"/>
+                            <TextBox Text="{Binding FormGiaNhap, UpdateSourceTrigger=PropertyChanged}" behaviors:NumericInputBehavior.IsNumericOnly="True" BorderThickness="0" Background="Transparent" FontSize="14" Foreground="#1E293B"/>
                         </Border>
                     </StackPanel>
 
