@@ -1,4 +1,4 @@
-﻿using System.Text;
+using System.Text;
 using System.Globalization;
 using Microsoft.Data.SqlClient;
 using System.Data;
@@ -582,6 +582,184 @@ public class BanHangService : DatabaseContext
         catch (Exception ex)
         {
             System.Diagnostics.Debug.WriteLine($"Error deleting PhieuBanHang: {ex.Message}");
+            return false;
+        }
+    }
+
+    /// <summary>
+    /// Xóa phiếu bán hàng và hoàn trả nguyên liệu vào tồn kho.
+    /// </summary>
+    public async Task<bool> DeletePhieuBanHangWithRestoreAsync(string maPhieuBan)
+    {
+        try
+        {
+            using var conn = GetConnection();
+            await conn.OpenAsync();
+            using var transaction = conn.BeginTransaction();
+            try
+            {
+                // 1) Đọc chi tiết phiếu bán để tính nguyên liệu cần hoàn
+                var chiTietsRestore = new List<CT_PhieuBan>();
+                var ctReadSql = @"SELECT MaHangHoa, SizeID, MaDeBanh, SoLuong FROM CT_PhieuBan WHERE MaPhieuBan = @MaPhieu";
+                using (var ctCmd = new SqlCommand(ctReadSql, conn, transaction))
+                {
+                    ctCmd.Parameters.AddWithValue("@MaPhieu", maPhieuBan);
+                    using var reader = await ctCmd.ExecuteReaderAsync();
+                    while (await reader.ReadAsync())
+                    {
+                        chiTietsRestore.Add(new CT_PhieuBan
+                        {
+                            MaHangHoa = reader.IsDBNull(0) ? null : reader.GetString(0),
+                            SizeID = reader.IsDBNull(1) ? null : reader.GetString(1),
+                            MaDeBanh = reader.IsDBNull(2) ? null : reader.GetString(2),
+                            SoLuong = reader.IsDBNull(3) ? null : reader.GetInt32(3)
+                        });
+                    }
+                }
+
+                // 2) Tính tổng nguyên liệu cần hoàn trả
+                var restoreMap = new Dictionary<int, decimal>();
+                var unitCtxCache = new Dictionary<int, IngredientUnitContext>();
+                var unitNmCache = new Dictionary<int, string>();
+
+                foreach (var ct in chiTietsRestore)
+                {
+                    if (ct.MaHangHoa == null || ct.SizeID == null) continue;
+                    var soLuongMua = ct.SoLuong ?? 0;
+                    if (soLuongMua <= 0) continue;
+
+                    var ingredientMap = new Dictionary<int, decimal>();
+
+                    // CongThuc_Pizza (nhân bánh)
+                    var congThucs = await GetCongThucPizzaInternalAsync(conn, transaction, ct.MaHangHoa, ct.SizeID);
+                    foreach (var recipe in congThucs)
+                    {
+                        var amount = await ConvertAmountToStockUnitAsync(
+                            conn, transaction, recipe.NguyenLieuID,
+                            (decimal)(recipe.SoLuong ?? 0), recipe.DonViID,
+                            unitCtxCache, unitNmCache);
+                        if (amount <= 0) continue;
+                        if (ingredientMap.ContainsKey(recipe.NguyenLieuID))
+                            ingredientMap[recipe.NguyenLieuID] += amount;
+                        else
+                            ingredientMap[recipe.NguyenLieuID] = amount;
+                    }
+
+                    // QuyDinh_Bot (bột mì)
+                    if (!string.IsNullOrEmpty(ct.MaDeBanh))
+                    {
+                        var botSqlR = @"SELECT qb.TrongLuongBot, qb.DonViID
+                                        FROM QuyDinh_Bot qb
+                                        INNER JOIN DoanhMuc_De dd ON qb.LoaiCotBanh = dd.LoaiCotBanh
+                                        WHERE qb.SizeID = @SizeID AND dd.MaDeBanh = @MaDeBanh";
+                        using var botCmdR = CreateCommand(botSqlR, conn, transaction);
+                        botCmdR.Parameters.AddWithValue("@SizeID", ct.SizeID);
+                        botCmdR.Parameters.AddWithValue("@MaDeBanh", ct.MaDeBanh);
+                        using var botReaderR = await botCmdR.ExecuteReaderAsync();
+                        if (await botReaderR.ReadAsync())
+                        {
+                            var trongLuongBot = botReaderR.IsDBNull(0) ? 0m : Convert.ToDecimal(botReaderR.GetDouble(0));
+                            int? donViBotId = botReaderR.IsDBNull(1) ? null : botReaderR.GetInt32(1);
+                            botReaderR.Close();
+                            if (trongLuongBot > 0)
+                            {
+                                var findBotSqlR = "SELECT TOP 1 NguyenLieuID FROM NguyenLieu WHERE TenNguyenLieu LIKE N'%Bột mì%' OR TenNguyenLieu LIKE N'%Bot mi%'";
+                                using var findBotCmdR = CreateCommand(findBotSqlR, conn, transaction);
+                                var botNlId = await findBotCmdR.ExecuteScalarAsync();
+                                if (botNlId != null && botNlId != DBNull.Value)
+                                {
+                                    var nlId = Convert.ToInt32(botNlId);
+                                    var normalizedBotAmount = await ConvertAmountToStockUnitAsync(
+                                        conn, transaction, nlId, trongLuongBot, donViBotId,
+                                        unitCtxCache, unitNmCache);
+                                    if (normalizedBotAmount > 0)
+                                    {
+                                        if (ingredientMap.ContainsKey(nlId))
+                                            ingredientMap[nlId] += normalizedBotAmount;
+                                        else
+                                            ingredientMap[nlId] = normalizedBotAmount;
+                                    }
+                                }
+                            }
+                        }
+                    }
+
+                    // QuyDinh_Vien (viền)
+                    if (!string.IsNullOrEmpty(ct.MaDeBanh))
+                    {
+                        var vienSqlR = @"SELECT NguyenLieuID, SoLuongVien, DonViID FROM QuyDinh_Vien 
+                                         WHERE MaDeBanh = @MaDeBanh AND SizeID = @SizeID";
+                        var vienItems = new List<(int NguyenLieuId, decimal SoLuong, int? DonViId)>();
+                        using var vienCmdR = CreateCommand(vienSqlR, conn, transaction);
+                        vienCmdR.Parameters.AddWithValue("@MaDeBanh", ct.MaDeBanh);
+                        vienCmdR.Parameters.AddWithValue("@SizeID", ct.SizeID);
+                        using (var vienReaderR = await vienCmdR.ExecuteReaderAsync())
+                        {
+                            while (await vienReaderR.ReadAsync())
+                            {
+                                vienItems.Add((
+                                    vienReaderR.GetInt32(0),
+                                    vienReaderR.IsDBNull(1) ? 0m : Convert.ToDecimal(vienReaderR.GetDouble(1)),
+                                    vienReaderR.IsDBNull(2) ? null : vienReaderR.GetInt32(2)));
+                            }
+                        }
+                        foreach (var vienItem in vienItems)
+                        {
+                            var soLuongVien = await ConvertAmountToStockUnitAsync(
+                                conn, transaction, vienItem.NguyenLieuId, vienItem.SoLuong, vienItem.DonViId,
+                                unitCtxCache, unitNmCache);
+                            if (soLuongVien <= 0) continue;
+                            if (ingredientMap.ContainsKey(vienItem.NguyenLieuId))
+                                ingredientMap[vienItem.NguyenLieuId] += soLuongVien;
+                            else
+                                ingredientMap[vienItem.NguyenLieuId] = soLuongVien;
+                        }
+                    }
+
+                    foreach (var (nguyenLieuId, amountPerPizza) in ingredientMap)
+                    {
+                        var totalAmount = amountPerPizza * soLuongMua;
+                        if (totalAmount <= 0) continue;
+                        if (restoreMap.ContainsKey(nguyenLieuId))
+                            restoreMap[nguyenLieuId] += totalAmount;
+                        else
+                            restoreMap[nguyenLieuId] = totalAmount;
+                    }
+                }
+
+                // 3) Hoàn trả nguyên liệu vào tồn kho
+                foreach (var kvp in restoreMap)
+                {
+                    var restoreSql = @"UPDATE TonKho 
+                                       SET SoLuongTon = SoLuongTon + @SoLuong, NgayCapNhat = GETDATE()
+                                       WHERE NguyenLieuID = @NguyenLieuID";
+                    using var restoreCmd = new SqlCommand(restoreSql, conn, transaction);
+                    restoreCmd.Parameters.AddWithValue("@SoLuong", kvp.Value);
+                    restoreCmd.Parameters.AddWithValue("@NguyenLieuID", kvp.Key);
+                    await restoreCmd.ExecuteNonQueryAsync();
+                }
+
+                // 4) Xóa chi tiết và phiếu bán hàng
+                using var delCtR = new SqlCommand("DELETE FROM CT_PhieuBan WHERE MaPhieuBan = @MaPhieu", conn, transaction);
+                delCtR.Parameters.AddWithValue("@MaPhieu", maPhieuBan);
+                await delCtR.ExecuteNonQueryAsync();
+
+                using var delPbR = new SqlCommand("DELETE FROM PhieuBanHang WHERE MaPhieuBan = @MaPhieu", conn, transaction);
+                delPbR.Parameters.AddWithValue("@MaPhieu", maPhieuBan);
+                await delPbR.ExecuteNonQueryAsync();
+
+                transaction.Commit();
+                return true;
+            }
+            catch
+            {
+                transaction.Rollback();
+                throw;
+            }
+        }
+        catch (Exception ex)
+        {
+            System.Diagnostics.Debug.WriteLine($"Error deleting PhieuBanHang with restore: {ex.Message}");
             return false;
         }
     }

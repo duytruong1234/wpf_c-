@@ -211,6 +211,8 @@ public class DatabaseService : IDatabaseService
         => _banHang.UpdatePhieuBanHangAsync(pb);
     public Task<bool> DeletePhieuBanHangAsync(string maPhieuBan)
         => _banHang.DeletePhieuBanHangAsync(maPhieuBan);
+    public Task<bool> DeletePhieuBanHangWithRestoreAsync(string maPhieuBan)
+        => _banHang.DeletePhieuBanHangWithRestoreAsync(maPhieuBan);
 
     // ═══════════════ THỐNG KÊ BÁN HÀNG ═══════════════
     public Task<decimal> GetDoanhThuAsync(DateTime fromDate, DateTime toDate)

@@ -270,7 +270,7 @@ public class DashboardService : DatabaseContext
     {
         try
         {
-            // Lợi nhuận = Doanh thu - Chi phí NL tiêu hao
+            // Lợi nhuận = Doanh thu - Chi phí nguyên liệu tiêu hao (tính theo công thức pizza × đơn giá nhập gần nhất)
             var doanhThu = await GetDoanhThuAsync(fromDate, toDate);
             var chiPhi = await GetChiPhiNguyenLieuAsync(fromDate, toDate);
             return doanhThu - chiPhi;

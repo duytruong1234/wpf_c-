@@ -28,7 +28,7 @@ public class CT_PhieuXuat : INotifyPropertyChanged
                 _soLuong = value;
                 OnPropertyChanged();
                 // Tự động tính lại thành tiền
-                ThanhTien = _soLuong * HeSo * DonGia;
+                ThanhTien = _soLuong * DonGia;
             }
         }
     }
@@ -45,7 +45,7 @@ public class CT_PhieuXuat : INotifyPropertyChanged
             {
                 _heSo = value;
                 OnPropertyChanged();
-                ThanhTien = SoLuong * _heSo * DonGia;
+                ThanhTien = SoLuong * DonGia;
             }
         }
     }
@@ -60,7 +60,7 @@ public class CT_PhieuXuat : INotifyPropertyChanged
             {
                 _donGia = value;
                 OnPropertyChanged();
-                ThanhTien = SoLuong * HeSo * _donGia;
+                ThanhTien = SoLuong * _donGia;
             }
         }
     }

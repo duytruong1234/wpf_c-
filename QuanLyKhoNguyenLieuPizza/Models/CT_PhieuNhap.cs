@@ -104,11 +104,12 @@ public class CT_PhieuNhap : INotifyPropertyChanged
                 {
                     var newHeSo = value.HeSo <= 0 ? 1m : value.HeSo;
 
-                    // Quy đổi Đơn giá theo tỷ lệ thuận với Hệ số
-                    // Vì HeSo giờ chuẩn rồi: kg = 1, g = 0.001, Bao = 25
+                    // Quy đổi Đơn giá khi đổi đơn vị nhập
+                    // Hệ số lớn = đơn vị nhỏ (vd: g=1000 nghĩa là 1000g = 1kg)
+                    // Giá đơn vị nhỏ = Giá đơn vị lớn * (oldHeSo / newHeSo)
                     if (_donGia > 0 && oldHeSo != newHeSo)
                     {
-                        _donGia = _donGia * newHeSo / oldHeSo;
+                        _donGia = _donGia * oldHeSo / newHeSo;
                         OnPropertyChanged(nameof(DonGia));
                     }
 

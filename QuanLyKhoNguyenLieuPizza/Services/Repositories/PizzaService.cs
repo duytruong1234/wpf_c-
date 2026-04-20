@@ -400,7 +400,8 @@ public class PizzaService : DatabaseContext
                        FROM HangHoa hh
                        LEFT JOIN DonViTinh dv ON hh.DonViID = dv.DonViID
                        LEFT JOIN LoaiHangHoa lhh ON hh.LoaiHangHoaID = lhh.LoaiHangHoaID
-                       WHERE hh.TinhTrang = 1";
+                       WHERE hh.TinhTrang = 1
+                         AND EXISTS (SELECT 1 FROM CongThuc_Pizza ctp WHERE ctp.MaHangHoa = hh.MaHangHoa)";
             using var cmd = new SqlCommand(sql, conn);
             using var reader = await cmd.ExecuteReaderAsync();
             while (await reader.ReadAsync())

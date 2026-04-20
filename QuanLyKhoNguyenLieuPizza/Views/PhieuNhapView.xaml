@@ -924,7 +924,11 @@
                                                                   DisplayMemberPath="DonViTinh.TenDonVi" BorderThickness="0" Background="Transparent"
                                                                   FontSize="12" VerticalAlignment="Center" HorizontalAlignment="Stretch" Cursor="Hand"/>
                                                         
-                                                        <TextBlock Grid.Column="3" Text="{Binding DonGia, StringFormat='{}{0:N0} đ'}" Style="{StaticResource TableCellStyle}"/>
+                                                        <Border Grid.Column="3" BorderBrush="{StaticResource Gray200}" BorderThickness="1" CornerRadius="6" Padding="4,2" Margin="4,0" VerticalAlignment="Center">
+                                                            <TextBox Text="{Binding DonGia, UpdateSourceTrigger=LostFocus, StringFormat=N0}" 
+                                                                     BorderThickness="0" Background="Transparent" FontSize="13" TextAlignment="Center" 
+                                                                     VerticalContentAlignment="Center" HorizontalContentAlignment="Center"/>
+                                                        </Border>
                                                         
                                                         <DatePicker Grid.Column="4" SelectedDate="{Binding HSD, Mode=TwoWay}" 
                                                                     BorderThickness="0" Background="Transparent" FontSize="11" 

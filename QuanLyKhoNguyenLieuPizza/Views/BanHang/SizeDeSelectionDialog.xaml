@@ -76,7 +76,7 @@
                     </Border>
 
                     <!-- Khối chọn Đế bánh -->
-                    <TextBlock Text="Đế Bánh (tùy chọn)" FontSize="12" FontWeight="Bold" Foreground="#475569" Margin="4,0,0,4"/>
+                    <TextBlock Text="Đế Bánh *" FontSize="12" FontWeight="Bold" Foreground="#475569" Margin="4,0,0,4"/>
                     <Border Background="#F8FAFC" BorderBrush="#E2E8F0" BorderThickness="1.5" CornerRadius="10" Padding="12,8" Margin="0,0,0,16">
                         <ComboBox ItemsSource="{Binding DeBanhs}" SelectedItem="{Binding SelectedDe}"
                                   DisplayMemberPath="TenDeBanh" BorderThickness="0" Background="Transparent" FontSize="14" FontWeight="SemiBold" Foreground="#0F172A" VerticalContentAlignment="Center"/>

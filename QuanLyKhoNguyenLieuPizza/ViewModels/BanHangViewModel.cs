@@ -17,6 +17,18 @@ public class CartItem : BaseViewModel
     public DoanhMuc_De? DeBanh { get; set; }
     public decimal GiaBan { get; set; }
     public decimal GiaThem { get; set; }
+
+    private decimal _donGia;
+    public decimal DonGia
+    {
+        get => _donGia;
+        set
+        {
+            if (SetProperty(ref _donGia, value))
+                OnPropertyChanged(nameof(ThanhTien));
+        }
+    }
+
     public int SoLuong
     {
         get => _soLuong;
@@ -26,7 +38,6 @@ public class CartItem : BaseViewModel
                 OnPropertyChanged(nameof(ThanhTien));
         }
     }
-    public decimal DonGia => GiaBan + GiaThem;
     public decimal ThanhTien => DonGia * SoLuong;
 
     public string CartKey => $"{HangHoa.MaHangHoa}_{Size.SizeID}_{DeBanh?.MaDeBanh ?? "NONE"}";
@@ -178,7 +189,7 @@ public class BanHangViewModel : BaseViewModel
     public decimal TienThua => Math.Max(0, (TienKhachDua ?? 0) - KhachCanTra);
     
     public bool IsTienKhachThieu => !IsChuyenKhoan && TienKhachDua.HasValue && TienKhachDua < KhachCanTra;
-    public string ThongBaoTienKhachThieu => IsTienKhachThieu ? $"Khách đưa thiếu {(KhachCanTra - (TienKhachDua ?? 0)):N0}đ" : "";
+    public string ThongBaoTienKhachThieu => IsTienKhachThieu ? $"Khách đưa thiếu {(KhachCanTra - (TienKhachDua ?? 0)):N0}" : "";
 
     public decimal DoanhThuHomNay { get => _doanhThuHomNay; set { SetProperty(ref _doanhThuHomNay, value); } }
     public int TongDonHomNay { get => _tongDonHomNay; set { SetProperty(ref _tongDonHomNay, value); } }
@@ -263,6 +274,24 @@ public class BanHangViewModel : BaseViewModel
         ShowPOSCommand = new RelayCommand(_ => NavigateTo("POS"));
         ShowOrderHistoryCommand = new AsyncRelayCommand(async _ => { NavigateTo("History"); await LoadPhieuBanHangsAsync(); });
         BackToMainCommand = new RelayCommand(_ => NavigateTo("POS"));
+
+        CartItems.CollectionChanged += (s, e) =>
+        {
+            if (e.NewItems != null)
+            {
+                foreach (CartItem item in e.NewItems)
+                {
+                    item.PropertyChanged += CartItem_PropertyChanged;
+                }
+            }
+            if (e.OldItems != null)
+            {
+                foreach (CartItem item in e.OldItems)
+                {
+                    item.PropertyChanged -= CartItem_PropertyChanged;
+                }
+            }
+        };
 
         // Lệnh bán hàng
         SelectHangHoaCommand = new AsyncRelayCommand(ExecuteSelectHangHoaAsync);
@@ -417,7 +446,7 @@ public class BanHangViewModel : BaseViewModel
 
         // Đặt lại lựa chọn
         SelectedSize = Sizes.FirstOrDefault();
-        SelectedDe = null;
+        SelectedDe = DeBanhs.FirstOrDefault();
 
         IsSizeDeDialogOpen = true;
     }
@@ -425,6 +454,12 @@ public class BanHangViewModel : BaseViewModel
     private void ExecuteConfirmAddToCart(object? parameter)
     {
         if (SelectedHangHoa == null || SelectedSize == null) return;
+        
+        if (SelectedDe == null)
+        {
+            MessageBox.Show("Vui lòng chọn đế bánh!", "Cảnh báo", MessageBoxButton.OK, MessageBoxImage.Warning);
+            return;
+        }
 
         // Tìm giá cho size đã chọn
         var giaSize = GiaTheoSizes.FirstOrDefault(g => g.SizeID == SelectedSize.SizeID);
@@ -453,12 +488,21 @@ public class BanHangViewModel : BaseViewModel
                 DeBanh = SelectedDe,
                 GiaBan = giaBan,
                 GiaThem = giaThem,
+                DonGia = giaBan + giaThem,
                 SoLuong = 1
             });
         }
 
         IsSizeDeDialogOpen = false;
         RefreshCartTotals();
+    }
+
+    private void CartItem_PropertyChanged(object? sender, System.ComponentModel.PropertyChangedEventArgs e)
+    {
+        if (e.PropertyName == nameof(CartItem.ThanhTien))
+        {
+            RefreshCartTotals();
+        }
     }
 
     private void ExecuteRemoveFromCart(object? parameter)
@@ -543,19 +587,10 @@ public class BanHangViewModel : BaseViewModel
             return;
         }
 
-        if (!IsChuyenKhoan)
-        {
-            if (TienKhachDua == null || TienKhachDua < KhachCanTra)
-            {
-                MessageBox.Show("Số tiền khách đưa không đủ để thanh toán!", "Cảnh báo", MessageBoxButton.OK, MessageBoxImage.Warning);
-                return;
-            }
-        }
-
         var msgBox = new Wpf.Ui.Controls.MessageBox
         {
             Title = "Xác nhận thanh toán",
-            Content = $"Xác nhận thanh toán đơn hàng?\nTổng tiền: {TongTienGioHang:N0} đ",
+            Content = $"Xác nhận thanh toán đơn hàng?\nTổng tiền cần trả: {KhachCanTra:N0}",
             PrimaryButtonText = "Thanh toán",
             CloseButtonText = "Hủy"
         };
@@ -601,7 +636,7 @@ public class BanHangViewModel : BaseViewModel
                 var successMsg = new Wpf.Ui.Controls.MessageBox
                 {
                     Title = "Thành công",
-                    Content = $"Thanh toán thành công!\nMã phiếu: {savedMa}\nTổng tiền: {TongTienGioHang:N0} đ",
+                    Content = $"Thanh toán thành công!\nMã phiếu: {savedMa}\nTổng tiền đã thu: {KhachCanTra:N0}",
                     CloseButtonText = "Đóng"
                 };
                 await successMsg.ShowDialogAsync();
@@ -672,7 +707,21 @@ public class BanHangViewModel : BaseViewModel
         IsLoading = true;
         try
         {
-            var success = await _db.DeletePhieuBanHangAsync(DeletingPhieuBan.MaPhieuBan);
+            bool success;
+            bool isWithin24h = DeletingPhieuBan.NgayBan.HasValue 
+                && (DateTime.Now - DeletingPhieuBan.NgayBan.Value).TotalHours <= 24;
+
+            if (isWithin24h)
+            {
+                // Đơn hàng trong vòng 24h -> hoàn trả nguyên liệu vào kho
+                success = await _db.DeletePhieuBanHangWithRestoreAsync(DeletingPhieuBan.MaPhieuBan);
+            }
+            else
+            {
+                // Đơn hàng quá 24h -> chỉ xóa, không hoàn nguyên liệu
+                success = await _db.DeletePhieuBanHangAsync(DeletingPhieuBan.MaPhieuBan);
+            }
+
             if (success)
             {
                 PhieuBanHangs.Remove(DeletingPhieuBan);
@@ -681,6 +730,13 @@ public class BanHangViewModel : BaseViewModel
                 if (DeletingPhieuBan.NgayBan?.Date == DateTime.Today)
                 {
                     await LoadStatsAsync();
+                }
+
+                if (isWithin24h)
+                {
+                    // Cập nhật lại trạng thái tồn kho và danh sách sản phẩm
+                    await RefreshStockStatusAsync();
+                    FilterHangHoas();
                 }
             }
             else

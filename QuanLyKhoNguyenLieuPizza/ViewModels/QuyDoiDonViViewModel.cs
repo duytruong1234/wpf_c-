@@ -406,7 +406,7 @@ public class QuyDoiDonViViewModel : BaseViewModel
                         decimal GetWeight(string unit) => unit switch { "g" => 0.001m, "kg" => 1m, "mg" => 0.000001m, _ => 0m };
                         decimal GetVolume(string unit) => unit switch { "ml" => 0.001m, "l" => 1m, "lit" => 1m, _ => 0m };
                         
-                        decimal GetReliableFactor(string unitName, decimal dbFactor)
+                        decimal GetReliableFactor(string? unitName, decimal dbFactor)
                         {
                             var lowerUnit = unitName?.ToLower() ?? "";
                             var w = GetWeight(lowerUnit);
