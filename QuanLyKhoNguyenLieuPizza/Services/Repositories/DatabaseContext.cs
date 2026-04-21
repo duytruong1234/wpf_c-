@@ -131,32 +131,31 @@ public abstract class DatabaseContext
                                        LEFT JOIN DonViTinh dv ON nl.DonViID = dv.DonViID
                                        WHERE nl.NguyenLieuID = @NguyenLieuID";
 
-        IngredientUnitContext? context = null;
+        int? fallbackUnitId = null;
+        string? fallbackUnitName = null;
+        string ingredientName = $"ID {ingredientId}";
+
         using (var cmd = CreateCommand(ingredientSql, conn, transaction))
         {
             cmd.Parameters.AddWithValue("@NguyenLieuID", ingredientId);
             using var reader = await cmd.ExecuteReaderAsync();
             if (await reader.ReadAsync())
             {
-                context = new IngredientUnitContext
-                {
-                    IngredientId = reader.GetInt32(0),
-                    Name = reader.IsDBNull(1) ? $"ID {ingredientId}" : reader.GetString(1),
-                    StockUnitId = reader.IsDBNull(2) ? null : reader.GetInt32(2),
-                    StockUnitName = reader.IsDBNull(3) ? null : reader.GetString(3)
-                };
+                ingredientName = reader.IsDBNull(1) ? $"ID {ingredientId}" : reader.GetString(1);
+                fallbackUnitId = reader.IsDBNull(2) ? null : reader.GetInt32(2);
+                fallbackUnitName = reader.IsDBNull(3) ? null : reader.GetString(3);
             }
         }
 
-        context ??= new IngredientUnitContext
-        {
-            IngredientId = ingredientId,
-            Name = $"ID {ingredientId}"
-        };
+        // Đọc tất cả quy đổi đơn vị VÀ tìm đơn vị chuẩn (LaDonViChuan=1) từ bảng QuyDoiDonVi
+        const string factorSql = @"SELECT qd.DonViID, qd.HeSo, qd.LaDonViChuan, dv.TenDonVi
+                                   FROM QuyDoiDonVi qd
+                                   LEFT JOIN DonViTinh dv ON qd.DonViID = dv.DonViID
+                                   WHERE qd.NguyenLieuID = @NguyenLieuID";
 
-        const string factorSql = @"SELECT DonViID, HeSo
-                                   FROM QuyDoiDonVi
-                                   WHERE NguyenLieuID = @NguyenLieuID";
+        int? quyDoiStockUnitId = null;
+        string? quyDoiStockUnitName = null;
+        var unitFactors = new Dictionary<int, decimal>();
 
         using (var cmd = CreateCommand(factorSql, conn, transaction))
         {
@@ -169,12 +168,36 @@ public abstract class DatabaseContext
 
                 var unitId = reader.GetInt32(0);
                 var factor = reader.IsDBNull(1) ? 0m : reader.GetDecimal(1);
+                var isDonViChuan = !reader.IsDBNull(2) && reader.GetBoolean(2);
+                var tenDonVi = reader.IsDBNull(3) ? null : reader.GetString(3);
+
                 if (factor > 0)
-                    context.UnitFactors[unitId] = factor;
+                    unitFactors[unitId] = factor;
+
+                if (isDonViChuan)
+                {
+                    quyDoiStockUnitId = unitId;
+                    quyDoiStockUnitName = tenDonVi;
+                }
             }
         }
 
-        if (context.StockUnitId is int stockUnitId && !context.UnitFactors.ContainsKey(stockUnitId))
+        // Ưu tiên đơn vị chuẩn từ QuyDoiDonVi, fallback về NguyenLieu.DonViID
+        var finalStockUnitId = quyDoiStockUnitId ?? fallbackUnitId;
+        var finalStockUnitName = quyDoiStockUnitName ?? fallbackUnitName;
+
+        var context = new IngredientUnitContext
+        {
+            IngredientId = ingredientId,
+            Name = ingredientName,
+            StockUnitId = finalStockUnitId,
+            StockUnitName = finalStockUnitName
+        };
+
+        foreach (var kvp in unitFactors)
+            context.UnitFactors[kvp.Key] = kvp.Value;
+
+        if (finalStockUnitId is int stockUnitId && !context.UnitFactors.ContainsKey(stockUnitId))
             context.UnitFactors[stockUnitId] = 1m;
 
         contextCache[ingredientId] = context;
@@ -229,20 +252,29 @@ public abstract class DatabaseContext
 
         var context = await GetIngredientUnitContextAsync(conn, transaction, ingredientId, contextCache);
 
-        // Nếu không có đơn vị nguồn hoặc đơn vị tồn kho → dùng nguyên số lượng gốc
-        if (sourceUnitId == null || context.StockUnitId == null || sourceUnitId == context.StockUnitId)
-            return amount;
+        // ĐẢM BẢO TOÀN VẸN: Phải có đơn vị chuẩn trong QuyDoiDonVi
+        if (context.StockUnitId == null)
+            throw new InvalidOperationException(
+                $"Nguyên liệu '{context.Name}' chưa cấu hình đơn vị chuẩn trong QuyDoiDonVi. " +
+                $"Vui lòng vào Tồn Kho → chọn nguyên liệu → thêm đơn vị và tích chọn ĐV Chuẩn.");
 
-        var sourceUnitName = await GetUnitNameAsync(conn, transaction, sourceUnitId, unitNameCache);
-        if (TryConvertByConfiguredFactors(context, sourceUnitId.Value, sourceUnitName, amount, out var convertedAmount))
-            return convertedAmount;
+        // ĐẢM BẢO TOÀN VẸN: Công thức/cấu hình phải chỉ định đơn vị
+        if (sourceUnitId == null)
+            throw new InvalidOperationException(
+                $"Nguyên liệu '{context.Name}' chưa được gán đơn vị trong công thức/cấu hình. " +
+                $"Vui lòng kiểm tra lại công thức món ăn hoặc cấu hình làm bánh.");
 
-        // Fallback: Khi chưa cấu hình quy đổi → dùng nguyên số lượng gốc (đơn vị gốc)
-        // thay vì throw lỗi, để hệ thống vẫn hoạt động được
-        System.Diagnostics.Debug.WriteLine(
-            $"[WARN] Chưa cấu hình quy đổi đơn vị cho nguyên liệu '{context.Name}' " +
-            $"({sourceUnitName ?? $"ID {sourceUnitId.Value}"} -> {context.StockUnitName ?? "đơn vị tồn kho"}). " +
-            $"Sử dụng số lượng gốc: {amount}");
+        // ĐẢM BẢO TOÀN VẸN: Đơn vị trong công thức PHẢI TRÙNG với đơn vị chuẩn tồn kho
+        if (sourceUnitId != context.StockUnitId)
+        {
+            var sourceUnitName = await GetUnitNameAsync(conn, transaction, sourceUnitId, unitNameCache);
+            throw new InvalidOperationException(
+                $"Nguyên liệu '{context.Name}': Đơn vị trong công thức/cấu hình là '{sourceUnitName ?? $"ID {sourceUnitId.Value}"}' " +
+                $"nhưng đơn vị chuẩn tồn kho là '{context.StockUnitName}'. " +
+                $"Vui lòng sửa lại công thức/cấu hình để dùng đúng đơn vị chuẩn '{context.StockUnitName}'.");
+        }
+
+        // Cùng đơn vị → trừ trực tiếp
         return amount;
     }
 

@@ -744,7 +744,7 @@ public class PizzaViewModel : BaseViewModel
         await LoadRecipeDonViOptionsAsync(_recipeSelectedNguyenLieu);
         RecipeSoLuong = item.SoLuong?.ToString("G") ?? "";
         RecipeSelectedDonVi = RecipeDonViOptions.FirstOrDefault(d => d.DonViID == item.DonViID)
-                              ?? DonViTinhs.FirstOrDefault(d => d.DonViID == item.DonViID);
+                              ?? RecipeDonViOptions.FirstOrDefault();
     }
 
     private void CancelRecipeEdit()

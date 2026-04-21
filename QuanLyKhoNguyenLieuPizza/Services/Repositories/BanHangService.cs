@@ -236,18 +236,33 @@ public class BanHangService : DatabaseContext
                     await ctCmd.ExecuteNonQueryAsync();
                 }
 
-                // Trừ nguyên liệu từ TồnKho dựa trên CôngThức
+                // Trừ nguyên liệu từ TồnKho dựa trên CôngThức (có quy đổi đơn vị)
+                var unitContextCache = new Dictionary<int, IngredientUnitContext>();
+                var unitNameCache = new Dictionary<int, string>();
                 foreach (var ct in chiTiets)
                 {
                     var congThucs = await GetCongThucsInternalAsync(conn, transaction, ct.PizzaID);
                     foreach (var recipe in congThucs)
                     {
+                        var convertedAmount = await ConvertAmountToStockUnitAsync(
+                            conn, transaction,
+                            recipe.NguyenLieuID,
+                            recipe.SoLuong * ct.SoLuong,
+                            recipe.DonViID,
+                            unitContextCache,
+                            unitNameCache);
+                        if (convertedAmount <= 0) continue;
+
                         var deductSql = @"UPDATE TonKho SET SoLuongTon = SoLuongTon - @SoLuong, NgayCapNhat = GETDATE()
                                          WHERE NguyenLieuID = @NguyenLieuID AND SoLuongTon >= @SoLuong";
                         using var deductCmd = new SqlCommand(deductSql, conn, transaction);
-                        deductCmd.Parameters.AddWithValue("@SoLuong", recipe.SoLuong * ct.SoLuong);
+                        deductCmd.Parameters.AddWithValue("@SoLuong", convertedAmount);
                         deductCmd.Parameters.AddWithValue("@NguyenLieuID", recipe.NguyenLieuID);
-                        await deductCmd.ExecuteNonQueryAsync();
+                        var rows = await deductCmd.ExecuteNonQueryAsync();
+                        if (rows == 0)
+                        {
+                            throw new Exception($"Nguyên liệu không đủ tồn kho (ID {recipe.NguyenLieuID})");
+                        }
                     }
                 }
 

@@ -858,6 +858,25 @@
                                            Foreground="{StaticResource Gray800}"
                                            Margin="0,0,0,10"/>
 
+                                <!-- Hướng dẫn nhập hệ số -->
+                                <Expander Grid.Row="1" Header="Hướng dẫn cách tính Hệ số quy đổi" Margin="0,0,0,16"
+                                          Visibility="{Binding SelectedNguyenLieu, Converter={StaticResource NullToVisibilityConverter}}"
+                                          Background="#FFF8E1" BorderBrush="#FFE082" Foreground="#D84315" FontWeight="SemiBold">
+                                    <Border BorderThickness="0" Padding="12,8">
+                                        <StackPanel>
+                                            <TextBlock Text="“1 [Đơn vị này] bằng bao nhiêu [Đơn vị chuẩn]?” =&gt; Con số trả lời chính là Hệ số cần nhập." TextWrapping="Wrap" Foreground="#5D4037" Margin="0,0,0,8" FontStyle="Italic" FontWeight="Normal" FontSize="12"/>
+                                            
+                                            <TextBlock Text="Ví dụ:" FontWeight="SemiBold" Foreground="#5D4037" Margin="0,0,0,4" FontSize="12"/>
+                                            <TextBlock Text="• TH 1: Chọn Lon làm Đơn vị chuẩn." Foreground="#5D4037" FontWeight="SemiBold" FontSize="12"/>
+                                            <TextBlock Text="  → Lon: Tích chọn ĐV Chuẩn → Nhập hệ số là 1." Foreground="#5D4037" Margin="0,0,0,2" FontWeight="Normal" FontSize="12"/>
+                                            <TextBlock Text="  → Thùng (1 Thùng = 24 Lon) → Hỏi &quot;1 Thùng bằng bao nhiêu lon?&quot; → Nhập hệ số là 24." TextWrapping="Wrap" Foreground="#5D4037" Margin="0,0,0,6" FontWeight="Normal" FontSize="12"/>
+                                            
+                                            <TextBlock Text="• TH 2: Thùng được chọn là ĐV Chuẩn → Hệ số = 1." Foreground="#5D4037" FontWeight="SemiBold" FontSize="12"/>
+                                            <TextBlock Text="  → Lon: &quot;1 Lon bằng bao nhiêu Thùng?&quot;. Câu trả lời là 1 chia 24 → Phải nhập Hệ số là 0.0416666" TextWrapping="Wrap" Foreground="#5D4037" FontWeight="Normal" FontSize="12"/>
+                                        </StackPanel>
+                                    </Border>
+                                </Expander>
+
                                 <!-- Bảng Quy đổi -->
                                 <Border Grid.Row="2"
                                         BorderBrush="{StaticResource Gray200}"

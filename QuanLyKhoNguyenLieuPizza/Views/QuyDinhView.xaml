@@ -167,7 +167,7 @@
                                 <StackPanel Grid.Column="2">
                                     <TextBlock Text="Đơn vị" Style="{StaticResource FieldLabel}"/>
                                     <Border Background="White" BorderBrush="{StaticResource Border}" BorderThickness="1" CornerRadius="10" Padding="12,10" Height="40">
-                                        <ComboBox ItemsSource="{Binding DonVis}" 
+                                        <ComboBox ItemsSource="{Binding BotDonViOptions}" 
                                                   SelectedItem="{Binding BotSelectedDonVi}"
                                                   DisplayMemberPath="TenDonVi"
                                                   BorderThickness="0" Background="Transparent" FontSize="13" Padding="0"/>
@@ -429,7 +429,7 @@
                                 <StackPanel Grid.Column="2">
                                     <TextBlock Text="Đơn vị" Style="{StaticResource FieldLabel}"/>
                                     <Border Background="White" BorderBrush="{StaticResource Border}" BorderThickness="1" CornerRadius="10" Padding="12,10" Height="40">
-                                        <ComboBox ItemsSource="{Binding DonVis}" 
+                                        <ComboBox ItemsSource="{Binding VienDonViOptions}" 
                                                   SelectedItem="{Binding VienSelectedDonVi}"
                                                   DisplayMemberPath="TenDonVi"
                                                   BorderThickness="0" Background="Transparent" FontSize="13" Padding="0"/>

@@ -20,6 +20,8 @@ public class QuyDinhViewModel : BaseViewModel
     public ObservableCollection<DoanhMuc_De> DeBanhs { get; } = new();
     public ObservableCollection<string> LoaiCotBanhs { get; } = new();
     public ObservableCollection<DonViTinh> DonVis { get; } = new();
+    public ObservableCollection<DonViTinh> BotDonViOptions { get; } = new();
+    public ObservableCollection<DonViTinh> VienDonViOptions { get; } = new();
     public ObservableCollection<NguyenLieu> NguyenLieus { get; } = new();
 
     private QuyDinh_Bot? _editingBot;
@@ -46,7 +48,17 @@ public class QuyDinhViewModel : BaseViewModel
     public DoanhMuc_Size? VienSelectedSize { get => _vienSelectedSize; set => SetProperty(ref _vienSelectedSize, value); }
 
     private NguyenLieu? _vienSelectedNguyenLieu;
-    public NguyenLieu? VienSelectedNguyenLieu { get => _vienSelectedNguyenLieu; set => SetProperty(ref _vienSelectedNguyenLieu, value); }
+    public NguyenLieu? VienSelectedNguyenLieu
+    {
+        get => _vienSelectedNguyenLieu;
+        set
+        {
+            if (SetProperty(ref _vienSelectedNguyenLieu, value))
+            {
+                _ = LoadVienDonViOptionsAsync(value);
+            }
+        }
+    }
 
     private string _vienSoLuong = string.Empty;
     public string VienSoLuong { get => _vienSoLuong; set => SetProperty(ref _vienSoLuong, value); }
@@ -114,6 +126,9 @@ public class QuyDinhViewModel : BaseViewModel
         NguyenLieus.Clear();
         foreach (var nl in nls) NguyenLieus.Add(nl);
 
+        // Load đơn vị quy đổi cho Bột mì (cần NguyenLieus đã được load)
+        await LoadBotDonViOptionsAsync();
+
         await RefreshBotGridAsync();
         await RefreshVienGridAsync();
 
@@ -149,7 +164,8 @@ public class QuyDinhViewModel : BaseViewModel
         BotSelectedSize = Sizes.FirstOrDefault(s => s.SizeID == item.SizeID);
         BotSelectedLoaiCotBanh = item.LoaiCotBanh;
         BotTrongLuong = item.TrongLuongBot?.ToString("G") ?? "";
-        BotSelectedDonVi = DonVis.FirstOrDefault(d => d.DonViID == item.DonViID);
+        BotSelectedDonVi = BotDonViOptions.FirstOrDefault(d => d.DonViID == item.DonViID)
+                           ?? BotDonViOptions.FirstOrDefault();
     }
 
     private async Task SaveBotAsync()
@@ -216,14 +232,18 @@ public class QuyDinhViewModel : BaseViewModel
         _editingVien = null;
     }
 
-    private void EditVien(QuyDinh_Vien item)
+    private async void EditVien(QuyDinh_Vien item)
     {
         _editingVien = item;
         VienSelectedDe = DeBanhs.FirstOrDefault(d => d.MaDeBanh == item.MaDeBanh);
         VienSelectedSize = Sizes.FirstOrDefault(s => s.SizeID == item.SizeID);
-        VienSelectedNguyenLieu = NguyenLieus.FirstOrDefault(n => n.NguyenLieuID == item.NguyenLieuID);
+        // Set trực tiếp để tránh trigger LoadVienDonViOptionsAsync 2 lần
+        _vienSelectedNguyenLieu = NguyenLieus.FirstOrDefault(n => n.NguyenLieuID == item.NguyenLieuID);
+        OnPropertyChanged(nameof(VienSelectedNguyenLieu));
+        await LoadVienDonViOptionsAsync(_vienSelectedNguyenLieu);
         VienSoLuong = item.SoLuongVien?.ToString("G") ?? "";
-        VienSelectedDonVi = DonVis.FirstOrDefault(d => d.DonViID == item.DonViID);
+        VienSelectedDonVi = VienDonViOptions.FirstOrDefault(d => d.DonViID == item.DonViID)
+                            ?? VienDonViOptions.FirstOrDefault();
     }
 
     private async Task SaveVienAsync()
@@ -278,6 +298,76 @@ public class QuyDinhViewModel : BaseViewModel
         if (await _databaseService.DeleteQuyDinhVienAsync(item.MaDeBanh, item.SizeID, item.NguyenLieuID))
         {
             await RefreshVienGridAsync();
+        }
+    }
+
+    private async Task LoadBotDonViOptionsAsync()
+    {
+        BotDonViOptions.Clear();
+        try
+        {
+            // Tìm nguyên liệu Bột mì
+            var botMi = NguyenLieus.FirstOrDefault(n => n.TenNguyenLieu != null && 
+                (n.TenNguyenLieu.Contains("Bột mì", StringComparison.OrdinalIgnoreCase) ||
+                 n.TenNguyenLieu.Contains("Bot mi", StringComparison.OrdinalIgnoreCase)));
+            if (botMi != null)
+            {
+                var quyDois = await _databaseService.GetQuyDoiDonVisAsync(botMi.NguyenLieuID);
+                if (quyDois.Count > 0)
+                {
+                    foreach (var qd in quyDois)
+                    {
+                        if (qd.DonViTinh != null)
+                            BotDonViOptions.Add(qd.DonViTinh);
+                    }
+                }
+            }
+            // Fallback: nếu không tìm thấy quy đổi, dùng danh sách gốc
+            if (BotDonViOptions.Count == 0)
+            {
+                foreach (var dv in DonVis) BotDonViOptions.Add(dv);
+            }
+        }
+        catch
+        {
+            if (BotDonViOptions.Count == 0)
+                foreach (var dv in DonVis) BotDonViOptions.Add(dv);
+        }
+    }
+
+    private async Task LoadVienDonViOptionsAsync(NguyenLieu? nguyenLieu)
+    {
+        VienDonViOptions.Clear();
+        VienSelectedDonVi = null;
+        if (nguyenLieu == null) return;
+
+        try
+        {
+            var quyDois = await _databaseService.GetQuyDoiDonVisAsync(nguyenLieu.NguyenLieuID);
+            if (quyDois.Count > 0)
+            {
+                foreach (var qd in quyDois)
+                {
+                    if (qd.DonViTinh != null)
+                        VienDonViOptions.Add(qd.DonViTinh);
+                }
+                var donViChuan = quyDois.FirstOrDefault(q => q.LaDonViChuan);
+                if (donViChuan?.DonViTinh != null)
+                    VienSelectedDonVi = VienDonViOptions.FirstOrDefault(d => d.DonViID == donViChuan.DonViID);
+            }
+            else if (nguyenLieu.DonViTinh != null)
+            {
+                VienDonViOptions.Add(nguyenLieu.DonViTinh);
+                VienSelectedDonVi = nguyenLieu.DonViTinh;
+            }
+        }
+        catch
+        {
+            if (nguyenLieu.DonViTinh != null)
+            {
+                VienDonViOptions.Add(nguyenLieu.DonViTinh);
+                VienSelectedDonVi = nguyenLieu.DonViTinh;
+            }
         }
     }
 }
