@@ -73,6 +73,9 @@
                     <ColumnDefinition Width="12"/>
                     <!-- Lịch sử đơn hàng -->
                     <ColumnDefinition Width="Auto"/>
+                    <ColumnDefinition Width="12"/>
+                    <!-- Nút làm mới -->
+                    <ColumnDefinition Width="Auto"/>
                 </Grid.ColumnDefinitions>
 
                 <!-- Tiêu đề trang -->
@@ -138,6 +141,26 @@
                                 <StackPanel Orientation="Horizontal" VerticalAlignment="Center">
                                     <ui:SymbolIcon Symbol="History24" FontSize="16" Foreground="{StaticResource Gray600}" VerticalAlignment="Center" Margin="0,0,8,0"/>
                                     <TextBlock Text="Lịch sử đơn hàng" FontSize="14" FontWeight="SemiBold" Foreground="{StaticResource Gray600}" VerticalAlignment="Center"/>
+                                </StackPanel>
+                            </Border>
+                            <ControlTemplate.Triggers>
+                                <Trigger Property="IsMouseOver" Value="True">
+                                    <Setter TargetName="border" Property="Background" Value="{StaticResource Gray50}"/>
+                                    <Setter TargetName="border" Property="BorderBrush" Value="{StaticResource PrimaryBlue}"/>
+                                </Trigger>
+                            </ControlTemplate.Triggers>
+                        </ControlTemplate>
+                    </Button.Template>
+                </Button>
+
+                <!-- Refresh Nút -->
+                <Button Grid.Column="7" Command="{Binding RefreshCommand}" Cursor="Hand" Height="44" VerticalAlignment="Center" ToolTip="Làm mới lại dữ liệu">
+                    <Button.Template>
+                        <ControlTemplate TargetType="Button">
+                            <Border x:Name="border" Background="White" BorderBrush="{StaticResource Gray200}" BorderThickness="1" CornerRadius="12" Padding="16,0">
+                                <StackPanel Orientation="Horizontal" VerticalAlignment="Center">
+                                    <ui:SymbolIcon Symbol="ArrowSync24" FontSize="16" Foreground="{StaticResource Gray600}" VerticalAlignment="Center" Margin="0,0,8,0"/>
+                                    <TextBlock Text="Làm mới" FontSize="14" FontWeight="SemiBold" Foreground="{StaticResource Gray600}" VerticalAlignment="Center"/>
                                 </StackPanel>
                             </Border>
                             <ControlTemplate.Triggers>

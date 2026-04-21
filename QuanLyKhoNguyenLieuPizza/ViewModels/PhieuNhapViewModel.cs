@@ -1069,6 +1069,9 @@ public class PhieuNhapViewModel : BaseViewModel
             return;
         }
 
+        // Đã gỡ bỏ: Kiểm tra ràng buộc bắt buộc phải là Đơn vị chuẩn
+        // Hệ thống hiện tại đã hỗ trợ tự động quy đổi khi duyệt phiếu nhập thông qua hàm ConvertAmountToStockUnitAsync
+
         if (SelectedNhaCungCapForm == null)
         {
             System.Windows.MessageBox.Show("Dữ liệu nhà cung cấp không hợp lệ.", "Lỗi", System.Windows.MessageBoxButton.OK, System.Windows.MessageBoxImage.Error);

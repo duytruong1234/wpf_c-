@@ -801,6 +801,9 @@ public class PhieuXuatViewModel : BaseViewModel
             return;
         }
 
+        // Đã gỡ bỏ: Kiểm tra ràng buộc bắt buộc phải là Đơn vị chuẩn
+        // Hệ thống hiện tại đã hỗ trợ tự động quy đổi khi duyệt phiếu xuất thông qua hàm ConvertAmountToStockUnitAsync
+
         // Ràng buộc kiểm tra tồn kho: Số lượng xuất không được lớn hơn tồn kho
         // Tồn kho lưu theo đơn vị chuẩn → cần quy đổi số lượng xuất về cùng đơn vị chuẩn
         var chiTietGroups = ChiTietForm.GroupBy(x => x.NguyenLieuID);

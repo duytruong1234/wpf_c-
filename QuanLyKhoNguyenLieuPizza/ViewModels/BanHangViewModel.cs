@@ -264,6 +264,7 @@ public class BanHangViewModel : BaseViewModel
     public ICommand ConfirmCheckoutCommand { get; }
     public ICommand CloseCheckoutSuccessCommand { get; }
     public ICommand ClearCartCommand { get; }
+    public ICommand RefreshCommand { get; }
     public ICommand PrintTamTinhCommand { get; }
 
     // Đơn hàng
@@ -317,6 +318,7 @@ public class BanHangViewModel : BaseViewModel
         ConfirmCheckoutCommand = new AsyncRelayCommand(ExecuteConfirmCheckoutAsync);
         CloseCheckoutSuccessCommand = new RelayCommand(ExecuteCloseCheckoutSuccess);
         ClearCartCommand = new RelayCommand(_ => { CartItems.Clear(); RefreshCartTotals(); });
+        RefreshCommand = new AsyncRelayCommand(async _ => await InitializeAsync());
         PrintTamTinhCommand = new RelayCommand(_ => ExecutePrintTamTinh());
 
         // Đơn hàng

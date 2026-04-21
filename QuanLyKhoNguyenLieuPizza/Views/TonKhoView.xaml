@@ -1036,7 +1036,7 @@
 
                     <!-- Biểu mẫu -->
                     <StackPanel Grid.Row="1" Margin="26,22">
-                        <TextBlock Text="Đơn vị nhập" 
+                        <TextBlock Text="Đơn vị chuẩn" 
                                    FontWeight="SemiBold"
                                    Foreground="{StaticResource Gray600}"
                                    FontSize="13"
@@ -1052,7 +1052,7 @@
                                        FontSize="14"/>
                         </Border>
 
-                        <TextBlock Text="Đơn vị"
+                        <TextBlock Text="Đơn vị quy đổi"
                                    FontWeight="SemiBold"
                                    Foreground="{StaticResource Gray600}"
                                    FontSize="13"

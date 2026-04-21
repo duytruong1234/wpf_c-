@@ -1409,9 +1409,9 @@
                                                         <ColumnDefinition Width="1*"/>
                                                     </Grid.ColumnDefinitions>
                                                     <TextBlock Grid.Column="0" Text="{Binding NguyenLieu.TenNguyenLieu}" Style="{StaticResource TableCellStyle}" TextAlignment="Left" Padding="20,16"/>
-                                                    <TextBlock Grid.Column="1" Text="{Binding SoLuong, StringFormat=\{0:N0\}}" Style="{StaticResource TableCellStyle}"/>
+                                                    <TextBlock Grid.Column="1" Text="{Binding SoLuong, StringFormat=\{0:N4\}}" Style="{StaticResource TableCellStyle}"/>
                                                     <TextBlock Grid.Column="2" Text="{Binding TenDonViNhap}" Style="{StaticResource TableCellStyle}"/>
-                                                    <TextBlock Grid.Column="3" Text="{Binding HeSo, StringFormat=\{0:N0\}}" Style="{StaticResource TableCellStyle}"/>
+                                                    <TextBlock Grid.Column="3" Text="{Binding HeSo, StringFormat=\{0:N4\}}" Style="{StaticResource TableCellStyle}"/>
                                                     <TextBlock Grid.Column="4" Text="{Binding HSD, StringFormat=\{0:dd/MM/yyyy\}, FallbackValue='-'}" Style="{StaticResource TableCellStyle}" FontSize="11"/>
                                                     <TextBlock Grid.Column="5" Text="{Binding DonGia, StringFormat='{}{0:N0} đ'}" Style="{StaticResource TableCellStyle}"/>
                                                     <TextBlock Grid.Column="6" Text="{Binding ThanhTien, StringFormat='{}{0:N0} đ'}" Style="{StaticResource TableCellStyle}" Foreground="{StaticResource Gray800}" FontWeight="SemiBold"/>

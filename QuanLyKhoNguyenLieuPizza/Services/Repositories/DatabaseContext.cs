@@ -264,14 +264,20 @@ public abstract class DatabaseContext
                 $"Nguyên liệu '{context.Name}' chưa được gán đơn vị trong công thức/cấu hình. " +
                 $"Vui lòng kiểm tra lại công thức món ăn hoặc cấu hình làm bánh.");
 
-        // ĐẢM BẢO TOÀN VẸN: Đơn vị trong công thức PHẢI TRÙNG với đơn vị chuẩn tồn kho
+        // Nếu không trùng khớp đơn vị, thử quy đổi dựa trên hệ số đã cấu hình
         if (sourceUnitId != context.StockUnitId)
         {
             var sourceUnitName = await GetUnitNameAsync(conn, transaction, sourceUnitId, unitNameCache);
+            
+            if (TryConvertByConfiguredFactors(context, sourceUnitId.Value, sourceUnitName, amount, out var convertedAmount))
+            {
+                return convertedAmount;
+            }
+
             throw new InvalidOperationException(
                 $"Nguyên liệu '{context.Name}': Đơn vị trong công thức/cấu hình là '{sourceUnitName ?? $"ID {sourceUnitId.Value}"}' " +
-                $"nhưng đơn vị chuẩn tồn kho là '{context.StockUnitName}'. " +
-                $"Vui lòng sửa lại công thức/cấu hình để dùng đúng đơn vị chuẩn '{context.StockUnitName}'.");
+                $"nhưng đơn vị chuẩn tồn kho là '{context.StockUnitName}'. Không tìm thấy tỷ lệ quy đổi hợp lệ. " +
+                $"Vui lòng vào phần Quy Đổi Đơn Vị để thiết lập tỷ lệ quy đổi.");
         }
 
         // Cùng đơn vị → trừ trực tiếp

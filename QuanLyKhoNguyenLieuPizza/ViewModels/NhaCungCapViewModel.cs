@@ -1,4 +1,4 @@
-﻿using System.Collections.ObjectModel;
+using System.Collections.ObjectModel;
 using System.Text.RegularExpressions;
 using System.Windows.Input;
 using QuanLyKhoNguyenLieuPizza.Core.Interfaces;
@@ -391,7 +391,20 @@ public class NhaCungCapViewModel : BaseViewModel
     public NguyenLieu? SelectedNguyenLieuToAdd
     {
         get => _selectedNguyenLieuToAdd;
-        set => SetProperty(ref _selectedNguyenLieuToAdd, value);
+        set
+        {
+            if (SetProperty(ref _selectedNguyenLieuToAdd, value))
+            {
+                if (value != null && value.DonViID.HasValue)
+                {
+                    FormDonViNhap = DonViTinhs.FirstOrDefault(d => d.DonViID == value.DonViID.Value);
+                }
+                else
+                {
+                    FormDonViNhap = null;
+                }
+            }
+        }
     }
 
     private string _formGiaNhap = string.Empty;
