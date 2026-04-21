@@ -124,7 +124,10 @@ public class NguyenLieuService : DatabaseContext
                 
                 if (!reader.IsDBNull(7))
                 {
-                    nl.DonViTinh = new DonViTinh { TenDonVi = reader.GetString(7) };
+                    nl.DonViTinh = new DonViTinh { 
+                        DonViID = reader.IsDBNull(5) ? 0 : reader.GetInt32(5),
+                        TenDonVi = reader.GetString(7) 
+                    };
                 }
                 
                 if (!reader.IsDBNull(8))
@@ -365,7 +368,10 @@ public class NguyenLieuService : DatabaseContext
                 
                 if (!reader.IsDBNull(7))
                 {
-                    nl.DonViTinh = new DonViTinh { TenDonVi = reader.GetString(7) };
+                    nl.DonViTinh = new DonViTinh { 
+                        DonViID = reader.IsDBNull(5) ? 0 : reader.GetInt32(5),
+                        TenDonVi = reader.GetString(7) 
+                    };
                 }
                 
                 if (!reader.IsDBNull(8))

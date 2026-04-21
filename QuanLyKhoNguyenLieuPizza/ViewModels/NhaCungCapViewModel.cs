@@ -380,6 +380,13 @@ public class NhaCungCapViewModel : BaseViewModel
         set => SetProperty(ref _isAddNLDialogOpen, value);
     }
 
+    private bool _isEditingNL;
+    public bool IsEditingNL
+    {
+        get => _isEditingNL;
+        set => SetProperty(ref _isEditingNL, value);
+    }
+
     private ObservableCollection<NguyenLieu> _allNguyenLieus = new();
     public ObservableCollection<NguyenLieu> AllNguyenLieus
     {
@@ -446,6 +453,7 @@ public class NhaCungCapViewModel : BaseViewModel
     public ICommand CloseAddNLDialogCommand { get; }
     public ICommand SaveAddNLCommand { get; }
     public ICommand DeleteNLFromNCCCommand { get; }
+    public ICommand EditNLPriceCommand { get; }
     public ICommand ComposeDiaChiCommand { get; }
     public ICommand ResetDiaChiCommand { get; }
     #endregion
@@ -470,6 +478,7 @@ public class NhaCungCapViewModel : BaseViewModel
         CloseAddNLDialogCommand = new RelayCommand(_ => IsAddNLDialogOpen = false);
         SaveAddNLCommand = new AsyncRelayCommand(async _ => await SaveAddNLAsync());
         DeleteNLFromNCCCommand = new AsyncRelayCommand(async p => await DeleteNLFromNCCAsync(p));
+        EditNLPriceCommand = new AsyncRelayCommand(async p => await OpenEditNLDialogAsync(p));
         ComposeDiaChiCommand = new RelayCommand(_ => ComposeDiaChi());
         ResetDiaChiCommand = new RelayCommand(_ => ResetDiaChi());
 
@@ -898,6 +907,33 @@ public class NhaCungCapViewModel : BaseViewModel
             SelectedNguyenLieuToAdd = null;
             FormGiaNhap = string.Empty;
             FormDonViNhap = null;
+            IsEditingNL = false;
+            IsAddNLDialogOpen = true;
+        }
+        catch (Exception ex)
+        {
+            System.Diagnostics.Debug.WriteLine($"Error loading NguyenLieus: {ex.Message}");
+        }
+    }
+
+    private async Task OpenEditNLDialogAsync(object? parameter)
+    {
+        if (parameter is not NguyenLieu nl) return;
+
+        try
+        {
+            var allNL = await _databaseService.GetNguyenLieusAsync();
+            AllNguyenLieus = new ObservableCollection<NguyenLieu>(allNL);
+
+            var dvtList = await _databaseService.GetDonViTinhsAsync();
+            DonViTinhs = new ObservableCollection<DonViTinh>(dvtList);
+
+            SelectedNguyenLieuToAdd = AllNguyenLieus.FirstOrDefault(x => x.NguyenLieuID == nl.NguyenLieuID);
+            
+            var giaNhap = nl.NguyenLieuNhaCungCaps?.FirstOrDefault()?.GiaNhap ?? 0;
+            FormGiaNhap = giaNhap.ToString("G");
+            
+            IsEditingNL = true;
             IsAddNLDialogOpen = true;
         }
         catch (Exception ex)

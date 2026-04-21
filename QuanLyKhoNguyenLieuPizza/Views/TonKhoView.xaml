@@ -951,12 +951,12 @@
                                                                           HorizontalAlignment="Center"
                                                                           VerticalAlignment="Center"/>
 
-                                                                <!-- Delete button -->
+                                                                <!-- Delete button - ẩn với đơn vị gốc -->
                                                                 <Button Grid.Column="3" 
                                                                         Command="{Binding DeleteCommand}"
                                                                         CommandParameter="{Binding}"
                                                                         Style="{StaticResource IconButton}" 
-                                                                        Visibility="{Binding LaDonViChuan, Converter={StaticResource InverseBoolToVisibilityConverter}}"
+                                                                        Visibility="{Binding IsBaseUnit, Converter={StaticResource InverseBoolToVisibilityConverter}}"
                                                                         ToolTip="Xóa quy đổi"
                                                                         HorizontalAlignment="Center"
                                                                         VerticalAlignment="Center">

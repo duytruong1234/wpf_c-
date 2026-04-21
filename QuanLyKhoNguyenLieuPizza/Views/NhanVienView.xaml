@@ -86,6 +86,8 @@
                     <ColumnDefinition Width="Auto"/>
                     <ColumnDefinition Width="12"/>
                     <ColumnDefinition Width="Auto"/>
+                    <ColumnDefinition Width="12"/>
+                    <ColumnDefinition Width="Auto"/>
                 </Grid.ColumnDefinitions>
 
                 <!-- Tiêu đề -->
@@ -107,6 +109,7 @@
 
                 <!-- Quản lý chức vụ -->
                 <Button Grid.Column="1" Command="{Binding OpenChucVuViewCommand}" Cursor="Hand" VerticalAlignment="Center">
+
                     <Button.Template>
                         <ControlTemplate TargetType="Button">
                             <Border x:Name="border" Background="White" BorderBrush="{StaticResource Gray200}" BorderThickness="1" CornerRadius="10" Padding="16,12">
@@ -124,8 +127,24 @@
                     </Button.Template>
                 </Button>
 
+                <!-- Nút Làm mới -->
+                <Button Grid.Column="3" Command="{Binding LoadDataCommand}" Cursor="Hand" VerticalAlignment="Center" ToolTip="Làm mới dữ liệu">
+                    <Button.Template>
+                        <ControlTemplate TargetType="Button">
+                            <Border x:Name="border" Background="White" BorderBrush="{StaticResource Gray200}" BorderThickness="1" CornerRadius="10" Width="44" Height="44">
+                                <ui:SymbolIcon Symbol="ArrowSync24" FontSize="18" Foreground="{StaticResource Gray600}" HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                            </Border>
+                            <ControlTemplate.Triggers>
+                                <Trigger Property="IsMouseOver" Value="True">
+                                    <Setter TargetName="border" Property="Background" Value="{StaticResource Gray100}"/>
+                                </Trigger>
+                            </ControlTemplate.Triggers>
+                        </ControlTemplate>
+                    </Button.Template>
+                </Button>
+
                 <!-- Nút Thêm -->
-                <Button Grid.Column="3" Command="{Binding CreateNhanVienCommand}" Cursor="Hand" VerticalAlignment="Center">
+                <Button Grid.Column="5" Command="{Binding CreateNhanVienCommand}" Cursor="Hand" VerticalAlignment="Center">
                     <Button.Template>
                         <ControlTemplate TargetType="Button">
                             <Border x:Name="border" CornerRadius="10" Padding="20,12">

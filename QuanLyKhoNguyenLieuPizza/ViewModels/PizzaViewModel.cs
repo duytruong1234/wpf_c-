@@ -807,26 +807,35 @@ public class PizzaViewModel : BaseViewModel
 
     private async Task SaveRecipeItemAsync()
     {
+        System.Diagnostics.Debug.WriteLine("=== SaveRecipeItemAsync START ===");
+        
         if (RecipePizza == null || string.IsNullOrEmpty(RecipePizza.MaPizza) || string.IsNullOrEmpty(RecipePizza.SizeID))
         {
+            System.Diagnostics.Debug.WriteLine($"ERROR: RecipePizza null or missing data. MaPizza={RecipePizza?.MaPizza}, SizeID={RecipePizza?.SizeID}");
             System.Windows.MessageBox.Show("Món ăn này chưa có kích thước hợp lệ, vui lòng cập nhật kích thước trước.", "Lỗi", System.Windows.MessageBoxButton.OK, System.Windows.MessageBoxImage.Warning);
             return;
         }
 
         if (RecipeSelectedNguyenLieu == null)
         {
+            System.Diagnostics.Debug.WriteLine("ERROR: RecipeSelectedNguyenLieu is null");
             System.Windows.MessageBox.Show("Vui lòng chọn nguyên liệu cần thêm.", "Thiếu thông tin", System.Windows.MessageBoxButton.OK, System.Windows.MessageBoxImage.Warning);
             return;
         }
 
+        System.Diagnostics.Debug.WriteLine($"RecipeSoLuong raw = '{RecipeSoLuong}'");
         double soLuong = 0;
         if (string.IsNullOrWhiteSpace(RecipeSoLuong) || !double.TryParse(RecipeSoLuong.Replace(",", "."), 
                 System.Globalization.NumberStyles.Any, 
                 System.Globalization.CultureInfo.InvariantCulture, out soLuong) || soLuong <= 0)
         {
+            System.Diagnostics.Debug.WriteLine($"ERROR: Invalid SoLuong. Raw='{RecipeSoLuong}', Parsed={soLuong}");
             System.Windows.MessageBox.Show("Vui lòng nhập định lượng hợp lệ (lớn hơn 0).", "Thiếu thông tin", System.Windows.MessageBoxButton.OK, System.Windows.MessageBoxImage.Warning);
             return;
         }
+
+        System.Diagnostics.Debug.WriteLine($"Parsed soLuong = {soLuong}");
+        System.Diagnostics.Debug.WriteLine($"RecipeSelectedDonVi = {RecipeSelectedDonVi?.TenDonVi} (ID={RecipeSelectedDonVi?.DonViID})");
 
         var congThuc = new CongThuc_Pizza
         {
@@ -837,17 +846,35 @@ public class PizzaViewModel : BaseViewModel
             DonViID = RecipeSelectedDonVi?.DonViID
         };
 
-        var success = await _databaseService.SaveCongThucPizzaAsync(congThuc);
-        if (success)
-        {
-            ClearRecipeForm();
-            await LoadRecipeItemsAsync();
+        System.Diagnostics.Debug.WriteLine($"Saving: MaHangHoa={congThuc.MaHangHoa}, SizeID={congThuc.SizeID}, NLID={congThuc.NguyenLieuID}, SL={congThuc.SoLuong}, DVID={congThuc.DonViID}");
 
-            // Tính lại giá vốn cho pizza này
-            var giaVon = await _databaseService.CalculateGiaVonByMaAsync(RecipePizza.MaPizza, RecipePizza.SizeID);
-            RecipePizza.GiaVon = giaVon;
-            RecipePizza.NotifyPropertyChanged(nameof(RecipePizza.GiaVonFormatted));
+        try
+        {
+            var success = await _databaseService.SaveCongThucPizzaAsync(congThuc);
+            System.Diagnostics.Debug.WriteLine($"SaveCongThucPizzaAsync result: {success}");
+            
+            if (success)
+            {
+                ClearRecipeForm();
+                await LoadRecipeItemsAsync();
+
+                // Tính lại giá vốn cho pizza này
+                var giaVon = await _databaseService.CalculateGiaVonByMaAsync(RecipePizza.MaPizza, RecipePizza.SizeID);
+                RecipePizza.GiaVon = giaVon;
+                RecipePizza.NotifyPropertyChanged(nameof(RecipePizza.GiaVonFormatted));
+            }
+            else
+            {
+                System.Windows.MessageBox.Show("Không thể lưu công thức. Vui lòng thử lại.", "Lỗi", System.Windows.MessageBoxButton.OK, System.Windows.MessageBoxImage.Error);
+            }
         }
+        catch (Exception ex)
+        {
+            System.Diagnostics.Debug.WriteLine($"EXCEPTION in SaveRecipeItemAsync: {ex.Message}\n{ex.StackTrace}");
+            System.Windows.MessageBox.Show($"Lỗi khi lưu: {ex.Message}", "Lỗi", System.Windows.MessageBoxButton.OK, System.Windows.MessageBoxImage.Error);
+        }
+        
+        System.Diagnostics.Debug.WriteLine("=== SaveRecipeItemAsync END ===");
     }
 
     private async Task DeleteRecipeItemAsync(CongThucItemViewModel item)

@@ -72,6 +72,13 @@ public class QuyDoiRowItem : BaseViewModel
     public string LoaiDonVi => LaDonViChuan ? "📦 ĐV Chuẩn" : "🔄 Quy đổi";
 
     public ICommand? DeleteCommand { get; set; }
+    
+    private bool _isBaseUnit;
+    public bool IsBaseUnit
+    {
+        get => _isBaseUnit;
+        set => SetProperty(ref _isBaseUnit, value);
+    }
 }
 
 public class QuyDoiDonViViewModel : BaseViewModel
@@ -268,8 +275,43 @@ public class QuyDoiDonViViewModel : BaseViewModel
             var quyDois = await _databaseService.GetQuyDoiDonVisAsync(SelectedNguyenLieu.NguyenLieuID);
             QuyDoiRows.Clear();
 
+            // Tìm đơn vị gốc của nguyên liệu
+            var donViGocId = SelectedNguyenLieu.DonViID;
+            bool baseUnitAdded = false;
+            
+            // Thêm đơn vị gốc lên đầu tiên
+            if (donViGocId.HasValue)
+            {
+                var baseQuyDoi = quyDois.FirstOrDefault(qd => qd.DonViID == donViGocId.Value);
+                if (baseQuyDoi != null)
+                {
+                    var baseRow = new QuyDoiRowItem
+                    {
+                        QuyDoiID = baseQuyDoi.QuyDoiID,
+                        NguyenLieuID = baseQuyDoi.NguyenLieuID,
+                        DonViID = baseQuyDoi.DonViID,
+                        TenDonVi = baseQuyDoi.DonViTinh?.TenDonVi ?? "",
+                        HeSoText = baseQuyDoi.HeSo.ToString("G"),
+                        LaDonViChuan = baseQuyDoi.LaDonViChuan,
+                        IsBaseUnit = true
+                    };
+                    baseRow.OnDonViChuanChanged = r => {
+                        foreach(var other in QuyDoiRows) {
+                            if (other != r && other.LaDonViChuan) other.LaDonViChuan = false;
+                        }
+                    };
+                    baseRow.DeleteCommand = new AsyncRelayCommand(async _ => await DeleteRowAsync(baseRow));
+                    QuyDoiRows.Add(baseRow);
+                    baseUnitAdded = true;
+                }
+            }
+
             foreach (var qd in quyDois)
             {
+                // Bỏ qua đơn vị gốc vì đã thêm ở trên
+                if (baseUnitAdded && donViGocId.HasValue && qd.DonViID == donViGocId.Value)
+                    continue;
+                    
                 var row = new QuyDoiRowItem
                 {
                     QuyDoiID = qd.QuyDoiID,
@@ -277,7 +319,8 @@ public class QuyDoiDonViViewModel : BaseViewModel
                     DonViID = qd.DonViID,
                     TenDonVi = qd.DonViTinh?.TenDonVi ?? "",
                     HeSoText = qd.HeSo.ToString("G"),
-                    LaDonViChuan = qd.LaDonViChuan
+                    LaDonViChuan = qd.LaDonViChuan,
+                    IsBaseUnit = false
                 };
                 row.OnDonViChuanChanged = r => {
                     foreach(var other in QuyDoiRows) {
@@ -286,6 +329,28 @@ public class QuyDoiDonViViewModel : BaseViewModel
                 };
                 row.DeleteCommand = new AsyncRelayCommand(async _ => await DeleteRowAsync(row));
                 QuyDoiRows.Add(row);
+            }
+            
+            // Nếu chưa thêm đơn vị gốc, thêm mặc định
+            if (!baseUnitAdded && !string.IsNullOrEmpty(SelectedNguyenLieu.DonViChinh))
+            {
+                var baseRow = new QuyDoiRowItem
+                {
+                    QuyDoiID = 0,
+                    NguyenLieuID = SelectedNguyenLieu.NguyenLieuID,
+                    DonViID = SelectedNguyenLieu.DonViID,
+                    TenDonVi = SelectedNguyenLieu.DonViChinh,
+                    HeSoText = "1",
+                    LaDonViChuan = true,
+                    IsBaseUnit = true
+                };
+                baseRow.OnDonViChuanChanged = r => {
+                    foreach(var other in QuyDoiRows) {
+                        if (other != r && other.LaDonViChuan) other.LaDonViChuan = false;
+                    }
+                };
+                baseRow.DeleteCommand = new AsyncRelayCommand(async _ => await DeleteRowAsync(baseRow));
+                QuyDoiRows.Insert(0, baseRow);
             }
         }
         catch (Exception ex)
@@ -316,18 +381,7 @@ public class QuyDoiDonViViewModel : BaseViewModel
             return;
         }
 
-        // Kiểm tra đơn vị trùng với đơn vị gốc
-        if (SelectedNguyenLieu.DonViID.HasValue && SelectedNewDonVi.DonViID == SelectedNguyenLieu.DonViID.Value)
-        {
-            MessageBox.Show(
-                "Đơn vị quy đổi không được trùng với đơn tính gốc của nguyên liệu!",
-                "Lỗi đơn vị trùng",
-                MessageBoxButton.OK,
-                MessageBoxImage.Warning);
-            return;
-        }
-
-        // Kiểm tra trùng lặp
+        // Kiểm tra trùng lặp (bao gồm cả đơn vị gốc nếu đã có trong bảng)
         if (QuyDoiRows.Any(r => r.DonViID == SelectedNewDonVi.DonViID))
         {
             MessageBox.Show(
@@ -474,6 +528,17 @@ public class QuyDoiDonViViewModel : BaseViewModel
 
     private async Task DeleteRowAsync(QuyDoiRowItem row)
     {
+        // Không cho phép xóa đơn vị gốc
+        if (row.IsBaseUnit)
+        {
+            MessageBox.Show(
+                "Không thể xóa đơn vị gốc của nguyên liệu!",
+                "Không được phép",
+                MessageBoxButton.OK,
+                MessageBoxImage.Warning);
+            return;
+        }
+        
         var confirmed = await ShowDeleteConfirmation(
             row.TenDonVi,
             "Xóa đơn vị quy đổi",

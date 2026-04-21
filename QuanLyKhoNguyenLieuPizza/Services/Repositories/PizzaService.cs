@@ -850,12 +850,13 @@ public class PizzaService : DatabaseContext
             cmd.Parameters.AddWithValue("@NguyenLieuID", congThuc.NguyenLieuID);
             cmd.Parameters.AddWithValue("@SoLuong", (object?)congThuc.SoLuong ?? DBNull.Value);
             cmd.Parameters.AddWithValue("@DonViID", (object?)congThuc.DonViID ?? DBNull.Value);
+            System.Diagnostics.Debug.WriteLine($"[SaveCongThucPizza] MaHangHoa={congThuc.MaHangHoa}, SizeID={congThuc.SizeID}, NLID={congThuc.NguyenLieuID}, SL={congThuc.SoLuong}, DVID={congThuc.DonViID}");
             await cmd.ExecuteNonQueryAsync();
             return true;
         }
         catch (Exception ex)
         {
-            System.Diagnostics.Debug.WriteLine($"Error saving CongThuc_Pizza: {ex.Message}");
+            System.Diagnostics.Debug.WriteLine($"Error saving CongThuc_Pizza: {ex.Message}\n{ex.StackTrace}");
             return false;
         }
     }
