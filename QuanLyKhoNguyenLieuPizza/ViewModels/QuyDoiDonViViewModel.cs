@@ -37,6 +37,8 @@ public class QuyDoiRowItem : BaseViewModel
     public int? DonViID { get; set; }
     public string TenDonVi { get; set; } = string.Empty;
 
+    public Action<QuyDoiRowItem>? OnDonViChuanChanged { get; set; }
+
     private string _heSoText = "1";
     public string HeSoText
     {
@@ -48,7 +50,18 @@ public class QuyDoiRowItem : BaseViewModel
     public bool LaDonViChuan
     {
         get => _laDonViChuan;
-        set => SetProperty(ref _laDonViChuan, value);
+        set 
+        {
+            if (SetProperty(ref _laDonViChuan, value))
+            {
+                OnPropertyChanged(nameof(LoaiDonVi));
+                if (value)
+                {
+                    HeSoText = "1";
+                    OnDonViChuanChanged?.Invoke(this);
+                }
+            }
+        }
     }
 
     /// <summary>
@@ -266,6 +279,11 @@ public class QuyDoiDonViViewModel : BaseViewModel
                     HeSoText = qd.HeSo.ToString("G"),
                     LaDonViChuan = qd.LaDonViChuan
                 };
+                row.OnDonViChuanChanged = r => {
+                    foreach(var other in QuyDoiRows) {
+                        if (other != r && other.LaDonViChuan) other.LaDonViChuan = false;
+                    }
+                };
                 row.DeleteCommand = new AsyncRelayCommand(async _ => await DeleteRowAsync(row));
                 QuyDoiRows.Add(row);
             }
@@ -329,6 +347,11 @@ public class QuyDoiDonViViewModel : BaseViewModel
             HeSoText = "1",
             LaDonViChuan = !QuyDoiRows.Any()
         };
+        newRow.OnDonViChuanChanged = r => {
+            foreach(var other in QuyDoiRows) {
+                if (other != r && other.LaDonViChuan) other.LaDonViChuan = false;
+            }
+        };
         newRow.DeleteCommand = new AsyncRelayCommand(async _ => await DeleteRowAsync(newRow));
         QuyDoiRows.Add(newRow);
 
@@ -358,7 +381,8 @@ public class QuyDoiDonViViewModel : BaseViewModel
 
             foreach (var row in QuyDoiRows)
             {
-                if (!decimal.TryParse(row.HeSoText, out decimal heSo) || heSo <= 0)
+                var cleanText = row.HeSoText?.Replace(",", ".") ?? "";
+                if (!decimal.TryParse(cleanText, System.Globalization.NumberStyles.Any, System.Globalization.CultureInfo.InvariantCulture, out decimal heSo) || heSo <= 0)
                 {
                     MessageBox.Show(
                         $"Hệ số của đơn vị '{row.TenDonVi}' không hợp lệ! Phải là số dương.",
@@ -389,42 +413,28 @@ public class QuyDoiDonViViewModel : BaseViewModel
                 // ⚡ BUG FIX: Lấy hệ số cũ từ giao diện (QuyDoiRows) thay vì từ DB (oldDonViChuan)
                 var uiOldDonVi = QuyDoiRows.FirstOrDefault(r => r.DonViID == oldDonViChuan?.DonViID);
                 decimal oldHeSo = 1m;
-                if (uiOldDonVi != null && decimal.TryParse(uiOldDonVi.HeSoText, out decimal parsedOldHeSo))
+                if (uiOldDonVi != null)
                 {
-                    oldHeSo = parsedOldHeSo;
+                    var cleanOld = uiOldDonVi.HeSoText?.Replace(",", ".") ?? "";
+                    if (decimal.TryParse(cleanOld, System.Globalization.NumberStyles.Any, System.Globalization.CultureInfo.InvariantCulture, out decimal parsedOldHeSo))
+                    {
+                        oldHeSo = parsedOldHeSo;
+                    }
                 }
                 else if (oldDonViChuan != null)
                 {
                     oldHeSo = oldDonViChuan.HeSo;
                 }
 
-                if (decimal.TryParse(newDonViChuan.HeSoText, out decimal newHeSo) && oldHeSo > 0 && newHeSo > 0)
+                var cleanNew = newDonViChuan.HeSoText?.Replace(",", ".") ?? "";
+                if (decimal.TryParse(cleanNew, System.Globalization.NumberStyles.Any, System.Globalization.CultureInfo.InvariantCulture, out decimal newHeSo) && oldHeSo > 0 && newHeSo > 0)
                 {
                     var tonKho = await _databaseService.GetTonKhoByNguyenLieuIdAsync(SelectedNguyenLieu.NguyenLieuID);
                     if (tonKho != null)
                     {
-                        decimal GetWeight(string unit) => unit switch { "g" => 0.001m, "kg" => 1m, "mg" => 0.000001m, _ => 0m };
-                        decimal GetVolume(string unit) => unit switch { "ml" => 0.001m, "l" => 1m, "lit" => 1m, _ => 0m };
-                        
-                        decimal GetReliableFactor(string? unitName, decimal dbFactor)
+                        if (oldHeSo > 0 && newHeSo > 0)
                         {
-                            var lowerUnit = unitName?.ToLower() ?? "";
-                            var w = GetWeight(lowerUnit);
-                            if (w > 0) return w;
-                            var v = GetVolume(lowerUnit);
-                            if (v > 0) return v;
-                            return dbFactor;
-                        }
-
-                        var oldName = oldDonViChuan?.DonViTinh?.TenDonVi;
-                        var newName = newDonViChuan.TenDonVi;
-
-                        var reliableOldHeSo = GetReliableFactor(oldName, oldHeSo);
-                        var reliableNewHeSo = GetReliableFactor(newName, newHeSo);
-
-                        if (reliableOldHeSo > 0 && reliableNewHeSo > 0)
-                        {
-                            decimal conversionFactor = reliableOldHeSo / reliableNewHeSo;
+                            decimal conversionFactor = oldHeSo / newHeSo;
                             decimal newSoLuongTon = tonKho.SoLuongTon * conversionFactor;
 
                             await _databaseService.UpdateTonKhoAsync(SelectedNguyenLieu.NguyenLieuID, newSoLuongTon);

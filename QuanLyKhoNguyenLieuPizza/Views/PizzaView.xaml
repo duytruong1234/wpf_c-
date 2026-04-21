@@ -734,7 +734,7 @@
                                     
                                     <StackPanel Grid.Column="2" Margin="0,0,16,0">
                                         <TextBlock Text="Đơn vị" FontSize="12" Foreground="{StaticResource Gray600}" Margin="0,0,0,4"/>
-                                        <ComboBox ItemsSource="{Binding DonViTinhs}" SelectedItem="{Binding RecipeSelectedDonVi}" DisplayMemberPath="TenDonVi" Background="White" BorderBrush="{StaticResource Gray200}"/>
+                                        <ComboBox ItemsSource="{Binding RecipeDonViOptions}" SelectedItem="{Binding RecipeSelectedDonVi}" DisplayMemberPath="TenDonVi" Background="White" BorderBrush="{StaticResource Gray200}"/>
                                     </StackPanel>
 
                                     <StackPanel Grid.Column="3" Orientation="Horizontal" VerticalAlignment="Bottom">

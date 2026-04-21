@@ -263,11 +263,11 @@ public class ShellViewModel : BaseViewModel
         }
         else if (isNhanVienKho)
         {
-            // Nhân viên kho: chỉ quản lý phiếu nhập
+            // Nhân viên kho: quản lý phiếu nhập + xuất
             CanViewBaoCaoThongKe = false;
             CanViewTonKho = false;
             CanViewPhieuNhap = true;
-            CanViewPhieuXuat = false;
+            CanViewPhieuXuat = true;
             CanViewNguyenLieu = false;
             CanViewNhaCungCap = false;
             CanViewNhanVien = false;
@@ -293,7 +293,7 @@ public class ShellViewModel : BaseViewModel
         }
         else if (isNhanVienBanHang)
         {
-            // Nhân viên bán hàng: chỉ bán hàng
+            // Nhân viên bán hàng: bán hàng + xuất kho
             CanViewBaoCaoThongKe = false;
             CanViewTonKho = false;
             CanViewPhieuNhap = false;
@@ -308,7 +308,7 @@ public class ShellViewModel : BaseViewModel
         }
         else
         {
-            // Mặc định: chỉ xem tồn kho
+            // Mặc định: xem tồn kho + xuất kho
             CanViewBaoCaoThongKe = false;
             CanViewTonKho = true;
             CanViewPhieuNhap = false;

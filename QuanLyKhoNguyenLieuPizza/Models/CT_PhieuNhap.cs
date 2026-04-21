@@ -1,5 +1,6 @@
 using System.Collections.ObjectModel;
 using System.ComponentModel;
+using System.Globalization;
 using System.Runtime.CompilerServices;
 
 namespace QuanLyKhoNguyenLieuPizza.Models;
@@ -19,8 +20,36 @@ public class CT_PhieuNhap : INotifyPropertyChanged
             if (_soLuong != value)
             {
                 _soLuong = value;
+                _soLuongText = value.ToString("0.####", CultureInfo.InvariantCulture);
                 OnPropertyChanged();
+                OnPropertyChanged(nameof(SoLuongText));
                 RecalculateThanhTien();
+            }
+        }
+    }
+
+    private string _soLuongText = "0";
+    public string SoLuongText
+    {
+        get => _soLuongText;
+        set
+        {
+            if (_soLuongText != value)
+            {
+                _soLuongText = value;
+                OnPropertyChanged();
+
+                // Normalize separator
+                var normalized = value?.Replace(',', '.') ?? "0";
+                if (decimal.TryParse(normalized, NumberStyles.Any, CultureInfo.InvariantCulture, out var parsed))
+                {
+                    if (_soLuong != parsed)
+                    {
+                        _soLuong = parsed;
+                        OnPropertyChanged(nameof(SoLuong));
+                        RecalculateThanhTien();
+                    }
+                }
             }
         }
     }

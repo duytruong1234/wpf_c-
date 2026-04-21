@@ -900,7 +900,7 @@
                                                                     </ControlTemplate>
                                                                 </Button.Template>
                                                             </Button>
-                                                            <TextBox Text="{Binding SoLuong, UpdateSourceTrigger=PropertyChanged}"
+                                                            <TextBox Text="{Binding SoLuongText, UpdateSourceTrigger=PropertyChanged}"
                                                                      Width="40" TextAlignment="Center" BorderThickness="0" behaviors:NumericInputBehavior.IsDecimalOnly="True"
                                                                      FontSize="14" FontWeight="SemiBold" VerticalContentAlignment="Center" Background="Transparent"/>
                                                             <Button Command="{Binding DataContext.IncreaseQuantityCommand, RelativeSource={RelativeSource AncestorType=ItemsControl}}"
@@ -1164,7 +1164,7 @@
                                                                     </ControlTemplate>
                                                                 </Button.Template>
                                                             </Button>
-                                                            <TextBox Text="{Binding SoLuong, UpdateSourceTrigger=PropertyChanged}" behaviors:NumericInputBehavior.IsDecimalOnly="True"
+                                                            <TextBox Text="{Binding SoLuongText, UpdateSourceTrigger=PropertyChanged}" behaviors:NumericInputBehavior.IsDecimalOnly="True"
                                                                      Width="45" TextAlignment="Center" BorderThickness="0" Background="Transparent"
                                                                      FontSize="14" FontWeight="SemiBold" VerticalContentAlignment="Center" Margin="4,0"/>
                                                             <Button Command="{Binding DataContext.IncreaseQuantityCommand, RelativeSource={RelativeSource AncestorType=ItemsControl}}"

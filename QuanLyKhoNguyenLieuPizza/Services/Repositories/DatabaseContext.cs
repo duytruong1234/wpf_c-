@@ -183,15 +183,13 @@ public abstract class DatabaseContext
 
     private static decimal GetReliableFactor(int unitId, string? unitName, Dictionary<int, decimal> dbFactors)
     {
-        if (TryGetWeightFactorToKilogram(unitName, out var weightFactor))
-            return weightFactor;
-            
-        if (TryGetVolumeFactorToLiter(unitName, out var volumeFactor))
-            return volumeFactor;
-            
+        // CHỈ lấy hệ số từ bảng QuyDoiDonVi — KHÔNG tự suy diễn
+        // Đảm bảo tính toàn vẹn: Nhập, Xuất, Bán hàng đều tuân theo cùng 1 quy tắc
         if (dbFactors.TryGetValue(unitId, out var factor) && factor > 0)
             return factor;
-            
+
+        // Nếu DB không có → trả về 0 (không quy đổi được)
+        // Buộc người dùng phải cấu hình QuyDoiDonVi trước khi sử dụng
         return 0m;
     }
 
@@ -231,6 +229,7 @@ public abstract class DatabaseContext
 
         var context = await GetIngredientUnitContextAsync(conn, transaction, ingredientId, contextCache);
 
+        // Nếu không có đơn vị nguồn hoặc đơn vị tồn kho → dùng nguyên số lượng gốc
         if (sourceUnitId == null || context.StockUnitId == null || sourceUnitId == context.StockUnitId)
             return amount;
 
@@ -238,8 +237,13 @@ public abstract class DatabaseContext
         if (TryConvertByConfiguredFactors(context, sourceUnitId.Value, sourceUnitName, amount, out var convertedAmount))
             return convertedAmount;
 
-        throw new InvalidOperationException(
-            $"Chưa cấu hình quy đổi đơn vị cho nguyên liệu \'{context.Name}\' ({sourceUnitName ?? $"ID {sourceUnitId.Value}"} -> {context.StockUnitName ?? "đơn vị tồn kho"}).");
+        // Fallback: Khi chưa cấu hình quy đổi → dùng nguyên số lượng gốc (đơn vị gốc)
+        // thay vì throw lỗi, để hệ thống vẫn hoạt động được
+        System.Diagnostics.Debug.WriteLine(
+            $"[WARN] Chưa cấu hình quy đổi đơn vị cho nguyên liệu '{context.Name}' " +
+            $"({sourceUnitName ?? $"ID {sourceUnitId.Value}"} -> {context.StockUnitName ?? "đơn vị tồn kho"}). " +
+            $"Sử dụng số lượng gốc: {amount}");
+        return amount;
     }
 
     /// <summary>

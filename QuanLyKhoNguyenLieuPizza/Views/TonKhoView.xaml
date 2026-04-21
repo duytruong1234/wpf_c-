@@ -845,6 +845,7 @@
                             <Grid>
                                 <Grid.RowDefinitions>
                                     <RowDefinition Height="Auto"/>
+                                    <RowDefinition Height="Auto"/>
                                     <RowDefinition Height="*"/>
                                     <RowDefinition Height="Auto"/>
                                 </Grid.RowDefinitions>
@@ -855,10 +856,10 @@
                                            FontSize="22"
                                            FontWeight="Bold"
                                            Foreground="{StaticResource Gray800}"
-                                           Margin="0,0,0,18"/>
+                                           Margin="0,0,0,10"/>
 
                                 <!-- Bảng Quy đổi -->
-                                <Border Grid.Row="1"
+                                <Border Grid.Row="2"
                                         BorderBrush="{StaticResource Gray200}"
                                         BorderThickness="1"
                                         CornerRadius="12">
@@ -913,12 +914,13 @@
                                                                         CornerRadius="6"
                                                                         Padding="8,4"
                                                                         HorizontalAlignment="Center">
-                                                                    <TextBox Text="{Binding HeSo, UpdateSourceTrigger=PropertyChanged}" behaviors:NumericInputBehavior.IsDecimalOnly="True"
+                                                                    <TextBox Text="{Binding HeSoText, UpdateSourceTrigger=PropertyChanged}" behaviors:NumericInputBehavior.IsDecimalOnly="True"
                                                                              Background="Transparent"
                                                                              BorderThickness="0"
                                                                              FontWeight="SemiBold"
                                                                              FontSize="14"
                                                                              Foreground="{StaticResource PrimaryBlue}"
+                                                                             IsReadOnly="{Binding LaDonViChuan}"
                                                                              HorizontalAlignment="Center"
                                                                              VerticalAlignment="Center"
                                                                              TextAlignment="Center"
@@ -951,7 +953,7 @@
                                 </Border>
 
                                 <!-- Nút Hành động -->
-                                <StackPanel Grid.Row="2" 
+                                <StackPanel Grid.Row="3" 
                                             Orientation="Horizontal" 
                                             HorizontalAlignment="Center"
                                             Margin="0,18,0,0">

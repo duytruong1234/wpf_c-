@@ -94,6 +94,7 @@ public class PizzaViewModel : BaseViewModel
     private NguyenLieu? _recipeSelectedNguyenLieu;
     private string _recipeSoLuong = string.Empty;
     private DonViTinh? _recipeSelectedDonVi;
+    private ObservableCollection<DonViTinh> _recipeDonViOptions = new();
     private bool _isRecipeEditing;
     private CongThucItemViewModel? _editingRecipeItem;
 
@@ -289,7 +290,13 @@ public class PizzaViewModel : BaseViewModel
     public NguyenLieu? RecipeSelectedNguyenLieu
     {
         get => _recipeSelectedNguyenLieu;
-        set => SetProperty(ref _recipeSelectedNguyenLieu, value);
+        set
+        {
+            if (SetProperty(ref _recipeSelectedNguyenLieu, value))
+            {
+                _ = LoadRecipeDonViOptionsAsync(value);
+            }
+        }
     }
 
     public string RecipeSoLuong
@@ -302,6 +309,12 @@ public class PizzaViewModel : BaseViewModel
     {
         get => _recipeSelectedDonVi;
         set => SetProperty(ref _recipeSelectedDonVi, value);
+    }
+
+    public ObservableCollection<DonViTinh> RecipeDonViOptions
+    {
+        get => _recipeDonViOptions;
+        set => SetProperty(ref _recipeDonViOptions, value);
     }
 
     public bool IsRecipeEditing
@@ -721,18 +734,75 @@ public class PizzaViewModel : BaseViewModel
         _editingRecipeItem = null;
     }
 
-    private void EditRecipeItem(CongThucItemViewModel item)
+    private async void EditRecipeItem(CongThucItemViewModel item)
     {
         IsRecipeEditing = true;
         _editingRecipeItem = item;
-        RecipeSelectedNguyenLieu = AllNguyenLieus.FirstOrDefault(n => n.NguyenLieuID == item.NguyenLieuID);
+        // Set ingredient first (this triggers loading QuyDoiDonVi options)
+        _recipeSelectedNguyenLieu = AllNguyenLieus.FirstOrDefault(n => n.NguyenLieuID == item.NguyenLieuID);
+        OnPropertyChanged(nameof(RecipeSelectedNguyenLieu));
+        await LoadRecipeDonViOptionsAsync(_recipeSelectedNguyenLieu);
         RecipeSoLuong = item.SoLuong?.ToString("G") ?? "";
-        RecipeSelectedDonVi = DonViTinhs.FirstOrDefault(d => d.DonViID == item.DonViID);
+        RecipeSelectedDonVi = RecipeDonViOptions.FirstOrDefault(d => d.DonViID == item.DonViID)
+                              ?? DonViTinhs.FirstOrDefault(d => d.DonViID == item.DonViID);
     }
 
     private void CancelRecipeEdit()
     {
         ClearRecipeForm();
+    }
+
+    /// <summary>
+    /// Load danh sách đơn vị từ bảng QuyDoiDonVi cho nguyên liệu được chọn.
+    /// Chỉ hiển thị các đơn vị đã cấu hình hệ số quy đổi.
+    /// </summary>
+    private async Task LoadRecipeDonViOptionsAsync(NguyenLieu? nguyenLieu)
+    {
+        RecipeDonViOptions.Clear();
+        RecipeSelectedDonVi = null;
+
+        if (nguyenLieu == null) return;
+
+        try
+        {
+            var quyDois = await _databaseService.GetQuyDoiDonVisAsync(nguyenLieu.NguyenLieuID);
+            
+            if (quyDois.Count > 0)
+            {
+                foreach (var qd in quyDois)
+                {
+                    if (qd.DonViTinh != null)
+                    {
+                        RecipeDonViOptions.Add(qd.DonViTinh);
+                    }
+                }
+                // Tự động chọn đơn vị chuẩn
+                var donViChuan = quyDois.FirstOrDefault(q => q.LaDonViChuan);
+                if (donViChuan?.DonViTinh != null)
+                {
+                    RecipeSelectedDonVi = RecipeDonViOptions.FirstOrDefault(d => d.DonViID == donViChuan.DonViID);
+                }
+            }
+            else
+            {
+                // Fallback: nếu chưa cấu hình QuyDoiDonVi → dùng đơn vị gốc của nguyên liệu
+                if (nguyenLieu.DonViTinh != null)
+                {
+                    RecipeDonViOptions.Add(nguyenLieu.DonViTinh);
+                    RecipeSelectedDonVi = nguyenLieu.DonViTinh;
+                }
+            }
+        }
+        catch (Exception ex)
+        {
+            System.Diagnostics.Debug.WriteLine($"Error loading recipe DonVi options: {ex.Message}");
+            // Fallback
+            if (nguyenLieu.DonViTinh != null)
+            {
+                RecipeDonViOptions.Add(nguyenLieu.DonViTinh);
+                RecipeSelectedDonVi = nguyenLieu.DonViTinh;
+            }
+        }
     }
 
     private async Task SaveRecipeItemAsync()

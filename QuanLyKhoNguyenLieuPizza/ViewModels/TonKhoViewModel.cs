@@ -28,7 +28,7 @@ public class QuyDoiDonViItemViewModel : BaseViewModel
 {
     private bool _laDonViChuan;
     private string _tenDonVi = string.Empty;
-    private decimal _heSo;
+    private string _heSoText = "1";
     
     public int QuyDoiID { get; set; }
     public int? DonViID { get; set; }
@@ -39,10 +39,10 @@ public class QuyDoiDonViItemViewModel : BaseViewModel
         set => SetProperty(ref _tenDonVi, value);
     }
     
-    public decimal HeSo
+    public string HeSoText
     {
-        get => _heSo;
-        set => SetProperty(ref _heSo, value / 1.000000000000000000000000000000000m);
+        get => _heSoText;
+        set => SetProperty(ref _heSoText, value);
     }
     
     public bool LaDonViChuan
@@ -572,7 +572,7 @@ public class TonKhoViewModel : BaseViewModel
                         QuyDoiID = qd.QuyDoiID,
                         DonViID = qd.DonViID,
                         TenDonVi = qd.DonViTinh?.TenDonVi ?? "",
-                        HeSo = qd.HeSo,
+                        HeSoText = qd.HeSo.ToString("G"),
                         LaDonViChuan = qd.LaDonViChuan,
                         EditCommand = EditQuyDoiCommand,
                         DeleteCommand = DeleteQuyDoiCommand,
@@ -594,7 +594,7 @@ public class TonKhoViewModel : BaseViewModel
                         QuyDoiID = 0,
                         DonViID = donVi.DonViID,
                         TenDonVi = donVi.TenDonVi,
-                        HeSo = 1.0m,
+                        HeSoText = "1",
                         LaDonViChuan = true,
                         EditCommand = EditQuyDoiCommand,
                         DeleteCommand = DeleteQuyDoiCommand,
@@ -609,7 +609,7 @@ public class TonKhoViewModel : BaseViewModel
                         QuyDoiID = 0,
                         DonViID = null,
                         TenDonVi = SelectedNguyenLieu.DonViTinh,
-                        HeSo = 1.0m,
+                        HeSoText = "1",
                         LaDonViChuan = true,
                         EditCommand = EditQuyDoiCommand,
                         DeleteCommand = DeleteQuyDoiCommand,
@@ -650,7 +650,8 @@ public class TonKhoViewModel : BaseViewModel
 
             foreach (var qd in QuyDoiDonVis)
             {
-                if (qd.HeSo <= 0)
+                var cleanText = qd.HeSoText?.Replace(",", ".") ?? "";
+                if (!decimal.TryParse(cleanText, System.Globalization.NumberStyles.Any, System.Globalization.CultureInfo.InvariantCulture, out decimal parsedHeSo) || parsedHeSo <= 0)
                 {
                     System.Windows.MessageBox.Show(
                         $"Hệ số của đơn vị '{qd.TenDonVi}' không hợp lệ! Phải là số dương.",
@@ -665,7 +666,7 @@ public class TonKhoViewModel : BaseViewModel
                     QuyDoiID = qd.QuyDoiID,
                     NguyenLieuID = SelectedNguyenLieu.NguyenLieuID,
                     DonViID = qd.DonViID,
-                    HeSo = qd.HeSo,
+                    HeSo = parsedHeSo,
                     LaDonViChuan = qd.LaDonViChuan
                 };
                 
@@ -681,41 +682,37 @@ public class TonKhoViewModel : BaseViewModel
                 // ⚡ BUG FIX: Lấy hệ số cũ từ giao diện (QuyDoiDonVis) thay vì từ DB (oldDonViChuan)
                 // Vì người dùng có thể đang sửa cả hệ số cũ trong cùng 1 lần lưu!
                 var uiOldDonVi = QuyDoiDonVis.FirstOrDefault(qd => qd.DonViID == oldDonViChuan?.DonViID);
-                decimal oldHeSo = uiOldDonVi?.HeSo ?? oldDonViChuan?.HeSo ?? 1m;
-                decimal newHeSo = newDonViChuan.HeSo;
+                decimal oldHeSo = 1m;
+                if (uiOldDonVi != null)
+                {
+                    var cleanOld = uiOldDonVi.HeSoText?.Replace(",", ".") ?? "";
+                    if (decimal.TryParse(cleanOld, System.Globalization.NumberStyles.Any, System.Globalization.CultureInfo.InvariantCulture, out decimal parsedOldHeSo))
+                    {
+                        oldHeSo = parsedOldHeSo;
+                    }
+                }
+                else if (oldDonViChuan != null)
+                {
+                    oldHeSo = oldDonViChuan.HeSo;
+                }
+
+                decimal newHeSo = 1m;
+                var cleanNew = newDonViChuan.HeSoText?.Replace(",", ".") ?? "";
+                if (decimal.TryParse(cleanNew, System.Globalization.NumberStyles.Any, System.Globalization.CultureInfo.InvariantCulture, out decimal parsedNewHeSo))
+                {
+                    newHeSo = parsedNewHeSo;
+                }
                 
                 if (oldHeSo > 0 && newHeSo > 0)
                 {
-                    decimal GetWeight(string unit) => unit switch { "g" => 0.001m, "kg" => 1m, "mg" => 0.000001m, _ => 0m };
-                    decimal GetVolume(string unit) => unit switch { "ml" => 0.001m, "l" => 1m, "lit" => 1m, _ => 0m };
-                    
-                    decimal GetReliableFactor(string? unitName, decimal dbFactor)
-                    {
-                        var lowerUnit = unitName?.ToLower() ?? "";
-                        var w = GetWeight(lowerUnit);
-                        if (w > 0) return w;
-                        var v = GetVolume(lowerUnit);
-                        if (v > 0) return v;
-                        return dbFactor;
-                    }
+                    decimal conversionFactor = oldHeSo / newHeSo;
+                    decimal newSoLuongTon = SelectedNguyenLieu.SoLuongTon * conversionFactor;
 
-                    var oldName = oldDonViChuan?.DonViTinh?.TenDonVi;
-                    var newName = newDonViChuan.TenDonVi;
-
-                    var reliableOldHeSo = GetReliableFactor(oldName, oldHeSo);
-                    var reliableNewHeSo = GetReliableFactor(newName, newHeSo);
-
-                    if (reliableOldHeSo > 0 && reliableNewHeSo > 0)
-                    {
-                        decimal conversionFactor = reliableOldHeSo / reliableNewHeSo;
-                        decimal newSoLuongTon = SelectedNguyenLieu.SoLuongTon * conversionFactor;
-
-                        await _databaseService.UpdateTonKhoAsync(SelectedNguyenLieu.NguyenLieuID, newSoLuongTon);
+                    await _databaseService.UpdateTonKhoAsync(SelectedNguyenLieu.NguyenLieuID, newSoLuongTon);
                         
-                        // ⚡ BUG FIX: Cập nhật lại số lượng tồn trên UI để người dùng thấy ngay kết quả
-                        SelectedNguyenLieu.SoLuongTon = newSoLuongTon;
-                        SelectedNguyenLieu.MucDoTonKho = GetMucDoTonKho(newSoLuongTon);
-                    }
+                    // ⚡ BUG FIX: Cập nhật lại số lượng tồn trên UI để người dùng thấy ngay kết quả
+                    SelectedNguyenLieu.SoLuongTon = newSoLuongTon;
+                    SelectedNguyenLieu.MucDoTonKho = GetMucDoTonKho(newSoLuongTon);
                 }
                 
                 // Cập nhật DonViID trong bảng NguyenLieu
