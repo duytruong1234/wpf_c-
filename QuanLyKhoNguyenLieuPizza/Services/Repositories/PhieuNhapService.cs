@@ -617,7 +617,21 @@ public class PhieuNhapService : DatabaseContext
 
     private async Task UpdateTonKhoOnNhapAsync(SqlConnection conn, SqlTransaction transaction, int nguyenLieuId, decimal soLuong)
     {
-        // Kiá»ƒm tra náº¿u Tá»“nKho Ä‘Ã£ tá»“n táº¡i
+        // Lấy DonViID chuẩn: ưu tiên QuyDoiDonVi (LaDonViChuan=1), fallback về NguyenLieu.DonViID
+        int? donViChuanId = null;
+        var dvSql = @"SELECT TOP 1 COALESCE(qd.DonViID, nl.DonViID) 
+                      FROM NguyenLieu nl
+                      LEFT JOIN QuyDoiDonVi qd ON nl.NguyenLieuID = qd.NguyenLieuID AND qd.LaDonViChuan = 1
+                      WHERE nl.NguyenLieuID = @NguyenLieuID";
+        using (var dvCmd = new SqlCommand(dvSql, conn, transaction))
+        {
+            dvCmd.Parameters.AddWithValue("@NguyenLieuID", nguyenLieuId);
+            var dvResult = await dvCmd.ExecuteScalarAsync();
+            if (dvResult != null && dvResult != DBNull.Value)
+                donViChuanId = Convert.ToInt32(dvResult);
+        }
+
+        // Kiểm tra nếu TồnKho đã tồn tại
         var checkSql = "SELECT COUNT(*) FROM TonKho WHERE NguyenLieuID = @NguyenLieuID";
         using var checkCmd = new SqlCommand(checkSql, conn, transaction);
         checkCmd.Parameters.AddWithValue("@NguyenLieuID", nguyenLieuId);
@@ -626,20 +640,23 @@ public class PhieuNhapService : DatabaseContext
         if (count > 0)
         {
             var updateSql = @"UPDATE TonKho 
-                             SET SoLuongTon = SoLuongTon + @SoLuong, NgayCapNhat = GETDATE()
+                             SET SoLuongTon = SoLuongTon + @SoLuong, NgayCapNhat = GETDATE(),
+                                 DonViID = COALESCE(DonViID, @DonViID)
                              WHERE NguyenLieuID = @NguyenLieuID";
             using var updateCmd = new SqlCommand(updateSql, conn, transaction);
             updateCmd.Parameters.AddWithValue("@SoLuong", soLuong);
             updateCmd.Parameters.AddWithValue("@NguyenLieuID", nguyenLieuId);
+            updateCmd.Parameters.AddWithValue("@DonViID", donViChuanId ?? (object)DBNull.Value);
             await updateCmd.ExecuteNonQueryAsync();
         }
         else
         {
-            var insertSql = @"INSERT INTO TonKho (NguyenLieuID, SoLuongTon, NgayCapNhat)
-                             VALUES (@NguyenLieuID, @SoLuong, GETDATE())";
+            var insertSql = @"INSERT INTO TonKho (NguyenLieuID, SoLuongTon, NgayCapNhat, DonViID)
+                             VALUES (@NguyenLieuID, @SoLuong, GETDATE(), @DonViID)";
             using var insertCmd = new SqlCommand(insertSql, conn, transaction);
             insertCmd.Parameters.AddWithValue("@NguyenLieuID", nguyenLieuId);
             insertCmd.Parameters.AddWithValue("@SoLuong", soLuong);
+            insertCmd.Parameters.AddWithValue("@DonViID", donViChuanId ?? (object)DBNull.Value);
             await insertCmd.ExecuteNonQueryAsync();
         }
     }
