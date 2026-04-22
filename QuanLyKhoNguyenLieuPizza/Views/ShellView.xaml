@@ -200,7 +200,8 @@
                                FontWeight="SemiBold" 
                                Foreground="#64748B" 
                                Margin="24,0,0,8" 
-                               FontFamily="Segoe UI Variable, Segoe UI, Arial"/>
+                               FontFamily="Segoe UI Variable, Segoe UI, Arial"
+                               Visibility="{Binding CanViewTongQuanSection, Converter={StaticResource BoolToVisibilityConverter}}"/>
                     <Button Command="{Binding NavigateCommand}"
                             CommandParameter="BaoCaoThongKe"
                             Visibility="{Binding CanViewBaoCaoThongKe, Converter={StaticResource BoolToVisibilityConverter}}">
@@ -248,7 +249,8 @@
                                FontWeight="SemiBold" 
                                Foreground="#64748B" 
                                Margin="24,16,0,8" 
-                               FontFamily="Segoe UI Variable, Segoe UI, Arial"/>
+                               FontFamily="Segoe UI Variable, Segoe UI, Arial"
+                               Visibility="{Binding CanViewQuanLyKhoSection, Converter={StaticResource BoolToVisibilityConverter}}"/>
 
                     <!-- Ton kho -->
                     <Button Command="{Binding NavigateCommand}"
@@ -489,7 +491,8 @@
                                FontWeight="SemiBold" 
                                Foreground="#64748B" 
                                Margin="24,16,0,8" 
-                               FontFamily="Segoe UI Variable, Segoe UI, Arial"/>
+                               FontFamily="Segoe UI Variable, Segoe UI, Arial"
+                               Visibility="{Binding CanViewHeThongSection, Converter={StaticResource BoolToVisibilityConverter}}"/>
 
                     <!-- Quan ly nha cung cap -->
                     <Button Command="{Binding NavigateCommand}"
@@ -623,7 +626,8 @@
                                FontWeight="SemiBold" 
                                Foreground="#64748B" 
                                Margin="24,16,0,8" 
-                               FontFamily="Segoe UI Variable, Segoe UI, Arial"/>
+                               FontFamily="Segoe UI Variable, Segoe UI, Arial"
+                               Visibility="{Binding CanViewBanHangSection, Converter={StaticResource BoolToVisibilityConverter}}"/>
 
                     <!-- Don hang -->
                     <Button Command="{Binding NavigateCommand}"

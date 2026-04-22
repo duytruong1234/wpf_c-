@@ -263,24 +263,24 @@ public class ShellViewModel : BaseViewModel
         }
         else if (isNhanVienKho)
         {
-            // Nhân viên kho: quản lý phiếu nhập + xuất
+            // Nhân viên kho: quản lý nguyên liệu, nhà cung cấp, phiếu nhập/xuất, xem tồn kho
             CanViewBaoCaoThongKe = false;
-            CanViewTonKho = false;
+            CanViewTonKho = true;
             CanViewPhieuNhap = true;
             CanViewPhieuXuat = true;
-            CanViewNguyenLieu = false;
-            CanViewNhaCungCap = false;
+            CanViewNguyenLieu = true;
+            CanViewNhaCungCap = true;
             CanViewNhanVien = false;
             CanViewBanHang = false;
             CanViewDonHang = false;
             CanViewPizza = false;
-            IsSidebarVisible = false;
+            IsSidebarVisible = true;
         }
         else if (isNhanVienBep)
         {
-            // Nhân viên bếp: chỉ quản lý phiếu xuất
+            // Nhân viên bếp: quản lý phiếu xuất + xem tồn kho
             CanViewBaoCaoThongKe = false;
-            CanViewTonKho = false;
+            CanViewTonKho = true;
             CanViewPhieuNhap = false;
             CanViewPhieuXuat = true;
             CanViewNguyenLieu = false;
@@ -289,7 +289,7 @@ public class ShellViewModel : BaseViewModel
             CanViewBanHang = false;
             CanViewDonHang = false;
             CanViewPizza = false;
-            IsSidebarVisible = false;
+            IsSidebarVisible = true;
         }
         else if (isNhanVienBanHang)
         {

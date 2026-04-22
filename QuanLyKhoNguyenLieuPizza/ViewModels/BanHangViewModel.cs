@@ -690,6 +690,18 @@ public class BanHangViewModel : BaseViewModel
     private void ExecuteDeletePhieuBan(object? parameter)
     {
         if (parameter is not PhieuBanHang pb) return;
+        
+        // Kiểm tra quyền xóa trong vòng 24h
+        if (pb.NgayBan.HasValue && (DateTime.Now - pb.NgayBan.Value).TotalHours > 24)
+        {
+            System.Windows.MessageBox.Show(
+                "Không thể xóa hóa đơn đã quá 24 giờ kể từ thời điểm tạo!",
+                "Không được phép",
+                System.Windows.MessageBoxButton.OK,
+                System.Windows.MessageBoxImage.Warning);
+            return;
+        }
+        
         DeletingPhieuBan = pb;
         IsDeletePhieuBanDialogOpen = true;
     }
@@ -753,6 +765,18 @@ public class BanHangViewModel : BaseViewModel
     private void ExecuteEditPhieuBan(object? parameter)
     {
         if (parameter is not PhieuBanHang pb) return;
+        
+        // Kiểm tra quyền sửa trong vòng 24h
+        if (pb.NgayBan.HasValue && (DateTime.Now - pb.NgayBan.Value).TotalHours > 24)
+        {
+            System.Windows.MessageBox.Show(
+                "Không thể sửa hóa đơn đã quá 24 giờ kể từ thời điểm tạo!",
+                "Không được phép",
+                System.Windows.MessageBoxButton.OK,
+                System.Windows.MessageBoxImage.Warning);
+            return;
+        }
+        
         EditingPhieuBan = new PhieuBanHang
         {
             MaPhieuBan = pb.MaPhieuBan,

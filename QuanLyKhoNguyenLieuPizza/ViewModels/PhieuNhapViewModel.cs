@@ -380,10 +380,10 @@ public class PhieuNhapViewModel : BaseViewModel
         set => SetProperty(ref _isLoading, value);
     }
 
-    // Chỉ sửa phiếu Chờ duyệt và trong vòng 24h
+    // Chỉ sửa phiếu Chờ duyệt và trong vòng 48h (yêu cầu nhân viên kho)
     public bool CanEditDelete => SelectedPhieuNhap != null && 
                                   SelectedPhieuNhap.TrangThai == 1 &&
-                                  (DateTime.Now - SelectedPhieuNhap.NgayNhap).TotalHours <= 24;
+                                  (DateTime.Now - SelectedPhieuNhap.NgayNhap).TotalHours <= 48;
 
     // Quản lý mới được duyệt phiếu Chờ duyệt
     public bool CanApprove => SelectedPhieuNhap != null && SelectedPhieuNhap.TrangThai == 1 && IsQuanLy;
