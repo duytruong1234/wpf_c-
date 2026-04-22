@@ -124,23 +124,14 @@ public class CT_PhieuNhap : INotifyPropertyChanged
         {
             if (!ReferenceEquals(_selectedDonViNhap, value))
             {
-                var oldHeSo = _heSo;
-                if (oldHeSo <= 0) oldHeSo = 1m;
-
                 _selectedDonViNhap = value;
 
                 if (value != null)
                 {
                     var newHeSo = value.HeSo <= 0 ? 1m : value.HeSo;
 
-                    // Quy đổi Đơn giá khi đổi đơn vị nhập
-                    // HeSo đã được chuẩn hóa: 1 đơn vị = HeSo × đơn vị chuẩn
-                    // VD: g=0.001, kg=1, Bao=25
-                    if (_donGia > 0 && oldHeSo != newHeSo)
-                    {
-                        _donGia = _donGia * newHeSo / oldHeSo;
-                        OnPropertyChanged(nameof(DonGia));
-                    }
+                    // Giữ nguyên Đơn giá khi đổi đơn vị nhập
+                    // Người dùng sẽ tự nhập/chỉnh giá theo đơn vị mới
 
                     DonViID = value.DonViID;
                     DonViTinh = value.DonViTinh;
