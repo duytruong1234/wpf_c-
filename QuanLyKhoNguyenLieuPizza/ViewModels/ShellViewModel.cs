@@ -263,11 +263,12 @@ public class ShellViewModel : BaseViewModel
         }
         else if (isNhanVienKho)
         {
-            // Nhân viên kho: quản lý nguyên liệu, nhà cung cấp, phiếu nhập/xuất, xem tồn kho
+            // Nhân viên kho: quản lý nguyên liệu, nhà cung cấp, phiếu nhập, xem tồn kho
+            // KHÔNG xem phiếu xuất (việc của nhân viên bếp)
             CanViewBaoCaoThongKe = false;
             CanViewTonKho = true;
             CanViewPhieuNhap = true;
-            CanViewPhieuXuat = true;
+            CanViewPhieuXuat = false;
             CanViewNguyenLieu = true;
             CanViewNhaCungCap = true;
             CanViewNhanVien = false;

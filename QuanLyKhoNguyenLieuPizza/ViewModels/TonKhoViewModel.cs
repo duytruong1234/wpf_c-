@@ -96,6 +96,9 @@ public class TonKhoViewModel : BaseViewModel
     private bool _isLoading;
     private string _searchText = string.Empty;
     private string _selectedFilter = "TatCa";
+    private bool _canViewHeSoQuyDoi = true;
+    private bool _canViewThemTonKho = true;
+    private bool _canViewXuatKho = true;
     
     // Cho popup thêm quy đổi
     private string _donViNhap = string.Empty;
@@ -273,6 +276,33 @@ public class TonKhoViewModel : BaseViewModel
     public ICommand GoToPhieuNhapCommand { get; private set; } = null!;
     public ICommand GoToPhieuXuatCommand { get; private set; } = null!;
 
+    /// <summary>
+    /// Ẩn nút "Hệ số quy đổi" với nhân viên kho và nhân viên bếp
+    /// </summary>
+    public bool CanViewHeSoQuyDoi
+    {
+        get => _canViewHeSoQuyDoi;
+        set => SetProperty(ref _canViewHeSoQuyDoi, value);
+    }
+
+    /// <summary>
+    /// Ẩn nút "Thêm tồn kho" (→ Phiếu Nhập) với nhân viên bếp
+    /// </summary>
+    public bool CanViewThemTonKho
+    {
+        get => _canViewThemTonKho;
+        set => SetProperty(ref _canViewThemTonKho, value);
+    }
+
+    /// <summary>
+    /// Ẩn nút "Xuất kho" (→ Phiếu Xuất) với nhân viên kho
+    /// </summary>
+    public bool CanViewXuatKho
+    {
+        get => _canViewXuatKho;
+        set => SetProperty(ref _canViewXuatKho, value);
+    }
+
     public event Action? OnBack;
     public event Action? OnNavigateToPhieuNhap;
     public event Action? OnNavigateToPhieuXuat;
@@ -289,6 +319,7 @@ public class TonKhoViewModel : BaseViewModel
         }
         
         InitializeCommands();
+        SetupRolePermissions();
         
         // ⚡ Thay fire-and-forget bằng SafeInitializeAsync — bắt lỗi thay vì nuốt chìm
         SafeInitializeAsync(LoadDataAsync);
@@ -298,8 +329,28 @@ public class TonKhoViewModel : BaseViewModel
     {
         _databaseService = databaseService;
         InitializeCommands();
+        SetupRolePermissions();
         
         SafeInitializeAsync(LoadDataAsync);
+    }
+
+    /// <summary>
+    /// Thiết lập quyền theo vai trò: nhân viên kho + nhân viên bếp không thấy Hệ số quy đổi
+    /// </summary>
+    private void SetupRolePermissions()
+    {
+        var nhanVien = CurrentUserSession.Instance.CurrentUser?.NhanVien;
+        var chucVuId = nhanVien?.ChucVuID ?? 0;
+        
+        // ChucVuID 3: Nhân viên bếp, ChucVuID 4: Nhân viên kho → ẩn hệ số quy đổi
+        bool isNhanVienKhoOrBep = chucVuId == 3 || chucVuId == 4;
+        CanViewHeSoQuyDoi = !isNhanVienKhoOrBep;
+        
+        // Nhân viên bếp: ẩn nút "Thêm tồn kho" (phiếu nhập)
+        CanViewThemTonKho = chucVuId != 3;
+        
+        // Nhân viên kho: ẩn nút "Xuất kho" (phiếu xuất)
+        CanViewXuatKho = chucVuId != 4;
     }
 
 
