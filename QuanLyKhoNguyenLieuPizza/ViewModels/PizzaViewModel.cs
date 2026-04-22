@@ -434,11 +434,11 @@ public class PizzaViewModel : BaseViewModel
                 _pizzas.Add(item);
             }
 
-            // Cập nhật danh sách kích thước từ dữ liệu thực tế
-            var sizes = _pizzas.Select(p => p.KichThuoc).Distinct().OrderBy(s => s).ToList();
+            // Cập nhật danh sách kích thước từ bảng DoanhMuc_Size trong database
+            var allSizes = await _databaseService.GetDoanhMucSizesAsync();
             KichThuocOptions.Clear();
-            foreach (var s in sizes)
-                KichThuocOptions.Add(s);
+            foreach (var s in allSizes.OrderBy(s => s.SizeID))
+                KichThuocOptions.Add(s.TenSize ?? s.SizeID);
 
             ApplyFilters();
         }
