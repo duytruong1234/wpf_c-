@@ -18,7 +18,7 @@ public class TonKhoItemViewModel : BaseViewModel
     public string DonViTinh { get; set; } = string.Empty;
     public string MucDoTonKho { get; set; } = string.Empty;
     
-    public bool IsLowStock => MucDoTonKho == "Thấp";
+    public bool IsLowStock => MucDoTonKho == "Thấp" || MucDoTonKho == "Hết hàng";
     
     public ICommand? EditCommand { get; set; }
     public ICommand? DeleteCommand { get; set; }
