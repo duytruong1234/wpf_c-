@@ -1,4 +1,4 @@
-﻿using System.Collections.ObjectModel;
+using System.Collections.ObjectModel;
 using System.Windows;
 using System.Windows.Input;
 using QuanLyKhoNguyenLieuPizza.Core.Commands;
@@ -222,7 +222,7 @@ public class DonHangViewModel : BaseViewModel
             TopNhanVienName = topNV?.HoTen ?? "—";
             TopNhanVienDoanhThu = topNV?.DoanhThu ?? 0;
 
-            // Cập nhật danh sách NV lọc từ đơn hàng thực tế (không chỉ NV có ChucVuID == 5)
+            // Cập nhật danh sách NV lọc từ đơn hàng thực tế (không chỉ NV bán hàng)
             var nvFromOrders = allOrders
                 .Where(d => d.NhanVien != null)
                 .Select(d => d.NhanVien!)
