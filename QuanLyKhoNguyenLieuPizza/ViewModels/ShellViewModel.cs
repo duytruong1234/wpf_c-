@@ -218,31 +218,20 @@ public class ShellViewModel : BaseViewModel
     private void SetupRoleBasedPermissions()
     {
         var nhanVien = CurrentUserSession.Instance.CurrentUser?.NhanVien;
-        var chucVuId = nhanVien?.ChucVuID ?? 0;
         var chucVuTen = nhanVien?.ChucVu?.TenChucVu?.Trim() ?? "";
+        var chucVuLower = chucVuTen.ToLower();
         
-        // Giá trị cơ sở dữ liệu:
-        // ChucVuID 2: "Quản lý"
-        // ChucVuID 3: "Nhân viên bếp"  
-        // ChucVuID 4: "Nhân viên kho"
-        // ChucVuID 5: "Nhân viên bán hàng"
+        // Kiểm tra theo tên chức vụ (không dùng ChucVuID vì ID tự động tăng, không cố định)
+        bool isQuanLy = chucVuLower.Contains("quản lý") || chucVuLower.Contains("quan ly");
 
-        // Kiểm tra theo ChucVuID trước (chính xác nhất), sau đó theo tên làm dự phòng
-        bool isQuanLy = chucVuId == 2 || 
-                        chucVuTen.Contains("Quản lý") ||
-                        chucVuTen.Contains("quản lý") ||
-                        chucVuTen.ToLower().Contains("quan ly");
+        bool isNhanVienBep = !isQuanLy && 
+                             (chucVuLower.Contains("bếp") || chucVuLower.Contains("bep"));
 
-        bool isNhanVienBep = chucVuId == 3 ||
-                             (!isQuanLy && (chucVuTen.Contains("bếp") || 
-                                            chucVuTen.ToLower().Contains("bep")));
+        bool isNhanVienKho = !isQuanLy && !isNhanVienBep && 
+                             chucVuLower.Contains("kho");
 
-        bool isNhanVienKho = chucVuId == 4 ||
-                             (!isQuanLy && !isNhanVienBep && chucVuTen.ToLower().Contains("kho"));
-
-        bool isNhanVienBanHang = chucVuId == 5 ||
-                                 (!isQuanLy && !isNhanVienBep && !isNhanVienKho && 
-                                  (chucVuTen.ToLower().Contains("bán hàng") || chucVuTen.ToLower().Contains("ban hang")));
+        bool isNhanVienBanHang = !isQuanLy && !isNhanVienBep && !isNhanVienKho && 
+                                 (chucVuLower.Contains("bán hàng") || chucVuLower.Contains("ban hang"));
 
         // Thiết lập quyền dựa trên vai trò - Quản lý có ưu tiên cao nhất
         if (isQuanLy)

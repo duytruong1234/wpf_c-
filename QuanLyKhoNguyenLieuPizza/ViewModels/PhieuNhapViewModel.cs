@@ -436,10 +436,11 @@ public class PhieuNhapViewModel : BaseViewModel
     {
         _databaseService = App.Services.GetRequiredService<DatabaseService>();
 
-        // Phát hiện người dùng hiện tại là nhân viên kho
+        // Phát hiện người dùng hiện tại là nhân viên kho (theo tên chức vụ, không dùng ID vì tự động tăng)
         var currentUser = CurrentUserSession.Instance.CurrentUser;
-        var chucVuId = currentUser?.NhanVien?.ChucVuID ?? 0;
-        IsNhanVienKho = chucVuId == 4; // 4: Nhân viên kho
+        var chucVuTen = (currentUser?.NhanVien?.ChucVu?.TenChucVu?.Trim() ?? "").ToLower();
+        bool isQuanLy = chucVuTen.Contains("quản lý") || chucVuTen.Contains("quan ly");
+        IsNhanVienKho = !isQuanLy && chucVuTen.Contains("kho");
         CurrentUserName = currentUser?.NhanVien?.HoTen ?? "Nhân viên";
 
         // ⚡ Dùng AsyncRelayCommand cho các lệnh async — an toàn hơn async void

@@ -403,10 +403,11 @@ public class BanHangViewModel : BaseViewModel
         var phieuBans = await _db.GetPhieuBanHangsAsync(FilterFromDate, FilterToDate);
         
         var currentNhanVienId = CurrentUserSession.Instance.CurrentUser?.NhanVienID;
-        var chucVuId = CurrentUserSession.Instance.CurrentUser?.NhanVien?.ChucVuID;
+        var chucVuTen = (CurrentUserSession.Instance.CurrentUser?.NhanVien?.ChucVu?.TenChucVu?.Trim() ?? "").ToLower();
+        bool isQuanLy = chucVuTen.Contains("quản lý") || chucVuTen.Contains("quan ly");
         
-        // Quản lý (ChucVuID = 2) xem được tất cả, còn lại chỉ xem đơn hàng của mình
-        if (chucVuId != 2)
+        // Quản lý xem được tất cả, còn lại chỉ xem đơn hàng của mình
+        if (!isQuanLy)
         {
             phieuBans = phieuBans.Where(p => p.NhanVienBanID == currentNhanVienId).ToList();
         }

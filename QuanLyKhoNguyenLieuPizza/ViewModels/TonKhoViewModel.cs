@@ -340,17 +340,21 @@ public class TonKhoViewModel : BaseViewModel
     private void SetupRolePermissions()
     {
         var nhanVien = CurrentUserSession.Instance.CurrentUser?.NhanVien;
-        var chucVuId = nhanVien?.ChucVuID ?? 0;
+        var chucVuTen = (nhanVien?.ChucVu?.TenChucVu?.Trim() ?? "").ToLower();
         
-        // ChucVuID 3: Nhân viên bếp, ChucVuID 4: Nhân viên kho → ẩn hệ số quy đổi
-        bool isNhanVienKhoOrBep = chucVuId == 3 || chucVuId == 4;
-        CanViewHeSoQuyDoi = !isNhanVienKhoOrBep;
+        // Kiểm tra theo tên chức vụ (không dùng ChucVuID vì ID tự động tăng)
+        bool isQuanLy = chucVuTen.Contains("quản lý") || chucVuTen.Contains("quan ly");
+        bool isNhanVienBep = !isQuanLy && (chucVuTen.Contains("bếp") || chucVuTen.Contains("bep"));
+        bool isNhanVienKho = !isQuanLy && !isNhanVienBep && chucVuTen.Contains("kho");
+        
+        // Nhân viên kho + nhân viên bếp → ẩn hệ số quy đổi
+        CanViewHeSoQuyDoi = !(isNhanVienKho || isNhanVienBep);
         
         // Nhân viên bếp: ẩn nút "Thêm tồn kho" (phiếu nhập)
-        CanViewThemTonKho = chucVuId != 3;
+        CanViewThemTonKho = !isNhanVienBep;
         
         // Nhân viên kho: ẩn nút "Xuất kho" (phiếu xuất)
-        CanViewXuatKho = chucVuId != 4;
+        CanViewXuatKho = !isNhanVienKho;
     }
 
 

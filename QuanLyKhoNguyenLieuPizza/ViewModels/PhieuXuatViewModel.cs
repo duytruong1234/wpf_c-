@@ -367,10 +367,13 @@ public class PhieuXuatViewModel : BaseViewModel
     {
         _databaseService = App.Services.GetRequiredService<DatabaseService>();
 
-        // Nhận biết người dùng hiện tại là nhân viên (không phải quản lý)
+        // Nhận biết người dùng hiện tại là nhân viên (theo tên chức vụ, không dùng ID vì tự động tăng)
         var currentUser = CurrentUserSession.Instance.CurrentUser;
-        var chucVuId = currentUser?.NhanVien?.ChucVuID ?? 0;
-        IsNhanVien = chucVuId == 3 || chucVuId == 4; // 3: Nhân viên bếp, 4: Nhân viên kho
+        var chucVuTen = (currentUser?.NhanVien?.ChucVu?.TenChucVu?.Trim() ?? "").ToLower();
+        bool isQuanLy = chucVuTen.Contains("quản lý") || chucVuTen.Contains("quan ly");
+        bool isNhanVienBep = !isQuanLy && (chucVuTen.Contains("bếp") || chucVuTen.Contains("bep"));
+        bool isNhanVienKho = !isQuanLy && !isNhanVienBep && chucVuTen.Contains("kho");
+        IsNhanVien = isNhanVienBep || isNhanVienKho;
         CurrentUserName = currentUser?.NhanVien?.HoTen ?? "Nhân viên";
 
         LoadDataCommand = new AsyncRelayCommand(async _ => await LoadDataAsync());
