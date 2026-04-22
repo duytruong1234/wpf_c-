@@ -808,7 +808,7 @@ public class PhieuXuatViewModel : BaseViewModel
         // Hệ thống hiện tại đã hỗ trợ tự động quy đổi khi duyệt phiếu xuất thông qua hàm ConvertAmountToStockUnitAsync
 
         // Ràng buộc kiểm tra tồn kho: Số lượng xuất không được lớn hơn tồn kho
-        // Tồn kho lưu theo đơn vị chuẩn → cần quy đổi số lượng xuất về cùng đơn vị chuẩn
+        // Tồn kho lưu theo đơn vị chuẩn (LaDonViChuan) → cần quy đổi số lượng xuất về cùng đơn vị chuẩn
         var chiTietGroups = ChiTietForm.GroupBy(x => x.NguyenLieuID);
         foreach (var group in chiTietGroups)
         {
@@ -818,23 +818,26 @@ public class PhieuXuatViewModel : BaseViewModel
             var nl = NguyenLieus.FirstOrDefault(n => n.NguyenLieuID == firstItem.NguyenLieuID) ?? firstItem.NguyenLieu;
             var tonKhoHienTai = nl?.TonKho?.SoLuongTon ?? 0;
 
-            // Tìm hệ số của đơn vị chuẩn (đơn vị lưu tồn kho)
+            // Tìm hệ số của đơn vị chuẩn (đơn vị lưu tồn kho = đơn vị mặc định = phần tử đầu tiên trong DonViOptions)
             decimal donViChuanHeSo = 1m;
             if (firstItem.DonViOptions != null && firstItem.DonViOptions.Any())
             {
-                // Đơn vị chuẩn = đơn vị có DonViID trùng với đơn vị gốc của nguyên liệu
-                var donViGoc = firstItem.DonViOptions.FirstOrDefault(o => o.DonViID == (firstItem.NguyenLieu?.DonViID ?? 0));
-                if (donViGoc != null && donViGoc.HeSo > 0)
-                    donViChuanHeSo = donViGoc.HeSo;
+                // Đơn vị chuẩn = đơn vị đầu tiên (là đơn vị LaDonViChuan, được set ở AddNguyenLieuToForm)
+                var donViChuan = firstItem.DonViOptions.FirstOrDefault();
+                if (donViChuan != null && donViChuan.HeSo > 0)
+                    donViChuanHeSo = donViChuan.HeSo;
             }
 
             // Quy đổi tổng số lượng xuất về đơn vị chuẩn
             var tongSoLuongChuanHoa = group.Sum(x => x.SoLuong * x.HeSo / donViChuanHeSo);
             
+            // Lấy tên đơn vị chuẩn để hiển thị
+            var tenDonViChuan = firstItem.DonViOptions?.FirstOrDefault()?.TenDonVi ?? nl?.DonViTinh?.TenDonVi ?? "";
+            
             if (tongSoLuongChuanHoa > tonKhoHienTai)
             {
                 System.Windows.MessageBox.Show(
-                    $"Số lượng xuất của '{nl?.TenNguyenLieu}' ({tongSoLuongChuanHoa:N2} {nl?.DonViTinh?.TenDonVi}) đang vượt mức tồn kho hiện tại ({tonKhoHienTai:N2} {nl?.DonViTinh?.TenDonVi}).\nVui lòng kiểm tra và điều chỉnh lại!", 
+                    $"Số lượng xuất của '{nl?.TenNguyenLieu}' ({tongSoLuongChuanHoa:N2} {tenDonViChuan}) đang vượt mức tồn kho hiện tại ({tonKhoHienTai:N2} {tenDonViChuan}).\nVui lòng kiểm tra và điều chỉnh lại!", 
                     "Cảnh báo tồn kho", 
                     System.Windows.MessageBoxButton.OK, 
                     System.Windows.MessageBoxImage.Warning);

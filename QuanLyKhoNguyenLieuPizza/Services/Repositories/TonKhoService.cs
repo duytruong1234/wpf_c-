@@ -19,12 +19,24 @@ public class TonKhoService : DatabaseContext
             using var conn = GetConnection();
             await conn.OpenAsync();
             
+            // Ưu tiên DonViID từ TonKho, fallback về NguyenLieu.DonViID
+            // Lấy thêm HeSoChuan để quy đổi ngược cho tính MucDoTonKho
             var sql = @"SELECT ISNULL(tk.TonKhoID, 0), nl.NguyenLieuID, 
                               ISNULL(tk.SoLuongTon, 0), ISNULL(tk.NgayCapNhat, GETDATE()),
-                              nl.TenNguyenLieu, nl.HinhAnh, dv.TenDonVi, nl.MaNguyenLieu
+                              nl.TenNguyenLieu, nl.HinhAnh, 
+                              COALESCE(dvTk.TenDonVi, dv.TenDonVi) AS TenDonVi, 
+                              nl.MaNguyenLieu,
+                              tk.DonViID AS TonKhoDonViID,
+                              ISNULL(qdc.HeSo, 1) AS HeSoChuan
                        FROM NguyenLieu nl
                        LEFT JOIN TonKho tk ON nl.NguyenLieuID = tk.NguyenLieuID
                        LEFT JOIN DonViTinh dv ON nl.DonViID = dv.DonViID
+                       LEFT JOIN DonViTinh dvTk ON tk.DonViID = dvTk.DonViID
+                       OUTER APPLY (
+                           SELECT TOP 1 qd.HeSo 
+                           FROM QuyDoiDonVi qd 
+                           WHERE qd.NguyenLieuID = nl.NguyenLieuID AND qd.LaDonViChuan = 1
+                       ) qdc
                        WHERE nl.TrangThai = 1
                        ORDER BY nl.NguyenLieuID ASC";
             
@@ -39,6 +51,8 @@ public class TonKhoService : DatabaseContext
                     NguyenLieuID = reader.IsDBNull(1) ? null : reader.GetInt32(1),
                     SoLuongTon = reader.GetDecimal(2),
                     NgayCapNhat = reader.GetDateTime(3),
+                    DonViID = reader.IsDBNull(8) ? null : reader.GetInt32(8),
+                    HeSoChuan = reader.GetDecimal(9),
                     NguyenLieu = new NguyenLieu
                     {
                         TenNguyenLieu = reader.GetString(4),

@@ -491,13 +491,15 @@ public class QuyDoiDonViViewModel : BaseViewModel
                             decimal conversionFactor = oldHeSo / newHeSo;
                             decimal newSoLuongTon = tonKho.SoLuongTon * conversionFactor;
 
-                            await _databaseService.UpdateTonKhoAsync(SelectedNguyenLieu.NguyenLieuID, newSoLuongTon);
+                            // Cập nhật cả số lượng VÀ đơn vị trong bảng TonKho
+                            await _databaseService.UpdateTonKhoDonViAsync(
+                                SelectedNguyenLieu.NguyenLieuID, newSoLuongTon, newDonViChuan.DonViID ?? 0);
                         }
                     }
                 }
                 
                 // Lưu ý: KHÔNG thay đổi DonViID trong bảng NguyenLieu
-                // Đơn vị gốc của nguyên liệu luôn giữ nguyên, chỉ đổi đơn vị chuẩn trong bảng quy đổi
+                // Đơn vị gốc của nguyên liệu luôn giữ nguyên, chỉ đổi đơn vị chuẩn + TonKho.DonViID
             }
 
             MessageBox.Show(

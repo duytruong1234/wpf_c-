@@ -95,6 +95,8 @@ public class DatabaseService : IDatabaseService
         => _nguyenLieu.DeleteQuyDoiDonViAsync(quyDoiId);
     public Task<bool> UpdateTonKhoAsync(int nguyenLieuId, decimal soLuong)
         => _nguyenLieu.UpdateTonKhoAsync(nguyenLieuId, soLuong);
+    public Task<bool> UpdateTonKhoDonViAsync(int nguyenLieuId, decimal soLuong, int donViId)
+        => _nguyenLieu.UpdateTonKhoDonViAsync(nguyenLieuId, soLuong, donViId);
 
     // ═══════════════ TỒN KHO ═══════════════
     public Task<List<TonKho>> GetTonKhosAsync()

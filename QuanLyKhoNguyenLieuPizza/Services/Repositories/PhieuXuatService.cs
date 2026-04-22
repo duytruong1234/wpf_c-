@@ -482,10 +482,12 @@ public class PhieuXuatService : DatabaseContext
             
             var sql = @"SELECT nl.NguyenLieuID, nl.MaNguyenLieu, nl.TenNguyenLieu, nl.HinhAnh,
                               nl.LoaiNLID, nl.DonViID, nl.TrangThai,
-                              dv.TenDonVi, ISNULL(tk.SoLuongTon, 0) as SoLuongTon
+                              COALESCE(dvTk.TenDonVi, dv.TenDonVi) AS TenDonVi, 
+                              ISNULL(tk.SoLuongTon, 0) as SoLuongTon
                        FROM NguyenLieu nl
                        LEFT JOIN DonViTinh dv ON nl.DonViID = dv.DonViID
                        LEFT JOIN TonKho tk ON nl.NguyenLieuID = tk.NguyenLieuID
+                       LEFT JOIN DonViTinh dvTk ON tk.DonViID = dvTk.DonViID
                        WHERE nl.TrangThai = 1 AND ISNULL(tk.SoLuongTon, 0) > 0";
             
             using var cmd = new SqlCommand(sql, conn);

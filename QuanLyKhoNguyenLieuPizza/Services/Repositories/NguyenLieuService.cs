@@ -495,4 +495,11 @@ public class NguyenLieuService : DatabaseContext
             @"UPDATE TonKho SET SoLuongTon = @SoLuongTon, NgayCapNhat = GETDATE() WHERE NguyenLieuID = @NguyenLieuID",
             new SqlParameter("@SoLuongTon", soLuong),
             new SqlParameter("@NguyenLieuID", nguyenLieuId));
+
+    public async Task<bool> UpdateTonKhoDonViAsync(int nguyenLieuId, decimal soLuong, int donViId) =>
+        await ExecuteCommandAsync(
+            @"UPDATE TonKho SET SoLuongTon = @SoLuongTon, DonViID = @DonViID, NgayCapNhat = GETDATE() WHERE NguyenLieuID = @NguyenLieuID",
+            new SqlParameter("@SoLuongTon", soLuong),
+            new SqlParameter("@DonViID", donViId),
+            new SqlParameter("@NguyenLieuID", nguyenLieuId));
 }

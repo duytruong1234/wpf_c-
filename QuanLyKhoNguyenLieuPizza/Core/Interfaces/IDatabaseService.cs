@@ -32,6 +32,7 @@ public interface IDatabaseService
     Task<List<TonKho>> GetTonKhosAsync();
     Task<TonKho?> GetTonKhoByNguyenLieuIdAsync(int nguyenLieuId);
     Task<bool> UpdateTonKhoAsync(int nguyenLieuId, decimal soLuong);
+    Task<bool> UpdateTonKhoDonViAsync(int nguyenLieuId, decimal soLuong, int donViId);
     
     // Đơn Vị Tính
     Task<List<DonViTinh>> GetDonViTinhsAsync();

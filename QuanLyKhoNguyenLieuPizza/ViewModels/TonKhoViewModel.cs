@@ -486,10 +486,12 @@ public class TonKhoViewModel : BaseViewModel
         }
     }
 
-    private string GetMucDoTonKho(decimal soLuong)
+    private string GetMucDoTonKho(decimal soLuong, decimal heSoChuan = 1m)
     {
         if (soLuong <= 0) return "Hết hàng";
-        return soLuong < 20 ? "Thấp" : (soLuong < 50 ? "Trung bình" : "Cao");
+        // Quy đổi về đơn vị gốc để so sánh ngưỡng nhất quán
+        var soLuongGoc = soLuong * heSoChuan;
+        return soLuongGoc < 20 ? "Thấp" : (soLuongGoc < 50 ? "Trung bình" : "Cao");
     }
 
     private async Task LoadDataAsync()
@@ -547,7 +549,7 @@ public class TonKhoViewModel : BaseViewModel
             HinhAnh = tk.NguyenLieu?.HinhAnh,
             SoLuongTon = tk.SoLuongTon,
             DonViTinh = tk.NguyenLieu?.DonViTinh?.TenDonVi ?? "",
-            MucDoTonKho = GetMucDoTonKho(tk.SoLuongTon),
+            MucDoTonKho = GetMucDoTonKho(tk.SoLuongTon, tk.HeSoChuan),
             EditCommand = OpenEditPopupCommand,
             DeleteCommand = DeleteItemCommand
         }).ToList();
@@ -801,15 +803,18 @@ public class TonKhoViewModel : BaseViewModel
                     decimal conversionFactor = oldHeSo / newHeSo;
                     decimal newSoLuongTon = SelectedNguyenLieu.SoLuongTon * conversionFactor;
 
-                    await _databaseService.UpdateTonKhoAsync(SelectedNguyenLieu.NguyenLieuID, newSoLuongTon);
+                    // Cập nhật cả số lượng VÀ đơn vị trong bảng TonKho
+                    await _databaseService.UpdateTonKhoDonViAsync(
+                        SelectedNguyenLieu.NguyenLieuID, newSoLuongTon, newDonViChuan.DonViID ?? 0);
                         
-                    // ⚡ BUG FIX: Cập nhật lại số lượng tồn trên UI để người dùng thấy ngay kết quả
+                    // ⚡ BUG FIX: Cập nhật lại số lượng tồn + đơn vị trên UI
                     SelectedNguyenLieu.SoLuongTon = newSoLuongTon;
                     SelectedNguyenLieu.MucDoTonKho = GetMucDoTonKho(newSoLuongTon);
+                    SelectedNguyenLieu.DonViTinh = newDonViChuan.TenDonVi;
                 }
                 
                 // Lưu ý: KHÔNG thay đổi DonViID trong bảng NguyenLieu
-                // Đơn vị gốc của nguyên liệu luôn giữ nguyên, chỉ đổi đơn vị chuẩn trong bảng quy đổi
+                // Đơn vị gốc của nguyên liệu luôn giữ nguyên, chỉ đổi đơn vị chuẩn + TonKho.DonViID
             }
 
             System.Windows.MessageBox.Show(
