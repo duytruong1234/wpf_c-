@@ -124,23 +124,18 @@ public class CT_PhieuNhap : INotifyPropertyChanged
         {
             if (!ReferenceEquals(_selectedDonViNhap, value))
             {
-                var oldHeSo = _heSo;
-                if (oldHeSo <= 0) oldHeSo = 1m;
-
                 _selectedDonViNhap = value;
 
                 if (value != null)
                 {
                     var newHeSo = value.HeSo <= 0 ? 1m : value.HeSo;
 
-                    // Quy đổi Đơn giá khi đổi đơn vị nhập
-                    // HeSo đã được chuẩn hóa: 1 đơn vị = HeSo × đơn vị chuẩn
-                    // VD: g=0.001, kg=1, Bao=25
-                    if (_donGia > 0 && oldHeSo != newHeSo)
-                    {
-                        _donGia = _donGia * newHeSo / oldHeSo;
-                        OnPropertyChanged(nameof(DonGia));
-                    }
+                    // QUY TẮC VÀNG: HeSo KHÔNG BAO GIỜ tham gia tính Tiền
+                    // DonGia luôn là giá gốc từ CSDL, không nhân với HeSo
+                    // HeSo chỉ dùng để tính Tồn Kho khi duyệt phiếu
+                    // VD: Cá ngừ, đơn vị "Hộp", DonGia = 140.000đ, HeSo = 150
+                    //   → ThanhTien = SoLuong × DonGia = 1 × 140.000 = 140.000đ
+                    //   → TonKho cộng thêm = SoLuong × HeSo = 1 × 150 = 150 (gram)
 
                     DonViID = value.DonViID;
                     DonViTinh = value.DonViTinh;
