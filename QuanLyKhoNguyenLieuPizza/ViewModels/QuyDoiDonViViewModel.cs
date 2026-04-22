@@ -496,15 +496,8 @@ public class QuyDoiDonViViewModel : BaseViewModel
                     }
                 }
                 
-                // Cập nhật DonViID trong bảng NguyenLieu
-                var nguyenLieu = await _databaseService.GetNguyenLieuByIdAsync(SelectedNguyenLieu.NguyenLieuID);
-                if (nguyenLieu != null)
-                {
-                    nguyenLieu.DonViID = newDonViChuan.DonViID;
-                    await _databaseService.SaveNguyenLieuAsync(nguyenLieu);
-                    SelectedNguyenLieu.DonViChinh = newDonViChuan.TenDonVi;
-                    SelectedNguyenLieu.DonViID = newDonViChuan.DonViID;
-                }
+                // Lưu ý: KHÔNG thay đổi DonViID trong bảng NguyenLieu
+                // Đơn vị gốc của nguyên liệu luôn giữ nguyên, chỉ đổi đơn vị chuẩn trong bảng quy đổi
             }
 
             MessageBox.Show(
