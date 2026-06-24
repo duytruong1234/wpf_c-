@@ -1,4 +1,4 @@
-using System;
+﻿using System;
 using System.IO;
 
 namespace QuanLyKhoNguyenLieuPizza.Helpers;
@@ -131,10 +131,7 @@ public static class ImageStorageHelper
             // Copy tất cả file ảnh từ thư mục cũ sang AppData
             CopyDirectoryRecursive(oldImagesPath, ImagesRootFolder);
         }
-        catch (Exception ex)
-        {
-            System.Diagnostics.Debug.WriteLine($"Error migrating images: {ex.Message}");
-        }
+        catch { }
     }
 
     private static void CopyDirectoryRecursive(string sourceDir, string destDir)

@@ -1,0 +1,146 @@
+<Window x:Class="QuanLyKhoNguyenLieuPizza.Views.SignaturePopup"
+        xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        Title="Chữ Ký Số Duyệt Phiếu"
+        Width="560" Height="460"
+        WindowStartupLocation="CenterScreen"
+        ResizeMode="NoResize"
+        WindowStyle="None"
+        AllowsTransparency="True"
+        Background="Transparent">
+
+    <Border CornerRadius="16" Background="White" BorderThickness="2">
+        <Border.BorderBrush>
+            <LinearGradientBrush StartPoint="0,0" EndPoint="1,1">
+                <GradientStop Color="#E85D04" Offset="0"/>
+                <GradientStop Color="#F48C06" Offset="0.5"/>
+                <GradientStop Color="#E85D04" Offset="1"/>
+            </LinearGradientBrush>
+        </Border.BorderBrush>
+
+        <Grid Margin="24">
+            <Grid.RowDefinitions>
+                <RowDefinition Height="Auto"/>
+                <RowDefinition Height="Auto"/>
+                <RowDefinition Height="*"/>
+                <RowDefinition Height="Auto"/>
+            </Grid.RowDefinitions>
+
+            <!-- Header -->
+            <StackPanel Grid.Row="0" Margin="0,0,0,16">
+                <TextBlock Text="Chữ Ký Số Duyệt Phiếu"
+                           FontSize="22" FontWeight="Bold" Foreground="#111827"
+                           HorizontalAlignment="Center" Margin="0,0,0,4"/>
+                <TextBlock Text="Vui lòng ký tên xác nhận duyệt phiếu"
+                           FontSize="12" Foreground="#6B7280"
+                           HorizontalAlignment="Center" Margin="0,6,0,0"/>
+            </StackPanel>
+
+            <!-- Thông tin phiếu -->
+            <Border Grid.Row="1" Background="#F3F4F6" CornerRadius="8" Padding="12" Margin="0,0,0,12">
+                <StackPanel>
+                    <TextBlock x:Name="txtMaPhieu" FontSize="13" Foreground="#E85D04" FontWeight="SemiBold"/>
+                    <TextBlock x:Name="txtNguoiDuyet" FontSize="12" Foreground="#4B5563" Margin="0,4,0,0"/>
+                </StackPanel>
+            </Border>
+
+            <!-- Vùng vẽ chữ ký -->
+            <Border Grid.Row="2" CornerRadius="10" BorderThickness="2" BorderBrush="#E5E7EB"
+                    Background="White" Margin="0,0,0,12" ClipToBounds="True">
+                <Grid>
+                    <!-- InkCanvas để vẽ chữ ký -->
+                    <InkCanvas x:Name="inkCanvas" Background="White" Cursor="Pen" PreviewMouseDown="InkCanvas_PreviewMouseDown">
+                        <InkCanvas.DefaultDrawingAttributes>
+                            <DrawingAttributes Color="#1E1E2E" Width="2.5" Height="2.5"
+                                               StylusTip="Ellipse" FitToCurve="True"/>
+                        </InkCanvas.DefaultDrawingAttributes>
+                    </InkCanvas>
+
+                    <!-- Placeholder text -->
+                    <TextBlock x:Name="txtPlaceholder"
+                               Text="Vẽ chữ ký tại đây..."
+                               FontSize="16" Foreground="#D1D5DB"
+                               HorizontalAlignment="Center" VerticalAlignment="Center"
+                               IsHitTestVisible="False"/>
+                </Grid>
+            </Border>
+
+            <!-- Nút hành động -->
+            <Grid Grid.Row="3">
+                <Grid.ColumnDefinitions>
+                    <ColumnDefinition Width="Auto"/>
+                    <ColumnDefinition Width="Auto"/>
+                    <ColumnDefinition Width="*"/>
+                    <ColumnDefinition Width="Auto"/>
+                    <ColumnDefinition Width="Auto"/>
+                </Grid.ColumnDefinitions>
+
+                <!-- Nút Xóa chữ ký -->
+                <Button Grid.Column="0" x:Name="btnClear" Click="BtnClear_Click"
+                        Content="Xóa chữ ký" Width="100" Height="38"
+                        Background="#F3F4F6" Foreground="#374151" FontSize="13" FontWeight="SemiBold"
+                        BorderThickness="0" Cursor="Hand">
+                    <Button.Template>
+                        <ControlTemplate TargetType="Button">
+                            <Border Background="{TemplateBinding Background}"
+                                    CornerRadius="8" Padding="12,8">
+                                <ContentPresenter HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                            </Border>
+                        </ControlTemplate>
+                    </Button.Template>
+                </Button>
+
+                <!-- Nút Tải ảnh chữ ký -->
+                <Button Grid.Column="1" x:Name="btnLoadImage" Click="BtnLoadImage_Click"
+                        Content="Tải ảnh chữ ký" Width="110" Height="38" Margin="8,0,0,0"
+                        Background="#F3F4F6" Foreground="#374151" FontSize="13" FontWeight="SemiBold"
+                        BorderThickness="0" Cursor="Hand">
+                    <Button.Template>
+                        <ControlTemplate TargetType="Button">
+                            <Border Background="{TemplateBinding Background}"
+                                    CornerRadius="8" Padding="12,8">
+                                <ContentPresenter HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                            </Border>
+                        </ControlTemplate>
+                    </Button.Template>
+                </Button>
+
+                <!-- Nút Hủy -->
+                <Button Grid.Column="3" x:Name="btnCancel" Click="BtnCancel_Click"
+                        Content="Hủy" Width="90" Height="38"
+                        Background="#E5E7EB" Foreground="#4B5563" FontSize="13" FontWeight="SemiBold"
+                        BorderThickness="0" Cursor="Hand">
+                    <Button.Template>
+                        <ControlTemplate TargetType="Button">
+                            <Border Background="{TemplateBinding Background}"
+                                    CornerRadius="8" Padding="12,8">
+                                <ContentPresenter HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                            </Border>
+                        </ControlTemplate>
+                    </Button.Template>
+                </Button>
+
+                <!-- Nút Xác nhận duyệt -->
+                <Button Grid.Column="4" x:Name="btnConfirm" Click="BtnConfirm_Click"
+                        Content="Xác Nhận Duyệt" Width="140" Height="38" Margin="8,0,0,0"
+                        Foreground="White" FontSize="13" FontWeight="Bold"
+                        BorderThickness="0" Cursor="Hand">
+                    <Button.Background>
+                        <LinearGradientBrush StartPoint="0,0" EndPoint="1,0">
+                            <GradientStop Color="#E85D04" Offset="0"/>
+                            <GradientStop Color="#F48C06" Offset="1"/>
+                        </LinearGradientBrush>
+                    </Button.Background>
+                    <Button.Template>
+                        <ControlTemplate TargetType="Button">
+                            <Border Background="{TemplateBinding Background}"
+                                    CornerRadius="8" Padding="12,8">
+                                <ContentPresenter HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                            </Border>
+                        </ControlTemplate>
+                    </Button.Template>
+                </Button>
+            </Grid>
+        </Grid>
+    </Border>
+</Window>

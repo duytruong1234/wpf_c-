@@ -9,4 +9,3 @@ public partial class LoaiNguyenLieuView : UserControl
         InitializeComponent();
     }
 }
-

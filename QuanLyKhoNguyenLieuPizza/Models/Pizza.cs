@@ -25,4 +25,3 @@ public class Pizza
     public virtual ICollection<CongThuc> CongThucs { get; set; } = new List<CongThuc>();
     public virtual ICollection<CT_DonHang> CT_DonHangs { get; set; } = new List<CT_DonHang>();
 }
-

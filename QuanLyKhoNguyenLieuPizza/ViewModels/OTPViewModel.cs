@@ -73,7 +73,7 @@ public class OTPViewModel : BaseViewModel
     public OTPViewModel()
     {
         _emailService = new EmailService();
-        
+
         VerifyOTPCommand = new RelayCommand(ExecuteVerifyOTP, CanExecuteVerifyOTP);
         ResendOTPCommand = new AsyncRelayCommand(async () => await ExecuteResendOTPAsync(), () => CanResend && !IsLoading);
         CloseCommand = new RelayCommand(_ => OnClose?.Invoke());
@@ -93,7 +93,6 @@ public class OTPViewModel : BaseViewModel
         // Ngăn gửi nhiều lần cùng lúc
         if (_isSending)
         {
-            System.Diagnostics.Debug.WriteLine("=== BLOCKED: Already sending OTP ===");
             return;
         }
 
@@ -104,9 +103,7 @@ public class OTPViewModel : BaseViewModel
             await SendOTPAsync();
             StartCountdown();
         }
-        catch (Exception ex)
-        {
-            System.Diagnostics.Debug.WriteLine($"InitializeAndSendOTPAsync Error: {ex}");
+        catch (Exception ex) {
             ErrorMessage = $"Lỗi khởi tạo OTP: {ex.Message}";
         }
         finally
@@ -125,10 +122,6 @@ public class OTPViewModel : BaseViewModel
         {
             // Tạo mã OTP mới
             _currentOTP = _emailService.GenerateOTP(6);
-            
-            System.Diagnostics.Debug.WriteLine($"=== Sending OTP ===");
-            System.Diagnostics.Debug.WriteLine($"Email: {Email}");
-            System.Diagnostics.Debug.WriteLine($"OTP: {_currentOTP}");
 
             // Gửi OTP qua email
             var (success, message) = await _emailService.SendOTPAsync(Email, _currentOTP);
@@ -142,10 +135,8 @@ public class OTPViewModel : BaseViewModel
                 ErrorMessage = message;
             }
         }
-        catch (Exception ex)
-        {
+        catch (Exception ex) {
             ErrorMessage = $"Lỗi gửi OTP: {ex.Message}";
-            System.Diagnostics.Debug.WriteLine($"SendOTP Error: {ex}");
         }
         finally
         {
@@ -163,7 +154,7 @@ public class OTPViewModel : BaseViewModel
     private void Timer_Tick(object? sender, EventArgs e)
     {
         _remainingSeconds--;
-        
+
         if (_remainingSeconds <= 0)
         {
             _timer.Stop();
@@ -180,8 +171,8 @@ public class OTPViewModel : BaseViewModel
 
     private bool CanExecuteVerifyOTP(object? parameter)
     {
-        return !string.IsNullOrWhiteSpace(OTPCode) && 
-               OTPCode.Length == 6 && 
+        return !string.IsNullOrWhiteSpace(OTPCode) &&
+               OTPCode.Length == 6 &&
                !IsLoading;
     }
 
@@ -193,15 +184,9 @@ public class OTPViewModel : BaseViewModel
 
         try
         {
-            System.Diagnostics.Debug.WriteLine($"=== Verifying OTP ===");
-            System.Diagnostics.Debug.WriteLine($"Email: {Email}");
-            System.Diagnostics.Debug.WriteLine($"Input OTP: {OTPCode}");
-            System.Diagnostics.Debug.WriteLine($"Expected OTP (local): {_currentOTP}");
 
             // Xác thực OTP bằng EmailService (nơi lưu OTP thực tế)
             bool isValid = _emailService.VerifyOTP(Email, OTPCode);
-            
-            System.Diagnostics.Debug.WriteLine($"VerifyOTP result: {isValid}");
 
             if (isValid)
             {
@@ -212,7 +197,6 @@ public class OTPViewModel : BaseViewModel
                 try
                 {
                     var dispatcher = System.Windows.Application.Current?.Dispatcher;
-                    System.Diagnostics.Debug.WriteLine("Invoking OnVerifySuccess (will use Dispatcher.BeginInvoke if available)");
                     if (dispatcher != null)
                     {
                         dispatcher.BeginInvoke(new Action(() =>
@@ -221,10 +205,7 @@ public class OTPViewModel : BaseViewModel
                             {
                                 OnVerifySuccess?.Invoke();
                             }
-                            catch (Exception innerEx)
-                            {
-                                System.Diagnostics.Debug.WriteLine($"OnVerifySuccess subscriber threw: {innerEx}");
-                            }
+                            catch { }
                         }));
                     }
                     else
@@ -233,16 +214,10 @@ public class OTPViewModel : BaseViewModel
                         {
                             OnVerifySuccess?.Invoke();
                         }
-                        catch (Exception innerEx)
-                        {
-                            System.Diagnostics.Debug.WriteLine($"OnVerifySuccess subscriber threw: {innerEx}");
-                        }
+                        catch { }
                     }
                 }
-                catch (Exception ex)
-                {
-                    System.Diagnostics.Debug.WriteLine($"OnVerifySuccess invoke scheduling error: {ex}");
-                }
+                catch { }
                 finally
                 {
                     // Xóa mã OTP đã nhập
@@ -254,10 +229,8 @@ public class OTPViewModel : BaseViewModel
                 ErrorMessage = "Mã OTP không chính xác hoặc đã hết hạn!";
             }
         }
-        catch (Exception ex)
-        {
+        catch (Exception ex) {
             ErrorMessage = ex.Message;
-            System.Diagnostics.Debug.WriteLine($"Verify OTP Error: {ex}");
         }
         finally
         {
@@ -274,12 +247,10 @@ public class OTPViewModel : BaseViewModel
         }
 
         await SendOTPAsync();
-        
+
         if (string.IsNullOrEmpty(ErrorMessage))
         {
             StartCountdown();
         }
     }
 }
-
-

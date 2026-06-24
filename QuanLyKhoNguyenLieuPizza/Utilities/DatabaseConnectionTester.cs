@@ -13,16 +13,14 @@ public static class DatabaseConnectionTester
         try
         {
             var connectionString = ConfigurationService.Instance.GetConnectionString();
-            
-            System.Diagnostics.Debug.WriteLine($"Testing connection with: {connectionString}");
-            
+
             using var conn = new SqlConnection(connectionString);
             await conn.OpenAsync();
-            
+
             // Kiểm tra truy vấn đơn giản
             using var cmd = new SqlCommand("SELECT @@VERSION", conn);
             var version = await cmd.ExecuteScalarAsync();
-            
+
             return (true, $"Connection successful! SQL Server version: {version?.ToString()?.Split('\n')[0]}");
         }
         catch (SqlException sqlEx)
@@ -35,15 +33,11 @@ public static class DatabaseConnectionTester
                 4060 => "Cơ sở dữ liệu không tồn tại. Tạo cơ sở dữ liệu trước.",
                 _ => $"SQL Error {sqlEx.Number}: {sqlEx.Message}"
             };
-            
-            System.Diagnostics.Debug.WriteLine($"SQL Error: {errorMsg}");
+
             return (false, errorMsg);
         }
-        catch (Exception ex)
-        {
-            System.Diagnostics.Debug.WriteLine($"Error: {ex.Message}");
+        catch (Exception ex) {
             return (false, $"Error: {ex.Message}");
         }
     }
 }
-

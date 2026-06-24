@@ -35,7 +35,7 @@ public class MainViewModel : BaseViewModel
         _verifyInfoViewModel.OnVerifySuccess += OnVerifyInfoSuccess;
         _verifyInfoViewModel.OnBack += () => CurrentView = _loginViewModel;
 
-        _otpViewModel.OnVerifySuccess += () => 
+        _otpViewModel.OnVerifySuccess += () =>
         {
             _changePasswordViewModel.Reset();
             _changePasswordViewModel.Email = _otpViewModel.Email;
@@ -55,7 +55,6 @@ public class MainViewModel : BaseViewModel
         try
         {
             App.LogToFile($"OnVerifyInfoSuccess START - email: {email}");
-            System.Diagnostics.Debug.WriteLine($"=== OnVerifyInfoSuccess called with email: {email} ===");
 
             // Chuyển sang view OTP trước để user thấy loading
             App.LogToFile("Setting CurrentView = _otpViewModel");
@@ -67,12 +66,9 @@ public class MainViewModel : BaseViewModel
             await _otpViewModel.InitializeAndSendOTPAsync(email);
 
             App.LogToFile("OnVerifyInfoSuccess DONE");
-            System.Diagnostics.Debug.WriteLine("=== OTP sent successfully ===");
         }
-        catch (Exception ex)
-        {
+        catch (Exception ex) {
             App.LogToFile($"OnVerifyInfoSuccess ERROR: {ex}");
-            System.Diagnostics.Debug.WriteLine($"=== OnVerifyInfoSuccess ERROR: {ex} ===");
             System.Windows.MessageBox.Show(
                 $"Lỗi khi gửi OTP: {ex.Message}",
                 "Lỗi",
@@ -87,7 +83,7 @@ public class MainViewModel : BaseViewModel
         // Tạo ShellViewModel SAU khi đăng nhập thành công, khi CurrentUserSession đã được điền
         _shellViewModel = new ShellViewModel();
         _shellViewModel.OnLogout += OnLogout;
-        
+
         CurrentView = _shellViewModel;
     }
 
@@ -105,5 +101,3 @@ public class MainViewModel : BaseViewModel
         CurrentView = _loginViewModel;
     }
 }
-
-

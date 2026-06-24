@@ -1,4 +1,4 @@
-using System.Text;
+﻿using System.Text;
 using System.Globalization;
 using Microsoft.Data.SqlClient;
 using System.Data;
@@ -28,10 +28,7 @@ public class PizzaService : DatabaseContext
                 });
             }
         }
-        catch (Exception ex)
-        {
-            System.Diagnostics.Debug.WriteLine($"Error loading LoaiHangHoa: {ex.Message}");
-        }
+        catch { }
         return result;
     }
 
@@ -76,10 +73,7 @@ public class PizzaService : DatabaseContext
                 });
             }
         }
-        catch (Exception ex)
-        {
-            System.Diagnostics.Debug.WriteLine($"Error getting Pizzas from HangHoa: {ex.Message}");
-        }
+        catch { }
 
         return result;
     }
@@ -174,9 +168,7 @@ public class PizzaService : DatabaseContext
 
             return true;
         }
-        catch (Exception ex)
-        {
-            System.Diagnostics.Debug.WriteLine($"Error saving Pizza: {ex.Message}");
+        catch {
             return false;
         }
     }
@@ -218,13 +210,11 @@ public class PizzaService : DatabaseContext
             await cmd.ExecuteNonQueryAsync();
             return true;
         }
-        catch (Exception ex)
-        {
-            System.Diagnostics.Debug.WriteLine($"Error deleting Pizza: {ex.Message}");
+        catch {
             return false;
         }
     }
-    
+
     public async Task<bool> TogglePizzaTrangThaiAsync(string maHangHoa, bool newStatus)
     {
         try
@@ -237,9 +227,7 @@ public class PizzaService : DatabaseContext
             await cmd.ExecuteNonQueryAsync();
             return true;
         }
-        catch (Exception ex)
-        {
-            System.Diagnostics.Debug.WriteLine($"Error toggling Pizza status: {ex.Message}");
+        catch {
             return false;
         }
     }
@@ -285,10 +273,7 @@ public class PizzaService : DatabaseContext
                 result.Add(ct);
             }
         }
-        catch (Exception ex)
-        {
-            System.Diagnostics.Debug.WriteLine($"Error getting CongThucs: {ex.Message}");
-        }
+        catch { }
         return result;
     }
 
@@ -301,13 +286,13 @@ public class PizzaService : DatabaseContext
             string sql;
             if (congThuc.CongThucID == 0)
             {
-                sql = @"INSERT INTO CongThuc (PizzaID, NguyenLieuID, SoLuong, DonViID) 
+                sql = @"INSERT INTO CongThuc (PizzaID, NguyenLieuID, SoLuong, DonViID)
                        VALUES (@PizzaID, @NguyenLieuID, @SoLuong, @DonViID);
                        SELECT SCOPE_IDENTITY();";
             }
             else
             {
-                sql = @"UPDATE CongThuc SET NguyenLieuID=@NguyenLieuID, SoLuong=@SoLuong, DonViID=@DonViID 
+                sql = @"UPDATE CongThuc SET NguyenLieuID=@NguyenLieuID, SoLuong=@SoLuong, DonViID=@DonViID
                        WHERE CongThucID=@CongThucID";
             }
             using var cmd = new SqlCommand(sql, conn);
@@ -329,9 +314,7 @@ public class PizzaService : DatabaseContext
             }
             return true;
         }
-        catch (Exception ex)
-        {
-            System.Diagnostics.Debug.WriteLine($"Error saving CongThuc: {ex.Message}");
+        catch {
             return false;
         }
     }
@@ -347,9 +330,7 @@ public class PizzaService : DatabaseContext
             await cmd.ExecuteNonQueryAsync();
             return true;
         }
-        catch (Exception ex)
-        {
-            System.Diagnostics.Debug.WriteLine($"Error deleting CongThuc: {ex.Message}");
+        catch {
             return false;
         }
     }
@@ -367,12 +348,12 @@ public class PizzaService : DatabaseContext
             using var conn = GetConnection();
             await conn.OpenAsync();
             var sql = @"SELECT ISNULL(SUM(ct.SoLuong * ISNULL(
-                           (SELECT TOP 1 ctn.DonGia FROM CT_PhieuNhap ctn 
+                           (SELECT TOP 1 ctn.DonGia FROM CT_PhieuNhap ctn
                             INNER JOIN PhieuNhap pn ON ctn.PhieuNhapID = pn.PhieuNhapID
                             WHERE ctn.NguyenLieuID = ct.NguyenLieuID AND pn.TrangThai = 2
-                            ORDER BY pn.NgayNhap DESC), 
-                           ISNULL((SELECT TOP 1 nnc.GiaNhap FROM NguyenLieuNhaCungCap nnc 
-                                   WHERE nnc.NguyenLieuID = ct.NguyenLieuID 
+                            ORDER BY pn.NgayNhap DESC),
+                           ISNULL((SELECT TOP 1 nnc.GiaNhap FROM NguyenLieuNhaCungCap nnc
+                                   WHERE nnc.NguyenLieuID = ct.NguyenLieuID
                                    ORDER BY nnc.NgayCapNhat DESC), 0)
                        )), 0) AS GiaVon
                        FROM CongThuc_Pizza ct WHERE ct.MaHangHoa = @Ma AND ct.SizeID = @S";
@@ -382,9 +363,7 @@ public class PizzaService : DatabaseContext
             var result = await cmd.ExecuteScalarAsync();
             return result != null && result != DBNull.Value ? Convert.ToDecimal(result) : 0;
         }
-        catch (Exception ex)
-        {
-            System.Diagnostics.Debug.WriteLine($"Error calculating GiaVon: {ex.Message}");
+        catch {
             return 0;
         }
     }
@@ -422,10 +401,7 @@ public class PizzaService : DatabaseContext
                 result.Add(hh);
             }
         }
-        catch (Exception ex)
-        {
-            System.Diagnostics.Debug.WriteLine($"Error getting HangHoas: {ex.Message}");
-        }
+        catch { }
         return result;
     }
 
@@ -462,10 +438,7 @@ public class PizzaService : DatabaseContext
                 return hh;
             }
         }
-        catch (Exception ex)
-        {
-            System.Diagnostics.Debug.WriteLine($"Error getting HangHoa by ID: {ex.Message}");
-        }
+        catch { }
         return null;
     }
 
@@ -621,14 +594,11 @@ public class PizzaService : DatabaseContext
 
                     if (!reqList.ContainsKey(row.NguyenLieuId))
                         reqList[row.NguyenLieuId] = 0;
-                    
+
                     reqList[row.NguyenLieuId] += normalizedRequired;
                     nguyenLieuInfo[row.NguyenLieuId] = (row.TenNguyenLieu, row.SoLuongTon);
                 }
-                catch (Exception ex)
-                {
-                    System.Diagnostics.Debug.WriteLine($"Skip stock pre-check for '{row.TenNguyenLieu}': {ex.Message}");
-                }
+                catch { }
             }
 
             // Check each combination against stock
@@ -661,10 +631,7 @@ public class PizzaService : DatabaseContext
                     .ToList();
             }
         }
-        catch (Exception ex)
-        {
-            System.Diagnostics.Debug.WriteLine($"Error getting out-of-stock ingredients: {ex.Message}");
-        }
+        catch { }
 
         return result;
     }
@@ -686,10 +653,7 @@ public class PizzaService : DatabaseContext
                 });
             }
         }
-        catch (Exception ex)
-        {
-            System.Diagnostics.Debug.WriteLine($"Error getting DoanhMuc_Size: {ex.Message}");
-        }
+        catch { }
         return result;
     }
 
@@ -712,10 +676,7 @@ public class PizzaService : DatabaseContext
                 });
             }
         }
-        catch (Exception ex)
-        {
-            System.Diagnostics.Debug.WriteLine($"Error getting DoanhMuc_De: {ex.Message}");
-        }
+        catch { }
         return result;
     }
     public async Task<List<GiaTheo_Size>> GetGiaTheoSizeByHangHoaAsync(string maHangHoa)
@@ -747,10 +708,7 @@ public class PizzaService : DatabaseContext
                 });
             }
         }
-        catch (Exception ex)
-        {
-            System.Diagnostics.Debug.WriteLine($"Error getting GiaTheo_Size: {ex.Message}");
-        }
+        catch { }
         return result;
     }
 
@@ -783,10 +741,7 @@ public class PizzaService : DatabaseContext
                 });
             }
         }
-        catch (Exception ex)
-        {
-            System.Diagnostics.Debug.WriteLine($"Error getting GiaTheo_De: {ex.Message}");
-        }
+        catch { }
         return result;
     }
     public async Task<List<CongThuc_Pizza>> GetCongThucPizzaAsync(string maHangHoa, string sizeId)
@@ -823,10 +778,7 @@ public class PizzaService : DatabaseContext
                 result.Add(ct);
             }
         }
-        catch (Exception ex)
-        {
-            System.Diagnostics.Debug.WriteLine($"Error getting CongThuc_Pizza: {ex.Message}");
-        }
+        catch { }
         return result;
     }
 
@@ -850,13 +802,10 @@ public class PizzaService : DatabaseContext
             cmd.Parameters.AddWithValue("@NguyenLieuID", congThuc.NguyenLieuID);
             cmd.Parameters.AddWithValue("@SoLuong", (object?)congThuc.SoLuong ?? DBNull.Value);
             cmd.Parameters.AddWithValue("@DonViID", (object?)congThuc.DonViID ?? DBNull.Value);
-            System.Diagnostics.Debug.WriteLine($"[SaveCongThucPizza] MaHangHoa={congThuc.MaHangHoa}, SizeID={congThuc.SizeID}, NLID={congThuc.NguyenLieuID}, SL={congThuc.SoLuong}, DVID={congThuc.DonViID}");
             await cmd.ExecuteNonQueryAsync();
             return true;
         }
-        catch (Exception ex)
-        {
-            System.Diagnostics.Debug.WriteLine($"Error saving CongThuc_Pizza: {ex.Message}\n{ex.StackTrace}");
+        catch {
             return false;
         }
     }
@@ -875,9 +824,7 @@ public class PizzaService : DatabaseContext
             await cmd.ExecuteNonQueryAsync();
             return true;
         }
-        catch (Exception ex)
-        {
-            System.Diagnostics.Debug.WriteLine($"Error deleting CongThuc_Pizza: {ex.Message}");
+        catch {
             return false;
         }
     }
@@ -909,10 +856,7 @@ public class PizzaService : DatabaseContext
                 });
             }
         }
-        catch (Exception ex)
-        {
-            System.Diagnostics.Debug.WriteLine($"Error getting QuyDinh_Bot: {ex.Message}");
-        }
+        catch { }
         return result;
     }
 
@@ -938,9 +882,7 @@ public class PizzaService : DatabaseContext
             cmd.Parameters.AddWithValue("@DonViID", item.DonViID ?? (object)DBNull.Value);
             return await cmd.ExecuteNonQueryAsync() > 0;
         }
-        catch (Exception ex)
-        {
-            System.Diagnostics.Debug.WriteLine($"Error saving QuyDinh_Bot: {ex.Message}");
+        catch {
             return false;
         }
     }
@@ -956,9 +898,7 @@ public class PizzaService : DatabaseContext
             cmd.Parameters.AddWithValue("@LoaiCotBanh", loaiCotBanh);
             return await cmd.ExecuteNonQueryAsync() > 0;
         }
-        catch (Exception ex)
-        {
-            System.Diagnostics.Debug.WriteLine($"Error deleting QuyDinh_Bot: {ex.Message}");
+        catch {
             return false;
         }
     }
@@ -995,10 +935,7 @@ public class PizzaService : DatabaseContext
                 });
             }
         }
-        catch (Exception ex)
-        {
-            System.Diagnostics.Debug.WriteLine($"Error getting QuyDinh_Vien: {ex.Message}");
-        }
+        catch { }
         return result;
     }
 
@@ -1025,9 +962,7 @@ public class PizzaService : DatabaseContext
             cmd.Parameters.AddWithValue("@DonViID", item.DonViID ?? (object)DBNull.Value);
             return await cmd.ExecuteNonQueryAsync() > 0;
         }
-        catch (Exception ex)
-        {
-            System.Diagnostics.Debug.WriteLine($"Error saving QuyDinh_Vien: {ex.Message}");
+        catch {
             return false;
         }
     }
@@ -1044,9 +979,7 @@ public class PizzaService : DatabaseContext
             cmd.Parameters.AddWithValue("@NguyenLieuID", nguyenLieuId);
             return await cmd.ExecuteNonQueryAsync() > 0;
         }
-        catch (Exception ex)
-        {
-            System.Diagnostics.Debug.WriteLine($"Error deleting QuyDinh_Vien: {ex.Message}");
+        catch {
             return false;
         }
     }

@@ -27,6 +27,7 @@ public class DatabaseService : IDatabaseService
     private readonly PizzaService _pizza;
     private readonly BanHangService _banHang;
     private readonly DashboardService _dashboard;
+    private readonly KiemKeService _kiemKe;
 
     public DatabaseService()
     {
@@ -41,6 +42,7 @@ public class DatabaseService : IDatabaseService
         _pizza = new PizzaService(_connectionString);
         _banHang = new BanHangService(_connectionString);
         _dashboard = new DashboardService(_connectionString);
+        _kiemKe = new KiemKeService(_connectionString);
     }
 
     public DatabaseService(string connectionString)
@@ -56,9 +58,13 @@ public class DatabaseService : IDatabaseService
         _pizza = new PizzaService(_connectionString);
         _banHang = new BanHangService(_connectionString);
         _dashboard = new DashboardService(_connectionString);
+        _kiemKe = new KiemKeService(_connectionString);
     }
 
-    // ═══════════════ AUTH ═══════════════
+    // MIGRATION ═══════════════
+    public Task EnsureChuKySoColumnsAsync() => _phieuNhap.EnsureChuKySoColumnsAsync();
+
+    // AUTH ═══════════════
     public Task<TaiKhoan?> AuthenticateAsync(string username, string password)
         => _auth.AuthenticateAsync(username, password);
     public Task<List<ChucVu>> GetChucVusAsync()
@@ -68,7 +74,7 @@ public class DatabaseService : IDatabaseService
     public Task<bool> ChangePasswordAsync(string email, string newPassword)
         => _auth.ChangePasswordAsync(email, newPassword);
 
-    // ═══════════════ NGUYÊN LIỆU ═══════════════
+    // NGUYÊN LIỆU ═══════════════
     public Task<List<LoaiNguyenLieu>> GetLoaiNguyenLieusAsync()
         => _nguyenLieu.GetLoaiNguyenLieusAsync();
     public Task<bool> SaveLoaiNguyenLieuAsync(LoaiNguyenLieu loaiNguyenLieu)
@@ -98,13 +104,13 @@ public class DatabaseService : IDatabaseService
     public Task<bool> UpdateTonKhoDonViAsync(int nguyenLieuId, decimal soLuong, int donViId)
         => _nguyenLieu.UpdateTonKhoDonViAsync(nguyenLieuId, soLuong, donViId);
 
-    // ═══════════════ TỒN KHO ═══════════════
+    // TỒN KHO ═══════════════
     public Task<List<TonKho>> GetTonKhosAsync()
         => _tonKho.GetTonKhosAsync();
     public Task<TonKho?> GetTonKhoByNguyenLieuIdAsync(int nguyenLieuId)
         => _nguyenLieu.GetTonKhoByNguyenLieuIdAsync(nguyenLieuId);
 
-    // ═══════════════ NHÀ CUNG CẤP ═══════════════
+    // NHÀ CUNG CẤP ═══════════════
     public Task<List<NhaCungCap>> GetNhaCungCapsAsync()
         => _nhaCungCap.GetNhaCungCapsAsync();
     public Task<List<NhaCungCap>> GetNhaCungCapsByNguyenLieuAsync(int nguyenLieuId)
@@ -114,7 +120,7 @@ public class DatabaseService : IDatabaseService
     public Task<bool> UpsertNguyenLieuNhaCungCapAsync(int nguyenLieuId, int nhaCungCapId, decimal giaNhap)
         => _nhaCungCap.UpsertNguyenLieuNhaCungCapAsync(nguyenLieuId, nhaCungCapId, giaNhap);
 
-    // ═══════════════ DASHBOARD ═══════════════
+    // DASHBOARD ═══════════════
     public Task<int> GetTotalNguyenLieuCountAsync()
         => _dashboard.GetTotalNguyenLieuCountAsync();
     public Task<int> GetTotalTonKhoCountAsync()
@@ -136,11 +142,11 @@ public class DatabaseService : IDatabaseService
     public Task<List<(string TenNguyenLieu, decimal SoLuongTon, string DonVi, DateTime? HanSuDung)>> GetOutOfStockItemsAsync()
         => _dashboard.GetOutOfStockItemsAsync();
 
-    // ═══════════════ NHÂN VIÊN ═══════════════
+    // NHÂN VIÊN ═══════════════
     public Task<List<NhanVien>> GetNhanViensAsync()
         => _phieuNhap.GetNhanViensAsync();
 
-    // ═══════════════ PIZZA ═══════════════
+    // PIZZA ═══════════════
     public Task<List<Pizza>> GetPizzasAsync()
         => _pizza.GetPizzasAsync();
     public Task<Pizza?> GetPizzaByIdAsync(int pizzaId)
@@ -186,7 +192,7 @@ public class DatabaseService : IDatabaseService
     public Task<bool> DeleteCongThucPizzaAsync(string maHangHoa, string sizeId, int nguyenLieuId)
         => _pizza.DeleteCongThucPizzaAsync(maHangHoa, sizeId, nguyenLieuId);
 
-    // ═══════════════ BÁN HÀNG ═══════════════
+    // BÁN HÀNG ═══════════════
     public Task<List<DonHang>> GetDonHangsAsync(DateTime? fromDate = null, DateTime? toDate = null)
         => _banHang.GetDonHangsAsync(fromDate, toDate);
     public Task<DonHang?> GetDonHangByIdAsync(int donHangId)
@@ -216,7 +222,7 @@ public class DatabaseService : IDatabaseService
     public Task<bool> DeletePhieuBanHangWithRestoreAsync(string maPhieuBan)
         => _banHang.DeletePhieuBanHangWithRestoreAsync(maPhieuBan);
 
-    // ═══════════════ THỐNG KÊ BÁN HÀNG ═══════════════
+    // THỐNG KÊ BÁN HÀNG ═══════════════
     public Task<decimal> GetDoanhThuAsync(DateTime fromDate, DateTime toDate)
         => _dashboard.GetDoanhThuAsync(fromDate, toDate);
     public Task<int> GetTotalDonHangCountAsync(DateTime fromDate, DateTime toDate)
@@ -234,7 +240,15 @@ public class DatabaseService : IDatabaseService
     public Task<int> GetTotalPhieuBanCountAsync(DateTime fromDate, DateTime toDate)
         => _dashboard.GetTotalPhieuBanCountAsync(fromDate, toDate);
 
-    // ═══════════════ PHIẾU NHẬP ═══════════════
+    // ĐỐI SOÁT TIÊU HAO & LÔ HÀNG ═══════════════
+    public Task<List<(int NguyenLieuID, string TenNguyenLieu, string DonVi, decimal LuongXuatCheBien, decimal LuongTieuHaoBanHang)>> GetDoiSoatTieuHaoAsync(DateTime ngay)
+        => _dashboard.GetDoiSoatTieuHaoAsync(ngay);
+    public Task<List<(int PhieuNhapID, string MaPhieuNhap, DateTime NgayNhap, int NguyenLieuID, string TenNguyenLieu, string DonVi, decimal SoLuongNhap, DateTime? HSD, int? HanCanhBao)>> GetTonKhoTheoLoHangAsync()
+        => _dashboard.GetTonKhoTheoLoHangAsync();
+    public Task<List<(int PhieuNhapID, string MaPhieuNhap, DateTime NgayNhap, int NguyenLieuID, string TenNguyenLieu, string DonVi, decimal SoLuongNhap, DateTime HSD, int SoNgayConLai)>> GetLoHangCanhBaoHSDAsync()
+        => _dashboard.GetLoHangCanhBaoHSDAsync();
+
+    // PHIẾU NHẬP ═══════════════
     public Task<List<PhieuNhap>> GetPhieuNhapsAsync(string? searchText = null, int? nhanVienId = null, int? nhaCungCapId = null, DateTime? tuNgay = null, DateTime? denNgay = null, List<byte>? trangThaiFilter = null)
         => _phieuNhap.GetPhieuNhapsAsync(searchText, nhanVienId, nhaCungCapId, tuNgay, denNgay, trangThaiFilter);
     public Task<PhieuNhap?> GetPhieuNhapByIdAsync(int phieuNhapId)
@@ -243,10 +257,10 @@ public class DatabaseService : IDatabaseService
         => _phieuNhap.GetChiTietPhieuNhapAsync(phieuNhapId);
     public Task<bool> DeletePhieuNhapAsync(int phieuNhapId)
         => _phieuNhap.DeletePhieuNhapAsync(phieuNhapId);
-    public Task<bool> ApprovePhieuNhapAsync(int phieuNhapId, int nguoiDuyetId)
-        => _phieuNhap.ApprovePhieuNhapAsync(phieuNhapId, nguoiDuyetId);
-    public Task<bool> CancelPhieuNhapAsync(int phieuNhapId, int nguoiHuyId, string? lyDoHuy = null)
-        => _phieuNhap.CancelPhieuNhapAsync(phieuNhapId, nguoiHuyId, lyDoHuy);
+    public Task<bool> ApprovePhieuNhapAsync(int phieuNhapId, int nguoiDuyetId, string? chuKySo = null)
+        => _phieuNhap.ApprovePhieuNhapAsync(phieuNhapId, nguoiDuyetId, chuKySo);
+    public Task<bool> CancelPhieuNhapAsync(int phieuNhapId, int nguoiHuyId, string? lyDoHuy = null, string? chuKyHuy = null)
+        => _phieuNhap.CancelPhieuNhapAsync(phieuNhapId, nguoiHuyId, lyDoHuy, chuKyHuy);
     public Task<string> GenerateMaPhieuNhapAsync()
         => _phieuNhap.GenerateMaPhieuNhapAsync();
     public Task<int> SavePhieuNhapAsync(PhieuNhap phieuNhap, List<CT_PhieuNhap> chiTiets)
@@ -258,7 +272,7 @@ public class DatabaseService : IDatabaseService
     public Task<List<NguyenLieu>> GetNguyenLieusByNhaCungCapAsync(int nhaCungCapId)
         => _phieuNhap.GetNguyenLieusByNhaCungCapAsync(nhaCungCapId);
 
-    // ═══════════════ PHIẾU XUẤT (extra methods) ═══════════════
+    // PHIẾU XUẤT (extra methods) ═══════════════
     public Task<List<PhieuXuat>> GetPhieuXuatsAsync(string? searchText = null, int? nhanVienYeuCauId = null, DateTime? tuNgay = null, DateTime? denNgay = null, List<byte>? trangThaiFilter = null)
         => _phieuXuat.GetPhieuXuatsAsync(searchText, nhanVienYeuCauId, tuNgay, denNgay, trangThaiFilter);
     public Task<PhieuXuat?> GetPhieuXuatByIdAsync(int phieuXuatId)
@@ -269,16 +283,16 @@ public class DatabaseService : IDatabaseService
         => _phieuXuat.GenerateMaPhieuXuatAsync();
     public Task<int> SavePhieuXuatAsync(PhieuXuat phieuXuat, List<CT_PhieuXuat> chiTiets)
         => _phieuXuat.SavePhieuXuatAsync(phieuXuat, chiTiets);
-    public Task<bool> ApprovePhieuXuatAsync(int phieuXuatId, int nhanVienDuyetId)
-        => _phieuXuat.ApprovePhieuXuatAsync(phieuXuatId, nhanVienDuyetId);
-    public Task<bool> CancelPhieuXuatAsync(int phieuXuatId)
-        => _phieuXuat.CancelPhieuXuatAsync(phieuXuatId);
+    public Task<bool> ApprovePhieuXuatAsync(int phieuXuatId, int nhanVienDuyetId, string? chuKySo = null)
+        => _phieuXuat.ApprovePhieuXuatAsync(phieuXuatId, nhanVienDuyetId, chuKySo);
+    public Task<bool> CancelPhieuXuatAsync(int phieuXuatId, int nhanVienDuyetId, string? lyDoHuy = null, string? chuKyHuy = null)
+        => _phieuXuat.CancelPhieuXuatAsync(phieuXuatId, nhanVienDuyetId, lyDoHuy, chuKyHuy);
     public Task<bool> DeletePhieuXuatAsync(int phieuXuatId)
         => _phieuXuat.DeletePhieuXuatAsync(phieuXuatId);
     public Task<List<NguyenLieu>> GetNguyenLieusWithTonKhoAsync()
         => _phieuXuat.GetNguyenLieusWithTonKhoAsync();
 
-    // ═══════════════ NHÀ CUNG CẤP (extra CRUD) ═══════════════
+    // NHÀ CUNG CẤP (extra CRUD) ═══════════════
     public Task<List<NhaCungCap>> GetAllNhaCungCapsAsync(string? searchText = null, bool? trangThai = null)
         => _nhaCungCap.GetAllNhaCungCapsAsync(searchText, trangThai);
     public Task<NhaCungCap?> GetNhaCungCapByIdAsync(int nhaCungCapId)
@@ -296,7 +310,7 @@ public class DatabaseService : IDatabaseService
     public Task<List<NguyenLieu>> GetNguyenLieusByNhaCungCapIdAsync(int nhaCungCapId)
         => _nhaCungCap.GetNguyenLieusByNhaCungCapIdAsync(nhaCungCapId);
 
-    // ═══════════════ NHÂN VIÊN (extra CRUD) ═══════════════
+    // NHÂN VIÊN (extra CRUD) ═══════════════
     public Task<List<ChucVu>> GetAllChucVusAsync()
         => _nhanVien.GetAllChucVusAsync();
     public Task<int> SaveChucVuAsync(ChucVu chucVu)
@@ -318,7 +332,7 @@ public class DatabaseService : IDatabaseService
     public Task<bool> CreateTaiKhoanForNhanVienAsync(int nhanVienId, string username, string password)
         => _nhanVien.CreateTaiKhoanForNhanVienAsync(nhanVienId, username, password);
 
-    // ═══════════════ PIZZA / QUY ĐỊNH (extra) ═══════════════
+    // PIZZA / QUY ĐỊNH (extra) ═══════════════
     public Task<List<QuyDinh_Bot>> GetQuyDinhBotsAsync()
         => _pizza.GetQuyDinhBotsAsync();
     public Task<List<QuyDinh_Vien>> GetQuyDinhViensAsync()
@@ -331,4 +345,26 @@ public class DatabaseService : IDatabaseService
         => _pizza.DeleteQuyDinhBotAsync(sizeId, loaiCotBanh);
     public Task<bool> DeleteQuyDinhVienAsync(string maDeBanh, string sizeId, int nguyenLieuId)
         => _pizza.DeleteQuyDinhVienAsync(maDeBanh, sizeId, nguyenLieuId);
+
+    // KIỂM KÊ KHO ═══════════════
+    public Task<List<PhieuKiemKe>> GetPhieuKiemKesAsync(string? searchText = null, DateTime? tuNgay = null, DateTime? denNgay = null, string? trangThai = null)
+        => _kiemKe.GetPhieuKiemKesAsync(searchText, tuNgay, denNgay, trangThai);
+    public Task<List<CT_PhieuKiemKe>> GetChiTietPhieuKiemKeAsync(int kiemKeId)
+        => _kiemKe.GetChiTietPhieuKiemKeAsync(kiemKeId);
+    public Task<string> GenerateMaPhieuKiemAsync()
+        => _kiemKe.GenerateMaPhieuKiemAsync();
+    public Task<int> SavePhieuKiemKeAsync(PhieuKiemKe phieuKiemKe, List<CT_PhieuKiemKe> chiTiets)
+        => _kiemKe.SavePhieuKiemKeAsync(phieuKiemKe, chiTiets);
+    public Task<bool> SubmitPhieuKiemKeAsync(int kiemKeId, string? chuKyKiem = null)
+        => _kiemKe.SubmitPhieuKiemKeAsync(kiemKeId, chuKyKiem);
+    public Task<bool> ApprovePhieuKiemKeAsync(int kiemKeId, int nhanVienDuyetId, string? chuKyDuyet = null, string? ghiChuDuyet = null)
+        => _kiemKe.ApprovePhieuKiemKeAsync(kiemKeId, nhanVienDuyetId, chuKyDuyet, ghiChuDuyet);
+    public Task<bool> RejectPhieuKiemKeAsync(int kiemKeId, int nhanVienDuyetId, string? ghiChuDuyet = null)
+        => _kiemKe.RejectPhieuKiemKeAsync(kiemKeId, nhanVienDuyetId, ghiChuDuyet);
+    public Task<bool> RequestRecountPhieuKiemKeAsync(int kiemKeId, int nhanVienDuyetId, string? ghiChuDuyet = null)
+        => _kiemKe.RequestRecountPhieuKiemKeAsync(kiemKeId, nhanVienDuyetId, ghiChuDuyet);
+    public Task<List<NguyenLieu>> GetNguyenLieusForKiemKeAsync()
+        => _kiemKe.GetNguyenLieusForKiemKeAsync();
+    public Task<bool> DeletePhieuKiemKeAsync(int kiemKeId)
+        => _kiemKe.DeletePhieuKiemKeAsync(kiemKeId);
 }

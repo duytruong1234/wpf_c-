@@ -152,6 +152,35 @@ public class CT_PhieuNhap : INotifyPropertyChanged
 
     public string TenDonViNhap => SelectedDonViNhap?.DonViTinh?.TenDonVi ?? DonViTinh?.TenDonVi ?? string.Empty;
 
+    // Đơn vị chuẩn (hiển thị trong chi tiết phiếu)
+    private string _tenDonViChuan = string.Empty;
+    public string TenDonViChuan
+    {
+        get => _tenDonViChuan;
+        set
+        {
+            if (_tenDonViChuan != value)
+            {
+                _tenDonViChuan = value;
+                OnPropertyChanged();
+            }
+        }
+    }
+
+    private decimal _heSoDonViChuan = 1m;
+    public decimal HeSoDonViChuan
+    {
+        get => _heSoDonViChuan;
+        set
+        {
+            if (_heSoDonViChuan != value)
+            {
+                _heSoDonViChuan = value;
+                OnPropertyChanged();
+            }
+        }
+    }
+
     // Thuộc tính điều hướng
     public virtual PhieuNhap? PhieuNhap { get; set; }
     public virtual NguyenLieu? NguyenLieu { get; set; }

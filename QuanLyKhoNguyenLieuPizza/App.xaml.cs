@@ -1,4 +1,4 @@
-using System.IO;
+﻿using System.IO;
 using System.Globalization;
 using System.Windows;
 using System.Windows.Markup;
@@ -40,6 +40,8 @@ namespace QuanLyKhoNguyenLieuPizza
             // ── Core Services (Singleton) ──
             services.AddSingleton<DatabaseService>();
             services.AddSingleton<IDatabaseService>(sp => sp.GetRequiredService<DatabaseService>());
+            services.AddSingleton<IEmailService, EmailService>();
+            services.AddSingleton<ExpiryNotificationService>();
 
             // ── ViewModels (Transient — mỗi lần resolve tạo instance mới) ──
             services.AddTransient<LoginViewModel>();
@@ -73,6 +75,10 @@ namespace QuanLyKhoNguyenLieuPizza
             // Tự động tạo Database nếu chưa tồn tại (lần đầu chạy trên máy mới)
             await DatabaseInitializer.EnsureDatabaseCreatedAsync();
 
+            // Auto-migration: Đảm bảo cột ChuKySo tồn tại (chữ ký số duyệt phiếu)
+            var dbService = Services.GetRequiredService<DatabaseService>();
+            await dbService.EnsureChuKySoColumnsAsync();
+
             // Migrate hình ảnh cũ sang AppData nếu cần
             Helpers.ImageStorageHelper.MigrateImagesFromBaseDirectory();
 
@@ -90,7 +96,6 @@ namespace QuanLyKhoNguyenLieuPizza
             DispatcherUnhandledException += (s, args) =>
             {
                 LogToFile($"DISPATCHER EXCEPTION: {args.Exception}");
-                System.Diagnostics.Debug.WriteLine($"=== UNHANDLED EXCEPTION ===\n{args.Exception}");
                 MessageBox.Show(
                     $"Đã xảy ra lỗi:\n{args.Exception.Message}\n\nChi tiết:\n{args.Exception.StackTrace}",
                     "Lỗi ứng dụng",
@@ -103,13 +108,11 @@ namespace QuanLyKhoNguyenLieuPizza
             {
                 var ex = args.ExceptionObject as Exception;
                 LogToFile($"DOMAIN EXCEPTION: {ex}");
-                System.Diagnostics.Debug.WriteLine($"=== DOMAIN UNHANDLED EXCEPTION ===\n{ex}");
             };
 
             TaskScheduler.UnobservedTaskException += (s, args) =>
             {
                 LogToFile($"TASK EXCEPTION: {args.Exception}");
-                System.Diagnostics.Debug.WriteLine($"=== UNOBSERVED TASK EXCEPTION ===\n{args.Exception}");
                 args.SetObserved();
             };
 

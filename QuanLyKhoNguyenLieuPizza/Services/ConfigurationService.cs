@@ -24,7 +24,7 @@ public class ConfigurationService
         try
         {
             var configPath = Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "appsettings.json");
-            
+
             if (!File.Exists(configPath))
             {
                 // Thử đường dẫn phát triển
@@ -56,15 +56,11 @@ public class ConfigurationService
             }
             else
             {
-                System.Diagnostics.Debug.WriteLine("appsettings.json not found, using default values");
                 // Đặt chuỗi kết nối mặc định
-                _connectionStrings["DefaultConnection"] = "Server=localhost;Database=QuanLyKhoNguyenLieu;Trusted_Connection=True;TrustServerCertificate=True;";
+                _connectionStrings["DefaultConnection"] = "Server=localhost;Database=QLKNL_PIZZA;Trusted_Connection=True;TrustServerCertificate=True;";
             }
         }
-        catch (Exception ex)
-        {
-            System.Diagnostics.Debug.WriteLine($"Error loading configuration: {ex.Message}");
-        }
+        catch { }
     }
 
     public string GetConnectionString(string name = "DefaultConnection")
@@ -77,4 +73,3 @@ public class ConfigurationService
         return _appSettings.TryGetValue(key, out var value) ? value : string.Empty;
     }
 }
-

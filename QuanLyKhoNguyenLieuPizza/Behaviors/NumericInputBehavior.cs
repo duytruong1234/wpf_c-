@@ -1,4 +1,4 @@
-using System;
+﻿using System;
 using System.Text.RegularExpressions;
 using System.Windows;
 using System.Windows.Controls;
@@ -36,7 +36,7 @@ public static class NumericInputBehavior
         {
             bool isNumeric = GetIsNumericOnly(textBox);
             bool isDecimal = GetIsDecimalOnly(textBox);
-            
+
             if (isNumeric || isDecimal)
             {
                 textBox.PreviewTextInput -= OnPreviewTextInput;
@@ -46,7 +46,7 @@ public static class NumericInputBehavior
                 textBox.PreviewTextInput += OnPreviewTextInput;
                 textBox.TextChanged += OnTextChanged;
                 DataObject.AddPastingHandler(textBox, OnPasting);
-                
+
                 InputMethod.SetIsInputMethodEnabled(textBox, false); // Tắt bộ gõ (IME)
             }
             else
@@ -76,7 +76,7 @@ public static class NumericInputBehavior
         {
             var text = textBox.Text;
             var cleanText = Regex.Replace(text, GetCleanRegexPattern(textBox), "");
-            
+
             if (text != cleanText)
             {
                 var caretIndex = textBox.CaretIndex;

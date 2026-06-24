@@ -90,9 +90,7 @@ public class VerifyInfoViewModel : BaseViewModel
     {
         try
         {
-            System.Diagnostics.Debug.WriteLine("LoadChucVusAsync: Starting...");
             var chucVus = await _databaseService.GetChucVusAsync();
-            System.Diagnostics.Debug.WriteLine($"LoadChucVusAsync: Got {chucVus.Count} items from DB");
 
             // �?m b?o c?p nh?t ObservableCollection tr�n UI thread
             if (Application.Current?.Dispatcher != null && !Application.Current.Dispatcher.CheckAccess())
@@ -115,8 +113,6 @@ public class VerifyInfoViewModel : BaseViewModel
                 }
             }
 
-            System.Diagnostics.Debug.WriteLine($"LoadChucVusAsync: ChucVus.Count = {ChucVus.Count}");
-
             if (ChucVus.Count == 0)
             {
                 ErrorMessage = "Chua c� d? li?u ch?c v?. Vui l�ng th�m ch?c v? trong m?c Qu?n l� nh�n vi�n.";
@@ -126,11 +122,8 @@ public class VerifyInfoViewModel : BaseViewModel
                 ErrorMessage = string.Empty;
             }
         }
-        catch (Exception ex)
-        {
+        catch {
             ErrorMessage = "Kh�ng t?i du?c danh s�ch ch?c v?. Vui l�ng ki?m tra k?t n?i co s? d? li?u.";
-            System.Diagnostics.Debug.WriteLine($"Error loading ChucVus: {ex.Message}");
-            System.Diagnostics.Debug.WriteLine($"Error loading ChucVus Stack: {ex.StackTrace}");
         }
     }
 
@@ -145,7 +138,6 @@ public class VerifyInfoViewModel : BaseViewModel
 
     private async Task ExecuteVerifyAsync()
     {
-        System.Diagnostics.Debug.WriteLine($"=== ExecuteVerify called ===");
 
         ErrorMessage = string.Empty;
         IsLoading = true;
@@ -162,7 +154,6 @@ public class VerifyInfoViewModel : BaseViewModel
 
             if (user != null)
             {
-                System.Diagnostics.Debug.WriteLine($"Invoking OnVerifySuccess with email: {Email}");
                 OnVerifySuccess?.Invoke(Email);
             }
             else
@@ -170,10 +161,8 @@ public class VerifyInfoViewModel : BaseViewModel
                 ErrorMessage = "Th�ng tin kh�ng ch�nh x�c!";
             }
         }
-        catch (Exception ex)
-        {
+        catch (Exception ex) {
             ErrorMessage = ex.Message;
-            System.Diagnostics.Debug.WriteLine($"ExecuteVerify Error: {ex}");
         }
         finally
         {
@@ -181,4 +170,3 @@ public class VerifyInfoViewModel : BaseViewModel
         }
     }
 }
-

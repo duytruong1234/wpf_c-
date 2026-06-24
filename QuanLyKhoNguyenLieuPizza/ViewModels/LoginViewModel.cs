@@ -55,23 +55,16 @@ public class LoginViewModel : BaseViewModel
 
     public LoginViewModel()
     {
-        try
-        {
-            _databaseService = App.Services.GetRequiredService<DatabaseService>();
-        }
-        catch
-        {
-            _databaseService = App.Services.GetRequiredService<DatabaseService>();
-        }
-        
+        _databaseService = App.Services.GetRequiredService<DatabaseService>();
+
         _preferencesService = UserPreferencesService.Instance;
-        
+
         LoginCommand = new AsyncRelayCommand(ExecuteLoginAsync, CanExecuteLogin);
         ForgotPasswordCommand = new RelayCommand(ExecuteForgotPassword);
-        
+
         // T?i thông tin dang nh?p dã luu (n?u có)
         LoadSavedCredentials();
-        
+
         // Ki?m tra k?t n?i khi kh?i d?ng
         _ = TestConnectionAsync();
     }
@@ -84,33 +77,31 @@ public class LoginViewModel : BaseViewModel
         try
         {
             var (rememberMe, savedUsername, savedPassword) = _preferencesService.LoadLoginCredentials();
-            
+
             if (rememberMe && !string.IsNullOrEmpty(savedUsername))
             {
                 Username = savedUsername;
                 Password = savedPassword;
                 RememberMe = true;
-                
-                System.Diagnostics.Debug.WriteLine($"Ðã t?i thông tin dang nh?p dã luu cho: {savedUsername}");
+
             }
         }
-        catch (Exception ex)
-        {
-            System.Diagnostics.Debug.WriteLine($"L?i khi t?i thông tin dang nh?p: {ex.Message}");
-        }
+        catch { }
     }
 
     private async Task TestConnectionAsync()
     {
-        var (success, _) = await DatabaseConnectionTester.TestConnectionAsync();
+        var (success, message) = await DatabaseConnectionTester.TestConnectionAsync();
         if (!success)
-            System.Diagnostics.Debug.WriteLine("Database connection test failed");
+        {
+            ErrorMessage = message;
+        }
     }
 
     private bool CanExecuteLogin()
     {
-        return !string.IsNullOrWhiteSpace(Username) && 
-               !string.IsNullOrWhiteSpace(Password) && 
+        return !string.IsNullOrWhiteSpace(Username) &&
+               !string.IsNullOrWhiteSpace(Password) &&
                !IsLoading;
     }
 
@@ -128,7 +119,7 @@ public class LoginViewModel : BaseViewModel
             }
 
             var taiKhoan = await _databaseService.AuthenticateAsync(Username, Password);
-            
+
             if (taiKhoan != null)
             {
                 // X? lý ghi nh? dang nh?p
@@ -140,7 +131,7 @@ public class LoginViewModel : BaseViewModel
                 {
                     _preferencesService.ClearLoginCredentials();
                 }
-                
+
                 CurrentUserSession.Instance.SetUser(taiKhoan);
                 OnLoginSuccess?.Invoke();
             }
@@ -149,8 +140,7 @@ public class LoginViewModel : BaseViewModel
                 ErrorMessage = "Tên đăng nhập hoặc mật khẩu không đúng!";
             }
         }
-        catch (Exception ex)
-        {
+        catch (Exception ex) {
             ErrorMessage = $"Lỗi: {ex.Message}";
         }
         finally
@@ -175,4 +165,3 @@ public class LoginViewModel : BaseViewModel
         ErrorMessage = string.Empty;
     }
 }
-

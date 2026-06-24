@@ -9,5 +9,3 @@ public partial class LoginView : UserControl
         InitializeComponent();
     }
 }
-
-

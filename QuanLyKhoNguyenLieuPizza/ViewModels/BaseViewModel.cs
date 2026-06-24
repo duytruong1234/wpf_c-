@@ -1,4 +1,4 @@
-using System.ComponentModel;
+﻿using System.ComponentModel;
 using System.Runtime.CompilerServices;
 using System.Windows.Input;
 
@@ -47,7 +47,6 @@ public abstract class BaseViewModel : INotifyPropertyChanged
 
     #endregion
 
-
     protected virtual void OnPropertyChanged([CallerMemberName] string? propertyName = null)
     {
         PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(propertyName));
@@ -74,10 +73,7 @@ public abstract class BaseViewModel : INotifyPropertyChanged
         {
             await action();
         }
-        catch (Exception ex)
-        {
-            System.Diagnostics.Debug.WriteLine($"Error in {caller}: {ex.Message}");
-        }
+        catch { }
         finally
         {
             IsBusy = false;
@@ -119,9 +115,6 @@ public abstract class BaseViewModel : INotifyPropertyChanged
         {
             await loadAction();
         }
-        catch (Exception ex)
-        {
-            System.Diagnostics.Debug.WriteLine($"Error initializing {GetType().Name}: {ex.Message}");
-        }
+        catch { }
     }
 }

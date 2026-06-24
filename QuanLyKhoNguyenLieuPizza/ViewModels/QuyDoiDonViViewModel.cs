@@ -50,14 +50,13 @@ public class QuyDoiRowItem : BaseViewModel
     public bool LaDonViChuan
     {
         get => _laDonViChuan;
-        set 
+        set
         {
             if (SetProperty(ref _laDonViChuan, value))
             {
                 OnPropertyChanged(nameof(LoaiDonVi));
                 if (value)
                 {
-                    HeSoText = "1";
                     OnDonViChuanChanged?.Invoke(this);
                 }
             }
@@ -69,10 +68,10 @@ public class QuyDoiRowItem : BaseViewModel
     /// Đơn vị chuẩn (LaDonViChuan=true) = đơn vị lưu tồn kho
     /// Các đơn vị khác = đơn vị quy đổi (dùng khi nhập/xuất/bán hàng, sẽ quy về ĐV chuẩn)
     /// </summary>
-    public string LoaiDonVi => LaDonViChuan ? "📦 ĐV Chuẩn" : "🔄 Quy đổi";
+    public string LoaiDonVi => LaDonViChuan ? "ĐV Chuẩn" : "Quy đổi";
 
     public ICommand? DeleteCommand { get; set; }
-    
+
     private bool _isBaseUnit;
     public bool IsBaseUnit
     {
@@ -233,10 +232,7 @@ public class QuyDoiDonViViewModel : BaseViewModel
             if (FilteredNguyenLieus.Any())
                 SelectedNguyenLieu = FilteredNguyenLieus.First();
         }
-        catch (Exception ex)
-        {
-            System.Diagnostics.Debug.WriteLine($"Error opening QuyDoi popup: {ex.Message}");
-        }
+        catch { }
         finally
         {
             IsLoading = false;
@@ -278,7 +274,7 @@ public class QuyDoiDonViViewModel : BaseViewModel
             // Tìm đơn vị gốc của nguyên liệu
             var donViGocId = SelectedNguyenLieu.DonViID;
             bool baseUnitAdded = false;
-            
+
             // Thêm đơn vị gốc lên đầu tiên
             if (donViGocId.HasValue)
             {
@@ -291,7 +287,7 @@ public class QuyDoiDonViViewModel : BaseViewModel
                         NguyenLieuID = baseQuyDoi.NguyenLieuID,
                         DonViID = baseQuyDoi.DonViID,
                         TenDonVi = baseQuyDoi.DonViTinh?.TenDonVi ?? "",
-                        HeSoText = baseQuyDoi.HeSo.ToString("G"),
+                        HeSoText = baseQuyDoi.HeSo.ToString("0.####"),
                         LaDonViChuan = baseQuyDoi.LaDonViChuan,
                         IsBaseUnit = true
                     };
@@ -311,14 +307,14 @@ public class QuyDoiDonViViewModel : BaseViewModel
                 // Bỏ qua đơn vị gốc vì đã thêm ở trên
                 if (baseUnitAdded && donViGocId.HasValue && qd.DonViID == donViGocId.Value)
                     continue;
-                    
+
                 var row = new QuyDoiRowItem
                 {
                     QuyDoiID = qd.QuyDoiID,
                     NguyenLieuID = qd.NguyenLieuID,
                     DonViID = qd.DonViID,
                     TenDonVi = qd.DonViTinh?.TenDonVi ?? "",
-                    HeSoText = qd.HeSo.ToString("G"),
+                    HeSoText = qd.HeSo.ToString("0.####"),
                     LaDonViChuan = qd.LaDonViChuan,
                     IsBaseUnit = false
                 };
@@ -330,7 +326,7 @@ public class QuyDoiDonViViewModel : BaseViewModel
                 row.DeleteCommand = new AsyncRelayCommand(async _ => await DeleteRowAsync(row));
                 QuyDoiRows.Add(row);
             }
-            
+
             // Nếu chưa thêm đơn vị gốc, thêm mặc định
             if (!baseUnitAdded && !string.IsNullOrEmpty(SelectedNguyenLieu.DonViChinh))
             {
@@ -353,10 +349,7 @@ public class QuyDoiDonViViewModel : BaseViewModel
                 QuyDoiRows.Insert(0, baseRow);
             }
         }
-        catch (Exception ex)
-        {
-            System.Diagnostics.Debug.WriteLine($"Error loading QuyDoi: {ex.Message}");
-        }
+        catch { }
     }
 
     private void AddNewRow()
@@ -420,8 +413,8 @@ public class QuyDoiDonViViewModel : BaseViewModel
         if (QuyDoiRows.Any() && !QuyDoiRows.Any(r => r.LaDonViChuan))
         {
             MessageBox.Show(
-                "Phải có ít nhất 1 đơn vị được chọn làm ĐV Chuẩn (đơn vị lưu tồn kho)!",
-                "Thiếu đơn vị chuẩn",
+                "Phải có ít nhất 1 đơn vị được chọn làm đơn vị lưu tồn kho!",
+                "Thiếu đơn vị lưu tồn kho",
                 MessageBoxButton.OK,
                 MessageBoxImage.Warning);
             return;
@@ -464,7 +457,7 @@ public class QuyDoiDonViViewModel : BaseViewModel
                 (oldDonViChuan == null || oldDonViChuan.DonViID != newDonViChuan.DonViID))
             {
                 // Quy đổi số lượng tồn kho theo đơn vị chuẩn mới
-                // ⚡ BUG FIX: Lấy hệ số cũ từ giao diện (QuyDoiRows) thay vì từ DB (oldDonViChuan)
+                // BUG FIX: Lấy hệ số cũ từ giao diện (QuyDoiRows) thay vì từ DB (oldDonViChuan)
                 var uiOldDonVi = QuyDoiRows.FirstOrDefault(r => r.DonViID == oldDonViChuan?.DonViID);
                 decimal oldHeSo = 1m;
                 if (uiOldDonVi != null)
@@ -497,7 +490,7 @@ public class QuyDoiDonViViewModel : BaseViewModel
                         }
                     }
                 }
-                
+
                 // Lưu ý: KHÔNG thay đổi DonViID trong bảng NguyenLieu
                 // Đơn vị gốc của nguyên liệu luôn giữ nguyên, chỉ đổi đơn vị chuẩn + TonKho.DonViID
             }
@@ -511,8 +504,7 @@ public class QuyDoiDonViViewModel : BaseViewModel
             // Reload lại để cập nhật QuyDoiID mới và tránh trùng lặp
             await LoadQuyDoiForSelectedAsync();
         }
-        catch (Exception ex)
-        {
+        catch (Exception ex) {
             MessageBox.Show(
                 $"Lỗi khi lưu: {ex.Message}",
                 "Lỗi",
@@ -533,7 +525,7 @@ public class QuyDoiDonViViewModel : BaseViewModel
                 MessageBoxImage.Warning);
             return;
         }
-        
+
         var confirmed = await ShowDeleteConfirmation(
             row.TenDonVi,
             "Xóa đơn vị quy đổi",

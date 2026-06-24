@@ -66,7 +66,7 @@ public static class PasswordBoxHelper
 
         // Chỉ thao tác đăng ký sự kiện nếu binding được bật
         bool isBound = GetBindPassword(passwordBox);
-        
+
         if (isBound)
             passwordBox.PasswordChanged -= PasswordBox_PasswordChanged;
 
@@ -123,4 +123,3 @@ public static class PasswordBoxHelper
         d.SetValue(ShowPasswordProperty, value);
     }
 }
-

@@ -18,7 +18,6 @@ public class StockDetailItem : BaseViewModel
     public string HanSuDungText => HanSuDung?.ToString("dd/MM/yyyy") ?? "—";
 }
 
-
 public class TopPizzaItem : BaseViewModel
 {
     public string TenPizza { get; set; } = string.Empty;
@@ -28,9 +27,27 @@ public class TopPizzaItem : BaseViewModel
     public int Rank { get; set; }
 }
 
+// Item đối soát tiêu hao nguyên liệu
+public class DoiSoatItem : BaseViewModel
+{
+    public string TenNguyenLieu { get; set; } = string.Empty;
+    public string DonVi { get; set; } = string.Empty;
+    public decimal LuongXuatCheBien { get; set; }
+    public decimal LuongTieuHaoBanHang { get; set; }
+    public decimal ChenhLech => LuongXuatCheBien - LuongTieuHaoBanHang;
+    public double TyLeChenhLech => LuongXuatCheBien > 0
+        ? (double)((LuongXuatCheBien - LuongTieuHaoBanHang) / LuongXuatCheBien * 100m)
+        : 0;
+    public string TrangThaiChenhLech => ChenhLech == 0 ? "Cân bằng"
+        : ChenhLech > 0 ? "Nhập nhiều hơn" : "Xuất nhiều hơn";
+    public string MauChenhLech => Math.Abs(TyLeChenhLech) < 5 ? "#10B981"
+        : Math.Abs(TyLeChenhLech) < 10 ? "#F59E0B" : "#EF4444";
+}
+
 public class DashboardViewModel : BaseViewModel
 {
     private readonly DatabaseService _databaseService;
+    private readonly ExpiryNotificationService? _expiryNotificationService;
 
     private string _selectedMenuItem = "BaoCaoThongKe";
     private string _tenNguoiDung = string.Empty;
@@ -38,6 +55,7 @@ public class DashboardViewModel : BaseViewModel
     private DateTime? _ngayBatDau;
     private DateTime? _ngayKetThuc;
     private bool _isLoading;
+    private DateTime _ngayDoiSoat = DateTime.Today;
 
     // Thống kê kho hàng
     private int _tongSoNguyenLieu;
@@ -58,10 +76,20 @@ public class DashboardViewModel : BaseViewModel
     private decimal _loiNhuanThang;
     private decimal _chiPhiNguyenLieuThang;
 
+    // Đối soát tiêu hao
+    private decimal _tongXuatCheBien;
+    private decimal _tongTieuHaoBanHang;
+    private decimal _tongChenhLech;
+
     // Popup trạng thái nguyên liệu
     private bool _isStatusPopupOpen;
     private string _statusPopupTitle = string.Empty;
     private string _statusPopupColor = "#5B6AFF";
+
+    // Email cảnh báo HSD
+    private bool _isSendingEmail;
+    private string _emailStatusMessage = string.Empty;
+    private bool _canSendExpiryEmail;
 
     // Dữ liệu biểu đồ
     private double[] _dailyRevenueValues = [];
@@ -85,7 +113,6 @@ public class DashboardViewModel : BaseViewModel
         get => _selectedNguyenLieu;
         set => SetProperty(ref _selectedNguyenLieu, value);
     }
-
 
     public bool IsLoading
     {
@@ -209,6 +236,25 @@ public class DashboardViewModel : BaseViewModel
     public ObservableCollection<NguyenLieu> NguyenLieus { get; } = [];
     public ObservableCollection<TopPizzaItem> TopPizzas { get; } = [];
     public ObservableCollection<DonHang> RecentDonHangs { get; } = [];
+    public ObservableCollection<DoiSoatItem> DoiSoatItems { get; } = [];
+
+    public decimal TongXuatCheBien
+    {
+        get => _tongXuatCheBien;
+        set => SetProperty(ref _tongXuatCheBien, value);
+    }
+
+    public decimal TongTieuHaoBanHang
+    {
+        get => _tongTieuHaoBanHang;
+        set => SetProperty(ref _tongTieuHaoBanHang, value);
+    }
+
+    public decimal TongChenhLech
+    {
+        get => _tongChenhLech;
+        set => SetProperty(ref _tongChenhLech, value);
+    }
     public ObservableCollection<StockDetailItem> StatusDetailItems { get; } = [];
 
     public bool IsStatusPopupOpen
@@ -229,12 +275,45 @@ public class DashboardViewModel : BaseViewModel
         set => SetProperty(ref _statusPopupColor, value);
     }
 
+    // Email cảnh báo HSD properties
+    public bool IsSendingEmail
+    {
+        get => _isSendingEmail;
+        set => SetProperty(ref _isSendingEmail, value);
+    }
+
+    public string EmailStatusMessage
+    {
+        get => _emailStatusMessage;
+        set => SetProperty(ref _emailStatusMessage, value);
+    }
+
+    public bool CanSendExpiryEmail
+    {
+        get => _canSendExpiryEmail;
+        set => SetProperty(ref _canSendExpiryEmail, value);
+    }
+
+    // Ngày đối soát
+    public DateTime NgayDoiSoat
+    {
+        get => _ngayDoiSoat;
+        set
+        {
+            if (SetProperty(ref _ngayDoiSoat, value))
+            {
+                SafeInitializeAsync(LoadDoiSoatDataAsync);
+            }
+        }
+    }
+
     // Lệnh
     public ICommand NavigateCommand { get; }
     public ICommand LogoutCommand { get; }
     public ICommand RefreshCommand { get; }
     public ICommand ShowStatusDetailCommand { get; }
     public ICommand CloseStatusPopupCommand { get; }
+    public ICommand SendExpiryEmailCommand { get; }
 
     // Sự kiện cập nhật biểu đồ
     public event Action? OnDataLoaded;
@@ -242,20 +321,27 @@ public class DashboardViewModel : BaseViewModel
 
     public DashboardViewModel()
     {
-        try
-        {
-            _databaseService = App.Services.GetRequiredService<DatabaseService>();
-        }
-        catch
-        {
-            _databaseService = App.Services.GetRequiredService<DatabaseService>();
-        }
-        
+        _databaseService = App.Services.GetRequiredService<DatabaseService>();
+
         NavigateCommand = new RelayCommand(ExecuteNavigate);
         LogoutCommand = new RelayCommand(_ => OnLogout?.Invoke());
         RefreshCommand = new AsyncRelayCommand(async _ => await LoadDataAsync());
         ShowStatusDetailCommand = new AsyncRelayCommand(async p => await LoadStatusDetailAsync(p));
         CloseStatusPopupCommand = new RelayCommand(_ => IsStatusPopupOpen = false);
+        SendExpiryEmailCommand = new AsyncRelayCommand(async _ => await SendExpiryEmailAsync());
+
+        // Khởi tạo ExpiryNotificationService
+        try
+        {
+            var emailService = App.Services.GetService<IEmailService>();
+            if (emailService != null)
+                _expiryNotificationService = new ExpiryNotificationService(_databaseService, emailService);
+        }
+        catch { /* EmailService chưa được đăng ký */ }
+
+        // Chỉ quản lý mới được gửi email cảnh báo
+        var chucVu = CurrentUserSession.Instance.CurrentUser?.NhanVien?.ChucVu?.TenChucVu?.ToLower() ?? "";
+        CanSendExpiryEmail = chucVu.Contains("quản lý") || chucVu.Contains("quan ly");
 
         // Tải tên người dùng hiện tại
         var currentUser = CurrentUserSession.Instance.CurrentUser;
@@ -265,19 +351,20 @@ public class DashboardViewModel : BaseViewModel
         _ngayBatDau = new DateTime(DateTime.Today.Year, DateTime.Today.Month, 1);
         _ngayKetThuc = DateTime.Today;
 
-        // ⚡ SafeInitializeAsync thay vì fire-and-forget
+        // SafeInitializeAsync thay vì fire-and-forget
         SafeInitializeAsync(LoadDataAsync);
     }
 
     public DashboardViewModel(DatabaseService databaseService)
     {
         _databaseService = databaseService;
-        
+
         NavigateCommand = new RelayCommand(ExecuteNavigate);
         LogoutCommand = new RelayCommand(_ => OnLogout?.Invoke());
         RefreshCommand = new AsyncRelayCommand(async _ => await LoadDataAsync());
         ShowStatusDetailCommand = new AsyncRelayCommand(async p => await LoadStatusDetailAsync(p));
         CloseStatusPopupCommand = new RelayCommand(_ => IsStatusPopupOpen = false);
+        SendExpiryEmailCommand = new AsyncRelayCommand(async _ => await SendExpiryEmailAsync());
 
         // Khởi tạo ngày mặc định
         _ngayBatDau = new DateTime(DateTime.Today.Year, DateTime.Today.Month, 1);
@@ -304,7 +391,7 @@ public class DashboardViewModel : BaseViewModel
             var fromDate = _ngayBatDau ?? new DateTime(today.Year, today.Month, 1);
             var toDate = _ngayKetThuc ?? today;
             var toDateQuery = toDate.Date.AddDays(1).AddTicks(-1);
-            
+
             // Đợt 1: Chạy tất cả truy vấn độc lập song song
             var tongNguyenLieuTask = _databaseService.GetTotalNguyenLieuCountAsync();
             var tonKhoTask = _databaseService.GetTotalTonKhoCountAsync();
@@ -344,10 +431,10 @@ public class DashboardViewModel : BaseViewModel
             SoLuongTonKhoThap = lowStockTask.Result;
             SoLuongSapHetHan = nearExpiryTask.Result;
             SoLuongHetHan = expiredTask.Result;
-            
+
             // Tính số lượng hết hàng
             SoLuongHetHang = Math.Max(0, TongSoNguyenLieu - SoLuongTonKho);
-            
+
             // Doanh thu theo bộ lọc
             var monthRevenue = doanhThuMonthTask.Result;
             var monthOrders = tongDonMonthTask.Result;
@@ -385,17 +472,46 @@ public class DashboardViewModel : BaseViewModel
                 RecentDonHangs.Add(order);
             }
 
+            // === Đối soát tiêu hao NL ===
+            await LoadDoiSoatDataAsync();
+
             // Thông báo cập nhật biểu đồ
             OnDataLoaded?.Invoke();
         }
-        catch (Exception ex)
-        {
-            System.Diagnostics.Debug.WriteLine($"Error loading dashboard data: {ex.Message}");
-        }
+        catch { }
         finally
         {
             IsLoading = false;
         }
+    }
+
+    /// <summary>
+    /// Tải dữ liệu đối soát tiêu hao theo ngày đã chọn (NgayDoiSoat)
+    /// </summary>
+    private async Task LoadDoiSoatDataAsync()
+    {
+        try
+        {
+            var doiSoatData = await _databaseService.GetDoiSoatTieuHaoAsync(_ngayDoiSoat);
+            DoiSoatItems.Clear();
+            decimal sumXuat = 0, sumTieuHao = 0;
+            foreach (var (nlId, tenNL, donVi, xuatCB, tieuHao) in doiSoatData)
+            {
+                DoiSoatItems.Add(new DoiSoatItem
+                {
+                    TenNguyenLieu = tenNL,
+                    DonVi = donVi,
+                    LuongXuatCheBien = xuatCB,
+                    LuongTieuHaoBanHang = tieuHao
+                });
+                sumXuat += xuatCB;
+                sumTieuHao += tieuHao;
+            }
+            TongXuatCheBien = sumXuat;
+            TongTieuHaoBanHang = sumTieuHao;
+            TongChenhLech = sumXuat - sumTieuHao;
+        }
+        catch { }
     }
 
     private async Task LoadStatusDetailAsync(object? parameter)
@@ -437,7 +553,7 @@ public class DashboardViewModel : BaseViewModel
                 foreach (var item in expiredItems)
                     StatusDetailItems.Add(new StockDetailItem { TenNguyenLieu = item.TenNguyenLieu, SoLuongTon = item.SoLuongTon, DonVi = item.DonVi, HanSuDung = item.HanSuDung });
                 break;
-                
+
             case "HetHang":
                 StatusPopupTitle = "Nguyên liệu đã hết hàng";
                 StatusPopupColor = "#64748B";
@@ -448,5 +564,66 @@ public class DashboardViewModel : BaseViewModel
         }
 
         IsStatusPopupOpen = true;
+    }
+
+    /// <summary>
+    /// Gửi email cảnh báo nguyên liệu sắp/đã hết hạn đến email quản lý hiện tại
+    /// </summary>
+    private async Task SendExpiryEmailAsync()
+    {
+        if (_expiryNotificationService == null || IsSendingEmail) return;
+
+        try
+        {
+            IsSendingEmail = true;
+            EmailStatusMessage = "Đang gửi email...";
+
+            // Lấy email quản lý hiện tại
+            var currentEmail = CurrentUserSession.Instance.CurrentUser?.NhanVien?.Email;
+            if (string.IsNullOrWhiteSpace(currentEmail))
+            {
+                EmailStatusMessage = "Tài khoản chưa có email!";
+                return;
+            }
+
+            var result = await _expiryNotificationService.CheckAndNotifyAsync(currentEmail, days: 7, forceResend: true);
+
+            if (result.Success)
+            {
+                EmailStatusMessage = result.ItemCount > 0
+                    ? $"Đã gửi email ({result.ItemCount} nguyên liệu)"
+                    : "Không có NL cần cảnh báo";
+
+                System.Windows.Application.Current?.Dispatcher.Invoke(() =>
+                {
+                    System.Windows.MessageBox.Show(result.ItemCount > 0
+                        ? $"Gửi thành công email báo cáo nguyên liệu sắp hết hạn đến {currentEmail}.\nTổng cộng: {result.ItemCount} nguyên liệu."
+                        : "Không có nguyên liệu nào sắp hết hạn hoặc quá hạn cần báo cáo.",
+                        "Thông báo", System.Windows.MessageBoxButton.OK, System.Windows.MessageBoxImage.Information);
+                });
+            }
+            else
+            {
+                EmailStatusMessage = $"Lỗi: {result.Message}";
+                System.Windows.Application.Current?.Dispatcher.Invoke(() =>
+                {
+                    System.Windows.MessageBox.Show($"Có lỗi xảy ra khi gửi email:\n{result.Message}",
+                        "Lỗi", System.Windows.MessageBoxButton.OK, System.Windows.MessageBoxImage.Error);
+                });
+            }
+        }
+        catch (Exception ex) {
+            EmailStatusMessage = $"Lỗi: {ex.Message}";
+        }
+        finally
+        {
+            IsSendingEmail = false;
+            // Tự động ẩn message sau 5 giây
+            _ = Task.Delay(5000).ContinueWith(_ =>
+            {
+                System.Windows.Application.Current?.Dispatcher.Invoke(() =>
+                    EmailStatusMessage = string.Empty);
+            });
+        }
     }
 }

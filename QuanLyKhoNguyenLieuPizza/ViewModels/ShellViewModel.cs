@@ -1,4 +1,5 @@
 using System.Windows.Input;
+using Microsoft.Extensions.DependencyInjection;
 using QuanLyKhoNguyenLieuPizza.Services;
 
 namespace QuanLyKhoNguyenLieuPizza.ViewModels;
@@ -24,9 +25,10 @@ public class ShellViewModel : BaseViewModel
     private bool _canViewDonHang;
     private bool _canViewPizza;
     private bool _canViewSaoLuu;
+    private bool _canViewKiemKe;
     private bool _isSidebarVisible = true;
 
-    // ⚡ LAZY LOADING: ViewModel chỉ được tạo khi user chuyển đến trang đó
+    // LAZY LOADING: ViewModel chỉ được tạo khi user chuyển đến trang đó
     // Trước đây tạo 11 ViewModel cùng lúc → ~50 DB connections lúc khởi động
     // Bây giờ chỉ tạo 1 ViewModel ban đầu → khởi động nhanh gấp 5-10 lần
     private DashboardViewModel? _dashboardViewModel;
@@ -42,6 +44,7 @@ public class ShellViewModel : BaseViewModel
     private QuyDinhViewModel? _quyDinhViewModel;
     private ProfileViewModel? _profileViewModel;
     private SaoLuuViewModel? _saoLuuViewModel;
+    private KiemKeViewModel? _kiemKeViewModel;
 
     public object? CurrentContent
     {
@@ -148,6 +151,12 @@ public class ShellViewModel : BaseViewModel
         set => SetProperty(ref _canViewSaoLuu, value);
     }
 
+    public bool CanViewKiemKe
+    {
+        get => _canViewKiemKe;
+        set => SetProperty(ref _canViewKiemKe, value);
+    }
+
     public bool IsSidebarVisible
     {
         get => _isSidebarVisible;
@@ -156,7 +165,7 @@ public class ShellViewModel : BaseViewModel
 
     // Computed properties: ẩn tiêu đề nhóm khi không có mục nào trong nhóm
     public bool CanViewTongQuanSection => CanViewBaoCaoThongKe;
-    public bool CanViewQuanLyKhoSection => CanViewTonKho || CanViewPhieuNhap || CanViewPhieuXuat || CanViewNguyenLieu || CanViewPizza;
+    public bool CanViewQuanLyKhoSection => CanViewTonKho || CanViewKiemKe || CanViewPhieuNhap || CanViewPhieuXuat || CanViewNguyenLieu || CanViewPizza;
     public bool CanViewHeThongSection => CanViewNhaCungCap || CanViewNhanVien || CanViewSaoLuu;
     public bool CanViewBanHangSection => CanViewBanHang || CanViewDonHang;
 
@@ -177,7 +186,7 @@ public class ShellViewModel : BaseViewModel
 
     public ShellViewModel()
     {
-        // ⚡ KHÔNG tạo ViewModel ở đây nữa — chỉ tạo khi cần (lazy loading)
+        // KHÔNG tạo ViewModel ở đây nữa — chỉ tạo khi cần (lazy loading)
 
         NavigateCommand = new RelayCommand(ExecuteNavigate);
         LogoutCommand = new RelayCommand(_ => OnLogout?.Invoke());
@@ -189,6 +198,37 @@ public class ShellViewModel : BaseViewModel
 
         // Bắt đầu với màn hình phù hợp theo vai trò — chỉ tạo 1 ViewModel ban đầu
         NavigateToDefaultView();
+
+        // Tự động kiểm tra nguyên liệu sắp hết hạn và gửi email (chỉ cho quản lý)
+        _ = AutoCheckExpiryNotificationAsync();
+    }
+
+    /// <summary>
+    /// Tự động kiểm tra và gửi email cảnh báo HSD khi quản lý đăng nhập (chạy ngầm, không block UI)
+    /// </summary>
+    private async Task AutoCheckExpiryNotificationAsync()
+    {
+        try
+        {
+            var nhanVien = CurrentUserSession.Instance.CurrentUser?.NhanVien;
+            var chucVuTen = nhanVien?.ChucVu?.TenChucVu?.Trim().ToLower() ?? "";
+            bool isQuanLy = chucVuTen.Contains("quản lý") || chucVuTen.Contains("quan ly");
+
+            if (!isQuanLy || string.IsNullOrWhiteSpace(nhanVien?.Email))
+                return;
+
+            var dbService = App.Services.GetRequiredService<DatabaseService>();
+            var emailService = App.Services.GetService<Core.Interfaces.IEmailService>();
+            if (emailService == null) return;
+
+            var notificationService = new ExpiryNotificationService(dbService, emailService);
+
+            // Chỉ gửi nếu chưa gửi hôm nay
+            if (notificationService.HasSentToday()) return;
+
+            await notificationService.CheckAndNotifyAsync(nhanVien.Email);
+        }
+        catch { }
     }
 
     /// <summary>
@@ -220,17 +260,17 @@ public class ShellViewModel : BaseViewModel
         var nhanVien = CurrentUserSession.Instance.CurrentUser?.NhanVien;
         var chucVuTen = nhanVien?.ChucVu?.TenChucVu?.Trim() ?? "";
         var chucVuLower = chucVuTen.ToLower();
-        
+
         // Kiểm tra theo tên chức vụ (không dùng ChucVuID vì ID tự động tăng, không cố định)
         bool isQuanLy = chucVuLower.Contains("quản lý") || chucVuLower.Contains("quan ly");
 
-        bool isNhanVienBep = !isQuanLy && 
+        bool isNhanVienBep = !isQuanLy &&
                              (chucVuLower.Contains("bếp") || chucVuLower.Contains("bep"));
 
-        bool isNhanVienKho = !isQuanLy && !isNhanVienBep && 
+        bool isNhanVienKho = !isQuanLy && !isNhanVienBep &&
                              chucVuLower.Contains("kho");
 
-        bool isNhanVienBanHang = !isQuanLy && !isNhanVienBep && !isNhanVienKho && 
+        bool isNhanVienBanHang = !isQuanLy && !isNhanVienBep && !isNhanVienKho &&
                                  (chucVuLower.Contains("bán hàng") || chucVuLower.Contains("ban hang"));
 
         // Thiết lập quyền dựa trên vai trò - Quản lý có ưu tiên cao nhất
@@ -248,6 +288,7 @@ public class ShellViewModel : BaseViewModel
             CanViewDonHang = true;
             CanViewPizza = true;
             CanViewSaoLuu = true;
+            CanViewKiemKe = true;
             IsSidebarVisible = true;
         }
         else if (isNhanVienKho)
@@ -264,6 +305,7 @@ public class ShellViewModel : BaseViewModel
             CanViewBanHang = false;
             CanViewDonHang = false;
             CanViewPizza = false;
+            CanViewKiemKe = true;
             IsSidebarVisible = true;
         }
         else if (isNhanVienBep)
@@ -378,7 +420,7 @@ public class ShellViewModel : BaseViewModel
 
     private void NavigateToContent(string menuItem)
     {
-        // ⚡ LAZY: ViewModel chỉ được tạo lần đầu khi user navigate đến
+        // LAZY: ViewModel chỉ được tạo lần đầu khi user navigate đến
         // Lần tiếp theo sẽ dùng lại instance đã tạo (??= operator)
         CurrentContent = menuItem switch
         {
@@ -394,6 +436,7 @@ public class ShellViewModel : BaseViewModel
             "Pizza" => _pizzaViewModel ??= new PizzaViewModel(),
             "QuyDinh" => _quyDinhViewModel ??= new QuyDinhViewModel(),
             "SaoLuu" => _saoLuuViewModel ??= new SaoLuuViewModel(),
+            "KiemKe" => _kiemKeViewModel ??= new KiemKeViewModel(),
             _ => _dashboardViewModel ??= new DashboardViewModel()
         };
     }
@@ -404,9 +447,21 @@ public class ShellViewModel : BaseViewModel
         {
             _tonKhoViewModel = new TonKhoViewModel();
             _tonKhoViewModel.OnNavigateToPhieuNhap += () => SelectedMenuItem = "PhieuNhap";
+            _tonKhoViewModel.OnNavigateToPhieuNhapDetail += NavigateToPhieuNhapDetail;
             _tonKhoViewModel.OnNavigateToPhieuXuat += () => SelectedMenuItem = "PhieuXuat";
         }
         return _tonKhoViewModel;
+    }
+
+    private void NavigateToPhieuNhapDetail(int phieuNhapId)
+    {
+        var phieuNhapViewModel = _phieuNhapViewModel ??= new PhieuNhapViewModel();
+
+        _selectedMenuItem = "PhieuNhap";
+        OnPropertyChanged(nameof(SelectedMenuItem));
+        CurrentContent = phieuNhapViewModel;
+
+        phieuNhapViewModel.ViewDetailCommand.Execute(phieuNhapId);
     }
 
     private DonHangViewModel CreateDonHangViewModel()
@@ -419,4 +474,3 @@ public class ShellViewModel : BaseViewModel
         return _donHangViewModel;
     }
 }
-

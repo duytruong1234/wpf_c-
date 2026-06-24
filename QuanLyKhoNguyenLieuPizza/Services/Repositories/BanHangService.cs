@@ -1,4 +1,4 @@
-using System.Text;
+﻿using System.Text;
 using System.Globalization;
 using Microsoft.Data.SqlClient;
 using System.Data;
@@ -20,7 +20,7 @@ public class BanHangService : DatabaseContext
         {
             using var conn = GetConnection();
             await conn.OpenAsync();
-            var sql = @"SELECT dh.DonHangID, dh.MaDonHang, dh.NhanVienID, dh.NgayTao, dh.TongTien, 
+            var sql = @"SELECT dh.DonHangID, dh.MaDonHang, dh.NhanVienID, dh.NgayTao, dh.TongTien,
                               dh.GiamGia, dh.ThanhToan, dh.PhuongThucTT, dh.TrangThai, dh.GhiChu,
                               nv.HoTen
                        FROM DonHang dh
@@ -67,10 +67,7 @@ public class BanHangService : DatabaseContext
                     existingMaDonHangs.Add(dh.MaDonHang);
             }
         }
-        catch (Exception ex)
-        {
-            System.Diagnostics.Debug.WriteLine($"Error getting DonHangs from DonHang table: {ex.Message}");
-        }
+        catch { }
 
         // 2) Always load from PhieuBanHang (the active data source)
         try
@@ -125,10 +122,7 @@ public class BanHangService : DatabaseContext
                 result.Add(dh);
             }
         }
-        catch (Exception ex)
-        {
-            System.Diagnostics.Debug.WriteLine($"Error getting DonHangs from PhieuBanHang: {ex.Message}");
-        }
+        catch { }
 
         // Sắp xếp kết quả kết hợp theo ngày giảm dần
         result.Sort((a, b) => b.NgayTao.CompareTo(a.NgayTao));
@@ -142,9 +136,7 @@ public class BanHangService : DatabaseContext
             var donHangs = await GetDonHangsAsync();
             return donHangs.FirstOrDefault(d => d.DonHangID == donHangId);
         }
-        catch (Exception ex)
-        {
-            System.Diagnostics.Debug.WriteLine($"Error getting DonHang by ID: {ex.Message}");
+        catch {
             return null;
         }
     }
@@ -188,10 +180,7 @@ public class BanHangService : DatabaseContext
                 result.Add(ct);
             }
         }
-        catch (Exception ex)
-        {
-            System.Diagnostics.Debug.WriteLine($"Error getting DonHang ChiTiets: {ex.Message}");
-        }
+        catch { }
         return result;
     }
 
@@ -261,7 +250,12 @@ public class BanHangService : DatabaseContext
                         var rows = await deductCmd.ExecuteNonQueryAsync();
                         if (rows == 0)
                         {
-                            throw new Exception($"Nguyên liệu không đủ tồn kho (ID {recipe.NguyenLieuID})");
+                            // Lấy tên nguyên liệu để hiển thị thông báo rõ ràng
+                            var nlNameSql = "SELECT TenNguyenLieu FROM NguyenLieu WHERE NguyenLieuID = @NguyenLieuID";
+                            using var nlNameCmd = new SqlCommand(nlNameSql, conn, transaction);
+                            nlNameCmd.Parameters.AddWithValue("@NguyenLieuID", recipe.NguyenLieuID);
+                            var tenNL = await nlNameCmd.ExecuteScalarAsync() as string ?? $"ID {recipe.NguyenLieuID}";
+                            throw new Exception($"Nguyên liệu '{tenNL}' không đủ tồn kho để chế biến.");
                         }
                     }
                 }
@@ -275,9 +269,7 @@ public class BanHangService : DatabaseContext
                 throw;
             }
         }
-        catch (Exception ex)
-        {
-            System.Diagnostics.Debug.WriteLine($"Error saving DonHang: {ex.Message}");
+        catch {
             return 0;
         }
     }
@@ -315,9 +307,7 @@ public class BanHangService : DatabaseContext
             await cmd.ExecuteNonQueryAsync();
             return true;
         }
-        catch (Exception ex)
-        {
-            System.Diagnostics.Debug.WriteLine($"Error updating DonHang status: {ex.Message}");
+        catch {
             return false;
         }
     }
@@ -363,9 +353,7 @@ public class BanHangService : DatabaseContext
                 throw;
             }
         }
-        catch (Exception ex)
-        {
-            System.Diagnostics.Debug.WriteLine($"Error deleting DonHang: {ex.Message}");
+        catch {
             return false;
         }
     }
@@ -418,10 +406,7 @@ public class BanHangService : DatabaseContext
                 result.Add(pb);
             }
         }
-        catch (Exception ex)
-        {
-            System.Diagnostics.Debug.WriteLine($"Error getting PhieuBanHangs: {ex.Message}");
-        }
+        catch { }
         return result;
     }
 
@@ -463,10 +448,7 @@ public class BanHangService : DatabaseContext
                 return pb;
             }
         }
-        catch (Exception ex)
-        {
-            System.Diagnostics.Debug.WriteLine($"Error getting PhieuBanHang by ID: {ex.Message}");
-        }
+        catch { }
         return null;
     }
 
@@ -508,10 +490,7 @@ public class BanHangService : DatabaseContext
                 result.Add(ct);
             }
         }
-        catch (Exception ex)
-        {
-            System.Diagnostics.Debug.WriteLine($"Error getting CT_PhieuBan: {ex.Message}");
-        }
+        catch { }
         return result;
     }
 
@@ -521,8 +500,8 @@ public class BanHangService : DatabaseContext
         {
             using var conn = GetConnection();
             await conn.OpenAsync();
-            var sql = @"SELECT TOP 1 MaPhieuBan FROM PhieuBanHang 
-                       WHERE MaPhieuBan LIKE 'PB%' 
+            var sql = @"SELECT TOP 1 MaPhieuBan FROM PhieuBanHang
+                       WHERE MaPhieuBan LIKE 'PB%'
                        ORDER BY MaPhieuBan DESC";
             using var cmd = new SqlCommand(sql, conn);
             var result = await cmd.ExecuteScalarAsync();
@@ -536,9 +515,7 @@ public class BanHangService : DatabaseContext
             }
             return "PB000001";
         }
-        catch (Exception ex)
-        {
-            System.Diagnostics.Debug.WriteLine($"Error generating MaPhieuBan: {ex.Message}");
+        catch {
             return $"PB{DateTime.Now:yyyyMMddHHmmss}";
         }
     }
@@ -548,25 +525,22 @@ public class BanHangService : DatabaseContext
         {
             using var conn = GetConnection();
             await conn.OpenAsync();
-            var sql = @"UPDATE PhieuBanHang 
-                        SET PhuongThucTT = @PhuongThucTT, 
-                            GhiChu = @GhiChu 
+            var sql = @"UPDATE PhieuBanHang
+                        SET PhuongThucTT = @PhuongThucTT,
+                            GhiChu = @GhiChu
                         WHERE MaPhieuBan = @MaPhieuBan";
             using var cmd = new SqlCommand(sql, conn);
             cmd.Parameters.AddWithValue("@PhuongThucTT", pb.PhuongThucTT ?? (object)DBNull.Value);
             cmd.Parameters.AddWithValue("@GhiChu", pb.GhiChu ?? (object)DBNull.Value);
             cmd.Parameters.AddWithValue("@MaPhieuBan", pb.MaPhieuBan);
-            
+
             var rowsAffected = await cmd.ExecuteNonQueryAsync();
             return rowsAffected > 0;
         }
-        catch (Exception ex)
-        {
-            System.Diagnostics.Debug.WriteLine($"Error updating PhieuBanHang: {ex.Message}");
+        catch {
             return false;
         }
     }
-
 
     public async Task<bool> DeletePhieuBanHangAsync(string maPhieuBan)
     {
@@ -594,9 +568,7 @@ public class BanHangService : DatabaseContext
                 throw;
             }
         }
-        catch (Exception ex)
-        {
-            System.Diagnostics.Debug.WriteLine($"Error deleting PhieuBanHang: {ex.Message}");
+        catch {
             return false;
         }
     }
@@ -702,7 +674,7 @@ public class BanHangService : DatabaseContext
                     // QuyDinh_Vien (viền)
                     if (!string.IsNullOrEmpty(ct.MaDeBanh))
                     {
-                        var vienSqlR = @"SELECT NguyenLieuID, SoLuongVien, DonViID FROM QuyDinh_Vien 
+                        var vienSqlR = @"SELECT NguyenLieuID, SoLuongVien, DonViID FROM QuyDinh_Vien
                                          WHERE MaDeBanh = @MaDeBanh AND SizeID = @SizeID";
                         var vienItems = new List<(int NguyenLieuId, decimal SoLuong, int? DonViId)>();
                         using var vienCmdR = CreateCommand(vienSqlR, conn, transaction);
@@ -745,7 +717,7 @@ public class BanHangService : DatabaseContext
                 // 3) Hoàn trả nguyên liệu vào tồn kho
                 foreach (var kvp in restoreMap)
                 {
-                    var restoreSql = @"UPDATE TonKho 
+                    var restoreSql = @"UPDATE TonKho
                                        SET SoLuongTon = SoLuongTon + @SoLuong, NgayCapNhat = GETDATE()
                                        WHERE NguyenLieuID = @NguyenLieuID";
                     using var restoreCmd = new SqlCommand(restoreSql, conn, transaction);
@@ -772,9 +744,7 @@ public class BanHangService : DatabaseContext
                 throw;
             }
         }
-        catch (Exception ex)
-        {
-            System.Diagnostics.Debug.WriteLine($"Error deleting PhieuBanHang with restore: {ex.Message}");
+        catch {
             return false;
         }
     }
@@ -876,7 +846,7 @@ public class BanHangService : DatabaseContext
                 // BÆ°á»›c 3: QuyDinh_Vien (viá»n) - lookup báº±ng MaDeBanh + SizeID
                 if (!string.IsNullOrEmpty(ct.MaDeBanh))
                 {
-                    var vienSql = @"SELECT NguyenLieuID, SoLuongVien, DonViID FROM QuyDinh_Vien 
+                    var vienSql = @"SELECT NguyenLieuID, SoLuongVien, DonViID FROM QuyDinh_Vien
                                     WHERE MaDeBanh = @MaDeBanh AND SizeID = @SizeID";
                     var vienItems = new List<(int NguyenLieuId, decimal SoLuong, int? DonViId)>();
                     using var vienCmd = CreateCommand(vienSql, conn, transaction);
@@ -988,7 +958,7 @@ public class BanHangService : DatabaseContext
             // 5) Trá»« tá»“n kho theo tá»•ng nguyÃªn liá»‡u
             foreach (var kvp in requiredMap)
             {
-                var deductSql = @"UPDATE TonKho 
+                var deductSql = @"UPDATE TonKho
                                  SET SoLuongTon = SoLuongTon - @SoLuong, NgayCapNhat = GETDATE()
                                  WHERE NguyenLieuID = @NguyenLieuID AND SoLuongTon >= @SoLuong";
                 using var deductCmd = new SqlCommand(deductSql, conn, transaction);
@@ -997,17 +967,20 @@ public class BanHangService : DatabaseContext
                 var rows = await deductCmd.ExecuteNonQueryAsync();
                 if (rows == 0)
                 {
-                    throw new Exception($"Nguyên liệu không đủ tồn kho (ID {kvp.Key})");
+                    // Lấy tên nguyên liệu để hiển thị thông báo rõ ràng
+                    var nlNameSql = "SELECT TenNguyenLieu FROM NguyenLieu WHERE NguyenLieuID = @NguyenLieuID";
+                    using var nlNameCmd = new SqlCommand(nlNameSql, conn, transaction);
+                    nlNameCmd.Parameters.AddWithValue("@NguyenLieuID", kvp.Key);
+                    var tenNL = await nlNameCmd.ExecuteScalarAsync() as string ?? $"ID {kvp.Key}";
+                    throw new Exception($"Nguyên liệu '{tenNL}' không đủ tồn kho để chế biến.");
                 }
             }
 
             transaction.Commit();
             return phieuBan.MaPhieuBan;
         }
-        catch (Exception ex)
-        {
+        catch {
             transaction.Rollback();
-            System.Diagnostics.Debug.WriteLine($"Error saving PhieuBanHang: {ex.Message}");
             throw;
         }
     }

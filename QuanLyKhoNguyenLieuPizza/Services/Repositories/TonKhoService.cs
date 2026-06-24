@@ -1,4 +1,4 @@
-using System.Text;
+﻿using System.Text;
 using System.Globalization;
 using Microsoft.Data.SqlClient;
 using System.Data;
@@ -13,18 +13,18 @@ public class TonKhoService : DatabaseContext
     public async Task<List<TonKho>> GetTonKhosAsync()
     {
         var result = new List<TonKho>();
-        
+
         try
         {
             using var conn = GetConnection();
             await conn.OpenAsync();
-            
+
             // Ưu tiên DonViID từ TonKho, fallback về NguyenLieu.DonViID
             // Lấy thêm HeSoChuan để quy đổi ngược cho tính MucDoTonKho
-            var sql = @"SELECT ISNULL(tk.TonKhoID, 0), nl.NguyenLieuID, 
+            var sql = @"SELECT ISNULL(tk.TonKhoID, 0), nl.NguyenLieuID,
                               ISNULL(tk.SoLuongTon, 0), ISNULL(tk.NgayCapNhat, GETDATE()),
-                              nl.TenNguyenLieu, nl.HinhAnh, 
-                              COALESCE(dvTk.TenDonVi, dv.TenDonVi) AS TenDonVi, 
+                              nl.TenNguyenLieu, nl.HinhAnh,
+                              COALESCE(dvTk.TenDonVi, dv.TenDonVi) AS TenDonVi,
                               nl.MaNguyenLieu,
                               tk.DonViID AS TonKhoDonViID,
                               ISNULL(qdc.HeSo, 1) AS HeSoChuan
@@ -33,16 +33,16 @@ public class TonKhoService : DatabaseContext
                        LEFT JOIN DonViTinh dv ON nl.DonViID = dv.DonViID
                        LEFT JOIN DonViTinh dvTk ON tk.DonViID = dvTk.DonViID
                        OUTER APPLY (
-                           SELECT TOP 1 qd.HeSo 
-                           FROM QuyDoiDonVi qd 
+                           SELECT TOP 1 qd.HeSo
+                           FROM QuyDoiDonVi qd
                            WHERE qd.NguyenLieuID = nl.NguyenLieuID AND qd.LaDonViChuan = 1
                        ) qdc
                        WHERE nl.TrangThai = 1
                        ORDER BY nl.NguyenLieuID ASC";
-            
+
             using var cmd = new SqlCommand(sql, conn);
             using var reader = await cmd.ExecuteReaderAsync();
-            
+
             while (await reader.ReadAsync())
             {
                 var tk = new TonKho
@@ -61,15 +61,12 @@ public class TonKhoService : DatabaseContext
                         MaNguyenLieu = reader.IsDBNull(7) ? null : reader.GetString(7)
                     }
                 };
-                
+
                 result.Add(tk);
             }
         }
-        catch (Exception ex)
-        {
-            System.Diagnostics.Debug.WriteLine($"Error loading TonKho: {ex.Message}");
-        }
-        
+        catch { }
+
         return result;
     }
 }

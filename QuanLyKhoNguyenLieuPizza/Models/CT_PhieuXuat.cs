@@ -16,7 +16,19 @@ public class CT_PhieuXuat : INotifyPropertyChanged
 {
     public int ChiTietID { get; set; }
     public int? PhieuXuatID { get; set; }
-    public int? NguyenLieuID { get; set; }
+    private int? _nguyenLieuID;
+    public int? NguyenLieuID
+    {
+        get => _nguyenLieuID;
+        set
+        {
+            if (_nguyenLieuID != value)
+            {
+                _nguyenLieuID = value;
+                OnPropertyChanged();
+            }
+        }
+    }
 
     private decimal _soLuong;
     public decimal SoLuong
@@ -141,9 +153,50 @@ public class CT_PhieuXuat : INotifyPropertyChanged
         }
     }
 
+    // Đơn vị chuẩn (hiển thị trong chi tiết phiếu)
+    private string _tenDonViChuan = string.Empty;
+    public string TenDonViChuan
+    {
+        get => _tenDonViChuan;
+        set
+        {
+            if (_tenDonViChuan != value)
+            {
+                _tenDonViChuan = value;
+                OnPropertyChanged();
+            }
+        }
+    }
+
+    private decimal _heSoDonViChuan = 1m;
+    public decimal HeSoDonViChuan
+    {
+        get => _heSoDonViChuan;
+        set
+        {
+            if (_heSoDonViChuan != value)
+            {
+                _heSoDonViChuan = value;
+                OnPropertyChanged();
+            }
+        }
+    }
+
     // Thuộc tính điều hướng
     public virtual PhieuXuat? PhieuXuat { get; set; }
-    public virtual NguyenLieu? NguyenLieu { get; set; }
+    private NguyenLieu? _nguyenLieu;
+    public virtual NguyenLieu? NguyenLieu
+    {
+        get => _nguyenLieu;
+        set
+        {
+            if (_nguyenLieu != value)
+            {
+                _nguyenLieu = value;
+                OnPropertyChanged();
+            }
+        }
+    }
     public virtual DonViTinh? DonViTinh { get; set; }
 
     public event PropertyChangedEventHandler? PropertyChanged;

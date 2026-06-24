@@ -12,7 +12,7 @@ namespace QuanLyKhoNguyenLieuPizza.ViewModels;
 public class ChucVuFilter : BaseViewModel
 {
     public ChucVu ChucVu { get; set; } = new();
-    
+
     private bool _isSelected;
     public bool IsSelected
     {
@@ -237,7 +237,6 @@ public class NhanVienViewModel : BaseViewModel
         set => SetProperty(ref _formTrangThai, value);
     }
 
-    
     // Error properties
     private string _errorHoTen = string.Empty;
     public string ErrorHoTen { get => _errorHoTen; set => SetProperty(ref _errorHoTen, value); }
@@ -422,7 +421,7 @@ public class NhanVienViewModel : BaseViewModel
     public ICommand ToggleStatusCommand { get; }
     public ICommand SaveNhanVienCommand { get; }
     public ICommand CancelDialogCommand { get; }
-    
+
     // Lệnh chức vụ
     public ICommand OpenChucVuViewCommand { get; }
     public ICommand BackToMainViewCommand { get; }
@@ -431,16 +430,16 @@ public class NhanVienViewModel : BaseViewModel
     public ICommand DeleteChucVuCommand { get; }
     public ICommand SaveChucVuCommand { get; }
     public ICommand CancelChucVuDialogCommand { get; }
-    
+
     // Lệnh tài khoản
     public ICommand OpenAccountDialogCommand { get; }
     public ICommand SaveAccountCommand { get; }
     public ICommand CancelAccountDialogCommand { get; }
-    
+
     // Lệnh lọc
     public ICommand ApplyChucVuFilterCommand { get; }
     public ICommand ClearFilterCommand { get; }
-    
+
     // Lệnh hình ảnh
     public ICommand SelectImageCommand { get; }
 
@@ -460,7 +459,7 @@ public class NhanVienViewModel : BaseViewModel
         ToggleStatusCommand = new AsyncRelayCommand(async p => await ToggleStatusAsync(p));
         SaveNhanVienCommand = new AsyncRelayCommand(async _ => await SaveNhanVienAsync());
         CancelDialogCommand = new RelayCommand(_ => CloseDialog());
-        
+
         OpenChucVuViewCommand = new RelayCommand(_ => OpenChucVuView());
         BackToMainViewCommand = new RelayCommand(_ => BackToMainView());
         CreateChucVuCommand = new RelayCommand(_ => OpenCreateChucVuDialog());
@@ -468,14 +467,14 @@ public class NhanVienViewModel : BaseViewModel
         DeleteChucVuCommand = new AsyncRelayCommand(async p => await DeleteChucVuAsync(p));
         SaveChucVuCommand = new AsyncRelayCommand(async _ => await SaveChucVuAsync());
         CancelChucVuDialogCommand = new RelayCommand(_ => CloseChucVuDialog());
-        
+
         OpenAccountDialogCommand = new AsyncRelayCommand(async p => await OpenAccountDialogAsync(p));
         SaveAccountCommand = new AsyncRelayCommand(async _ => await SaveAccountAsync());
         CancelAccountDialogCommand = new RelayCommand(_ => CloseAccountDialog());
-        
+
         ApplyChucVuFilterCommand = new AsyncRelayCommand(async _ => await LoadNhanViensAsync());
         ClearFilterCommand = new RelayCommand(_ => ClearFilter());
-        
+
         SelectImageCommand = new RelayCommand(_ => SelectImage());
 
         CloseStatusDialogCommand = new RelayCommand(_ => IsStatusDialogOpen = false);
@@ -501,31 +500,28 @@ public class NhanVienViewModel : BaseViewModel
                 // Lấy đường dẫn file nguồn
                 string sourceFilePath = openFileDialog.FileName;
                 string fileName = Path.GetFileName(sourceFilePath);
-                
+
                 // Tạo tên file duy nhất để tránh xung đột
                 string uniqueFileName = $"{Guid.NewGuid()}_{fileName}";
-                
+
                 // Lấy đường dẫn thư mục Images trong Resources
                 string appDirectory = AppDomain.CurrentDomain.BaseDirectory;
                 string imagesFolder = Path.Combine(appDirectory, "Resources", "Images", "NhanVien");
-                
+
                 // Tạo thư mục nếu chưa tồn tại
                 if (!Directory.Exists(imagesFolder))
                 {
                     Directory.CreateDirectory(imagesFolder);
                 }
-                
+
                 // Sao chép file vào thư mục Images
                 string destFilePath = Path.Combine(imagesFolder, uniqueFileName);
                 File.Copy(sourceFilePath, destFilePath, true);
-                
+
                 // Lưu đường dẫn tương đối
                 FormHinhAnh = Path.Combine("Resources", "Images", "NhanVien", uniqueFileName);
             }
-            catch (Exception ex)
-            {
-                System.Diagnostics.Debug.WriteLine($"Error copying image: {ex.Message}");
-            }
+            catch { }
         }
     }
 
@@ -537,10 +533,7 @@ public class NhanVienViewModel : BaseViewModel
             await LoadChucVusAsync();
             await LoadNhanViensAsync();
         }
-        catch (Exception ex)
-        {
-            System.Diagnostics.Debug.WriteLine($"Error loading data: {ex.Message}");
-        }
+        catch { }
         finally
         {
             IsLoading = false;
@@ -551,7 +544,7 @@ public class NhanVienViewModel : BaseViewModel
     {
         var chucVus = await _databaseService.GetAllChucVusAsync();
         ChucVus = new ObservableCollection<ChucVu>(chucVus);
-        
+
         // Cập nhật bộ lọc
         ChucVuFilters = new ObservableCollection<ChucVuFilter>(
             chucVus.Select(cv => new ChucVuFilter { ChucVu = cv, IsSelected = false })
@@ -563,7 +556,7 @@ public class NhanVienViewModel : BaseViewModel
         try
         {
             bool? trangThaiFilter = null;
-            
+
             if (FilterDangLamViec && !FilterDaNghiViec)
             {
                 trangThaiFilter = true;
@@ -588,10 +581,7 @@ public class NhanVienViewModel : BaseViewModel
             CountDangLamViec = nhanViens.Count(n => n.TrangThai);
             CountDaNghiViec = nhanViens.Count(n => !n.TrangThai);
         }
-        catch (Exception ex)
-        {
-            System.Diagnostics.Debug.WriteLine($"Error loading NhanViens: {ex.Message}");
-        }
+        catch { }
     }
 
     private void ClearFilter()
@@ -611,7 +601,7 @@ public class NhanVienViewModel : BaseViewModel
     private async Task SetupAddressAsync(string provinceName, string districtName, string wardName)
     {
         _isProgrammaticAddressUpdate = true;
-        
+
         try
         {
             if (Provinces.Count == 0)
@@ -623,7 +613,7 @@ public class NhanVienViewModel : BaseViewModel
 
             var prov = Provinces.FirstOrDefault(x => x.name == provinceName);
             SelectedProvince = prov;
-            
+
             if (prov != null)
             {
                 var wards = await LocationService.Instance.GetWardsAsync(prov.code);
@@ -631,17 +621,14 @@ public class NhanVienViewModel : BaseViewModel
                 foreach (var w in wards) Wards.Add(w);
                 SelectedWard = Wards.FirstOrDefault(x => x.name == wardName);
             }
-            else 
+            else
             {
                 SelectedWard = null;
                 Wards.Clear();
             }
         }
-        catch (Exception ex)
-        {
-            System.Diagnostics.Debug.WriteLine($"Error setting up address: {ex.Message}");
-        }
-        
+        catch { }
+
         _isProgrammaticAddressUpdate = false;
     }
 
@@ -718,7 +705,6 @@ public class NhanVienViewModel : BaseViewModel
         }
     }
 
-    
     private bool ValidateForm()
     {
         bool isValid = true;
@@ -859,14 +845,11 @@ public class NhanVienViewModel : BaseViewModel
             }
 
             await _databaseService.SaveNhanVienAsync(nhanVien);
-            
+
             CloseDialog();
             await LoadNhanViensAsync();
         }
-        catch (Exception ex)
-        {
-            System.Diagnostics.Debug.WriteLine($"Error saving NhanVien: {ex.Message}");
-        }
+        catch { }
     }
 
     private async Task ToggleStatusAsync(object? parameter)
@@ -889,10 +872,7 @@ public class NhanVienViewModel : BaseViewModel
             IsStatusDialogOpen = false;
             await LoadNhanViensAsync();
         }
-        catch (Exception ex)
-        {
-            System.Diagnostics.Debug.WriteLine($"Error toggling status: {ex.Message}");
-        }
+        catch { }
     }
 
     private async Task DeleteNhanVienAsync(object? parameter)
@@ -910,10 +890,7 @@ public class NhanVienViewModel : BaseViewModel
                 await _databaseService.DeleteNhanVienAsync(nv.NhanVienID);
                 await LoadNhanViensAsync();
             }
-            catch (Exception ex)
-            {
-                System.Diagnostics.Debug.WriteLine($"Error deleting NhanVien: {ex.Message}");
-            }
+            catch { }
         }
     }
 
@@ -977,14 +954,11 @@ public class NhanVienViewModel : BaseViewModel
             }
 
             await _databaseService.SaveChucVuAsync(chucVu);
-            
+
             CloseChucVuDialog();
             await LoadChucVusAsync();
         }
-        catch (Exception ex)
-        {
-            System.Diagnostics.Debug.WriteLine($"Error saving ChucVu: {ex.Message}");
-        }
+        catch { }
     }
 
     private async Task DeleteChucVuAsync(object? parameter)
@@ -1005,10 +979,7 @@ public class NhanVienViewModel : BaseViewModel
                     await LoadChucVusAsync();
                 }
             }
-            catch (Exception ex)
-            {
-                System.Diagnostics.Debug.WriteLine($"Error deleting ChucVu: {ex.Message}");
-            }
+            catch { }
         }
     }
 
@@ -1053,20 +1024,17 @@ public class NhanVienViewModel : BaseViewModel
         try
         {
             var result = await _databaseService.CreateTaiKhoanForNhanVienAsync(
-                SelectedNhanVien.NhanVienID, 
-                FormUsername.Trim(), 
+                SelectedNhanVien.NhanVienID,
+                FormUsername.Trim(),
                 FormPassword);
-                
+
             if (result)
             {
                 CloseAccountDialog();
                 await LoadNhanViensAsync();
             }
         }
-        catch (Exception ex)
-        {
-            System.Diagnostics.Debug.WriteLine($"Error creating account: {ex.Message}");
-        }
+        catch { }
     }
 
     private void CloseAccountDialog()
@@ -1079,11 +1047,3 @@ public class NhanVienViewModel : BaseViewModel
     #endregion
     #endregion
 }
-
-
-
-
-
-
-
-

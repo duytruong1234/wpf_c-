@@ -8,4 +8,3 @@ public class ChucVu
     // Thuộc tính điều hướng
     public virtual ICollection<NhanVien> NhanViens { get; set; } = new List<NhanVien>();
 }
-

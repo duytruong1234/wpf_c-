@@ -1,4 +1,4 @@
-using System.Collections.ObjectModel;
+﻿using System.Collections.ObjectModel;
 using System.Windows.Input;
 using QuanLyKhoNguyenLieuPizza.Models;
 using QuanLyKhoNguyenLieuPizza.Services;
@@ -17,10 +17,11 @@ public class NguyenLieuItemViewModel : BaseViewModel
     public string? NhaCungCap { get; set; }
     public decimal GiaNhap { get; set; }
     public bool TrangThai { get; set; }
-    
+    public int HanCanhBao { get; set; } = 7;
+
     public string TrangThaiText => TrangThai ? "Đang sử dụng" : "Ngừng sử dụng";
     public bool IsTrangThaiActive => TrangThai;
-    
+
     public ICommand? EditCommand { get; set; }
     public ICommand? DeleteCommand { get; set; }
 }
@@ -28,13 +29,13 @@ public class NguyenLieuItemViewModel : BaseViewModel
 public class NguyenLieuViewModel : BaseViewModel
 {
     private readonly DatabaseService _databaseService;
-    
+
     private ObservableCollection<NguyenLieuItemViewModel> _nguyenLieus = new();
     private ObservableCollection<NguyenLieuItemViewModel> _filteredNguyenLieus = new();
     private ObservableCollection<LoaiNguyenLieu> _loaiNguyenLieus = new();
     private ObservableCollection<NhaCungCap> _nhaCungCaps = new();
     private ObservableCollection<DonViTinh> _donViTinhs = new();
-    
+
     private string _searchText = string.Empty;
     private bool _filterDangSuDung = false;
     private bool _filterNgungSuDung = false;
@@ -44,12 +45,12 @@ public class NguyenLieuViewModel : BaseViewModel
     private int _countDangSuDung;
     private int _countNgungSuDung;
     private bool _isLoading;
-    
+
     // Popup thêm/sửa
     private bool _isAddEditPopupOpen;
     private bool _isEditing;
     private NguyenLieuItemViewModel? _selectedNguyenLieu;
-    
+
     // Trường form thêm/sửa
     private string _formMaNguyenLieu = string.Empty;
     private string _formTenNguyenLieu = string.Empty;
@@ -59,7 +60,8 @@ public class NguyenLieuViewModel : BaseViewModel
     private NhaCungCap? _formNhaCungCap;
     private string _formGiaNhap = string.Empty;
     private bool _formTrangThai = true;
-    
+    private string _formHanCanhBao = "7";
+
     // Quản lý loại nguyên liệu
     private bool _isLoaiNguyenLieuViewVisible;
 
@@ -69,31 +71,31 @@ public class NguyenLieuViewModel : BaseViewModel
 
     // Quản lý hệ số quy đổi
     public QuyDoiDonViViewModel QuyDoiVM { get; }
-    
+
     public ObservableCollection<NguyenLieuItemViewModel> FilteredNguyenLieus
     {
         get => _filteredNguyenLieus;
         set => SetProperty(ref _filteredNguyenLieus, value);
     }
-    
+
     public ObservableCollection<LoaiNguyenLieu> LoaiNguyenLieus
     {
         get => _loaiNguyenLieus;
         set => SetProperty(ref _loaiNguyenLieus, value);
     }
-    
+
     public ObservableCollection<NhaCungCap> NhaCungCaps
     {
         get => _nhaCungCaps;
         set => SetProperty(ref _nhaCungCaps, value);
     }
-    
+
     public ObservableCollection<DonViTinh> DonViTinhs
     {
         get => _donViTinhs;
         set => SetProperty(ref _donViTinhs, value);
     }
-    
+
     public string SearchText
     {
         get => _searchText;
@@ -105,7 +107,7 @@ public class NguyenLieuViewModel : BaseViewModel
             }
         }
     }
-    
+
     public bool FilterDangSuDung
     {
         get => _filterDangSuDung;
@@ -117,7 +119,7 @@ public class NguyenLieuViewModel : BaseViewModel
             }
         }
     }
-    
+
     public bool FilterNgungSuDung
     {
         get => _filterNgungSuDung;
@@ -129,7 +131,7 @@ public class NguyenLieuViewModel : BaseViewModel
             }
         }
     }
-    
+
     public LoaiNguyenLieu? SelectedLoaiFilter
     {
         get => _selectedLoaiFilter;
@@ -141,7 +143,7 @@ public class NguyenLieuViewModel : BaseViewModel
             }
         }
     }
-    
+
     public NhaCungCap? SelectedNhaCungCapFilter
     {
         get => _selectedNhaCungCapFilter;
@@ -153,7 +155,7 @@ public class NguyenLieuViewModel : BaseViewModel
             }
         }
     }
-    
+
     public int TotalNguyenLieu
     {
         get => _totalNguyenLieu;
@@ -177,74 +179,80 @@ public class NguyenLieuViewModel : BaseViewModel
         get => _isLoading;
         set => SetProperty(ref _isLoading, value);
     }
-    
+
     public bool IsAddEditPopupOpen
     {
         get => _isAddEditPopupOpen;
         set => SetProperty(ref _isAddEditPopupOpen, value);
     }
-    
+
     public bool IsEditing
     {
         get => _isEditing;
         set => SetProperty(ref _isEditing, value);
     }
-    
+
     public NguyenLieuItemViewModel? SelectedNguyenLieu
     {
         get => _selectedNguyenLieu;
         set => SetProperty(ref _selectedNguyenLieu, value);
     }
-    
+
     // Thuộc tính form
     public string FormMaNguyenLieu
     {
         get => _formMaNguyenLieu;
         set => SetProperty(ref _formMaNguyenLieu, value);
     }
-    
+
     public string FormTenNguyenLieu
     {
         get => _formTenNguyenLieu;
         set => SetProperty(ref _formTenNguyenLieu, value);
     }
-    
+
     public string FormHinhAnh
     {
         get => _formHinhAnh;
         set => SetProperty(ref _formHinhAnh, value);
     }
-    
+
     public LoaiNguyenLieu? FormLoaiNguyenLieu
     {
         get => _formLoaiNguyenLieu;
         set => SetProperty(ref _formLoaiNguyenLieu, value);
     }
-    
+
     public DonViTinh? FormDonViTinh
     {
         get => _formDonViTinh;
         set => SetProperty(ref _formDonViTinh, value);
     }
-    
+
     public NhaCungCap? FormNhaCungCap
     {
         get => _formNhaCungCap;
         set => SetProperty(ref _formNhaCungCap, value);
     }
-    
+
     public string FormGiaNhap
     {
         get => _formGiaNhap;
         set => SetProperty(ref _formGiaNhap, value);
     }
-    
+
     public bool FormTrangThai
     {
         get => _formTrangThai;
         set => SetProperty(ref _formTrangThai, value);
     }
-    
+
+    public string FormHanCanhBao
+    {
+        get => _formHanCanhBao;
+        set => SetProperty(ref _formHanCanhBao, value);
+    }
+
     public bool IsLoaiNguyenLieuViewVisible
     {
         get => _isLoaiNguyenLieuViewVisible;
@@ -263,7 +271,7 @@ public class NguyenLieuViewModel : BaseViewModel
         get => _statusNguyenLieu;
         set => SetProperty(ref _statusNguyenLieu, value);
     }
-    
+
     // Thuộc tính nguồn hàng popup
     private bool _isNguonHangPopupOpen;
     public bool IsNguonHangPopupOpen
@@ -272,10 +280,10 @@ public class NguyenLieuViewModel : BaseViewModel
         set => SetProperty(ref _isNguonHangPopupOpen, value);
     }
     public ObservableCollection<NguyenLieuNhaCungCap> NguonHangList { get; } = new();
-    
+
     public ICommand OpenNguonHangCommand { get; }
     public ICommand CloseNguonHangCommand { get; }
-    
+
     // Lệnh
     public ICommand LoadDataCommand { get; }
     public ICommand OpenAddPopupCommand { get; }
@@ -288,14 +296,14 @@ public class NguyenLieuViewModel : BaseViewModel
     public ICommand CloseStatusDialogCommand { get; }
     public ICommand ConfirmToggleStatusCommand { get; }
     public ICommand OpenQuyDoiCommand { get; }
-    
+
     // LoaiNguyenLieu ViewModel
     public LoaiNguyenLieuViewModel LoaiNguyenLieuVM { get; }
-    
+
     public NguyenLieuViewModel()
     {
         _databaseService = App.Services.GetRequiredService<DatabaseService>();
-        
+
         LoaiNguyenLieuVM = new LoaiNguyenLieuViewModel();
         LoaiNguyenLieuVM.OnBack += () =>
         {
@@ -305,8 +313,8 @@ public class NguyenLieuViewModel : BaseViewModel
         LoaiNguyenLieuVM.OnDataChanged += () => SafeInitializeAsync(ReloadLoaiNguyenLieusAsync);
 
         QuyDoiVM = new QuyDoiDonViViewModel();
-        
-        // ⚡ AsyncRelayCommand thay vì async void trong RelayCommand
+
+        // AsyncRelayCommand thay vì async void trong RelayCommand
         LoadDataCommand = new AsyncRelayCommand(async _ => await LoadDataAsync());
         OpenAddPopupCommand = new RelayCommand(_ => OpenAddPopup());
         ClosePopupCommand = new RelayCommand(_ => ClosePopup());
@@ -320,32 +328,32 @@ public class NguyenLieuViewModel : BaseViewModel
         OpenQuyDoiCommand = new AsyncRelayCommand(async _ => await QuyDoiVM.OpenAsync());
         OpenNguonHangCommand = new AsyncRelayCommand(async param => await OpenNguonHangAsync(param as NguyenLieuItemViewModel));
         CloseNguonHangCommand = new RelayCommand(_ => IsNguonHangPopupOpen = false);
-        
-        // ⚡ SafeInitializeAsync thay vì fire-and-forget
+
+        // SafeInitializeAsync thay vì fire-and-forget
         SafeInitializeAsync(LoadDataAsync);
     }
-    
+
     private async Task LoadDataAsync()
     {
         IsLoading = true;
-        
+
         try
         {
             var loaiList = await _databaseService.GetLoaiNguyenLieusAsync();
             LoaiNguyenLieus.Clear();
             foreach(var l in loaiList) LoaiNguyenLieus.Add(l);
-            
+
             var nccList = await _databaseService.GetNhaCungCapsAsync();
             NhaCungCaps.Clear();
             foreach(var n in nccList) NhaCungCaps.Add(n);
-            
+
             var dvList = await _databaseService.GetDonViTinhsAsync();
             DonViTinhs.Clear();
             foreach(var d in dvList) DonViTinhs.Add(d);
-            
+
             var nguyenLieuList = await _databaseService.GetAllNguyenLieusWithDetailsAsync();
             _nguyenLieus.Clear();
-            
+
             foreach (var nl in nguyenLieuList)
             {
                 var item = new NguyenLieuItemViewModel
@@ -357,6 +365,7 @@ public class NguyenLieuViewModel : BaseViewModel
                     LoaiNguyenLieu = nl.LoaiNguyenLieu?.TenLoai,
                     DonViTinh = nl.DonViTinh?.TenDonVi,
                     TrangThai = nl.TrangThai,
+                    HanCanhBao = nl.HanCanhBao ?? 7,
                     NhaCungCap = nl.NguyenLieuNhaCungCaps?.FirstOrDefault()?.NhaCungCap?.TenNCC,
                     GiaNhap = nl.NguyenLieuNhaCungCaps?.FirstOrDefault()?.GiaNhap ?? 0
                 };
@@ -364,31 +373,28 @@ public class NguyenLieuViewModel : BaseViewModel
                 item.DeleteCommand = new RelayCommand(p => OpenStatusDialog(item));
                 _nguyenLieus.Add(item);
             }
-            
+
             ApplyFilters();
         }
-        catch (Exception ex)
-        {
-            System.Diagnostics.Debug.WriteLine($"Error loading data: {ex.Message}");
-        }
+        catch { }
         finally
         {
             IsLoading = false;
         }
     }
-    
+
     private void ApplyFilters()
     {
         var filtered = _nguyenLieus.AsEnumerable();
-        
+
         if (!string.IsNullOrWhiteSpace(SearchText))
         {
             var searchLower = SearchText.ToLower();
-            filtered = filtered.Where(n => 
+            filtered = filtered.Where(n =>
                 n.TenNguyenLieu.ToLower().Contains(searchLower) ||
                 (n.MaNguyenLieu?.ToLower().Contains(searchLower) ?? false));
         }
-        
+
         if (FilterDangSuDung && !FilterNgungSuDung)
         {
             filtered = filtered.Where(n => n.TrangThai);
@@ -397,23 +403,23 @@ public class NguyenLieuViewModel : BaseViewModel
         {
             filtered = filtered.Where(n => !n.TrangThai);
         }
-        
+
         if (SelectedLoaiFilter != null)
         {
             filtered = filtered.Where(n => n.LoaiNguyenLieu == SelectedLoaiFilter.TenLoai);
         }
-        
+
         if (SelectedNhaCungCapFilter != null)
         {
             filtered = filtered.Where(n => n.NhaCungCap == SelectedNhaCungCapFilter.TenNCC);
         }
-        
+
         FilteredNguyenLieus = new ObservableCollection<NguyenLieuItemViewModel>(filtered);
         TotalNguyenLieu = _nguyenLieus.Count;
         CountDangSuDung = _nguyenLieus.Count(n => n.TrangThai);
         CountNgungSuDung = _nguyenLieus.Count(n => !n.TrangThai);
     }
-    
+
     private void ClearFilters()
     {
         SearchText = string.Empty;
@@ -422,7 +428,7 @@ public class NguyenLieuViewModel : BaseViewModel
         SelectedLoaiFilter = null;
         SelectedNhaCungCapFilter = null;
     }
-    
+
     private void OpenAddPopup()
     {
         IsEditing = false;
@@ -430,12 +436,12 @@ public class NguyenLieuViewModel : BaseViewModel
         ClearForm();
         IsAddEditPopupOpen = true;
     }
-    
+
     private void EditNguyenLieu(NguyenLieuItemViewModel item)
     {
         IsEditing = true;
         SelectedNguyenLieu = item;
-        
+
         FormMaNguyenLieu = item.MaNguyenLieu ?? string.Empty;
         FormTenNguyenLieu = item.TenNguyenLieu;
         FormHinhAnh = item.HinhAnh ?? string.Empty;
@@ -444,16 +450,17 @@ public class NguyenLieuViewModel : BaseViewModel
         FormNhaCungCap = NhaCungCaps.FirstOrDefault(n => n.TenNCC == item.NhaCungCap);
         FormGiaNhap = item.GiaNhap.ToString("N0");
         FormTrangThai = item.TrangThai;
-        
+        FormHanCanhBao = item.HanCanhBao.ToString();
+
         IsAddEditPopupOpen = true;
     }
-    
+
     private void ClosePopup()
     {
         IsAddEditPopupOpen = false;
         ClearForm();
     }
-    
+
     private void ClearForm()
     {
         FormMaNguyenLieu = string.Empty;
@@ -464,8 +471,9 @@ public class NguyenLieuViewModel : BaseViewModel
         FormNhaCungCap = null;
         FormGiaNhap = string.Empty;
         FormTrangThai = true;
+        FormHanCanhBao = "7";
     }
-    
+
     private async Task SaveAsync()
     {
         // Validate tất cả trường bắt buộc
@@ -491,7 +499,7 @@ public class NguyenLieuViewModel : BaseViewModel
                 System.Windows.MessageBoxImage.Warning);
             return;
         }
-        
+
         var nguyenLieu = new NguyenLieu
         {
             NguyenLieuID = IsEditing ? SelectedNguyenLieu?.NguyenLieuID ?? 0 : 0,
@@ -500,23 +508,24 @@ public class NguyenLieuViewModel : BaseViewModel
             HinhAnh = FormHinhAnh,
             LoaiNLID = FormLoaiNguyenLieu?.LoaiNLID,
             DonViID = FormDonViTinh?.DonViID,
-            TrangThai = FormTrangThai
+            TrangThai = FormTrangThai,
+            HanCanhBao = int.TryParse(FormHanCanhBao, out var hcb) ? hcb : 7
         };
-        
+
         var success = await _databaseService.SaveNguyenLieuAsync(nguyenLieu);
-        
+
         if (success)
         {
-            
+
             ClosePopup();
             await LoadDataAsync();
         }
     }
-    
+
     private async Task DeleteNguyenLieuAsync(NguyenLieuItemViewModel item)
     {
         var success = await _databaseService.DeleteNguyenLieuAsync(item.NguyenLieuID);
-        
+
         if (success)
         {
             await LoadDataAsync();
@@ -547,10 +556,7 @@ public class NguyenLieuViewModel : BaseViewModel
             IsStatusDialogOpen = false;
             await LoadDataAsync();
         }
-        catch (Exception ex)
-        {
-            System.Diagnostics.Debug.WriteLine($"Error toggling status: {ex.Message}");
-        }
+        catch { }
     }
 
     private async Task OpenNguonHangAsync(NguyenLieuItemViewModel? item)
@@ -566,45 +572,52 @@ public class NguyenLieuViewModel : BaseViewModel
             }
             IsNguonHangPopupOpen = true;
         }
-        catch (Exception ex)
-        {
-            System.Diagnostics.Debug.WriteLine($"Error open nguon hang: {ex.Message}");
-        }
+        catch { }
     }
-    
+
     private async Task ReloadLoaiNguyenLieusAsync()
     {
         try
         {
             var loaiList = await _databaseService.GetLoaiNguyenLieusAsync();
-            
+
             // Backup selection
             var oldSelectedId = FormLoaiNguyenLieu?.LoaiNLID;
-            
+
             LoaiNguyenLieus.Clear();
             foreach (var loai in loaiList)
             {
                 LoaiNguyenLieus.Add(loai);
             }
-            
+
             // Restore selection
             if (oldSelectedId.HasValue)
             {
                 FormLoaiNguyenLieu = LoaiNguyenLieus.FirstOrDefault(l => l.LoaiNLID == oldSelectedId.Value);
             }
         }
-        catch (Exception ex)
-        {
-            System.Diagnostics.Debug.WriteLine($"Error reloading LoaiNguyenLieu: {ex.Message}");
-        }
+        catch { }
     }
-    
+
     private void OpenLoaiNguyenLieu()
     {
         IsLoaiNguyenLieuViewVisible = true;
         LoaiNguyenLieuVM.LoadDataCommand.Execute(null);
     }
-    
+
+    private async Task LoadHanCanhBaoAsync(int nguyenLieuId)
+    {
+        try
+        {
+            var allNguyenLieus = await _databaseService.GetAllNguyenLieusWithDetailsAsync();
+            var nl = allNguyenLieus.FirstOrDefault(x => x.NguyenLieuID == nguyenLieuId);
+            FormHanCanhBao = (nl?.HanCanhBao ?? 7).ToString();
+        }
+        catch {
+            FormHanCanhBao = "7";
+        }
+    }
+
     private void BrowseImage()
     {
         try
@@ -622,16 +635,11 @@ public class NguyenLieuViewModel : BaseViewModel
                 // Lấy đường dẫn file nguồn
                 // Sử dụng helper để lưu ảnh vào AppData và lấy đường dẫn tương đối
                 FormHinhAnh = Helpers.ImageStorageHelper.CopyImageToStorage(openFileDialog.FileName);
-                
-                System.Diagnostics.Debug.WriteLine($"Relative path saved: {FormHinhAnh}");
+
             }
         }
-        catch (Exception ex)
-        {
-            System.Diagnostics.Debug.WriteLine($"Error browsing image: {ex.Message}");
+        catch {
             // Có thể hiển thị thông báo lỗi cho người dùng tại đây
         }
     }
 }
-
-

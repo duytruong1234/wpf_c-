@@ -18,4 +18,3 @@ public class DonHang
     public virtual NhanVien? NhanVien { get; set; }
     public virtual ICollection<CT_DonHang> CT_DonHangs { get; set; } = new List<CT_DonHang>();
 }
-

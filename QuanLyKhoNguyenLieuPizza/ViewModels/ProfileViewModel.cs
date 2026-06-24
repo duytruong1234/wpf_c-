@@ -21,19 +21,19 @@ public class ProfileViewModel : BaseViewModel
     public string Username => CurrentUserSession.Instance.CurrentUser?.Username ?? "N/A";
     public string HoTen => CurrentUserSession.Instance.CurrentUser?.NhanVien?.HoTen ?? "N/A";
     public string ChucVu => CurrentUserSession.Instance.CurrentUser?.NhanVien?.ChucVu?.TenChucVu ?? "Nhân viên";
-    
+
     private string? _email;
     public string? Email { get => _email; set => SetProperty(ref _email, value); }
-    
+
     private string? _sdt;
     public string? SDT { get => _sdt; set => SetProperty(ref _sdt, value); }
-    
+
     private DateTime? _ngaySinh;
     public DateTime? NgaySinh { get => _ngaySinh; set => SetProperty(ref _ngaySinh, value); }
-    
+
     private string? _diaChi;
     public string? DiaChi { get => _diaChi; set => SetProperty(ref _diaChi, value); }
-    
+
     // Address fields
     private string _formTinhTP = string.Empty;
     public string FormTinhTP { get => _formTinhTP; set => SetProperty(ref _formTinhTP, value); }
@@ -89,7 +89,6 @@ public class ProfileViewModel : BaseViewModel
         }
     }
 
-    
     // Error properties
     private string _errorNgaySinh = string.Empty;
     public string ErrorNgaySinh { get => _errorNgaySinh; set => SetProperty(ref _errorNgaySinh, value); }
@@ -117,7 +116,7 @@ public class ProfileViewModel : BaseViewModel
         }
     }
     public bool IsNotEditing => !IsEditing;
-    
+
     public string? HinhAnh
     {
         get => _hinhAnh;
@@ -150,7 +149,7 @@ public class ProfileViewModel : BaseViewModel
     {
         _databaseService = App.Services.GetRequiredService<DatabaseService>();
         _locationService = LocationService.Instance;
-        
+
         CloseCommand = new RelayCommand(_ => OnClose?.Invoke());
         ChangePasswordCommand = new RelayCommand(_ => OnChangePassword?.Invoke());
         LogoutCommand = new RelayCommand(_ => OnLogout?.Invoke());
@@ -164,7 +163,7 @@ public class ProfileViewModel : BaseViewModel
             RefreshData();
         });
         SaveProfileCommand = new AsyncRelayCommand(async _ => await SaveProfileAsync());
-        
+
         // Load current data
         _hinhAnh = CurrentUserSession.Instance.CurrentUser?.NhanVien?.HinhAnh;
         _email = CurrentUserSession.Instance.CurrentUser?.NhanVien?.Email;
@@ -266,10 +265,7 @@ public class ProfileViewModel : BaseViewModel
                 }
             }
         }
-        catch (Exception ex)
-        {
-            System.Diagnostics.Debug.WriteLine($"Error setting up address: {ex.Message}");
-        }
+        catch { }
         finally
         {
             _isProgrammaticAddressUpdate = false;
@@ -287,10 +283,7 @@ public class ProfileViewModel : BaseViewModel
             var wards = await _locationService.GetWardsAsync(provinceCode);
             foreach (var w in wards) Wards.Add(w);
         }
-        catch (Exception ex)
-        {
-            System.Diagnostics.Debug.WriteLine($"Error loading wards: {ex.Message}");
-        }
+        catch { }
     }
 
     private void SelectAvatarAsync()
@@ -310,11 +303,8 @@ public class ProfileViewModel : BaseViewModel
                 HinhAnh = _pendingAvatarSourceFile;
                 IsAvatarChanged = true;
                 OnPropertyChanged(nameof(HasAvatar));
-                System.Diagnostics.Debug.WriteLine($"Avatar preview loaded: {_pendingAvatarSourceFile}");
             }
-            catch (Exception ex)
-            {
-                System.Diagnostics.Debug.WriteLine($"Error loading avatar preview: {ex.Message}");
+            catch {
                 MessageBox.Show("Không thể tải ảnh. Vui lòng thử lại!", "Lỗi", MessageBoxButton.OK, MessageBoxImage.Error);
             }
         }
@@ -334,7 +324,7 @@ public class ProfileViewModel : BaseViewModel
             if (nhanVien != null)
             {
                 var success = await _databaseService.UpdateNhanVienAvatarAsync(nhanVien.NhanVienID, relativePath);
-                
+
                 if (success)
                 {
                     nhanVien.HinhAnh = relativePath;
@@ -343,24 +333,18 @@ public class ProfileViewModel : BaseViewModel
                     _pendingAvatarSourceFile = null;
                     OnPropertyChanged(nameof(HasAvatar));
                     MessageBox.Show("Cập nhật ảnh đại diện thành công!", "Thành công", MessageBoxButton.OK, MessageBoxImage.Information);
-                    System.Diagnostics.Debug.WriteLine($"Avatar updated successfully: {relativePath}");
                 }
                 else
                 {
                     MessageBox.Show("Không thể lưu ảnh vào database!", "Lỗi", MessageBoxButton.OK, MessageBoxImage.Error);
-                    System.Diagnostics.Debug.WriteLine("Failed to update avatar in database");
                 }
             }
         }
-        catch (Exception ex)
-        {
+        catch (Exception ex) {
             MessageBox.Show($"Lỗi khi lưu ảnh: {ex.Message}", "Lỗi", MessageBoxButton.OK, MessageBoxImage.Error);
-            System.Diagnostics.Debug.WriteLine($"Error saving avatar: {ex.Message}");
-            System.Diagnostics.Debug.WriteLine($"Stack trace: {ex.StackTrace}");
         }
     }
 
-    
     private bool ValidateForm()
     {
         bool isValid = true;
@@ -439,7 +423,7 @@ public class ProfileViewModel : BaseViewModel
                 nhanVien.SDT = SDT;
                 nhanVien.NgaySinh = NgaySinh;
                 nhanVien.DiaChi = ComposeDiaChi();
-                
+
                 var success = await _databaseService.SaveNhanVienAsync(nhanVien);
                 if (success > 0)
                 {
@@ -453,8 +437,7 @@ public class ProfileViewModel : BaseViewModel
                 }
             }
         }
-        catch (Exception ex)
-        {
+        catch (Exception ex) {
             MessageBox.Show($"Lỗi: {ex.Message}", "Lỗi", MessageBoxButton.OK, MessageBoxImage.Error);
         }
     }
@@ -464,9 +447,8 @@ public class ProfileViewModel : BaseViewModel
         HinhAnh = CurrentUserSession.Instance.CurrentUser?.NhanVien?.HinhAnh;
         IsAvatarChanged = false;
         _pendingAvatarSourceFile = null;
-        
+
         OnPropertyChanged(nameof(HasAvatar));
-        System.Diagnostics.Debug.WriteLine("Avatar change cancelled");
     }
 
     public void RefreshData()
@@ -476,7 +458,7 @@ public class ProfileViewModel : BaseViewModel
         _sdt = CurrentUserSession.Instance.CurrentUser?.NhanVien?.SDT;
         _ngaySinh = CurrentUserSession.Instance.CurrentUser?.NhanVien?.NgaySinh;
         _diaChi = CurrentUserSession.Instance.CurrentUser?.NhanVien?.DiaChi;
-        
+
         OnPropertyChanged(nameof(Username));
         OnPropertyChanged(nameof(HoTen));
         OnPropertyChanged(nameof(Email));

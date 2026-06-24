@@ -32,7 +32,7 @@ public class IntToVisibilityConverter : IValueConverter
     {
         if (value is int intValue)
             return intValue == 0 ? Visibility.Visible : Visibility.Collapsed;
-        
+
         return Visibility.Visible;
     }
 
@@ -48,10 +48,10 @@ public class BoolToVisibilityConverter : IValueConverter
     {
         bool boolValue = value is bool b && b;
         bool inverse = parameter as string == "Inverse";
-        
+
         if (inverse)
             return boolValue ? Visibility.Collapsed : Visibility.Visible;
-        
+
         return boolValue ? Visibility.Visible : Visibility.Collapsed;
     }
 
@@ -114,7 +114,7 @@ public class BoolToColorConverter : IValueConverter
     public object Convert(object value, Type targetType, object parameter, CultureInfo culture)
     {
         bool boolValue = value is bool b && b;
-        return boolValue 
+        return boolValue
             ? new SolidColorBrush(Color.FromRgb(16, 185, 129))  // Xanh lá
             : new SolidColorBrush(Color.FromRgb(239, 68, 68)); // Đỏ
     }
@@ -160,10 +160,10 @@ public class ValueToPercentageConverter : IValueConverter
     public object Convert(object value, Type targetType, object parameter, CultureInfo culture)
     {
         if (value is not int intValue) return 0.0;
-        
+
         double maxValue = 100;
         double multiplier = 1;
-        
+
         if (parameter is string paramStr)
         {
             var parts = paramStr.Split(',');
@@ -172,7 +172,7 @@ public class ValueToPercentageConverter : IValueConverter
             if (parts.Length >= 2 && double.TryParse(parts[1], out double mult))
                 multiplier = mult;
         }
-        
+
         if (maxValue == 0) return 0.0;
         return Math.Min(100, (intValue / maxValue) * 100 * multiplier);
     }
@@ -191,24 +191,24 @@ public class ValueToArcConverter : IValueConverter
     public object Convert(object value, Type targetType, object parameter, CultureInfo culture)
     {
         if (value is not int intValue) return new Point(50, 5);
-        
+
         double maxValue = 100;
         if (parameter is string paramStr && double.TryParse(paramStr, out double max))
             maxValue = max;
-        
+
         double percentage = maxValue > 0 ? Math.Min(1.0, (double)intValue / maxValue) : 0;
         double angle = percentage * 360;
-        
+
         // Chuyển đổi góc sang radians và tính điểm cuối
         // Bắt đầu từ trên cùng (270 độ trong toạ độ chuẩn, hoặc -90 trong hệ của chúng ta)
         double radians = (angle - 90) * Math.PI / 180;
         double radius = 45;
         double centerX = 50;
         double centerY = 50;
-        
+
         double endX = centerX + radius * Math.Cos(radians);
         double endY = centerY + radius * Math.Sin(radians);
-        
+
         return new Point(endX, endY);
     }
 
@@ -226,11 +226,11 @@ public class ValueToLargeArcConverter : IValueConverter
     public object Convert(object value, Type targetType, object parameter, CultureInfo culture)
     {
         if (value is not int intValue) return false;
-        
+
         double maxValue = 100;
         if (parameter is string paramStr && double.TryParse(paramStr, out double max))
             maxValue = max;
-        
+
         double percentage = maxValue > 0 ? (double)intValue / maxValue : 0;
         return percentage > 0.5;
     }
@@ -249,10 +249,10 @@ public class ValueToBarHeightConverter : IValueConverter
     public object Convert(object value, Type targetType, object parameter, CultureInfo culture)
     {
         if (value is not int intValue) return 20.0;
-        
+
         double maxHeight = 150;
         double maxValue = 100;
-        
+
         if (parameter is string paramStr)
         {
             var parts = paramStr.Split(',');
@@ -261,7 +261,7 @@ public class ValueToBarHeightConverter : IValueConverter
             if (parts.Length >= 2 && double.TryParse(parts[1], out double mv))
                 maxValue = mv;
         }
-        
+
         if (maxValue == 0) return 20.0;
         return Math.Max(20, (intValue / maxValue) * maxHeight);
     }
@@ -300,32 +300,32 @@ public class DonutChartPathConverter : IMultiValueConverter
     {
         if (values.Length < 2 || values[0] is not int currentValue || values[1] is not int maxValue)
             return Geometry.Empty;
-        
+
         if (maxValue == 0 || currentValue == 0) return Geometry.Empty;
-        
+
         double percentage = Math.Min(1.0, (double)currentValue / maxValue);
         if (percentage >= 1.0) percentage = 0.999; // Tránh lỗi vòng tròn đầy
-        
+
         double angle = percentage * 360;
         double radians = (angle - 90) * Math.PI / 180;
-        
+
         double radius = 40;
         double centerX = 50;
         double centerY = 50;
-        
+
         double startX = centerX;
         double startY = centerY - radius;
-        
+
         double endX = centerX + radius * Math.Cos(radians);
         double endY = centerY + radius * Math.Sin(radians);
-        
+
         bool isLargeArc = percentage > 0.5;
-        
+
         string pathData = $"M {startX.ToString(CultureInfo.InvariantCulture)},{startY.ToString(CultureInfo.InvariantCulture)} " +
                          $"A {radius.ToString(CultureInfo.InvariantCulture)},{radius.ToString(CultureInfo.InvariantCulture)} 0 " +
                          $"{(isLargeArc ? "1" : "0")} 1 " +
                          $"{endX.ToString(CultureInfo.InvariantCulture)},{endY.ToString(CultureInfo.InvariantCulture)}";
-        
+
         return Geometry.Parse(pathData);
     }
 
@@ -355,3 +355,77 @@ public class StringToBoolConverter : IValueConverter
     }
 }
 
+public class AddOneConverter : IValueConverter
+{
+    public object Convert(object value, Type targetType, object parameter, CultureInfo culture)
+    {
+        if (value is int intValue)
+            return intValue + 1;
+        return value;
+    }
+
+    public object ConvertBack(object value, Type targetType, object parameter, CultureInfo culture)
+    {
+        throw new NotImplementedException();
+    }
+}
+
+public class RowToIndexConverter : IValueConverter
+{
+    public object Convert(object value, Type targetType, object parameter, CultureInfo culture)
+    {
+        if (value is System.Windows.Controls.DataGridRow row)
+        {
+            return row.GetIndex() + 1;
+        }
+        return 0;
+    }
+
+    public object ConvertBack(object value, Type targetType, object parameter, CultureInfo culture)
+    {
+        throw new NotImplementedException();
+    }
+}
+
+/// <summary>
+/// Trả về "Không có" khi value là null hoặc rỗng.
+/// ConverterParameter dùng để thay đổi text mặc định (mặc định: "Không có").
+/// </summary>
+public class NullOrEmptyToTextConverter : IValueConverter
+{
+    public object Convert(object value, Type targetType, object parameter, CultureInfo culture)
+    {
+        var str = value as string;
+        var defaultText = parameter as string ?? "Không có";
+        return string.IsNullOrWhiteSpace(str) ? defaultText : str;
+    }
+
+    public object ConvertBack(object value, Type targetType, object parameter, CultureInfo culture)
+    {
+        throw new NotImplementedException();
+    }
+}
+
+/// <summary>
+/// Rút ngắn chuỗi quá dài và hiển thị "Xem chi tiết" thay thế.
+/// ConverterParameter = số ký tự tối đa (mặc định 30).
+/// </summary>
+public class StringTruncateConverter : IValueConverter
+{
+    public object Convert(object value, Type targetType, object parameter, CultureInfo culture)
+    {
+        var str = value as string;
+        if (string.IsNullOrWhiteSpace(str)) return "Không có";
+
+        int maxLength = 30;
+        if (parameter is string paramStr && int.TryParse(paramStr, out int parsed))
+            maxLength = parsed;
+
+        return str.Length > maxLength ? "Xem chi tiết" : str;
+    }
+
+    public object ConvertBack(object value, Type targetType, object parameter, CultureInfo culture)
+    {
+        throw new NotImplementedException();
+    }
+}

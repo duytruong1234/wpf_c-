@@ -1,4 +1,4 @@
-using System.Collections.ObjectModel;
+﻿using System.Collections.ObjectModel;
 using System.Windows.Input;
 using QuanLyKhoNguyenLieuPizza.Models;
 using QuanLyKhoNguyenLieuPizza.Services;
@@ -442,10 +442,7 @@ public class PizzaViewModel : BaseViewModel
 
             ApplyFilters();
         }
-        catch (Exception ex)
-        {
-            System.Diagnostics.Debug.WriteLine($"Error loading pizza data: {ex.Message}");
-        }
+        catch { }
         finally
         {
             IsLoading = false;
@@ -620,7 +617,7 @@ public class PizzaViewModel : BaseViewModel
     {
         if (string.IsNullOrEmpty(item.MaPizza))
             return;
-            
+
         // Mở dialog xác nhận thay vì toggle trực tiếp
         StatusPizza = item;
         IsStatusDialogOpen = true;
@@ -634,17 +631,14 @@ public class PizzaViewModel : BaseViewModel
         {
             var newStatus = !StatusPizza.TrangThai;
             var success = await _databaseService.TogglePizzaTrangThaiAsync(StatusPizza.MaPizza, newStatus);
-            
+
             if (success)
             {
                 IsStatusDialogOpen = false;
                 await LoadDataAsync();
             }
         }
-        catch (Exception ex)
-        {
-            System.Diagnostics.Debug.WriteLine($"Error toggling pizza status: {ex.Message}");
-        }
+        catch { }
     }
 
     private void BrowseImage()
@@ -665,10 +659,7 @@ public class PizzaViewModel : BaseViewModel
                 FormHinhAnh = Helpers.ImageStorageHelper.CopyImageToStorage(openFileDialog.FileName);
             }
         }
-        catch (Exception ex)
-        {
-            System.Diagnostics.Debug.WriteLine($"Error browsing image: {ex.Message}");
-        }
+        catch { }
     }
 
     #region Quản lý Công thức
@@ -766,7 +757,7 @@ public class PizzaViewModel : BaseViewModel
         try
         {
             var quyDois = await _databaseService.GetQuyDoiDonVisAsync(nguyenLieu.NguyenLieuID);
-            
+
             if (quyDois.Count > 0)
             {
                 foreach (var qd in quyDois)
@@ -793,9 +784,7 @@ public class PizzaViewModel : BaseViewModel
                 }
             }
         }
-        catch (Exception ex)
-        {
-            System.Diagnostics.Debug.WriteLine($"Error loading recipe DonVi options: {ex.Message}");
+        catch {
             // Fallback
             if (nguyenLieu.DonViTinh != null)
             {
@@ -807,35 +796,27 @@ public class PizzaViewModel : BaseViewModel
 
     private async Task SaveRecipeItemAsync()
     {
-        System.Diagnostics.Debug.WriteLine("=== SaveRecipeItemAsync START ===");
-        
+
         if (RecipePizza == null || string.IsNullOrEmpty(RecipePizza.MaPizza) || string.IsNullOrEmpty(RecipePizza.SizeID))
         {
-            System.Diagnostics.Debug.WriteLine($"ERROR: RecipePizza null or missing data. MaPizza={RecipePizza?.MaPizza}, SizeID={RecipePizza?.SizeID}");
             System.Windows.MessageBox.Show("Món ăn này chưa có kích thước hợp lệ, vui lòng cập nhật kích thước trước.", "Lỗi", System.Windows.MessageBoxButton.OK, System.Windows.MessageBoxImage.Warning);
             return;
         }
 
         if (RecipeSelectedNguyenLieu == null)
         {
-            System.Diagnostics.Debug.WriteLine("ERROR: RecipeSelectedNguyenLieu is null");
             System.Windows.MessageBox.Show("Vui lòng chọn nguyên liệu cần thêm.", "Thiếu thông tin", System.Windows.MessageBoxButton.OK, System.Windows.MessageBoxImage.Warning);
             return;
         }
 
-        System.Diagnostics.Debug.WriteLine($"RecipeSoLuong raw = '{RecipeSoLuong}'");
         double soLuong = 0;
-        if (string.IsNullOrWhiteSpace(RecipeSoLuong) || !double.TryParse(RecipeSoLuong.Replace(",", "."), 
-                System.Globalization.NumberStyles.Any, 
+        if (string.IsNullOrWhiteSpace(RecipeSoLuong) || !double.TryParse(RecipeSoLuong.Replace(",", "."),
+                System.Globalization.NumberStyles.Any,
                 System.Globalization.CultureInfo.InvariantCulture, out soLuong) || soLuong <= 0)
         {
-            System.Diagnostics.Debug.WriteLine($"ERROR: Invalid SoLuong. Raw='{RecipeSoLuong}', Parsed={soLuong}");
             System.Windows.MessageBox.Show("Vui lòng nhập định lượng hợp lệ (lớn hơn 0).", "Thiếu thông tin", System.Windows.MessageBoxButton.OK, System.Windows.MessageBoxImage.Warning);
             return;
         }
-
-        System.Diagnostics.Debug.WriteLine($"Parsed soLuong = {soLuong}");
-        System.Diagnostics.Debug.WriteLine($"RecipeSelectedDonVi = {RecipeSelectedDonVi?.TenDonVi} (ID={RecipeSelectedDonVi?.DonViID})");
 
         var congThuc = new CongThuc_Pizza
         {
@@ -846,13 +827,10 @@ public class PizzaViewModel : BaseViewModel
             DonViID = RecipeSelectedDonVi?.DonViID
         };
 
-        System.Diagnostics.Debug.WriteLine($"Saving: MaHangHoa={congThuc.MaHangHoa}, SizeID={congThuc.SizeID}, NLID={congThuc.NguyenLieuID}, SL={congThuc.SoLuong}, DVID={congThuc.DonViID}");
-
         try
         {
             var success = await _databaseService.SaveCongThucPizzaAsync(congThuc);
-            System.Diagnostics.Debug.WriteLine($"SaveCongThucPizzaAsync result: {success}");
-            
+
             if (success)
             {
                 ClearRecipeForm();
@@ -868,13 +846,10 @@ public class PizzaViewModel : BaseViewModel
                 System.Windows.MessageBox.Show("Không thể lưu công thức. Vui lòng thử lại.", "Lỗi", System.Windows.MessageBoxButton.OK, System.Windows.MessageBoxImage.Error);
             }
         }
-        catch (Exception ex)
-        {
-            System.Diagnostics.Debug.WriteLine($"EXCEPTION in SaveRecipeItemAsync: {ex.Message}\n{ex.StackTrace}");
+        catch (Exception ex) {
             System.Windows.MessageBox.Show($"Lỗi khi lưu: {ex.Message}", "Lỗi", System.Windows.MessageBoxButton.OK, System.Windows.MessageBoxImage.Error);
         }
-        
-        System.Diagnostics.Debug.WriteLine("=== SaveRecipeItemAsync END ===");
+
     }
 
     private async Task DeleteRecipeItemAsync(CongThucItemViewModel item)
@@ -905,4 +880,3 @@ public class PizzaViewModel : BaseViewModel
 
     #endregion
 }
-

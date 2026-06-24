@@ -1,4 +1,4 @@
-using System;
+﻿using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Net.Http;
@@ -38,10 +38,7 @@ namespace QuanLyKhoNguyenLieuPizza.Services
                     return result?.data?.OrderBy(p => p.name).ToList() ?? new List<ApiProvince>();
                 }
             }
-            catch (Exception ex)
-            {
-                System.Diagnostics.Debug.WriteLine($"Error fetching provinces: {ex.Message}");
-            }
+            catch { }
             return new List<ApiProvince>();
         }
 
@@ -78,10 +75,7 @@ namespace QuanLyKhoNguyenLieuPizza.Services
 
                 return allWards.OrderBy(w => w.name).ToList();
             }
-            catch (Exception ex)
-            {
-                System.Diagnostics.Debug.WriteLine($"Error fetching wards: {ex.Message}");
-            }
+            catch { }
             return new List<ApiWard>();
         }
 

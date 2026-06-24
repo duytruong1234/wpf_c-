@@ -1,4 +1,4 @@
-using System.Windows.Controls;
+﻿using System.Windows.Controls;
 
 namespace QuanLyKhoNguyenLieuPizza.Views;
 
@@ -15,4 +15,3 @@ public partial class PizzaView : UserControl
         e.Handled = !System.Text.RegularExpressions.Regex.IsMatch(e.Text, @"^[0-9,.]+$");
     }
 }
-

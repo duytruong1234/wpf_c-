@@ -1,4 +1,4 @@
-using System;
+﻿using System;
 using System.Collections.ObjectModel;
 using System.Linq;
 using System.Threading.Tasks;
@@ -30,7 +30,7 @@ public class QuyDinhViewModel : BaseViewModel
     // Form Quy Ð?nh B?t
     private DoanhMuc_Size? _botSelectedSize;
     public DoanhMuc_Size? BotSelectedSize { get => _botSelectedSize; set => SetProperty(ref _botSelectedSize, value); }
-    
+
     private string _botSelectedLoaiCotBanh = string.Empty;
     public string BotSelectedLoaiCotBanh { get => _botSelectedLoaiCotBanh; set => SetProperty(ref _botSelectedLoaiCotBanh, value); }
 
@@ -84,7 +84,7 @@ public class QuyDinhViewModel : BaseViewModel
     {
         _databaseService = App.Services.GetRequiredService<DatabaseService>();
         LoadDataCommand = new AsyncRelayCommand(async _ => await LoadDataAsync());
-        
+
         SaveBotCommand = new AsyncRelayCommand(async _ => await SaveBotAsync());
         DeleteBotCommand = new AsyncRelayCommand(async param => { if (param is QuyDinh_Bot b) await DeleteBotAsync(b); });
         EditBotCommand = new RelayCommand<QuyDinh_Bot>(item => { if (item != null) EditBot(item); });
@@ -101,7 +101,7 @@ public class QuyDinhViewModel : BaseViewModel
     private async Task LoadDataAsync()
     {
         IsLoading = true;
-        
+
         var sizes = await _databaseService.GetDoanhMucSizesAsync();
         Sizes.Clear();
         foreach (var s in sizes) Sizes.Add(s);
@@ -171,7 +171,7 @@ public class QuyDinhViewModel : BaseViewModel
     private async Task SaveBotAsync()
     {
         if (BotSelectedSize == null || string.IsNullOrWhiteSpace(BotSelectedLoaiCotBanh)) return;
-        
+
         // Ngăn thêm mới bị trùng (ghi đè vô ý)
         if (_editingBot == null)
         {
@@ -187,7 +187,7 @@ public class QuyDinhViewModel : BaseViewModel
         }
 
         double.TryParse(BotTrongLuong.Replace(",", "."), System.Globalization.NumberStyles.Any, System.Globalization.CultureInfo.InvariantCulture, out double tl);
-        
+
         var bot = new QuyDinh_Bot
         {
             SizeID = BotSelectedSize.SizeID,
@@ -307,7 +307,7 @@ public class QuyDinhViewModel : BaseViewModel
         try
         {
             // Tìm nguyên liệu Bột mì
-            var botMi = NguyenLieus.FirstOrDefault(n => n.TenNguyenLieu != null && 
+            var botMi = NguyenLieus.FirstOrDefault(n => n.TenNguyenLieu != null &&
                 (n.TenNguyenLieu.Contains("Bột mì", StringComparison.OrdinalIgnoreCase) ||
                  n.TenNguyenLieu.Contains("Bot mi", StringComparison.OrdinalIgnoreCase)));
             if (botMi != null)
@@ -371,4 +371,3 @@ public class QuyDinhViewModel : BaseViewModel
         }
     }
 }
-

@@ -1,4 +1,4 @@
-using System.Text;
+﻿using System.Text;
 using System.Globalization;
 using Microsoft.Data.SqlClient;
 using System.Data;
@@ -9,6 +9,46 @@ namespace QuanLyKhoNguyenLieuPizza.Services.Repositories;
 public class DashboardService : DatabaseContext
 {
     public DashboardService(string connectionString) : base(connectionString) { }
+
+    private const string LoHangTonKhoFifoCte = @"
+        ;WITH ApprovedBatches AS (
+            SELECT pn.PhieuNhapID, pn.MaPhieuNhap, pn.NgayNhap, ct.ChiTietID,
+                   nl.NguyenLieuID, nl.TenNguyenLieu,
+                   COALESCE(dv.TenDonVi, N'') AS DonVi,
+                   CAST(ct.SoLuong AS decimal(18,4)) AS SoLuongNhap,
+                   CAST(ISNULL(NULLIF(ct.HeSo, 0), 1) AS decimal(18,4)) AS HeSo,
+                   ct.HSD,
+                   nl.HanCanhBao,
+                   CAST(ct.SoLuong * ISNULL(NULLIF(ct.HeSo, 0), 1) AS decimal(18,4)) AS SoLuongChuan,
+                   CAST(ISNULL(tk.SoLuongTon, 0) AS decimal(18,4)) AS TonHienTai
+            FROM CT_PhieuNhap ct
+            INNER JOIN PhieuNhap pn ON ct.PhieuNhapID = pn.PhieuNhapID
+            INNER JOIN NguyenLieu nl ON ct.NguyenLieuID = nl.NguyenLieuID
+            LEFT JOIN DonViTinh dv ON ct.DonViID = dv.DonViID
+            LEFT JOIN TonKho tk ON nl.NguyenLieuID = tk.NguyenLieuID
+            WHERE pn.TrangThai = 2 AND nl.TrangThai = 1
+        ),
+        RunningBatches AS (
+            SELECT *,
+                   SUM(SoLuongChuan) OVER (
+                       PARTITION BY NguyenLieuID
+                       ORDER BY NgayNhap, PhieuNhapID, ChiTietID
+                       ROWS BETWEEN UNBOUNDED PRECEDING AND 1 PRECEDING
+                   ) AS TongNhapTruocLo,
+                   SUM(SoLuongChuan) OVER (PARTITION BY NguyenLieuID) AS TongNhapTatCa
+            FROM ApprovedBatches
+        ),
+        RemainingBatches AS (
+            SELECT *,
+                   CASE
+                       WHEN TonHienTai <= 0 THEN 0
+                       WHEN TongNhapTatCa - TonHienTai <= 0 THEN SoLuongChuan
+                       WHEN ISNULL(TongNhapTruocLo, 0) + SoLuongChuan <= TongNhapTatCa - TonHienTai THEN 0
+                       WHEN ISNULL(TongNhapTruocLo, 0) >= TongNhapTatCa - TonHienTai THEN SoLuongChuan
+                       ELSE ISNULL(TongNhapTruocLo, 0) + SoLuongChuan - (TongNhapTatCa - TonHienTai)
+                   END AS SoLuongConChuan
+            FROM RunningBatches
+        )";
 
     public async Task<int> GetTotalNguyenLieuCountAsync() =>
         await ExecuteScalarValueAsync("SELECT COUNT(*) FROM NguyenLieu WHERE TrangThai = 1", 0);
@@ -23,37 +63,23 @@ public class DashboardService : DatabaseContext
 
     public async Task<int> GetNearExpiryCountAsync(int days = 7) =>
         await ExecuteScalarValueAsync(
-            @"SELECT COUNT(*) FROM TonKho tk
-              INNER JOIN NguyenLieu nl ON tk.NguyenLieuID = nl.NguyenLieuID
-              OUTER APPLY (
-                  SELECT TOP 1 ctp.HSD
-                  FROM CT_PhieuNhap ctp
-                  INNER JOIN PhieuNhap pn ON ctp.PhieuNhapID = pn.PhieuNhapID
-                  WHERE ctp.NguyenLieuID = nl.NguyenLieuID AND pn.TrangThai = 2 AND ctp.HSD IS NOT NULL
-                  ORDER BY pn.NgayNhap DESC
-              ) phieu
-              WHERE tk.SoLuongTon > 0 
-              AND nl.TrangThai = 1
-              AND phieu.HSD IS NOT NULL 
-              AND phieu.HSD <= DATEADD(DAY, @Days, GETDATE())
-              AND phieu.HSD > GETDATE()", 0,
+            LoHangTonKhoFifoCte + @"
+              SELECT COUNT(*)
+              FROM RemainingBatches
+              WHERE SoLuongConChuan > 0
+              AND HSD IS NOT NULL
+              AND HSD <= DATEADD(DAY, @Days, GETDATE())
+              AND HSD > GETDATE()", 0,
             new SqlParameter("@Days", days));
 
     public async Task<int> GetExpiredCountAsync() =>
         await ExecuteScalarValueAsync(
-            @"SELECT COUNT(*) FROM TonKho tk
-              INNER JOIN NguyenLieu nl ON tk.NguyenLieuID = nl.NguyenLieuID
-              OUTER APPLY (
-                  SELECT TOP 1 ctp.HSD
-                  FROM CT_PhieuNhap ctp
-                  INNER JOIN PhieuNhap pn ON ctp.PhieuNhapID = pn.PhieuNhapID
-                  WHERE ctp.NguyenLieuID = nl.NguyenLieuID AND pn.TrangThai = 2 AND ctp.HSD IS NOT NULL
-                  ORDER BY pn.NgayNhap DESC
-              ) phieu
-              WHERE tk.SoLuongTon > 0 
-              AND nl.TrangThai = 1
-              AND phieu.HSD IS NOT NULL 
-              AND phieu.HSD <= GETDATE()", 0);
+            LoHangTonKhoFifoCte + @"
+              SELECT COUNT(*)
+              FROM RemainingBatches
+              WHERE SoLuongConChuan > 0
+              AND HSD IS NOT NULL
+              AND HSD <= GETDATE()", 0);
 
     public async Task<List<(string TenNguyenLieu, decimal SoLuongTon, string DonVi, DateTime? HanSuDung)>> GetLowStockItemsAsync(decimal threshold = 20)
     {
@@ -82,7 +108,7 @@ public class DashboardService : DatabaseContext
             while (await reader.ReadAsync())
                 result.Add((reader[0]?.ToString() ?? "", Convert.ToDecimal(reader[1]), reader[2]?.ToString() ?? "", reader.IsDBNull(3) ? null : Convert.ToDateTime(reader[3])));
         }
-        catch (Exception ex) { System.Diagnostics.Debug.WriteLine($"Error GetLowStockItems: {ex.Message}"); }
+        catch { }
         return result;
     }
 
@@ -93,30 +119,24 @@ public class DashboardService : DatabaseContext
         {
             using var conn = GetConnection();
             await conn.OpenAsync();
-            var sql = @"SELECT ISNULL(nl.TenNguyenLieu, N'Không tên'), ISNULL(tk.SoLuongTon, 0), ISNULL(dv.TenDonVi, ''), phieu.HSD
-                        FROM TonKho tk
-                        INNER JOIN NguyenLieu nl ON tk.NguyenLieuID = nl.NguyenLieuID
-                        LEFT JOIN DonViTinh dv ON nl.DonViID = dv.DonViID
-                        OUTER APPLY (
-                            SELECT TOP 1 ctp.HSD
-                            FROM CT_PhieuNhap ctp
-                            INNER JOIN PhieuNhap pn ON ctp.PhieuNhapID = pn.PhieuNhapID
-                            WHERE ctp.NguyenLieuID = nl.NguyenLieuID AND pn.TrangThai = 2 AND ctp.HSD IS NOT NULL
-                            ORDER BY pn.NgayNhap DESC
-                        ) phieu
-                        WHERE tk.SoLuongTon > 0 
-                        AND nl.TrangThai = 1
-                        AND phieu.HSD IS NOT NULL 
-                        AND phieu.HSD <= DATEADD(DAY, @Days, GETDATE())
-                        AND phieu.HSD > GETDATE()
-                        ORDER BY phieu.HSD ASC";
+            var sql = LoHangTonKhoFifoCte + @"
+                        SELECT ISNULL(TenNguyenLieu, N'Không tên'),
+                               CASE WHEN HeSo <= 0 THEN SoLuongConChuan ELSE SoLuongConChuan / HeSo END AS SoLuongCon,
+                               ISNULL(DonVi, N''),
+                               HSD
+                        FROM RemainingBatches
+                        WHERE SoLuongConChuan > 0
+                        AND HSD IS NOT NULL
+                        AND HSD <= DATEADD(DAY, @Days, GETDATE())
+                        AND HSD > GETDATE()
+                        ORDER BY HSD ASC, TenNguyenLieu ASC, NgayNhap ASC";
             using var cmd = new SqlCommand(sql, conn);
             cmd.Parameters.AddWithValue("@Days", days);
             using var reader = await cmd.ExecuteReaderAsync();
             while (await reader.ReadAsync())
                 result.Add((reader[0]?.ToString() ?? "", Convert.ToDecimal(reader[1]), reader[2]?.ToString() ?? "", reader.IsDBNull(3) ? null : Convert.ToDateTime(reader[3])));
         }
-        catch (Exception ex) { System.Diagnostics.Debug.WriteLine($"Error GetNearExpiryItems: {ex.Message}"); }
+        catch { }
         return result;
     }
 
@@ -127,28 +147,22 @@ public class DashboardService : DatabaseContext
         {
             using var conn = GetConnection();
             await conn.OpenAsync();
-            var sql = @"SELECT ISNULL(nl.TenNguyenLieu, N'Không tên'), ISNULL(tk.SoLuongTon, 0), ISNULL(dv.TenDonVi, ''), phieu.HSD
-                        FROM TonKho tk
-                        INNER JOIN NguyenLieu nl ON tk.NguyenLieuID = nl.NguyenLieuID
-                        LEFT JOIN DonViTinh dv ON nl.DonViID = dv.DonViID
-                        OUTER APPLY (
-                            SELECT TOP 1 ctp.HSD
-                            FROM CT_PhieuNhap ctp
-                            INNER JOIN PhieuNhap pn ON ctp.PhieuNhapID = pn.PhieuNhapID
-                            WHERE ctp.NguyenLieuID = nl.NguyenLieuID AND pn.TrangThai = 2 AND ctp.HSD IS NOT NULL
-                            ORDER BY pn.NgayNhap DESC
-                        ) phieu
-                        WHERE tk.SoLuongTon > 0 
-                        AND nl.TrangThai = 1
-                        AND phieu.HSD IS NOT NULL 
-                        AND phieu.HSD <= GETDATE()
-                        ORDER BY phieu.HSD ASC";
+            var sql = LoHangTonKhoFifoCte + @"
+                        SELECT ISNULL(TenNguyenLieu, N'Không tên'),
+                               CASE WHEN HeSo <= 0 THEN SoLuongConChuan ELSE SoLuongConChuan / HeSo END AS SoLuongCon,
+                               ISNULL(DonVi, N''),
+                               HSD
+                        FROM RemainingBatches
+                        WHERE SoLuongConChuan > 0
+                        AND HSD IS NOT NULL
+                        AND HSD <= GETDATE()
+                        ORDER BY HSD ASC, TenNguyenLieu ASC, NgayNhap ASC";
             using var cmd = new SqlCommand(sql, conn);
             using var reader = await cmd.ExecuteReaderAsync();
             while (await reader.ReadAsync())
                 result.Add((reader[0]?.ToString() ?? "", Convert.ToDecimal(reader[1]), reader[2]?.ToString() ?? "", reader.IsDBNull(3) ? null : Convert.ToDateTime(reader[3])));
         }
-        catch (Exception ex) { System.Diagnostics.Debug.WriteLine($"Error GetExpiredItems: {ex.Message}"); }
+        catch { }
         return result;
     }
 
@@ -179,7 +193,7 @@ public class DashboardService : DatabaseContext
             while (await reader.ReadAsync())
                 result.Add((reader[0]?.ToString() ?? "", Convert.ToDecimal(reader[1]), reader[2]?.ToString() ?? "", reader.IsDBNull(3) ? null : Convert.ToDateTime(reader[3])));
         }
-        catch (Exception ex) { System.Diagnostics.Debug.WriteLine($"Error GetNormalStockItems: {ex.Message}"); }
+        catch { }
         return result;
     }
     public async Task<List<(string TenNguyenLieu, decimal SoLuongTon, string DonVi, DateTime? HanSuDung)>> GetOutOfStockItemsAsync()
@@ -207,7 +221,7 @@ public class DashboardService : DatabaseContext
             while (await reader.ReadAsync())
                 result.Add((reader[0]?.ToString() ?? "", Convert.ToDecimal(reader[1]), reader[2]?.ToString() ?? "", reader.IsDBNull(3) ? null : Convert.ToDateTime(reader[3])));
         }
-        catch (Exception ex) { System.Diagnostics.Debug.WriteLine($"Error GetOutOfStockItems: {ex.Message}"); }
+        catch { }
         return result;
     }
     public async Task<decimal> GetDoanhThuAsync(DateTime fromDate, DateTime toDate)
@@ -219,10 +233,10 @@ public class DashboardService : DatabaseContext
             // Doanh thu chính từ PhieuBanHang (nguồn dữ liệu bán hàng chính)
             // + DonHang records chưa có trong PhieuBanHang
             var sql = @"SELECT ISNULL(SUM(ThanhToan), 0) FROM (
-                           SELECT ISNULL(TongTien, 0) AS ThanhToan FROM PhieuBanHang 
+                           SELECT ISNULL(TongTien, 0) AS ThanhToan FROM PhieuBanHang
                            WHERE NgayBan >= @FromDate AND NgayBan < @ToDate
                            UNION ALL
-                           SELECT ThanhToan FROM DonHang 
+                           SELECT ThanhToan FROM DonHang
                            WHERE TrangThai = 2 AND NgayTao >= @FromDate AND NgayTao < @ToDate
                            AND (MaDonHang IS NULL OR MaDonHang NOT IN (SELECT MaPhieuBan FROM PhieuBanHang WHERE MaPhieuBan IS NOT NULL))
                        ) AS combined";
@@ -232,9 +246,7 @@ public class DashboardService : DatabaseContext
             var result = await cmd.ExecuteScalarAsync();
             return result != null && result != DBNull.Value ? Convert.ToDecimal(result) : 0;
         }
-        catch (Exception ex)
-        {
-            System.Diagnostics.Debug.WriteLine($"Error getting DoanhThu: {ex.Message}");
+        catch {
             return 0;
         }
     }
@@ -247,10 +259,10 @@ public class DashboardService : DatabaseContext
             await conn.OpenAsync();
             // Đếm đơn hàng chính từ PhieuBanHang + DonHang chưa có trong PhieuBanHang
             var sql = @"SELECT COUNT(*) FROM (
-                           SELECT MaPhieuBan FROM PhieuBanHang 
+                           SELECT MaPhieuBan FROM PhieuBanHang
                            WHERE NgayBan >= @FromDate AND NgayBan < @ToDate
                            UNION ALL
-                           SELECT MaDonHang FROM DonHang 
+                           SELECT MaDonHang FROM DonHang
                            WHERE TrangThai = 2 AND NgayTao >= @FromDate AND NgayTao < @ToDate
                            AND (MaDonHang IS NULL OR MaDonHang NOT IN (SELECT MaPhieuBan FROM PhieuBanHang WHERE MaPhieuBan IS NOT NULL))
                        ) AS combined";
@@ -259,9 +271,7 @@ public class DashboardService : DatabaseContext
             cmd.Parameters.AddWithValue("@ToDate", toDate.Date.AddDays(1));
             return Convert.ToInt32(await cmd.ExecuteScalarAsync());
         }
-        catch (Exception ex)
-        {
-            System.Diagnostics.Debug.WriteLine($"Error getting DonHang count: {ex.Message}");
+        catch {
             return 0;
         }
     }
@@ -275,9 +285,7 @@ public class DashboardService : DatabaseContext
             var chiPhi = await GetChiPhiNguyenLieuAsync(fromDate, toDate);
             return doanhThu - chiPhi;
         }
-        catch (Exception ex)
-        {
-            System.Diagnostics.Debug.WriteLine($"Error getting LoiNhuan: {ex.Message}");
+        catch {
             return 0;
         }
     }
@@ -349,9 +357,7 @@ public class DashboardService : DatabaseContext
             var result = await cmd.ExecuteScalarAsync();
             return result != null && result != DBNull.Value ? Convert.ToDecimal(result) : 0;
         }
-        catch (Exception ex)
-        {
-            System.Diagnostics.Debug.WriteLine($"Error getting ChiPhiNguyenLieu: {ex.Message}");
+        catch {
             return 0;
         }
     }
@@ -364,10 +370,10 @@ public class DashboardService : DatabaseContext
             using var conn = GetConnection();
             await conn.OpenAsync();
             // Lấy từ CT_PhieuBan (nguồn dữ liệu bán hàng chính)
-            var sql = @"SELECT TOP (@Top) 
-                           ISNULL(hh.TenHangHoa, ct.MaHangHoa) AS TenPizza, 
-                           ISNULL(ds.TenSize, ct.SizeID) AS KichThuoc, 
-                           SUM(ISNULL(ct.SoLuong, 0)) AS SoLuongBan, 
+            var sql = @"SELECT TOP (@Top)
+                           ISNULL(hh.TenHangHoa, ct.MaHangHoa) AS TenPizza,
+                           ISNULL(ds.TenSize, ct.SizeID) AS KichThuoc,
+                           SUM(ISNULL(ct.SoLuong, 0)) AS SoLuongBan,
                            SUM(ISNULL(ct.ThanhTien, 0)) AS DoanhThu
                        FROM CT_PhieuBan ct
                        INNER JOIN PhieuBanHang pb ON ct.MaPhieuBan = pb.MaPhieuBan
@@ -391,10 +397,7 @@ public class DashboardService : DatabaseContext
                 ));
             }
         }
-        catch (Exception ex)
-        {
-            System.Diagnostics.Debug.WriteLine($"Error getting TopPizzas: {ex.Message}");
-        }
+        catch { }
         return result;
     }
 
@@ -408,7 +411,7 @@ public class DashboardService : DatabaseContext
         {
             using var conn = GetConnection();
             await conn.OpenAsync();
-            var sql = @"SELECT TOP (@Top) dh.DonHangID, dh.MaDonHang, dh.NhanVienID, dh.NgayTao, 
+            var sql = @"SELECT TOP (@Top) dh.DonHangID, dh.MaDonHang, dh.NhanVienID, dh.NgayTao,
                                dh.TongTien, dh.GiamGia, dh.ThanhToan, dh.PhuongThucTT, dh.TrangThai, dh.GhiChu,
                                nv.HoTen
                        FROM DonHang dh
@@ -438,17 +441,14 @@ public class DashboardService : DatabaseContext
                     existingMaDonHangs.Add(dh.MaDonHang);
             }
         }
-        catch (Exception ex)
-        {
-            System.Diagnostics.Debug.WriteLine($"Error getting RecentDonHangs from DonHang: {ex.Message}");
-        }
+        catch { }
 
         // 2) Lấy từ bảng PhieuBanHang (nguồn dữ liệu bán hàng chính)
         try
         {
             using var conn2 = GetConnection();
             await conn2.OpenAsync();
-            var sql2 = @"SELECT TOP (@Top) pb.MaPhieuBan, pb.NhanVienBanID, pb.NgayBan, 
+            var sql2 = @"SELECT TOP (@Top) pb.MaPhieuBan, pb.NhanVienBanID, pb.NgayBan,
                                 ISNULL(pb.TongTien, 0), nv.HoTen, pb.GhiChu, pb.PhuongThucTT
                         FROM PhieuBanHang pb
                         LEFT JOIN NhanVien nv ON pb.NhanVienBanID = nv.NhanVienID
@@ -474,18 +474,15 @@ public class DashboardService : DatabaseContext
                     PhuongThucTT = reader2.IsDBNull(6) ? "Tiền mặt" : reader2.GetString(6),
                     TrangThai = 2, // Hoàn thành
                     GhiChu = reader2.IsDBNull(5) ? "Bán hàng tại quầy" : reader2.GetString(5),
-                    NhanVien = reader2.IsDBNull(4) ? null : new NhanVien 
-                    { 
+                    NhanVien = reader2.IsDBNull(4) ? null : new NhanVien
+                    {
                         NhanVienID = reader2.IsDBNull(1) ? 0 : reader2.GetInt32(1),
-                        HoTen = reader2.GetString(4) 
+                        HoTen = reader2.GetString(4)
                     }
                 });
             }
         }
-        catch (Exception ex)
-        {
-            System.Diagnostics.Debug.WriteLine($"Error getting RecentDonHangs from PhieuBanHang: {ex.Message}");
-        }
+        catch { }
 
         // Sáº¯p xáº¿p theo ngÃ y má»›i nháº¥t vÃ  láº¥y top
         donHangs.Sort((a, b) => b.NgayTao.CompareTo(a.NgayTao));
@@ -502,7 +499,7 @@ public class DashboardService : DatabaseContext
             // Doanh thu tá»« PhieuBanHang (POS)
             try
             {
-                var sql1 = @"SELECT ISNULL(SUM(TongTien), 0) FROM PhieuBanHang 
+                var sql1 = @"SELECT ISNULL(SUM(TongTien), 0) FROM PhieuBanHang
                              WHERE NgayBan >= @FromDate AND NgayBan < @ToDate";
                 using var cmd1 = new SqlCommand(sql1, conn);
                 cmd1.Parameters.AddWithValue("@FromDate", fromDate.Date);
@@ -510,15 +507,12 @@ public class DashboardService : DatabaseContext
                 var r1 = await cmd1.ExecuteScalarAsync();
                 if (r1 != null && r1 != DBNull.Value) total += Convert.ToDecimal(r1);
             }
-            catch (Exception ex1)
-            {
-                System.Diagnostics.Debug.WriteLine($"Error PhieuBanHang revenue: {ex1.Message}");
-            }
+            catch { }
 
             // Doanh thu tá»« DonHang (náº¿u báº£ng tá»“n táº¡i)
             try
             {
-                var sql2 = @"SELECT ISNULL(SUM(ThanhToan), 0) FROM DonHang 
+                var sql2 = @"SELECT ISNULL(SUM(ThanhToan), 0) FROM DonHang
                              WHERE NgayTao >= @FromDate AND NgayTao < @ToDate AND TrangThai = 2";
                 using var cmd2 = new SqlCommand(sql2, conn);
                 cmd2.Parameters.AddWithValue("@FromDate", fromDate.Date);
@@ -528,10 +522,7 @@ public class DashboardService : DatabaseContext
             }
             catch { /* Báº£ng DonHang cÃ³ thá»ƒ khÃ´ng tá»“n táº¡i */ }
         }
-        catch (Exception ex)
-        {
-            System.Diagnostics.Debug.WriteLine($"Error getting DoanhThuBanHang: {ex.Message}");
-        }
+        catch { }
         return total;
     }
 
@@ -546,22 +537,19 @@ public class DashboardService : DatabaseContext
             // Äáº¿m tá»« PhieuBanHang (POS)
             try
             {
-                var sql1 = @"SELECT COUNT(*) FROM PhieuBanHang 
+                var sql1 = @"SELECT COUNT(*) FROM PhieuBanHang
                              WHERE NgayBan >= @FromDate AND NgayBan < @ToDate";
                 using var cmd1 = new SqlCommand(sql1, conn);
                 cmd1.Parameters.AddWithValue("@FromDate", fromDate.Date);
                 cmd1.Parameters.AddWithValue("@ToDate", toDate.Date.AddDays(1));
                 total += Convert.ToInt32(await cmd1.ExecuteScalarAsync());
             }
-            catch (Exception ex1)
-            {
-                System.Diagnostics.Debug.WriteLine($"Error PhieuBanHang count: {ex1.Message}");
-            }
+            catch { }
 
             // Äáº¿m tá»« DonHang (náº¿u báº£ng tá»“n táº¡i)
             try
             {
-                var sql2 = @"SELECT COUNT(*) FROM DonHang 
+                var sql2 = @"SELECT COUNT(*) FROM DonHang
                              WHERE NgayTao >= @FromDate AND NgayTao < @ToDate AND TrangThai = 2";
                 using var cmd2 = new SqlCommand(sql2, conn);
                 cmd2.Parameters.AddWithValue("@FromDate", fromDate.Date);
@@ -570,11 +558,167 @@ public class DashboardService : DatabaseContext
             }
             catch { /* Báº£ng DonHang cÃ³ thá»ƒ khÃ´ng tá»“n táº¡i */ }
         }
-        catch (Exception ex)
-        {
-            System.Diagnostics.Debug.WriteLine($"Error getting PhieuBan count: {ex.Message}");
-        }
+        catch { }
         return total;
     }
-}
 
+    /// <summary>
+    /// Đối soát nhập/xuất nguyên liệu: so sánh tổng lượng nhập vào với tổng lượng xuất ra trong ngày.
+    /// </summary>
+    public async Task<List<(int NguyenLieuID, string TenNguyenLieu, string DonVi, decimal LuongXuatCheBien, decimal LuongTieuHaoBanHang)>> GetDoiSoatTieuHaoAsync(DateTime ngay)
+    {
+        var result = new List<(int, string, string, decimal, decimal)>();
+        try
+        {
+            using var conn = GetConnection();
+            await conn.OpenAsync();
+
+            // Giữ tên tuple cũ để không lan thay đổi: LuongXuatCheBien = tổng nhập, LuongTieuHaoBanHang = tổng xuất.
+            var nhapDict = new Dictionary<int, decimal>();
+            var sqlNhap = @"SELECT ct.NguyenLieuID,
+                                   SUM(ct.SoLuong * ISNULL(NULLIF(ct.HeSo, 0), 1)) AS TongNhap
+                            FROM CT_PhieuNhap ct
+                            INNER JOIN PhieuNhap pn ON ct.PhieuNhapID = pn.PhieuNhapID
+                            WHERE pn.TrangThai = 2
+                            AND CAST(ISNULL(pn.NgayDuyet, pn.NgayNhap) AS DATE) = @Ngay
+                            GROUP BY ct.NguyenLieuID";
+            using (var cmd = new SqlCommand(sqlNhap, conn))
+            {
+                cmd.Parameters.AddWithValue("@Ngay", ngay.Date);
+                using var reader = await cmd.ExecuteReaderAsync();
+                while (await reader.ReadAsync())
+                {
+                    nhapDict[reader.GetInt32(0)] = reader.GetDecimal(1);
+                }
+            }
+
+            var xuatDict = new Dictionary<int, decimal>();
+            var sqlXuat = @"SELECT ct.NguyenLieuID,
+                                   SUM(ct.SoLuong * ISNULL(NULLIF(ct.HeSo, 0), 1)) AS TongXuat
+                            FROM CT_PhieuXuat ct
+                            INNER JOIN PhieuXuat px ON ct.PhieuXuatID = px.PhieuXuatID
+                            WHERE px.TrangThai = 2
+                            AND CAST(ISNULL(px.NgayDuyet, px.NgayYeuCau) AS DATE) = @Ngay
+                            GROUP BY ct.NguyenLieuID";
+            using (var cmd = new SqlCommand(sqlXuat, conn))
+            {
+                cmd.Parameters.AddWithValue("@Ngay", ngay.Date);
+                using var reader = await cmd.ExecuteReaderAsync();
+                while (await reader.ReadAsync())
+                {
+                    xuatDict[reader.GetInt32(0)] = reader.GetDecimal(1);
+                }
+            }
+
+            var allIds = new HashSet<int>(nhapDict.Keys);
+            foreach (var id in xuatDict.Keys) allIds.Add(id);
+
+            if (allIds.Count > 0)
+            {
+                var idList = string.Join(",", allIds);
+                var sqlInfo = $@"SELECT nl.NguyenLieuID, nl.TenNguyenLieu,
+                                        COALESCE(dvTk.TenDonVi, dv.TenDonVi, N'') AS DonVi
+                                 FROM NguyenLieu nl
+                                 LEFT JOIN DonViTinh dv ON nl.DonViID = dv.DonViID
+                                 LEFT JOIN TonKho tk ON nl.NguyenLieuID = tk.NguyenLieuID
+                                 LEFT JOIN DonViTinh dvTk ON tk.DonViID = dvTk.DonViID
+                                 WHERE nl.NguyenLieuID IN ({idList})
+                                 ORDER BY nl.TenNguyenLieu";
+                using var cmd3 = new SqlCommand(sqlInfo, conn);
+                using var reader3 = await cmd3.ExecuteReaderAsync();
+                while (await reader3.ReadAsync())
+                {
+                    var nlId = reader3.GetInt32(0);
+                    var tenNL = reader3.GetString(1);
+                    var donVi = reader3.GetString(2);
+                    nhapDict.TryGetValue(nlId, out decimal tongNhap);
+                    xuatDict.TryGetValue(nlId, out decimal tongXuat);
+                    result.Add((nlId, tenNL, donVi, tongNhap, tongXuat));
+                }
+            }
+        }
+        catch { }
+        return result;
+    }
+
+    /// <summary>
+    /// Lấy các lô hàng còn tồn theo FIFO, kèm HSD. Trường SoLuongNhap trả về số lượng còn lại theo đơn vị của lô.
+    /// </summary>
+    public async Task<List<(int PhieuNhapID, string MaPhieuNhap, DateTime NgayNhap, int NguyenLieuID, string TenNguyenLieu, string DonVi, decimal SoLuongNhap, DateTime? HSD, int? HanCanhBao)>> GetTonKhoTheoLoHangAsync()
+    {
+        var result = new List<(int, string, DateTime, int, string, string, decimal, DateTime?, int?)>();
+        try
+        {
+            using var conn = GetConnection();
+            await conn.OpenAsync();
+            var sql = LoHangTonKhoFifoCte + @"
+                        SELECT PhieuNhapID, MaPhieuNhap, NgayNhap,
+                               NguyenLieuID, TenNguyenLieu, DonVi,
+                               CASE WHEN HeSo <= 0 THEN SoLuongConChuan ELSE SoLuongConChuan / HeSo END AS SoLuongCon,
+                               HSD, HanCanhBao
+                        FROM RemainingBatches
+                        WHERE SoLuongConChuan > 0
+                        ORDER BY TenNguyenLieu ASC, HSD ASC, NgayNhap ASC";
+            using var cmd = new SqlCommand(sql, conn);
+            using var reader = await cmd.ExecuteReaderAsync();
+            while (await reader.ReadAsync())
+            {
+                result.Add((
+                    reader.GetInt32(0),
+                    reader.IsDBNull(1) ? "" : reader.GetString(1),
+                    reader.GetDateTime(2),
+                    reader.GetInt32(3),
+                    reader.GetString(4),
+                    reader.GetString(5),
+                    reader.GetDecimal(6),
+                    reader.IsDBNull(7) ? null : reader.GetDateTime(7),
+                    reader.IsDBNull(8) ? 7 : reader.GetInt32(8)
+                ));
+            }
+        }
+        catch { }
+        return result;
+    }
+
+    /// <summary>
+    /// Lấy các lô hàng còn tồn theo FIFO đang sắp hết hạn hoặc đã hết hạn.
+    /// </summary>
+    public async Task<List<(int PhieuNhapID, string MaPhieuNhap, DateTime NgayNhap, int NguyenLieuID, string TenNguyenLieu, string DonVi, decimal SoLuongNhap, DateTime HSD, int SoNgayConLai)>> GetLoHangCanhBaoHSDAsync()
+    {
+        var result = new List<(int, string, DateTime, int, string, string, decimal, DateTime, int)>();
+        try
+        {
+            using var conn = GetConnection();
+            await conn.OpenAsync();
+            var sql = LoHangTonKhoFifoCte + @"
+                        SELECT PhieuNhapID, MaPhieuNhap, NgayNhap,
+                               NguyenLieuID, TenNguyenLieu, DonVi,
+                               CASE WHEN HeSo <= 0 THEN SoLuongConChuan ELSE SoLuongConChuan / HeSo END AS SoLuongCon,
+                               HSD,
+                               DATEDIFF(DAY, GETDATE(), HSD) AS SoNgayConLai
+                        FROM RemainingBatches
+                        WHERE SoLuongConChuan > 0
+                        AND HSD IS NOT NULL
+                        AND DATEDIFF(DAY, GETDATE(), HSD) <= ISNULL(HanCanhBao, 7)
+                        ORDER BY HSD ASC, TenNguyenLieu ASC, NgayNhap ASC";
+            using var cmd = new SqlCommand(sql, conn);
+            using var reader = await cmd.ExecuteReaderAsync();
+            while (await reader.ReadAsync())
+            {
+                result.Add((
+                    reader.GetInt32(0),
+                    reader.IsDBNull(1) ? "" : reader.GetString(1),
+                    reader.GetDateTime(2),
+                    reader.GetInt32(3),
+                    reader.GetString(4),
+                    reader.GetString(5),
+                    reader.GetDecimal(6),
+                    reader.GetDateTime(7),
+                    reader.GetInt32(8)
+                ));
+            }
+        }
+        catch { }
+        return result;
+    }
+}

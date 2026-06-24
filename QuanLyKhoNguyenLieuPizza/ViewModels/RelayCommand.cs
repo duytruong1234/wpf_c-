@@ -27,10 +27,7 @@ public class RelayCommand : ICommand
         {
             _execute(parameter);
         }
-        catch (Exception ex)
-        {
-            System.Diagnostics.Debug.WriteLine($"RelayCommand Error: {ex}");
-        }
+        catch { }
     }
 }
 
@@ -67,10 +64,6 @@ public class RelayCommand<T> : ICommand
             else
                 _execute(default);
         }
-        catch (Exception ex)
-        {
-            System.Diagnostics.Debug.WriteLine($"RelayCommand<T> Error: {ex}");
-        }
+        catch { }
     }
 }
-

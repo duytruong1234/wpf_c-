@@ -17,11 +17,19 @@ public class TonKhoItemViewModel : BaseViewModel
     public decimal SoLuongTon { get; set; }
     public string DonViTinh { get; set; } = string.Empty;
     public string MucDoTonKho { get; set; } = string.Empty;
-    
+
     public bool IsLowStock => MucDoTonKho == "Thấp" || MucDoTonKho == "Hết hàng";
-    
+
+    private bool _hasExpirySoon;
+    public bool HasExpirySoon
+    {
+        get => _hasExpirySoon;
+        set => SetProperty(ref _hasExpirySoon, value);
+    }
+
     public ICommand? EditCommand { get; set; }
     public ICommand? DeleteCommand { get; set; }
+    public ICommand? ViewExpiryDetailCommand { get; set; }
 }
 
 public class QuyDoiDonViItemViewModel : BaseViewModel
@@ -29,22 +37,22 @@ public class QuyDoiDonViItemViewModel : BaseViewModel
     private bool _laDonViChuan;
     private string _tenDonVi = string.Empty;
     private string _heSoText = "1";
-    
+
     public int QuyDoiID { get; set; }
     public int? DonViID { get; set; }
-    
+
     public string TenDonVi
     {
         get => _tenDonVi;
         set => SetProperty(ref _tenDonVi, value);
     }
-    
+
     public string HeSoText
     {
         get => _heSoText;
         set => SetProperty(ref _heSoText, value);
     }
-    
+
     public bool LaDonViChuan
     {
         get => _laDonViChuan;
@@ -57,7 +65,7 @@ public class QuyDoiDonViItemViewModel : BaseViewModel
             }
         }
     }
-    
+
     /// <summary>
     /// Đặt LaDonViChuan mà không kích hoạt command (tránh vòng lặp vô hạn)
     /// </summary>
@@ -69,11 +77,11 @@ public class QuyDoiDonViItemViewModel : BaseViewModel
             OnPropertyChanged(nameof(LaDonViChuan));
         }
     }
-    
+
     public ICommand? EditCommand { get; set; }
     public ICommand? DeleteCommand { get; set; }
     public ICommand? SetDonViChuanCommand { get; set; }
-    
+
     private bool _isBaseUnit;
     public bool IsBaseUnit
     {
@@ -82,10 +90,55 @@ public class QuyDoiDonViItemViewModel : BaseViewModel
     }
 }
 
+// Item lô hàng nhập kho với HSD
+public class LoHangItem : BaseViewModel
+{
+    public int PhieuNhapID { get; set; }
+    public string MaPhieuNhap { get; set; } = string.Empty;
+    public DateTime NgayNhap { get; set; }
+    public int NguyenLieuID { get; set; }
+    public string TenNguyenLieu { get; set; } = string.Empty;
+    public string DonVi { get; set; } = string.Empty;
+    public decimal SoLuongNhap { get; set; }
+    public DateTime? HSD { get; set; }
+    public int? HanCanhBao { get; set; }
+    public string NgayNhapText => NgayNhap.ToString("dd/MM/yyyy");
+    public string HSDText => HSD?.ToString("dd/MM/yyyy") ?? "—";
+    public bool HasHSD => HSD.HasValue;
+
+    public int SoNgayConLai => HSD.HasValue ? (int)(HSD.Value.Date - DateTime.Today).TotalDays : int.MaxValue;
+
+    public string TrangThaiHSD
+    {
+        get
+        {
+            if (!HSD.HasValue) return "Không có HSD";
+            if (SoNgayConLai < 0) return "Đã hết hạn";
+            if (SoNgayConLai == 0) return "Hết hạn hôm nay";
+            if (SoNgayConLai <= (HanCanhBao ?? 7)) return $"Còn {SoNgayConLai} ngày";
+            return "Còn hạn";
+        }
+    }
+
+    public string MauTrangThai
+    {
+        get
+        {
+            if (!HSD.HasValue) return "#94A3B8";
+            if (SoNgayConLai < 0) return "#EF4444";
+            if (SoNgayConLai <= (HanCanhBao ?? 7)) return "#F59E0B";
+            return "#10B981";
+        }
+    }
+
+    public bool IsExpired => HSD.HasValue && SoNgayConLai < 0;
+    public bool IsNearExpiry => HSD.HasValue && SoNgayConLai >= 0 && SoNgayConLai <= (HanCanhBao ?? 7);
+}
+
 public class TonKhoViewModel : BaseViewModel
 {
     private readonly DatabaseService _databaseService;
-    
+
     private LoaiNguyenLieu? _selectedLoaiNguyenLieu;
     private TonKhoItemViewModel? _selectedNguyenLieu;
     private bool _isQuyDoiPopupOpen;
@@ -99,12 +152,17 @@ public class TonKhoViewModel : BaseViewModel
     private bool _canViewHeSoQuyDoi = true;
     private bool _canViewThemTonKho = true;
     private bool _canViewXuatKho = true;
-    
+
+    // Lô hàng & cảnh báo HSD
+    private bool _isLoHangPopupOpen;
+    private string _selectedLoHangTab = "CanhBao";
+    private int _soLoHangCanhBao;
+
     // Cho popup thêm quy đổi
     private string _donViNhap = string.Empty;
     private DonViTinh? _selectedDonViXuat;
     private string _heSoNhap = string.Empty;
-    
+
     // Cho popup chỉnh sửa
     private string _editTenNguyenLieu = string.Empty;
     private decimal _editSoLuongTon;
@@ -185,7 +243,7 @@ public class TonKhoViewModel : BaseViewModel
             if (SetProperty(ref _selectedNguyenLieu, value))
             {
                 _ = LoadQuyDoiDonViAsync();
-                
+
                 // Đặt đơn vị nhập
                 if (value != null)
                 {
@@ -249,6 +307,26 @@ public class TonKhoViewModel : BaseViewModel
     public ObservableCollection<TonKhoItemViewModel> FilteredNguyenLieus { get; } = new();
     public ObservableCollection<QuyDoiDonViItemViewModel> QuyDoiDonVis { get; } = new();
     public ObservableCollection<DonViTinh> DonViTinhs { get; } = new();
+    public ObservableCollection<LoHangItem> AllLoHangItems { get; } = new();
+    public ObservableCollection<LoHangItem> LoHangCanhBaoItems { get; } = new();
+
+    public bool IsLoHangPopupOpen
+    {
+        get => _isLoHangPopupOpen;
+        set => SetProperty(ref _isLoHangPopupOpen, value);
+    }
+
+    public string SelectedLoHangTab
+    {
+        get => _selectedLoHangTab;
+        set => SetProperty(ref _selectedLoHangTab, value);
+    }
+
+    public int SoLoHangCanhBao
+    {
+        get => _soLoHangCanhBao;
+        set => SetProperty(ref _soLoHangCanhBao, value);
+    }
 
     // Lệnh
     public ICommand OpenQuyDoiPopupCommand { get; private set; } = null!;
@@ -275,6 +353,29 @@ public class TonKhoViewModel : BaseViewModel
     public ICommand SetDonViChuanCommand { get; private set; } = null!;
     public ICommand GoToPhieuNhapCommand { get; private set; } = null!;
     public ICommand GoToPhieuXuatCommand { get; private set; } = null!;
+    public ICommand OpenLoHangPopupCommand { get; private set; } = null!;
+    public ICommand CloseLoHangPopupCommand { get; private set; } = null!;
+    public ICommand SwitchLoHangTabCommand { get; private set; } = null!;
+    public ICommand ViewPhieuNhapCommand { get; private set; } = null!;
+    public ICommand ViewExpiryDetailForItemCommand { get; private set; } = null!;
+    public ICommand CloseNguyenLieuLoHangPopupCommand { get; private set; } = null!;
+
+    // Popup lô hàng theo nguyên liệu
+    private bool _isNguyenLieuLoHangPopupOpen;
+    public bool IsNguyenLieuLoHangPopupOpen
+    {
+        get => _isNguyenLieuLoHangPopupOpen;
+        set => SetProperty(ref _isNguyenLieuLoHangPopupOpen, value);
+    }
+
+    private string _selectedNguyenLieuName = string.Empty;
+    public string SelectedNguyenLieuName
+    {
+        get => _selectedNguyenLieuName;
+        set => SetProperty(ref _selectedNguyenLieuName, value);
+    }
+
+    public ObservableCollection<LoHangItem> SelectedNguyenLieuLoHang { get; } = new();
 
     /// <summary>
     /// Ẩn nút "Hệ số quy đổi" với nhân viên kho và nhân viên bếp
@@ -306,6 +407,7 @@ public class TonKhoViewModel : BaseViewModel
     public event Action? OnBack;
     public event Action? OnNavigateToPhieuNhap;
     public event Action? OnNavigateToPhieuXuat;
+    public event Action<int>? OnNavigateToPhieuNhapDetail;
 
     public TonKhoViewModel()
     {
@@ -317,11 +419,11 @@ public class TonKhoViewModel : BaseViewModel
         {
             _databaseService = App.Services.GetRequiredService<DatabaseService>();
         }
-        
+
         InitializeCommands();
         SetupRolePermissions();
-        
-        // ⚡ Thay fire-and-forget bằng SafeInitializeAsync — bắt lỗi thay vì nuốt chìm
+
+        // Thay fire-and-forget bằng SafeInitializeAsync — bắt lỗi thay vì nuốt chìm
         SafeInitializeAsync(LoadDataAsync);
     }
 
@@ -330,7 +432,7 @@ public class TonKhoViewModel : BaseViewModel
         _databaseService = databaseService;
         InitializeCommands();
         SetupRolePermissions();
-        
+
         SafeInitializeAsync(LoadDataAsync);
     }
 
@@ -341,27 +443,26 @@ public class TonKhoViewModel : BaseViewModel
     {
         var nhanVien = CurrentUserSession.Instance.CurrentUser?.NhanVien;
         var chucVuTen = (nhanVien?.ChucVu?.TenChucVu?.Trim() ?? "").ToLower();
-        
+
         // Kiểm tra theo tên chức vụ (không dùng ChucVuID vì ID tự động tăng)
         bool isQuanLy = chucVuTen.Contains("quản lý") || chucVuTen.Contains("quan ly");
         bool isNhanVienBep = !isQuanLy && (chucVuTen.Contains("bếp") || chucVuTen.Contains("bep"));
         bool isNhanVienKho = !isQuanLy && !isNhanVienBep && chucVuTen.Contains("kho");
-        
+
         // Nhân viên kho + nhân viên bếp → ẩn hệ số quy đổi
         CanViewHeSoQuyDoi = !(isNhanVienKho || isNhanVienBep);
-        
+
         // Nhân viên bếp: ẩn nút "Thêm tồn kho" (phiếu nhập)
         CanViewThemTonKho = !isNhanVienBep;
-        
+
         // Nhân viên kho: ẩn nút "Xuất kho" (phiếu xuất)
         CanViewXuatKho = !isNhanVienKho;
     }
 
-
     private void InitializeCommands()
     {
         OpenQuyDoiPopupCommand = new RelayCommand(_ => IsQuyDoiPopupOpen = true);
-        CloseQuyDoiPopupCommand = new RelayCommand(_ => 
+        CloseQuyDoiPopupCommand = new RelayCommand(_ =>
         {
             IsQuyDoiPopupOpen = false;
             IsEditing = false;
@@ -370,7 +471,7 @@ public class TonKhoViewModel : BaseViewModel
         SelectNguyenLieuCommand = new RelayCommand(ExecuteSelectNguyenLieu);
         EditCommand = new RelayCommand(_ => IsEditing = true);
         SaveCommand = new AsyncRelayCommand(async _ => await ExecuteSaveAsync());
-        AddQuyDoiCommand = new RelayCommand(_ => 
+        AddQuyDoiCommand = new RelayCommand(_ =>
         {
             IsAddQuyDoiPopupOpen = true;
             HeSoNhap = string.Empty;
@@ -383,40 +484,98 @@ public class TonKhoViewModel : BaseViewModel
         RefreshCommand = new AsyncRelayCommand(async _ => await LoadDataAsync());
         EditItemCommand = new RelayCommand(ExecuteEditItem);
         DeleteItemCommand = new AsyncRelayCommand(async param => await ExecuteDeleteItemAsync(param));
-        
+
         // Lệnh lọc
         FilterTatCaCommand = new RelayCommand(_ => SelectedFilter = "TatCa");
         FilterTonThapCommand = new RelayCommand(_ => SelectedFilter = "TonThap");
         FilterTonCaoCommand = new RelayCommand(_ => SelectedFilter = "TonCao");
-        
+
         // Lệnh popup chỉnh sửa
         OpenEditPopupCommand = new RelayCommand(ExecuteOpenEditPopup);
         CloseEditPopupCommand = new RelayCommand(_ => IsEditPopupOpen = false);
         SaveEditCommand = new AsyncRelayCommand(async _ => await ExecuteSaveEditAsync());
-        
+
         // Lệnh sửa/xóa quy đổi
         EditQuyDoiCommand = new RelayCommand(ExecuteEditQuyDoi);
         DeleteQuyDoiCommand = new AsyncRelayCommand(async param => await ExecuteDeleteQuyDoiAsync(param));
         SetDonViChuanCommand = new RelayCommand(ExecuteSetDonViChuan);
-        
+
         // Lệnh chuyển trang
         GoToPhieuNhapCommand = new RelayCommand(_ => OnNavigateToPhieuNhap?.Invoke());
         GoToPhieuXuatCommand = new RelayCommand(_ => OnNavigateToPhieuXuat?.Invoke());
+
+        // Lô hàng & cảnh báo HSD
+        OpenLoHangPopupCommand = new AsyncRelayCommand(async _ =>
+        {
+            await LoadLoHangDataAsync();
+            SelectedLoHangTab = "CanhBao";
+            IsLoHangPopupOpen = true;
+        });
+        CloseLoHangPopupCommand = new RelayCommand(_ => IsLoHangPopupOpen = false);
+        SwitchLoHangTabCommand = new RelayCommand(p =>
+        {
+            if (p is string tab) SelectedLoHangTab = tab;
+        });
+        ViewPhieuNhapCommand = new RelayCommand(p =>
+        {
+            if (p is int phieuNhapId)
+            {
+                OnNavigateToPhieuNhapDetail?.Invoke(phieuNhapId);
+            }
+        });
+        ViewExpiryDetailForItemCommand = new AsyncRelayCommand(async p =>
+        {
+            if (p is TonKhoItemViewModel item)
+            {
+                SelectedNguyenLieuName = item.TenNguyenLieu;
+                SelectedNguyenLieuLoHang.Clear();
+
+                try
+                {
+                    var allBatches = await _databaseService.GetTonKhoTheoLoHangAsync();
+                    var filteredBatches = allBatches
+                        .Where(lo => lo.NguyenLieuID == item.NguyenLieuID)
+                        .OrderBy(lo => lo.HSD ?? DateTime.MaxValue)
+                        .ThenBy(lo => lo.NgayNhap)
+                        .ToList();
+
+                    foreach (var (phieuNhapID, maPN, ngayNhap, nlId, tenNL, donVi, soLuong, hsd, hanCanhBao) in filteredBatches)
+                    {
+                        SelectedNguyenLieuLoHang.Add(new LoHangItem
+                        {
+                            PhieuNhapID = phieuNhapID,
+                            MaPhieuNhap = maPN,
+                            NgayNhap = ngayNhap,
+                            NguyenLieuID = nlId,
+                            TenNguyenLieu = tenNL,
+                            DonVi = donVi,
+                            SoLuongNhap = soLuong,
+                            HSD = hsd,
+                            HanCanhBao = hanCanhBao
+                        });
+                    }
+                }
+                catch { }
+
+                IsNguyenLieuLoHangPopupOpen = true;
+            }
+        });
+        CloseNguyenLieuLoHangPopupCommand = new RelayCommand(_ => IsNguyenLieuLoHangPopupOpen = false);
     }
 
     private void ApplyFilters()
     {
-        // ⚡ Tính toán filter ngoài UI thread, chỉ swap collection trên UI
+        // Tính toán filter ngoài UI thread, chỉ swap collection trên UI
         var filtered = TonKhoItems.AsEnumerable();
-        
+
         // Áp dụng bộ lọc tìm kiếm
         if (!string.IsNullOrWhiteSpace(SearchText))
         {
-            filtered = filtered.Where(x => 
+            filtered = filtered.Where(x =>
                 x.TenNguyenLieu.Contains(SearchText, StringComparison.OrdinalIgnoreCase) ||
                 x.MaNguyenLieu.Contains(SearchText, StringComparison.OrdinalIgnoreCase));
         }
-        
+
         // Áp dụng bộ lọc trạng thái
         if (SelectedFilter == "TonThap")
         {
@@ -426,13 +585,13 @@ public class TonKhoViewModel : BaseViewModel
         {
             filtered = filtered.Where(x => !x.IsLowStock && x.MucDoTonKho.Contains("Cao", StringComparison.OrdinalIgnoreCase));
         }
-        
-        // ⚡ Materialize danh sách trước rồi mới swap trên UI
+
+        // Materialize danh sách trước rồi mới swap trên UI
         var result = filtered.ToList();
-        
+
         System.Windows.Application.Current.Dispatcher.BeginInvoke(() =>
         {
-            // ⚡ Thay vì Clear + Add từng cái (N lần UI vẽ lại),
+            // Thay vì Clear + Add từng cái (N lần UI vẽ lại),
             // dùng ReplaceAll chỉ vẽ lại 1 lần
             if (FilteredTonKhoItems is RangeObservableCollection<TonKhoItemViewModel> rangeCollection)
             {
@@ -445,8 +604,7 @@ public class TonKhoViewModel : BaseViewModel
                     FilteredTonKhoItems.Add(item);
             }
         });
-        
-        System.Diagnostics.Debug.WriteLine($"ApplyFilters - Filter: {SelectedFilter}, Total: {TonKhoItems.Count}, Filtered: {result.Count}");
+
     }
 
     private void ExecuteOpenEditPopup(object? parameter)
@@ -465,25 +623,32 @@ public class TonKhoViewModel : BaseViewModel
     {
         if (SelectedNguyenLieu == null) return;
 
+        if (EditSoLuongTon < 0)
+        {
+            System.Windows.MessageBox.Show(
+                "Số lượng tồn kho không được là số âm!",
+                "Cảnh báo",
+                System.Windows.MessageBoxButton.OK,
+                System.Windows.MessageBoxImage.Warning);
+            return;
+        }
+
         try
         {
             // Cập nhật tồn kho
             var success = await _databaseService.UpdateTonKhoAsync(SelectedNguyenLieu.NguyenLieuID, EditSoLuongTon);
-            
+
             if (success)
             {
                 // Cập nhật giao diện
                 SelectedNguyenLieu.SoLuongTon = EditSoLuongTon;
                 SelectedNguyenLieu.MucDoTonKho = GetMucDoTonKho(EditSoLuongTon);
-                
+
                 IsEditPopupOpen = false;
                 await LoadTonKhoAsync();
             }
         }
-        catch (Exception ex)
-        {
-            System.Diagnostics.Debug.WriteLine($"Error saving edit: {ex.Message}");
-        }
+        catch { }
     }
 
     private string GetMucDoTonKho(decimal soLuong, decimal heSoChuan = 1m)
@@ -499,19 +664,19 @@ public class TonKhoViewModel : BaseViewModel
         try
         {
             IsLoading = true;
-            
-            // ⚡ Tải dữ liệu ngoài UI thread
+
+            // Tải dữ liệu ngoài UI thread
             var loaiNLs = await _databaseService.GetLoaiNguyenLieusAsync();
             var donVis = await _databaseService.GetDonViTinhsAsync();
 
-            // ⚡ Cập nhật UI bằng BeginInvoke (không block) thay vì Invoke (block)
+            // Cập nhật UI bằng BeginInvoke (không block) thay vì Invoke (block)
             await System.Windows.Application.Current.Dispatcher.InvokeAsync(() =>
             {
                 LoaiNguyenLieus.Clear();
                 LoaiNguyenLieus.Add(new LoaiNguyenLieu { LoaiNLID = 0, TenLoai = "Tất cả" });
                 foreach (var loai in loaiNLs)
                     LoaiNguyenLieus.Add(loai);
-                
+
                 if (LoaiNguyenLieus.Count > 0)
                     SelectedLoaiNguyenLieu = LoaiNguyenLieus[0];
 
@@ -522,14 +687,34 @@ public class TonKhoViewModel : BaseViewModel
 
             // Tải dữ liệu tồn kho
             await LoadTonKhoAsync();
-            
+
             // Tải nguyên liệu cho popup
             await FilterNguyenLieuAsync();
+
+            // Tải số lượng lô hàng cảnh báo HSD
+            try
+            {
+                var canhBaoData = await _databaseService.GetLoHangCanhBaoHSDAsync();
+                SoLoHangCanhBao = canhBaoData.Count;
+
+                // Tính HasExpirySoon cho từng nguyên liệu
+                var nguyenLieuIdsWithExpiry = canhBaoData
+                    .Select(lo => lo.NguyenLieuID)
+                    .Where(id => id > 0)
+                    .Distinct()
+                    .ToHashSet();
+
+                await System.Windows.Application.Current.Dispatcher.InvokeAsync(() =>
+                {
+                    foreach (var item in TonKhoItems)
+                    {
+                        item.HasExpirySoon = nguyenLieuIdsWithExpiry.Contains(item.NguyenLieuID);
+                    }
+                });
+            }
+            catch { SoLoHangCanhBao = 0; }
         }
-        catch (Exception ex)
-        {
-            System.Diagnostics.Debug.WriteLine($"Error in LoadDataAsync: {ex.Message}");
-        }
+        catch { }
         finally
         {
             await System.Windows.Application.Current.Dispatcher.InvokeAsync(() => IsLoading = false);
@@ -539,8 +724,8 @@ public class TonKhoViewModel : BaseViewModel
     private async Task LoadTonKhoAsync()
     {
         var tonKhos = await _databaseService.GetTonKhosAsync();
-        
-        // ⚡ Chuẩn bị dữ liệu ngoài UI thread
+
+        // Chuẩn bị dữ liệu ngoài UI thread
         var items = tonKhos.Select(tk => new TonKhoItemViewModel
         {
             NguyenLieuID = tk.NguyenLieuID ?? 0,
@@ -551,21 +736,21 @@ public class TonKhoViewModel : BaseViewModel
             DonViTinh = tk.NguyenLieu?.DonViTinh?.TenDonVi ?? "",
             MucDoTonKho = GetMucDoTonKho(tk.SoLuongTon, tk.HeSoChuan),
             EditCommand = OpenEditPopupCommand,
-            DeleteCommand = DeleteItemCommand
+            DeleteCommand = DeleteItemCommand,
+            ViewExpiryDetailCommand = ViewExpiryDetailForItemCommand
         }).ToList();
 
-        // ⚡ Chỉ cập nhật UI 1 lần với tất cả dữ liệu
+        // Chỉ cập nhật UI 1 lần với tất cả dữ liệu
         await System.Windows.Application.Current.Dispatcher.InvokeAsync(() =>
         {
             TonKhoItems.Clear();
             foreach (var item in items)
                 TonKhoItems.Add(item);
-            
+
             SoNguyenLieuTonKho = TonKhoItems.Count;
             ApplyFilters();
         });
     }
-
 
     private async Task FilterNguyenLieuAsync()
     {
@@ -573,17 +758,17 @@ public class TonKhoViewModel : BaseViewModel
         {
             int? loaiID = SelectedLoaiNguyenLieu?.LoaiNLID;
             if (loaiID == 0) loaiID = null;
-            
+
             var nguyenLieus = await _databaseService.GetNguyenLieusAsync(loaiID);
-            
+
             System.Windows.Application.Current.Dispatcher.Invoke(() =>
             {
                 FilteredNguyenLieus.Clear();
-                
+
                 foreach (var nl in nguyenLieus)
                 {
                     var tonKhoItem = TonKhoItems.FirstOrDefault(t => t.NguyenLieuID == nl.NguyenLieuID);
-                    
+
                     FilteredNguyenLieus.Add(new TonKhoItemViewModel
                     {
                         NguyenLieuID = nl.NguyenLieuID,
@@ -599,9 +784,7 @@ public class TonKhoViewModel : BaseViewModel
                 }
             });
         }
-        catch (Exception ex)
-        {
-            System.Diagnostics.Debug.WriteLine($"Error in FilterNguyenLieuAsync: {ex.Message}");
+        catch {
             System.Windows.Application.Current.Dispatcher.Invoke(() => FilteredNguyenLieus.Clear());
         }
     }
@@ -617,26 +800,24 @@ public class TonKhoViewModel : BaseViewModel
     private async Task LoadQuyDoiDonViAsync()
     {
         QuyDoiDonVis.Clear();
-        
+
         if (SelectedNguyenLieu == null) return;
 
         try
         {
-            System.Diagnostics.Debug.WriteLine($"=== Loading QuyDoi for NguyenLieuID: {SelectedNguyenLieu.NguyenLieuID} ===");
             var quyDois = await _databaseService.GetQuyDoiDonVisAsync(SelectedNguyenLieu.NguyenLieuID);
-            System.Diagnostics.Debug.WriteLine($"=== Found {quyDois.Count} QuyDoi records ===");
-            
+
             // Tìm đơn vị gốc của nguyên liệu
             var donViGoc = DonViTinhs.FirstOrDefault(d => d.TenDonVi == SelectedNguyenLieu.DonViTinh);
             bool baseUnitAdded = false;
-            
+
             if (quyDois.Count > 0)
             {
                 // Thêm đơn vị gốc lên đầu tiên nếu có trong danh sách
-                var baseQuyDoi = donViGoc != null 
-                    ? quyDois.FirstOrDefault(qd => qd.DonViID == donViGoc.DonViID) 
+                var baseQuyDoi = donViGoc != null
+                    ? quyDois.FirstOrDefault(qd => qd.DonViID == donViGoc.DonViID)
                     : null;
-                
+
                 if (baseQuyDoi != null)
                 {
                     QuyDoiDonVis.Add(new QuyDoiDonViItemViewModel
@@ -644,7 +825,7 @@ public class TonKhoViewModel : BaseViewModel
                         QuyDoiID = baseQuyDoi.QuyDoiID,
                         DonViID = baseQuyDoi.DonViID,
                         TenDonVi = baseQuyDoi.DonViTinh?.TenDonVi ?? "",
-                        HeSoText = baseQuyDoi.HeSo.ToString("G"),
+                        HeSoText = baseQuyDoi.HeSo.ToString("0.####"),
                         LaDonViChuan = baseQuyDoi.LaDonViChuan,
                         IsBaseUnit = true,
                         EditCommand = EditQuyDoiCommand,
@@ -653,20 +834,19 @@ public class TonKhoViewModel : BaseViewModel
                     });
                     baseUnitAdded = true;
                 }
-                
+
                 foreach (var qd in quyDois)
                 {
                     // Bỏ qua đơn vị gốc vì đã thêm ở trên
                     if (baseQuyDoi != null && qd.QuyDoiID == baseQuyDoi.QuyDoiID)
                         continue;
-                    
-                    System.Diagnostics.Debug.WriteLine($"QuyDoi: {qd.DonViTinh?.TenDonVi}, HeSo: {qd.HeSo}");
+
                     QuyDoiDonVis.Add(new QuyDoiDonViItemViewModel
                     {
                         QuyDoiID = qd.QuyDoiID,
                         DonViID = qd.DonViID,
                         TenDonVi = qd.DonViTinh?.TenDonVi ?? "",
-                        HeSoText = qd.HeSo.ToString("G"),
+                        HeSoText = qd.HeSo.ToString("0.####"),
                         LaDonViChuan = qd.LaDonViChuan,
                         IsBaseUnit = false,
                         EditCommand = EditQuyDoiCommand,
@@ -675,12 +855,11 @@ public class TonKhoViewModel : BaseViewModel
                     });
                 }
             }
-            
+
             // Nếu chưa thêm đơn vị gốc, thêm mặc định lên đầu
             if (!baseUnitAdded)
             {
-                System.Diagnostics.Debug.WriteLine($"=== No base unit found, adding: {SelectedNguyenLieu.DonViTinh} ===");
-                
+
                 if (donViGoc != null)
                 {
                     QuyDoiDonVis.Insert(0, new QuyDoiDonViItemViewModel
@@ -712,14 +891,9 @@ public class TonKhoViewModel : BaseViewModel
                     });
                 }
             }
-            
-            System.Diagnostics.Debug.WriteLine($"=== Total QuyDoiDonVis in collection: {QuyDoiDonVis.Count} ===");
+
         }
-        catch (Exception ex)
-        {
-            System.Diagnostics.Debug.WriteLine($"Error loading QuyDoiDonVi: {ex.Message}");
-            System.Diagnostics.Debug.WriteLine($"Stack trace: {ex.StackTrace}");
-        }
+        catch { }
     }
 
     private async Task ExecuteSaveAsync()
@@ -730,8 +904,8 @@ public class TonKhoViewModel : BaseViewModel
         if (QuyDoiDonVis.Any() && !QuyDoiDonVis.Any(r => r.LaDonViChuan))
         {
             System.Windows.MessageBox.Show(
-                "Phải có ít nhất 1 đơn vị được chọn làm ĐV Chuẩn (đơn vị lưu tồn kho)!",
-                "Thiếu đơn vị chuẩn",
+                "Phải có ít nhất 1 đơn vị được chọn làm đơn vị lưu tồn kho!",
+                "Thiếu đơn vị lưu tồn kho",
                 System.Windows.MessageBoxButton.OK,
                 System.Windows.MessageBoxImage.Warning);
             return;
@@ -764,17 +938,17 @@ public class TonKhoViewModel : BaseViewModel
                     HeSo = parsedHeSo,
                     LaDonViChuan = qd.LaDonViChuan
                 };
-                
+
                 await _databaseService.SaveQuyDoiDonViAsync(quyDoi);
             }
 
             // So sánh đơn vị chuẩn CŨ (từ DB) với đơn vị chuẩn MỚI (từ UI)
             var newDonViChuan = QuyDoiDonVis.FirstOrDefault(qd => qd.LaDonViChuan);
-            if (newDonViChuan?.DonViID != null && 
+            if (newDonViChuan?.DonViID != null &&
                 (oldDonViChuan == null || oldDonViChuan.DonViID != newDonViChuan.DonViID))
             {
                 // Quy đổi số lượng tồn kho theo đơn vị chuẩn mới
-                // ⚡ BUG FIX: Lấy hệ số cũ từ giao diện (QuyDoiDonVis) thay vì từ DB (oldDonViChuan)
+                // BUG FIX: Lấy hệ số cũ từ giao diện (QuyDoiDonVis) thay vì từ DB (oldDonViChuan)
                 // Vì người dùng có thể đang sửa cả hệ số cũ trong cùng 1 lần lưu!
                 var uiOldDonVi = QuyDoiDonVis.FirstOrDefault(qd => qd.DonViID == oldDonViChuan?.DonViID);
                 decimal oldHeSo = 1m;
@@ -797,7 +971,7 @@ public class TonKhoViewModel : BaseViewModel
                 {
                     newHeSo = parsedNewHeSo;
                 }
-                
+
                 if (oldHeSo > 0 && newHeSo > 0)
                 {
                     decimal conversionFactor = oldHeSo / newHeSo;
@@ -806,13 +980,13 @@ public class TonKhoViewModel : BaseViewModel
                     // Cập nhật cả số lượng VÀ đơn vị trong bảng TonKho
                     await _databaseService.UpdateTonKhoDonViAsync(
                         SelectedNguyenLieu.NguyenLieuID, newSoLuongTon, newDonViChuan.DonViID ?? 0);
-                        
-                    // ⚡ BUG FIX: Cập nhật lại số lượng tồn + đơn vị trên UI
+
+                    // BUG FIX: Cập nhật lại số lượng tồn + đơn vị trên UI
                     SelectedNguyenLieu.SoLuongTon = newSoLuongTon;
                     SelectedNguyenLieu.MucDoTonKho = GetMucDoTonKho(newSoLuongTon);
                     SelectedNguyenLieu.DonViTinh = newDonViChuan.TenDonVi;
                 }
-                
+
                 // Lưu ý: KHÔNG thay đổi DonViID trong bảng NguyenLieu
                 // Đơn vị gốc của nguyên liệu luôn giữ nguyên, chỉ đổi đơn vị chuẩn + TonKho.DonViID
             }
@@ -822,18 +996,16 @@ public class TonKhoViewModel : BaseViewModel
                 "Thành công",
                 System.Windows.MessageBoxButton.OK,
                 System.Windows.MessageBoxImage.Information);
-            
+
             IsEditing = false;
 
             // Reload lại để cập nhật QuyDoiID mới và tránh trùng lặp
             await LoadQuyDoiDonViAsync();
-            
+
             // Reload bảng tồn kho để hiển thị đơn vị mới
             await LoadTonKhoAsync();
         }
-        catch (Exception ex)
-        {
-            System.Diagnostics.Debug.WriteLine($"Error saving: {ex.Message}");
+        catch (Exception ex) {
             System.Windows.MessageBox.Show(
                 $"Lỗi khi lưu: {ex.Message}",
                 "Lỗi",
@@ -908,9 +1080,9 @@ public class TonKhoViewModel : BaseViewModel
                 HeSo = heSo,
                 LaDonViChuan = false
             };
-            
+
             var success = await _databaseService.SaveQuyDoiDonViAsync(quyDoi);
-            
+
             if (success)
             {
                 IsAddQuyDoiPopupOpen = false;
@@ -927,9 +1099,7 @@ public class TonKhoViewModel : BaseViewModel
                     System.Windows.MessageBoxImage.Information);
             }
         }
-        catch (Exception ex)
-        {
-            System.Diagnostics.Debug.WriteLine($"Error saving new QuyDoi: {ex.Message}");
+        catch (Exception ex) {
             System.Windows.MessageBox.Show(
                 $"Lỗi khi thêm quy đổi: {ex.Message}",
                 "Lỗi",
@@ -942,15 +1112,7 @@ public class TonKhoViewModel : BaseViewModel
     {
         if (parameter is TonKhoItemViewModel item)
         {
-            // Mở hộp thoại chỉnh sửa hoặc điều hướng đến trang chỉnh sửa
-            // Hiện tại, chỉ hiển thị thông báo debug
-            System.Diagnostics.Debug.WriteLine($"Edit item: {item.TenNguyenLieu} (ID: {item.NguyenLieuID})");
-            
-            // TODO: Triển khai chức năng chỉnh sửa
-            // Có thể mở popup để chỉnh sửa chi tiết nguyên liệu
-            // Ví dụ:
-            // - Mở popup để chỉnh sửa tên nguyên liệu, số lượng, đơn vị, v.v.
-            // - Hoặc điều hướng đến trang chỉnh sửa riêng
+            ExecuteOpenEditPopup(item);
         }
     }
 
@@ -967,7 +1129,7 @@ public class TonKhoViewModel : BaseViewModel
             try
             {
                 var success = await _databaseService.DeleteNguyenLieuAsync(item.NguyenLieuID);
-                
+
                 if (success)
                 {
                     System.Windows.Application.Current.Dispatcher.Invoke(() =>
@@ -978,10 +1140,7 @@ public class TonKhoViewModel : BaseViewModel
                     });
                 }
             }
-            catch (Exception ex)
-            {
-                System.Diagnostics.Debug.WriteLine($"Error deleting item: {ex.Message}");
-            }
+            catch { }
         }
     }
 
@@ -1023,7 +1182,7 @@ public class TonKhoViewModel : BaseViewModel
                     System.Windows.MessageBoxImage.Warning);
                 return;
             }
-            
+
             var confirmed = await ShowDeleteConfirmation(
                 quyDoi.TenDonVi,
                 "Xóa hệ số quy đổi",
@@ -1035,7 +1194,7 @@ public class TonKhoViewModel : BaseViewModel
                 if (quyDoi.QuyDoiID > 0)
                 {
                     var success = await _databaseService.DeleteQuyDoiDonViAsync(quyDoi.QuyDoiID);
-                    
+
                     if (success)
                     {
                         System.Windows.Application.Current.Dispatcher.Invoke(() =>
@@ -1052,11 +1211,55 @@ public class TonKhoViewModel : BaseViewModel
                     });
                 }
             }
-            catch (Exception ex)
-            {
-                System.Diagnostics.Debug.WriteLine($"Error deleting quy doi: {ex.Message}");
-            }
+            catch { }
         }
     }
-}
 
+    private async Task LoadLoHangDataAsync()
+    {
+        try
+        {
+            var allBatches = await _databaseService.GetTonKhoTheoLoHangAsync();
+            var warningBatches = await _databaseService.GetLoHangCanhBaoHSDAsync();
+
+            await System.Windows.Application.Current.Dispatcher.InvokeAsync(() =>
+            {
+                AllLoHangItems.Clear();
+                foreach (var (phieuNhapID, maPN, ngayNhap, nlId, tenNL, donVi, soLuong, hsd, hanCB) in allBatches)
+                {
+                    AllLoHangItems.Add(new LoHangItem
+                    {
+                        PhieuNhapID = phieuNhapID,
+                        MaPhieuNhap = maPN,
+                        NgayNhap = ngayNhap,
+                        NguyenLieuID = nlId,
+                        TenNguyenLieu = tenNL,
+                        DonVi = donVi,
+                        SoLuongNhap = soLuong,
+                        HSD = hsd,
+                        HanCanhBao = hanCB
+                    });
+                }
+
+                LoHangCanhBaoItems.Clear();
+                foreach (var (phieuNhapID, maPN, ngayNhap, nlId, tenNL, donVi, soLuong, hsd, soNgayConLai) in warningBatches)
+                {
+                    LoHangCanhBaoItems.Add(new LoHangItem
+                    {
+                        PhieuNhapID = phieuNhapID,
+                        MaPhieuNhap = maPN,
+                        NgayNhap = ngayNhap,
+                        NguyenLieuID = nlId,
+                        TenNguyenLieu = tenNL,
+                        DonVi = donVi,
+                        SoLuongNhap = soLuong,
+                        HSD = hsd
+                    });
+                }
+
+                SoLoHangCanhBao = LoHangCanhBaoItems.Count;
+            });
+        }
+        catch { }
+    }
+}

@@ -11,4 +11,3 @@ public class NguyenLieuNhaCungCap
     public virtual NguyenLieu? NguyenLieu { get; set; }
     public virtual NhaCungCap? NhaCungCap { get; set; }
 }
-

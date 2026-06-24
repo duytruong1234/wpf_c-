@@ -10,4 +10,3 @@ public class GiaTheo_Size
     public virtual HangHoa? HangHoa { get; set; }
     public virtual DoanhMuc_Size? DoanhMucSize { get; set; }
 }
-

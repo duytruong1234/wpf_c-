@@ -70,6 +70,8 @@ public class BanHangViewModel : BaseViewModel
     private DoanhMuc_Size? _selectedSize;
     private DoanhMuc_De? _selectedDe;
     private HangHoa? _selectedHangHoa;
+    private List<DoanhMuc_Size> _allSizes = new();
+    private List<HangHoa> _currentVariations = new();
 
     // Thống kê
     private decimal _doanhThuHomNay;
@@ -87,6 +89,7 @@ public class BanHangViewModel : BaseViewModel
     private string _searchText = string.Empty;
     private string _ghiChu = string.Empty;
     private string _selectedPhuongThucTT = "Tiền mặt";
+    private string _selectedFilterPhuongThucTT = "Tất cả";
 
     // Thanh toán chi tiết
     private decimal? _giamGia;
@@ -119,7 +122,10 @@ public class BanHangViewModel : BaseViewModel
             if (SetProperty(ref _selectedSize, value))
             {
                 if (value != null)
+                {
                     _ = LoadGiaTheoDeAsync(value.SizeID);
+                    UpdateSelectedHangHoaForSize(value.SizeID);
+                }
                 OnPropertyChanged(nameof(PreviewGiaBanSize));
                 OnPropertyChanged(nameof(PreviewGiaThem));
                 OnPropertyChanged(nameof(PreviewGia));
@@ -187,7 +193,7 @@ public class BanHangViewModel : BaseViewModel
         }
     }
     public decimal TienThua => Math.Max(0, (TienKhachDua ?? 0) - KhachCanTra);
-    
+
     public bool IsTienKhachThieu => !IsChuyenKhoan && TienKhachDua.HasValue && TienKhachDua < KhachCanTra;
     public string ThongBaoTienKhachThieu => IsTienKhachThieu ? $"Khách đưa thiếu {(KhachCanTra - (TienKhachDua ?? 0)):N0}" : "";
 
@@ -221,6 +227,16 @@ public class BanHangViewModel : BaseViewModel
     public string GhiChu { get => _ghiChu; set { SetProperty(ref _ghiChu, value); } }
 
     public List<string> DanhSachPhuongThucTT { get; } = new() { "Tiền mặt", "Chuyển khoản" };
+    public List<string> FilterPhuongThucTTOptions { get; } = new() { "Tất cả", "Tiền mặt", "Chuyển khoản" };
+    public string SelectedFilterPhuongThucTT
+    {
+        get => _selectedFilterPhuongThucTT;
+        set
+        {
+            if (SetProperty(ref _selectedFilterPhuongThucTT, value))
+                _ = LoadPhieuBanHangsAsync();
+        }
+    }
     public string SelectedPhuongThucTT
     {
         get => _selectedPhuongThucTT;
@@ -273,7 +289,7 @@ public class BanHangViewModel : BaseViewModel
     public ICommand DeletePhieuBanCommand { get; }
     public ICommand CloseDeletePhieuBanDialogCommand { get; }
     public ICommand ConfirmDeletePhieuBanCommand { get; }
-    
+
     public ICommand EditPhieuBanCommand { get; }
     public ICommand CloseEditPhieuBanDialogCommand { get; }
     public ICommand SaveEditPhieuBanCommand { get; }
@@ -327,7 +343,7 @@ public class BanHangViewModel : BaseViewModel
         DeletePhieuBanCommand = new RelayCommand(ExecuteDeletePhieuBan);
         CloseDeletePhieuBanDialogCommand = new RelayCommand(_ => { IsDeletePhieuBanDialogOpen = false; DeletingPhieuBan = null; });
         ConfirmDeletePhieuBanCommand = new AsyncRelayCommand(ExecuteConfirmDeletePhieuBanAsync);
-        
+
         EditPhieuBanCommand = new RelayCommand(ExecuteEditPhieuBan);
         CloseEditPhieuBanDialogCommand = new RelayCommand(_ => { IsEditPhieuBanDialogOpen = false; EditingPhieuBan = null; });
         SaveEditPhieuBanCommand = new AsyncRelayCommand(ExecuteSaveEditPhieuBanAsync);
@@ -401,23 +417,30 @@ public class BanHangViewModel : BaseViewModel
     private async Task LoadPhieuBanHangsAsync()
     {
         var phieuBans = await _db.GetPhieuBanHangsAsync(FilterFromDate, FilterToDate);
-        
+
         var currentNhanVienId = CurrentUserSession.Instance.CurrentUser?.NhanVienID;
         var chucVuTen = (CurrentUserSession.Instance.CurrentUser?.NhanVien?.ChucVu?.TenChucVu?.Trim() ?? "").ToLower();
         bool isQuanLy = chucVuTen.Contains("quản lý") || chucVuTen.Contains("quan ly");
-        
+
         // Quản lý xem được tất cả, còn lại chỉ xem đơn hàng của mình
         if (!isQuanLy)
         {
             phieuBans = phieuBans.Where(p => p.NhanVienBanID == currentNhanVienId).ToList();
         }
-        
+
+        // Lọc theo phương thức thanh toán
+        if (!string.IsNullOrEmpty(SelectedFilterPhuongThucTT) && SelectedFilterPhuongThucTT != "Tất cả")
+        {
+            phieuBans = phieuBans.Where(p => p.PhuongThucTT == SelectedFilterPhuongThucTT).ToList();
+        }
+
         PhieuBanHangs = new ObservableCollection<PhieuBanHang>(phieuBans);
     }
 
     private async Task LoadSupportDataAsync()
     {
         var sizes = await _db.GetDoanhMucSizesAsync();
+        _allSizes = sizes;
         Sizes = new ObservableCollection<DoanhMuc_Size>(sizes);
         var des = await _db.GetDoanhMucDesAsync();
         DeBanhs = new ObservableCollection<DoanhMuc_De>(des);
@@ -431,39 +454,109 @@ public class BanHangViewModel : BaseViewModel
         OnPropertyChanged(nameof(PreviewGia));
     }
 
+    private void UpdateSelectedHangHoaForSize(string sizeId)
+    {
+        if (_currentVariations == null || _currentVariations.Count == 0) return;
+
+        var matchingVar = _currentVariations.FirstOrDefault(v => {
+            var gia = GiaTheoSizes.FirstOrDefault(g => g.MaHangHoa == v.MaHangHoa && g.SizeID == sizeId);
+            return gia != null;
+        });
+
+        if (matchingVar != null)
+        {
+            SelectedHangHoa = matchingVar;
+        }
+    }
+
     private void FilterHangHoas()
     {
+        List<HangHoa> filteredActive;
         if (string.IsNullOrWhiteSpace(SearchText))
         {
-            HangHoas = new ObservableCollection<HangHoa>(_cachedActiveHangHoas);
-            return;
+            filteredActive = _cachedActiveHangHoas;
         }
-        var search = SearchText.ToLower();
-        var filtered = _cachedActiveHangHoas.Where(h =>
-            (h.TenHangHoa?.ToLower().Contains(search) ?? false) ||
-            h.MaHangHoa.ToLower().Contains(search)).ToList();
-        HangHoas = new ObservableCollection<HangHoa>(filtered);
+        else
+        {
+            var search = SearchText.ToLower();
+            filteredActive = _cachedActiveHangHoas.Where(h =>
+                (h.TenHangHoa?.ToLower().Contains(search) ?? false) ||
+                h.MaHangHoa.ToLower().Contains(search)).ToList();
+        }
+
+        var grouped = filteredActive
+            .GroupBy(h => h.TenHangHoa ?? string.Empty)
+            .Select(g =>
+            {
+                var rep = g.First();
+                bool allOutOfStock = g.All(h => h.IsOutOfStock);
+
+                return new HangHoa
+                {
+                    MaHangHoa = rep.MaHangHoa.Split('-')[0].Trim(),
+                    TenHangHoa = rep.TenHangHoa,
+                    HinhAnh = rep.HinhAnh,
+                    DonViID = rep.DonViID,
+                    LoaiHangHoaID = rep.LoaiHangHoaID,
+                    TinhTrang = rep.TinhTrang,
+                    DonViTinh = rep.DonViTinh,
+                    LoaiHangHoa = rep.LoaiHangHoa,
+                    IsOutOfStock = allOutOfStock,
+                    OutOfStockNote = allOutOfStock ? "Tất cả các cỡ bánh đều hết hàng" : string.Empty
+                };
+            })
+            .ToList();
+
+        HangHoas = new ObservableCollection<HangHoa>(grouped);
     }
     #endregion
 
     #region Thao tác giỏ hàng
     private async Task ExecuteSelectHangHoaAsync(object? parameter)
     {
-        if (parameter is not HangHoa hangHoa) return;
-        if (hangHoa.IsOutOfStock)
+        if (parameter is not HangHoa displayHh) return;
+        if (displayHh.IsOutOfStock)
         {
-            var note = string.IsNullOrWhiteSpace(hangHoa.OutOfStockNote) ? "Pizza này đang hết nguyên liệu." : hangHoa.OutOfStockNote;
+            var note = string.IsNullOrWhiteSpace(displayHh.OutOfStockNote) ? "Pizza này đang hết nguyên liệu." : displayHh.OutOfStockNote;
             MessageBox.Show(note, "Hết hàng", MessageBoxButton.OK, MessageBoxImage.Warning);
             return;
         }
-        SelectedHangHoa = hangHoa;
 
-        // Tải giá cho sản phẩm này
-        var giaTheoSizes = await _db.GetGiaTheoSizeByHangHoaAsync(hangHoa.MaHangHoa);
-        GiaTheoSizes = new ObservableCollection<GiaTheo_Size>(giaTheoSizes);
+        // 1. Tìm tất cả các biến thể của pizza này
+        _currentVariations = _cachedActiveHangHoas
+            .Where(h => h.TenHangHoa == displayHh.TenHangHoa)
+            .ToList();
 
-        // Đặt lại lựa chọn
-        SelectedSize = Sizes.FirstOrDefault();
+        // 2. Tải giá cho tất cả các size của pizza này
+        var allGiaTheoSizes = new List<GiaTheo_Size>();
+        foreach (var v in _currentVariations)
+        {
+            var gia = await _db.GetGiaTheoSizeByHangHoaAsync(v.MaHangHoa);
+            allGiaTheoSizes.AddRange(gia);
+        }
+        GiaTheoSizes = new ObservableCollection<GiaTheo_Size>(allGiaTheoSizes);
+
+        // 3. Lọc danh sách sizes có sẵn cho pizza này để hiển thị trong combobox
+        var availableSizeIds = GiaTheoSizes.Select(g => g.SizeID).Distinct().ToList();
+        var dialogSizes = _allSizes.Where(s => availableSizeIds.Contains(s.SizeID)).ToList();
+        Sizes = new ObservableCollection<DoanhMuc_Size>(dialogSizes);
+
+        // 4. Đặt lại giá trị private về null để chắc chắn kích hoạt Setter PropertyChanged khi gán mới
+        _selectedSize = null;
+        _selectedDe = null;
+
+        // Chọn size đầu tiên khả dụng (ưu tiên size còn hàng)
+        var firstInStockVar = _currentVariations.FirstOrDefault(v => !v.IsOutOfStock);
+        if (firstInStockVar != null)
+        {
+            var firstInStockSizeId = GiaTheoSizes.FirstOrDefault(g => g.MaHangHoa == firstInStockVar.MaHangHoa)?.SizeID;
+            SelectedSize = Sizes.FirstOrDefault(s => s.SizeID == firstInStockSizeId) ?? Sizes.FirstOrDefault();
+        }
+        else
+        {
+            SelectedSize = Sizes.FirstOrDefault();
+        }
+
         SelectedDe = DeBanhs.FirstOrDefault();
 
         IsSizeDeDialogOpen = true;
@@ -472,7 +565,7 @@ public class BanHangViewModel : BaseViewModel
     private void ExecuteConfirmAddToCart(object? parameter)
     {
         if (SelectedHangHoa == null || SelectedSize == null) return;
-        
+
         if (SelectedDe == null)
         {
             MessageBox.Show("Vui lòng chọn đế bánh!", "Cảnh báo", MessageBoxButton.OK, MessageBoxImage.Warning);
@@ -638,7 +731,7 @@ public class BanHangViewModel : BaseViewModel
             }).ToList();
 
             var savedMa = await _db.SavePhieuBanHangAsync(phieuBan, chiTiets);
-            
+
             // Tắt hiệu ứng loading trước khi hiển thị popup
             IsLoading = false;
             await Task.Delay(150); // Đợi WPF cập nhật giao diện (ẩn overlay)
@@ -653,9 +746,10 @@ public class BanHangViewModel : BaseViewModel
                 MessageBox.Show("Có lỗi xảy ra khi tạo phiếu bán!", "Lỗi", MessageBoxButton.OK, MessageBoxImage.Error);
             }
         }
-        catch (Exception ex)
-        {
-            MessageBox.Show($"Lỗi thanh toán: {ex.Message}", "Lỗi", MessageBoxButton.OK, MessageBoxImage.Error);
+        catch (Exception ex) {
+            MessageBox.Show(
+                $"Không thể thanh toán: Nguyên liệu trong kho không đủ để chế biến.\n\nChi tiết: {ex.Message}",
+                "Lỗi tồn kho", MessageBoxButton.OK, MessageBoxImage.Error);
         }
         finally
         {
@@ -691,7 +785,7 @@ public class BanHangViewModel : BaseViewModel
     private void ExecuteDeletePhieuBan(object? parameter)
     {
         if (parameter is not PhieuBanHang pb) return;
-        
+
         // Kiểm tra quyền xóa trong vòng 24h
         if (pb.NgayBan.HasValue && (DateTime.Now - pb.NgayBan.Value).TotalHours > 24)
         {
@@ -702,7 +796,7 @@ public class BanHangViewModel : BaseViewModel
                 System.Windows.MessageBoxImage.Warning);
             return;
         }
-        
+
         DeletingPhieuBan = pb;
         IsDeletePhieuBanDialogOpen = true;
     }
@@ -710,12 +804,12 @@ public class BanHangViewModel : BaseViewModel
     private async Task ExecuteConfirmDeletePhieuBanAsync(object? parameter)
     {
         if (DeletingPhieuBan == null) return;
-        
+
         IsLoading = true;
         try
         {
             bool success;
-            bool isWithin24h = DeletingPhieuBan.NgayBan.HasValue 
+            bool isWithin24h = DeletingPhieuBan.NgayBan.HasValue
                 && (DateTime.Now - DeletingPhieuBan.NgayBan.Value).TotalHours <= 24;
 
             if (isWithin24h)
@@ -732,7 +826,7 @@ public class BanHangViewModel : BaseViewModel
             if (success)
             {
                 PhieuBanHangs.Remove(DeletingPhieuBan);
-                
+
                 // Cập nhật lại thống kê nếu hóa đơn bị xóa thuộc ngày hôm nay
                 if (DeletingPhieuBan.NgayBan?.Date == DateTime.Today)
                 {
@@ -751,8 +845,7 @@ public class BanHangViewModel : BaseViewModel
                 System.Windows.MessageBox.Show("Có lỗi xảy ra khi xóa đơn hàng!", "Lỗi", System.Windows.MessageBoxButton.OK, System.Windows.MessageBoxImage.Error);
             }
         }
-        catch (Exception ex)
-        {
+        catch (Exception ex) {
             System.Windows.MessageBox.Show("Lỗi: " + ex.Message, "Lỗi", System.Windows.MessageBoxButton.OK, System.Windows.MessageBoxImage.Error);
         }
         finally
@@ -762,11 +855,11 @@ public class BanHangViewModel : BaseViewModel
             DeletingPhieuBan = null;
         }
     }
-    
+
     private void ExecuteEditPhieuBan(object? parameter)
     {
         if (parameter is not PhieuBanHang pb) return;
-        
+
         // Kiểm tra quyền sửa trong vòng 24h
         if (pb.NgayBan.HasValue && (DateTime.Now - pb.NgayBan.Value).TotalHours > 24)
         {
@@ -777,7 +870,7 @@ public class BanHangViewModel : BaseViewModel
                 System.Windows.MessageBoxImage.Warning);
             return;
         }
-        
+
         EditingPhieuBan = new PhieuBanHang
         {
             MaPhieuBan = pb.MaPhieuBan,
@@ -801,7 +894,7 @@ public class BanHangViewModel : BaseViewModel
                 {
                     PhieuBanHangs[existingIndex].PhuongThucTT = EditingPhieuBan.PhuongThucTT;
                     PhieuBanHangs[existingIndex].GhiChu = EditingPhieuBan.GhiChu;
-                    
+
                     // Trigger INotifyPropertyChanged logic if needed or just re-assign
                     var temp = PhieuBanHangs[existingIndex];
                     PhieuBanHangs[existingIndex] = temp;
@@ -814,8 +907,7 @@ public class BanHangViewModel : BaseViewModel
                 System.Windows.MessageBox.Show("Có lỗi xảy ra khi lưu!", "Lỗi", System.Windows.MessageBoxButton.OK, System.Windows.MessageBoxImage.Error);
             }
         }
-        catch (Exception ex)
-        {
+        catch (Exception ex) {
              System.Windows.MessageBox.Show("Lỗi: " + ex.Message, "Lỗi", System.Windows.MessageBoxButton.OK, System.Windows.MessageBoxImage.Error);
         }
         finally
@@ -825,8 +917,3 @@ public class BanHangViewModel : BaseViewModel
     }
     #endregion
 }
-
-
-
-
-

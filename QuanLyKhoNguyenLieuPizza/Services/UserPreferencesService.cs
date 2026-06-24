@@ -13,9 +13,9 @@ public class UserPreferencesService
 {
     private static UserPreferencesService? _instance;
     private readonly string _preferencesFilePath;
-    
+
     // Entropy bổ sung cho mã hóa DPAPI
-    private static readonly byte[] AdditionalEntropy = 
+    private static readonly byte[] AdditionalEntropy =
         Encoding.UTF8.GetBytes("QuanLyKhoNguyenLieuPizza_v1");
 
     public static UserPreferencesService Instance => _instance ??= new UserPreferencesService();
@@ -25,7 +25,7 @@ public class UserPreferencesService
         var appDataPath = Path.Combine(
             Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData),
             "QuanLyKhoNguyenLieuPizza");
-        
+
         Directory.CreateDirectory(appDataPath);
         _preferencesFilePath = Path.Combine(appDataPath, "user_preferences.json");
     }
@@ -43,13 +43,9 @@ public class UserPreferencesService
             preferences.EncryptedPassword = EncryptPassword(password);
             preferences.LastSavedDate = DateTime.Now;
             SavePreferencesFile(preferences);
-            
-            System.Diagnostics.Debug.WriteLine($"Đã lưu thông tin đăng nhập cho: {username}");
+
         }
-        catch (Exception ex)
-        {
-            System.Diagnostics.Debug.WriteLine($"Lỗi khi lưu thông tin đăng nhập: {ex.Message}");
-        }
+        catch { }
     }
 
     /// <summary>
@@ -60,18 +56,15 @@ public class UserPreferencesService
         try
         {
             var preferences = LoadPreferencesFile();
-            
+
             if (preferences.RememberMe && !string.IsNullOrEmpty(preferences.SavedUsername))
             {
                 var password = DecryptPassword(preferences.EncryptedPassword);
                 return (true, preferences.SavedUsername, password);
             }
         }
-        catch (Exception ex)
-        {
-            System.Diagnostics.Debug.WriteLine($"Lỗi khi đọc thông tin đăng nhập: {ex.Message}");
-        }
-        
+        catch { }
+
         return (false, string.Empty, string.Empty);
     }
 
@@ -88,13 +81,9 @@ public class UserPreferencesService
             preferences.EncryptedPassword = string.Empty;
             preferences.LastSavedDate = null;
             SavePreferencesFile(preferences);
-            
-            System.Diagnostics.Debug.WriteLine("Đã xóa thông tin đăng nhập đã lưu");
+
         }
-        catch (Exception ex)
-        {
-            System.Diagnostics.Debug.WriteLine($"Lỗi khi xóa thông tin đăng nhập: {ex.Message}");
-        }
+        catch { }
     }
 
     /// <summary>
@@ -112,9 +101,7 @@ public class UserPreferencesService
                 passwordBytes, AdditionalEntropy, DataProtectionScope.CurrentUser);
             return Convert.ToBase64String(encryptedBytes);
         }
-        catch (Exception ex)
-        {
-            System.Diagnostics.Debug.WriteLine($"Lỗi mã hóa mật khẩu: {ex.Message}");
+        catch {
             return string.Empty;
         }
     }
@@ -134,9 +121,7 @@ public class UserPreferencesService
                 encryptedBytes, AdditionalEntropy, DataProtectionScope.CurrentUser);
             return Encoding.UTF8.GetString(passwordBytes);
         }
-        catch (Exception ex)
-        {
-            System.Diagnostics.Debug.WriteLine($"Lỗi giải mã mật khẩu: {ex.Message}");
+        catch {
             return string.Empty;
         }
     }
@@ -151,11 +136,8 @@ public class UserPreferencesService
                 return JsonSerializer.Deserialize<UserPreferences>(json) ?? new UserPreferences();
             }
         }
-        catch (Exception ex)
-        {
-            System.Diagnostics.Debug.WriteLine($"Lỗi đọc file preferences: {ex.Message}");
-        }
-        
+        catch { }
+
         return new UserPreferences();
     }
 

@@ -1,4 +1,4 @@
-using System;
+﻿using System;
 using System.Globalization;
 using System.IO;
 using System.Windows.Data;
@@ -50,9 +50,7 @@ public class ImagePathConverter : IValueConverter
 
             return null;
         }
-        catch (Exception ex)
-        {
-            System.Diagnostics.Debug.WriteLine($"Error loading image: {ex.Message}");
+        catch {
             return null;
         }
     }
@@ -62,4 +60,3 @@ public class ImagePathConverter : IValueConverter
         throw new NotImplementedException();
     }
 }
-

@@ -19,84 +19,84 @@ public class PhieuNhapService : DatabaseContext
         List<byte>? trangThaiFilter = null)
     {
         var result = new List<PhieuNhap>();
-        
+
         try
         {
             using var conn = GetConnection();
             await conn.OpenAsync();
-            
+
             var sql = @"SELECT pn.PhieuNhapID, pn.MaPhieuNhap, pn.NhanVienNhapID, pn.NhaCungCapID,
                               pn.NgayNhap, pn.TongTien, pn.TrangThai,
                               nv.HoTen as TenNhanVien, ncc.TenNCC,
                               pn.NhanVienDuyetID, pn.NgayDuyet, nvd.HoTen as TenNhanVienDuyet,
-                              pn.GhiChu
+                              pn.GhiChu, pn.ChuKySoDuyet, pn.LoaiPhieu, pn.KiemKeID, pn.ChuKyNhap
                        FROM PhieuNhap pn
                        LEFT JOIN NhanVien nv ON pn.NhanVienNhapID = nv.NhanVienID
                        LEFT JOIN NhaCungCap ncc ON pn.NhaCungCapID = ncc.NhaCungCapID
                        LEFT JOIN NhanVien nvd ON pn.NhanVienDuyetID = nvd.NhanVienID
                        WHERE 1=1";
-            
+
             if (!string.IsNullOrWhiteSpace(searchText))
             {
                 sql += " AND (pn.MaPhieuNhap LIKE @SearchText OR nv.HoTen LIKE @SearchText OR ncc.TenNCC LIKE @SearchText)";
             }
-            
+
             if (nhanVienId.HasValue)
             {
                 sql += " AND pn.NhanVienNhapID = @NhanVienID";
             }
-            
+
             if (nhaCungCapId.HasValue)
             {
                 sql += " AND pn.NhaCungCapID = @NhaCungCapID";
             }
-            
+
             if (tuNgay.HasValue)
             {
                 sql += " AND pn.NgayNhap >= @TuNgay";
             }
-            
+
             if (denNgay.HasValue)
             {
                 sql += " AND pn.NgayNhap <= @DenNgay";
             }
-            
+
             if (trangThaiFilter != null && trangThaiFilter.Any())
             {
                 sql += " AND pn.TrangThai IN (" + string.Join(",", trangThaiFilter) + ")";
             }
-            
+
             sql += " ORDER BY pn.NgayNhap DESC";
-            
+
             using var cmd = new SqlCommand(sql, conn);
-            
+
             if (!string.IsNullOrWhiteSpace(searchText))
             {
                 cmd.Parameters.AddWithValue("@SearchText", $"%{searchText}%");
             }
-            
+
             if (nhanVienId.HasValue)
             {
                 cmd.Parameters.AddWithValue("@NhanVienID", nhanVienId.Value);
             }
-            
+
             if (nhaCungCapId.HasValue)
             {
                 cmd.Parameters.AddWithValue("@NhaCungCapID", nhaCungCapId.Value);
             }
-            
+
             if (tuNgay.HasValue)
             {
                 cmd.Parameters.AddWithValue("@TuNgay", tuNgay.Value.Date);
             }
-            
+
             if (denNgay.HasValue)
             {
                 cmd.Parameters.AddWithValue("@DenNgay", denNgay.Value.Date.AddDays(1).AddSeconds(-1));
             }
-            
+
             using var reader = await cmd.ExecuteReaderAsync();
-            
+
             while (await reader.ReadAsync())
             {
                 var phieuNhap = new PhieuNhap
@@ -110,32 +110,33 @@ public class PhieuNhapService : DatabaseContext
                     TrangThai = reader.GetByte(6),
                     NhanVienDuyetID = reader.IsDBNull(9) ? null : reader.GetInt32(9),
                     NgayDuyet = reader.IsDBNull(10) ? null : reader.GetDateTime(10),
-                    GhiChu = reader.IsDBNull(12) ? null : reader.GetString(12)
+                    GhiChu = reader.IsDBNull(12) ? null : reader.GetString(12),
+                    ChuKySoDuyet = reader.IsDBNull(13) ? null : reader.GetString(13),
+                    LoaiPhieu = reader.IsDBNull(14) ? null : reader.GetString(14),
+                    KiemKeID = reader.IsDBNull(15) ? null : reader.GetInt32(15),
+                    ChuKyNhap = reader.IsDBNull(16) ? null : reader.GetString(16)
                 };
-                
+
                 if (!reader.IsDBNull(7))
                 {
                     phieuNhap.NhanVienNhap = new NhanVien { HoTen = reader.GetString(7) };
                 }
-                
+
                 if (!reader.IsDBNull(8))
                 {
                     phieuNhap.NhaCungCap = new NhaCungCap { TenNCC = reader.GetString(8) };
                 }
-                
+
                 if (!reader.IsDBNull(11))
                 {
                     phieuNhap.NhanVienDuyet = new NhanVien { HoTen = reader.GetString(11) };
                 }
-                
+
                 result.Add(phieuNhap);
             }
         }
-        catch (Exception ex)
-        {
-            System.Diagnostics.Debug.WriteLine($"Error loading PhieuNhap: {ex.Message}");
-        }
-        
+        catch { }
+
         return result;
     }
 
@@ -145,23 +146,23 @@ public class PhieuNhapService : DatabaseContext
         {
             using var conn = GetConnection();
             await conn.OpenAsync();
-            
+
             var sql = @"SELECT pn.PhieuNhapID, pn.MaPhieuNhap, pn.NhanVienNhapID, pn.NhaCungCapID,
                               pn.NgayNhap, pn.TongTien, pn.TrangThai,
                               nv.HoTen as TenNhanVien, ncc.TenNCC, ncc.DiaChi,
                               pn.NhanVienDuyetID, pn.NgayDuyet, nvd.HoTen as TenNhanVienDuyet,
-                              pn.GhiChu
+                              pn.GhiChu, pn.ChuKySoDuyet, pn.LoaiPhieu, pn.KiemKeID, pn.ChuKyNhap
                        FROM PhieuNhap pn
                        LEFT JOIN NhanVien nv ON pn.NhanVienNhapID = nv.NhanVienID
                        LEFT JOIN NhaCungCap ncc ON pn.NhaCungCapID = ncc.NhaCungCapID
                        LEFT JOIN NhanVien nvd ON pn.NhanVienDuyetID = nvd.NhanVienID
                        WHERE pn.PhieuNhapID = @PhieuNhapID";
-            
+
             using var cmd = new SqlCommand(sql, conn);
             cmd.Parameters.AddWithValue("@PhieuNhapID", phieuNhapId);
-            
+
             using var reader = await cmd.ExecuteReaderAsync();
-            
+
             if (await reader.ReadAsync())
             {
                 var phieuNhap = new PhieuNhap
@@ -175,61 +176,65 @@ public class PhieuNhapService : DatabaseContext
                     TrangThai = reader.GetByte(6),
                     NhanVienDuyetID = reader.IsDBNull(10) ? null : reader.GetInt32(10),
                     NgayDuyet = reader.IsDBNull(11) ? null : reader.GetDateTime(11),
-                    GhiChu = reader.IsDBNull(13) ? null : reader.GetString(13)
+                    GhiChu = reader.IsDBNull(13) ? null : reader.GetString(13),
+                    ChuKySoDuyet = reader.IsDBNull(14) ? null : reader.GetString(14),
+                    LoaiPhieu = reader.IsDBNull(15) ? null : reader.GetString(15),
+                    KiemKeID = reader.IsDBNull(16) ? null : reader.GetInt32(16),
+                    ChuKyNhap = reader.IsDBNull(17) ? null : reader.GetString(17)
                 };
-                
+
                 if (!reader.IsDBNull(7))
                 {
                     phieuNhap.NhanVienNhap = new NhanVien { HoTen = reader.GetString(7) };
                 }
-                
+
                 if (!reader.IsDBNull(8))
                 {
-                    phieuNhap.NhaCungCap = new NhaCungCap 
-                    { 
+                    phieuNhap.NhaCungCap = new NhaCungCap
+                    {
                         TenNCC = reader.GetString(8),
                         DiaChi = reader.IsDBNull(9) ? null : reader.GetString(9)
                     };
                 }
-                
+
                 if (!reader.IsDBNull(12))
                 {
                     phieuNhap.NhanVienDuyet = new NhanVien { HoTen = reader.GetString(12) };
                 }
-                
+
                 return phieuNhap;
             }
         }
-        catch (Exception ex)
-        {
-            System.Diagnostics.Debug.WriteLine($"Error getting PhieuNhap: {ex.Message}");
-        }
-        
+        catch { }
+
         return null;
     }
 
     public async Task<List<CT_PhieuNhap>> GetChiTietPhieuNhapAsync(int phieuNhapId)
     {
         var result = new List<CT_PhieuNhap>();
-        
+
         try
         {
             using var conn = GetConnection();
             await conn.OpenAsync();
-            
+
             var sql = @"SELECT ct.ChiTietID, ct.PhieuNhapID, ct.NguyenLieuID, ct.SoLuong,
                               ct.DonViID, ct.HeSo, ct.DonGia, ct.ThanhTien, ct.HSD,
-                              nl.MaNguyenLieu, nl.TenNguyenLieu, dv.TenDonVi
+                              nl.MaNguyenLieu, nl.TenNguyenLieu, dv.TenDonVi,
+                              dvChuan.TenDonVi AS TenDonViChuan, qdChuan.HeSo AS HeSoDonViChuan
                        FROM CT_PhieuNhap ct
                        LEFT JOIN NguyenLieu nl ON ct.NguyenLieuID = nl.NguyenLieuID
                        LEFT JOIN DonViTinh dv ON ct.DonViID = dv.DonViID
+                       LEFT JOIN QuyDoiDonVi qdChuan ON ct.NguyenLieuID = qdChuan.NguyenLieuID AND qdChuan.HeSo = 1
+                       LEFT JOIN DonViTinh dvChuan ON qdChuan.DonViID = dvChuan.DonViID
                        WHERE ct.PhieuNhapID = @PhieuNhapID";
-            
+
             using var cmd = new SqlCommand(sql, conn);
             cmd.Parameters.AddWithValue("@PhieuNhapID", phieuNhapId);
-            
+
             using var reader = await cmd.ExecuteReaderAsync();
-            
+
             while (await reader.ReadAsync())
             {
                 var chiTiet = new CT_PhieuNhap
@@ -244,38 +249,39 @@ public class PhieuNhapService : DatabaseContext
                     ThanhTien = reader.IsDBNull(7) ? null : reader.GetDecimal(7),
                     HSD = reader.IsDBNull(8) ? null : reader.GetDateTime(8)
                 };
-                
+
                 chiTiet.NguyenLieu = new NguyenLieu
                 {
                     MaNguyenLieu = reader.IsDBNull(9) ? null : reader.GetString(9),
                     TenNguyenLieu = reader.IsDBNull(10) ? string.Empty : reader.GetString(10)
                 };
-                
+
                 if (!reader.IsDBNull(11))
                 {
                     chiTiet.DonViTinh = new DonViTinh { TenDonVi = reader.GetString(11) };
                 }
-                
+
+                // Đơn vị chuẩn
+                chiTiet.TenDonViChuan = reader.IsDBNull(12) ? string.Empty : reader.GetString(12);
+                chiTiet.HeSoDonViChuan = reader.IsDBNull(13) ? 1m : reader.GetDecimal(13);
+
                 result.Add(chiTiet);
             }
         }
-        catch (Exception ex)
-        {
-            System.Diagnostics.Debug.WriteLine($"Error loading CT_PhieuNhap: {ex.Message}");
-        }
-        
+        catch { }
+
         return result;
     }
 
     public async Task<List<NguyenLieu>> GetNguyenLieusByNhaCungCapAsync(int nhaCungCapId)
     {
         var result = new List<NguyenLieu>();
-        
+
         try
         {
             using var conn = GetConnection();
             await conn.OpenAsync();
-            
+
             var sql = @"SELECT nl.NguyenLieuID, nl.MaNguyenLieu, nl.TenNguyenLieu, nl.HinhAnh,
                               nl.LoaiNLID, nl.DonViID, nl.TrangThai,
                               dv.TenDonVi, nlncc.NhaCungCapID, ncc.TenNCC, nlncc.GiaNhap
@@ -284,12 +290,12 @@ public class PhieuNhapService : DatabaseContext
                        INNER JOIN NhaCungCap ncc ON nlncc.NhaCungCapID = ncc.NhaCungCapID
                        LEFT JOIN DonViTinh dv ON nl.DonViID = dv.DonViID
                        WHERE nlncc.NhaCungCapID = @NhaCungCapID AND nl.TrangThai = 1";
-            
+
             using var cmd = new SqlCommand(sql, conn);
             cmd.Parameters.AddWithValue("@NhaCungCapID", nhaCungCapId);
-            
+
             using var reader = await cmd.ExecuteReaderAsync();
-            
+
             while (await reader.ReadAsync())
             {
                 var nl = new NguyenLieu
@@ -302,12 +308,12 @@ public class PhieuNhapService : DatabaseContext
                     DonViID = reader.IsDBNull(5) ? null : reader.GetInt32(5),
                     TrangThai = reader.GetBoolean(6)
                 };
-                
+
                 if (!reader.IsDBNull(7))
                 {
                     nl.DonViTinh = new DonViTinh { TenDonVi = reader.GetString(7) };
                 }
-                
+
                 if (!reader.IsDBNull(10))
                 {
                     nl.NguyenLieuNhaCungCaps = new List<NguyenLieuNhaCungCap>
@@ -324,27 +330,24 @@ public class PhieuNhapService : DatabaseContext
                         }
                     };
                 }
-                
+
                 result.Add(nl);
             }
         }
-        catch (Exception ex)
-        {
-            System.Diagnostics.Debug.WriteLine($"Error loading NguyenLieu by NhaCungCap: {ex.Message}");
-        }
-        
+        catch { }
+
         return result;
     }
 
     public async Task<List<NguyenLieu>> GetAllNguyenLieusWithPriceAsync()
     {
         var result = new List<NguyenLieu>();
-        
+
         try
         {
             using var conn = GetConnection();
             await conn.OpenAsync();
-            
+
             var sql = @"SELECT nl.NguyenLieuID, nl.MaNguyenLieu, nl.TenNguyenLieu, nl.HinhAnh,
                               nl.LoaiNLID, nl.DonViID, nl.TrangThai,
                               dv.TenDonVi,
@@ -359,10 +362,10 @@ public class PhieuNhapService : DatabaseContext
                            ORDER BY nlncc.NgayCapNhat DESC, nlncc.NhaCungCapID
                        ) pref
                        WHERE nl.TrangThai = 1";
-            
+
             using var cmd = new SqlCommand(sql, conn);
             using var reader = await cmd.ExecuteReaderAsync();
-            
+
             while (await reader.ReadAsync())
             {
                 var nl = new NguyenLieu
@@ -375,12 +378,12 @@ public class PhieuNhapService : DatabaseContext
                     DonViID = reader.IsDBNull(5) ? null : reader.GetInt32(5),
                     TrangThai = reader.GetBoolean(6)
                 };
-                
+
                 if (!reader.IsDBNull(7))
                 {
                     nl.DonViTinh = new DonViTinh { TenDonVi = reader.GetString(7) };
                 }
-                
+
                 if (!reader.IsDBNull(10))
                 {
                     nl.NguyenLieuNhaCungCaps = new List<NguyenLieuNhaCungCap>
@@ -397,15 +400,12 @@ public class PhieuNhapService : DatabaseContext
                         }
                     };
                 }
-                
+
                 result.Add(nl);
             }
         }
-        catch (Exception ex)
-        {
-            System.Diagnostics.Debug.WriteLine($"Error loading all NguyenLieu with price: {ex.Message}");
-        }
-        
+        catch { }
+
         return result;
     }
 
@@ -415,14 +415,14 @@ public class PhieuNhapService : DatabaseContext
         {
             using var conn = GetConnection();
             await conn.OpenAsync();
-            
-            var sql = @"SELECT TOP 1 MaPhieuNhap FROM PhieuNhap 
-                       WHERE MaPhieuNhap LIKE 'PN%' 
+
+            var sql = @"SELECT TOP 1 MaPhieuNhap FROM PhieuNhap
+                       WHERE MaPhieuNhap LIKE 'PN%'
                        ORDER BY PhieuNhapID DESC";
-            
+
             using var cmd = new SqlCommand(sql, conn);
             var result = await cmd.ExecuteScalarAsync();
-            
+
             if (result != null && result != DBNull.Value)
             {
                 var lastCode = result.ToString()!;
@@ -431,12 +431,10 @@ public class PhieuNhapService : DatabaseContext
                     return $"PN{(lastNumber + 1):D6}";
                 }
             }
-            
+
             return "PN000001";
         }
-        catch (Exception ex)
-        {
-            System.Diagnostics.Debug.WriteLine($"Error generating MaPhieuNhap: {ex.Message}");
+        catch {
             return $"PN{DateTime.Now:yyyyMMddHHmmss}";
         }
     }
@@ -446,18 +444,18 @@ public class PhieuNhapService : DatabaseContext
         using var conn = GetConnection();
         await conn.OpenAsync();
         using var transaction = conn.BeginTransaction();
-        
+
         try
         {
             int phieuNhapId;
-            
+
             if (phieuNhap.PhieuNhapID == 0)
             {
-                // ThÃªm phiáº¿u nháº­p má»›i
-                var sql = @"INSERT INTO PhieuNhap (MaPhieuNhap, NhanVienNhapID, NhaCungCapID, NgayNhap, TongTien, TrangThai)
-                           VALUES (@MaPhieuNhap, @NhanVienNhapID, @NhaCungCapID, @NgayNhap, @TongTien, @TrangThai);
+                // Thêm phiếu nhập mới
+                var sql = @"INSERT INTO PhieuNhap (MaPhieuNhap, NhanVienNhapID, NhaCungCapID, NgayNhap, TongTien, TrangThai, LoaiPhieu, KiemKeID, ChuKyNhap)
+                           VALUES (@MaPhieuNhap, @NhanVienNhapID, @NhaCungCapID, @NgayNhap, @TongTien, @TrangThai, @LoaiPhieu, @KiemKeID, @ChuKyNhap);
                            SELECT SCOPE_IDENTITY();";
-                
+
                 using var cmd = new SqlCommand(sql, conn, transaction);
                 cmd.Parameters.AddWithValue("@MaPhieuNhap", phieuNhap.MaPhieuNhap ?? (object)DBNull.Value);
                 cmd.Parameters.AddWithValue("@NhanVienNhapID", phieuNhap.NhanVienNhapID ?? (object)DBNull.Value);
@@ -465,20 +463,24 @@ public class PhieuNhapService : DatabaseContext
                 cmd.Parameters.AddWithValue("@NgayNhap", phieuNhap.NgayNhap);
                 cmd.Parameters.AddWithValue("@TongTien", phieuNhap.TongTien);
                 cmd.Parameters.AddWithValue("@TrangThai", phieuNhap.TrangThai);
-                
+                cmd.Parameters.AddWithValue("@LoaiPhieu", phieuNhap.LoaiPhieu ?? (object)DBNull.Value);
+                cmd.Parameters.AddWithValue("@KiemKeID", phieuNhap.KiemKeID ?? (object)DBNull.Value);
+                cmd.Parameters.AddWithValue("@ChuKyNhap", phieuNhap.ChuKyNhap ?? (object)DBNull.Value);
+
                 var result = await cmd.ExecuteScalarAsync();
                 phieuNhapId = Convert.ToInt32(result);
             }
             else
             {
-                // Cáº­p nháº­t phiáº¿u nháº­p hiá»‡n cÃ³
+                // Cập nhật phiếu nhập hiện có
                 phieuNhapId = phieuNhap.PhieuNhapID;
-                
-                var sql = @"UPDATE PhieuNhap 
+
+                var sql = @"UPDATE PhieuNhap
                            SET NhanVienNhapID = @NhanVienNhapID, NhaCungCapID = @NhaCungCapID,
-                               NgayNhap = @NgayNhap, TongTien = @TongTien, TrangThai = @TrangThai
+                               NgayNhap = @NgayNhap, TongTien = @TongTien, TrangThai = @TrangThai,
+                               LoaiPhieu = @LoaiPhieu, KiemKeID = @KiemKeID, ChuKyNhap = @ChuKyNhap
                            WHERE PhieuNhapID = @PhieuNhapID";
-                
+
                 using var cmd = new SqlCommand(sql, conn, transaction);
                 cmd.Parameters.AddWithValue("@PhieuNhapID", phieuNhapId);
                 cmd.Parameters.AddWithValue("@NhanVienNhapID", phieuNhap.NhanVienNhapID ?? (object)DBNull.Value);
@@ -486,22 +488,25 @@ public class PhieuNhapService : DatabaseContext
                 cmd.Parameters.AddWithValue("@NgayNhap", phieuNhap.NgayNhap);
                 cmd.Parameters.AddWithValue("@TongTien", phieuNhap.TongTien);
                 cmd.Parameters.AddWithValue("@TrangThai", phieuNhap.TrangThai);
-                
+                cmd.Parameters.AddWithValue("@LoaiPhieu", phieuNhap.LoaiPhieu ?? (object)DBNull.Value);
+                cmd.Parameters.AddWithValue("@KiemKeID", phieuNhap.KiemKeID ?? (object)DBNull.Value);
+                cmd.Parameters.AddWithValue("@ChuKyNhap", phieuNhap.ChuKyNhap ?? (object)DBNull.Value);
+
                 await cmd.ExecuteNonQueryAsync();
-                
-                // XÃ³a chi tiáº¿t hiá»‡n cÃ³
+
+                // Xóa chi tiết hiện có
                 var deleteSql = "DELETE FROM CT_PhieuNhap WHERE PhieuNhapID = @PhieuNhapID";
                 using var deleteCmd = new SqlCommand(deleteSql, conn, transaction);
                 deleteCmd.Parameters.AddWithValue("@PhieuNhapID", phieuNhapId);
                 await deleteCmd.ExecuteNonQueryAsync();
             }
-            
+
             // ThÃªm chi tiáº¿t
             foreach (var ct in chiTiets)
             {
                 var ctSql = @"INSERT INTO CT_PhieuNhap (PhieuNhapID, NguyenLieuID, SoLuong, DonViID, HeSo, DonGia, ThanhTien, HSD)
                              VALUES (@PhieuNhapID, @NguyenLieuID, @SoLuong, @DonViID, @HeSo, @DonGia, @ThanhTien, @HSD)";
-                
+
                 using var ctCmd = new SqlCommand(ctSql, conn, transaction);
                 ctCmd.Parameters.AddWithValue("@PhieuNhapID", phieuNhapId);
                 ctCmd.Parameters.AddWithValue("@NguyenLieuID", ct.NguyenLieuID ?? (object)DBNull.Value);
@@ -511,52 +516,59 @@ public class PhieuNhapService : DatabaseContext
                 ctCmd.Parameters.AddWithValue("@DonGia", ct.DonGia);
                 ctCmd.Parameters.AddWithValue("@ThanhTien", ct.ThanhTien ?? (object)DBNull.Value);
                 ctCmd.Parameters.AddWithValue("@HSD", ct.HSD ?? (object)DBNull.Value);
-                
+
                 await ctCmd.ExecuteNonQueryAsync();
-                
+
                 // KHÃ”NG cáº­p nháº­t Tá»“nKho á»Ÿ Ä‘Ã¢y - chá»‰ cáº­p nháº­t khi duyá»‡t phiáº¿u
             }
-            
+
             transaction.Commit();
             return phieuNhapId;
         }
-        catch (Exception ex)
-        {
+        catch {
             transaction.Rollback();
-            System.Diagnostics.Debug.WriteLine($"Error saving PhieuNhap: {ex.Message}");
             throw;
         }
     }
 
-    public async Task<bool> ApprovePhieuNhapAsync(int phieuNhapId, int nhanVienDuyetId)
+    public async Task<bool> ApprovePhieuNhapAsync(int phieuNhapId, int nhanVienDuyetId, string? chuKySo = null)
     {
         using var conn = GetConnection();
         await conn.OpenAsync();
         using var transaction = conn.BeginTransaction();
-        
+
         try
         {
-            // Cáº­p nháº­t tráº¡ng thÃ¡i phiáº¿u nháº­p
-            var sql = @"UPDATE PhieuNhap 
-                       SET TrangThai = 2, NhanVienDuyetID = @NhanVienDuyetID, NgayDuyet = GETDATE()
+            // Debug: Kiểm tra TrangThai thực sự trong DB trước khi UPDATE
+            var checkSql = "SELECT TrangThai FROM PhieuNhap WHERE PhieuNhapID = @PhieuNhapID";
+            using var checkCmd = new SqlCommand(checkSql, conn, transaction);
+            checkCmd.Parameters.AddWithValue("@PhieuNhapID", phieuNhapId);
+            var currentStatus = await checkCmd.ExecuteScalarAsync();
+
+            // Cập nhật trạng thái phiếu nhập + chữ ký số
+            var sql = @"UPDATE PhieuNhap
+                       SET TrangThai = 2, NhanVienDuyetID = @NhanVienDuyetID, NgayDuyet = GETDATE(),
+                           ChuKySoDuyet = @ChuKySo
                        WHERE PhieuNhapID = @PhieuNhapID AND TrangThai = 1";
-            
+
             using var cmd = new SqlCommand(sql, conn, transaction);
             cmd.Parameters.AddWithValue("@PhieuNhapID", phieuNhapId);
             cmd.Parameters.AddWithValue("@NhanVienDuyetID", nhanVienDuyetId);
-            
+            cmd.Parameters.AddWithValue("@ChuKySo", (object?)chuKySo ?? DBNull.Value);
+
             var rows = await cmd.ExecuteNonQueryAsync();
+
             if (rows == 0)
             {
                 transaction.Rollback();
                 return false;
             }
-            
+
             // Láº¥y chi tiáº¿t phiáº¿u nháº­p Ä‘á»ƒ cáº­p nháº­t Tá»“nKho
             var getSql = "SELECT NguyenLieuID, SoLuong, DonViID FROM CT_PhieuNhap WHERE PhieuNhapID = @PhieuNhapID";
             using var getCmd = new SqlCommand(getSql, conn, transaction);
             getCmd.Parameters.AddWithValue("@PhieuNhapID", phieuNhapId);
-            
+
             var chiTiets = new List<(int NguyenLieuID, decimal SoLuong, int? DonViID)>();
             using var reader = await getCmd.ExecuteReaderAsync();
             while (await reader.ReadAsync())
@@ -564,11 +576,11 @@ public class PhieuNhapService : DatabaseContext
                 chiTiets.Add((reader.GetInt32(0), reader.GetDecimal(1), reader.IsDBNull(2) ? null : reader.GetInt32(2)));
             }
             reader.Close();
-            
+
             // Cáº­p nháº­t Tá»“nKho
             var contextCache = new Dictionary<int, IngredientUnitContext>();
             var unitNameCache = new Dictionary<int, string>();
-            
+
             foreach (var ct in chiTiets)
             {
                 var soLuongCong = await ConvertAmountToStockUnitAsync(
@@ -577,40 +589,37 @@ public class PhieuNhapService : DatabaseContext
 
                 await UpdateTonKhoOnNhapAsync(conn, transaction, ct.NguyenLieuID, soLuongCong);
             }
-            
+
             transaction.Commit();
             return true;
         }
-        catch (Exception ex)
-        {
+        catch {
             transaction.Rollback();
-            System.Diagnostics.Debug.WriteLine($"Error approving PhieuNhap: {ex.Message}");
-            return false;
+            throw; // Ném lỗi lên ViewModel để hiện cho user
         }
     }
 
-    public async Task<bool> CancelPhieuNhapAsync(int phieuNhapId, int nguoiHuyId, string? lyDoHuy = null)
+    public async Task<bool> CancelPhieuNhapAsync(int phieuNhapId, int nguoiHuyId, string? lyDoHuy = null, string? chuKyHuy = null)
     {
         try
         {
             using var conn = GetConnection();
             await conn.OpenAsync();
-            
-            var sql = @"UPDATE PhieuNhap 
-                        SET TrangThai = 3, NhanVienDuyetID = @NguoiHuyId, NgayDuyet = GETDATE(), GhiChu = @GhiChu
+
+            var sql = @"UPDATE PhieuNhap
+                        SET TrangThai = 3, NhanVienDuyetID = @NguoiHuyId, NgayDuyet = GETDATE(), GhiChu = @GhiChu, ChuKySoDuyet = @ChuKyHuy
                         WHERE PhieuNhapID = @PhieuNhapID AND TrangThai = 1";
-            
+
             using var cmd = new SqlCommand(sql, conn);
             cmd.Parameters.AddWithValue("@PhieuNhapID", phieuNhapId);
             cmd.Parameters.AddWithValue("@NguoiHuyId", nguoiHuyId);
             cmd.Parameters.AddWithValue("@GhiChu", (object?)lyDoHuy ?? DBNull.Value);
-            
+            cmd.Parameters.AddWithValue("@ChuKyHuy", (object?)chuKyHuy ?? DBNull.Value);
+
             var rows = await cmd.ExecuteNonQueryAsync();
             return rows > 0;
         }
-        catch (Exception ex)
-        {
-            System.Diagnostics.Debug.WriteLine($"Error canceling PhieuNhap: {ex.Message}");
+        catch {
             return false;
         }
     }
@@ -619,7 +628,7 @@ public class PhieuNhapService : DatabaseContext
     {
         // Lấy DonViID chuẩn: ưu tiên QuyDoiDonVi (LaDonViChuan=1), fallback về NguyenLieu.DonViID
         int? donViChuanId = null;
-        var dvSql = @"SELECT TOP 1 COALESCE(qd.DonViID, nl.DonViID) 
+        var dvSql = @"SELECT TOP 1 COALESCE(qd.DonViID, nl.DonViID)
                       FROM NguyenLieu nl
                       LEFT JOIN QuyDoiDonVi qd ON nl.NguyenLieuID = qd.NguyenLieuID AND qd.LaDonViChuan = 1
                       WHERE nl.NguyenLieuID = @NguyenLieuID";
@@ -636,10 +645,10 @@ public class PhieuNhapService : DatabaseContext
         using var checkCmd = new SqlCommand(checkSql, conn, transaction);
         checkCmd.Parameters.AddWithValue("@NguyenLieuID", nguyenLieuId);
         var count = Convert.ToInt32(await checkCmd.ExecuteScalarAsync());
-        
+
         if (count > 0)
         {
-            var updateSql = @"UPDATE TonKho 
+            var updateSql = @"UPDATE TonKho
                              SET SoLuongTon = SoLuongTon + @SoLuong, NgayCapNhat = GETDATE(),
                                  DonViID = COALESCE(DonViID, @DonViID)
                              WHERE NguyenLieuID = @NguyenLieuID";
@@ -666,80 +675,126 @@ public class PhieuNhapService : DatabaseContext
         using var conn = GetConnection();
         await conn.OpenAsync();
         using var transaction = conn.BeginTransaction();
-        
+
         try
         {
-            // Láº¥y chi tiáº¿t Ä‘á»ƒ hoÃ n tÃ¡c Tá»“nKho
-            var chiTiets = new List<(int NguyenLieuID, decimal SoLuong, int? DonViID)>();
-            
-            var getSql = "SELECT NguyenLieuID, SoLuong, DonViID FROM CT_PhieuNhap WHERE PhieuNhapID = @PhieuNhapID";
-            using var getCmd = new SqlCommand(getSql, conn, transaction);
-            getCmd.Parameters.AddWithValue("@PhieuNhapID", phieuNhapId);
-            
-            using var reader = await getCmd.ExecuteReaderAsync();
-            while (await reader.ReadAsync())
+            // Kiểm tra TrangThai của PhieuNhap để biết có cần hoàn tác TồnKho hay không
+            var statusSql = "SELECT TrangThai FROM PhieuNhap WHERE PhieuNhapID = @PhieuNhapID";
+            byte trangThai = 0;
+            using (var statusCmd = new SqlCommand(statusSql, conn, transaction))
             {
-                chiTiets.Add((reader.GetInt32(0), reader.GetDecimal(1), reader.IsDBNull(2) ? null : reader.GetInt32(2)));
+                statusCmd.Parameters.AddWithValue("@PhieuNhapID", phieuNhapId);
+                var statusResult = await statusCmd.ExecuteScalarAsync();
+                if (statusResult != null && statusResult != DBNull.Value)
+                {
+                    trangThai = Convert.ToByte(statusResult);
+                }
             }
-            reader.Close();
-            
-            // HoÃ n tÃ¡c Tá»“n kho
-            var contextCache = new Dictionary<int, IngredientUnitContext>();
-            var unitNameCache = new Dictionary<int, string>();
 
-            foreach (var ct in chiTiets)
+            // Chỉ hoàn tác tồn kho nếu phiếu đã được duyệt (TrangThai == 2)
+            if (trangThai == 2)
             {
-                var soLuongHoanTac = await ConvertAmountToStockUnitAsync(
-                    conn, transaction, ct.NguyenLieuID, ct.SoLuong, ct.DonViID,
-                    contextCache, unitNameCache);
+                // Lấy chi tiết để hoàn tác TồnKho
+                var chiTiets = new List<(int NguyenLieuID, decimal SoLuong, int? DonViID)>();
 
-                var updateSql = @"UPDATE TonKho 
-                                 SET SoLuongTon = SoLuongTon - @SoLuong, NgayCapNhat = GETDATE()
-                                 WHERE NguyenLieuID = @NguyenLieuID";
-                using var updateCmd = new SqlCommand(updateSql, conn, transaction);
-                updateCmd.Parameters.AddWithValue("@SoLuong", soLuongHoanTac);
-                updateCmd.Parameters.AddWithValue("@NguyenLieuID", ct.NguyenLieuID);
-                await updateCmd.ExecuteNonQueryAsync();
+                var getSql = "SELECT NguyenLieuID, SoLuong, DonViID FROM CT_PhieuNhap WHERE PhieuNhapID = @PhieuNhapID";
+                using var getCmd = new SqlCommand(getSql, conn, transaction);
+                getCmd.Parameters.AddWithValue("@PhieuNhapID", phieuNhapId);
+
+                using var reader = await getCmd.ExecuteReaderAsync();
+                while (await reader.ReadAsync())
+                {
+                    chiTiets.Add((reader.GetInt32(0), reader.GetDecimal(1), reader.IsDBNull(2) ? null : reader.GetInt32(2)));
+                }
+                reader.Close();
+
+                // Hoàn tác Tồn kho
+                var contextCache = new Dictionary<int, IngredientUnitContext>();
+                var unitNameCache = new Dictionary<int, string>();
+
+                foreach (var ct in chiTiets)
+                {
+                    var soLuongHoanTac = await ConvertAmountToStockUnitAsync(
+                        conn, transaction, ct.NguyenLieuID, ct.SoLuong, ct.DonViID,
+                        contextCache, unitNameCache);
+
+                    // Kiểm tra tồn kho trước khi hoàn tác (để tránh tồn kho bị âm)
+                    var checkTonSql = "SELECT SoLuongTon FROM TonKho WHERE NguyenLieuID = @NguyenLieuID";
+                    decimal soLuongTonHienTai = 0;
+                    using (var checkTonCmd = new SqlCommand(checkTonSql, conn, transaction))
+                    {
+                        checkTonCmd.Parameters.AddWithValue("@NguyenLieuID", ct.NguyenLieuID);
+                        var tonResult = await checkTonCmd.ExecuteScalarAsync();
+                        if (tonResult != null && tonResult != DBNull.Value)
+                        {
+                            soLuongTonHienTai = Convert.ToDecimal(tonResult);
+                        }
+                    }
+
+                    if (soLuongTonHienTai < soLuongHoanTac)
+                    {
+                        // Lấy tên nguyên liệu để thông báo lỗi rõ ràng
+                        var getTenSql = "SELECT TenNguyenLieu FROM NguyenLieu WHERE NguyenLieuID = @NguyenLieuID";
+                        string tenNL = "Nguyên liệu";
+                        using (var getTenCmd = new SqlCommand(getTenSql, conn, transaction))
+                        {
+                            getTenCmd.Parameters.AddWithValue("@NguyenLieuID", ct.NguyenLieuID);
+                            var tenResult = await getTenCmd.ExecuteScalarAsync();
+                            if (tenResult != null && tenResult != DBNull.Value)
+                            {
+                                tenNL = tenResult.ToString() ?? "Nguyên liệu";
+                            }
+                        }
+                        throw new InvalidOperationException($"Không thể hoàn tác tồn kho cho nguyên liệu '{tenNL}' vì số lượng tồn hiện tại ({soLuongTonHienTai:N2}) nhỏ hơn số lượng cần hoàn tác ({soLuongHoanTac:N2}).");
+                    }
+
+                    var updateSql = @"UPDATE TonKho
+                                     SET SoLuongTon = SoLuongTon - @SoLuong, NgayCapNhat = GETDATE()
+                                     WHERE NguyenLieuID = @NguyenLieuID";
+                    using var updateCmd = new SqlCommand(updateSql, conn, transaction);
+                    updateCmd.Parameters.AddWithValue("@SoLuong", soLuongHoanTac);
+                    updateCmd.Parameters.AddWithValue("@NguyenLieuID", ct.NguyenLieuID);
+                    await updateCmd.ExecuteNonQueryAsync();
+                }
             }
-            
-            // XÃ³a chi tiáº¿t
+
+            // Xóa chi tiết
             var deleteCtSql = "DELETE FROM CT_PhieuNhap WHERE PhieuNhapID = @PhieuNhapID";
             using var deleteCtCmd = new SqlCommand(deleteCtSql, conn, transaction);
             deleteCtCmd.Parameters.AddWithValue("@PhieuNhapID", phieuNhapId);
             await deleteCtCmd.ExecuteNonQueryAsync();
-            
-            // XÃ³a Phiáº¿uNháº­p
+
+            // Xóa PhiếuNhập
             var deleteSql = "DELETE FROM PhieuNhap WHERE PhieuNhapID = @PhieuNhapID";
             using var deleteCmd = new SqlCommand(deleteSql, conn, transaction);
             deleteCmd.Parameters.AddWithValue("@PhieuNhapID", phieuNhapId);
             await deleteCmd.ExecuteNonQueryAsync();
-            
+
             transaction.Commit();
             return true;
         }
-        catch (Exception ex)
+        catch
         {
             transaction.Rollback();
-            System.Diagnostics.Debug.WriteLine($"Error deleting PhieuNhap: {ex.Message}");
-            return false;
+            throw;
         }
     }
 
     public async Task<List<NhanVien>> GetNhanViensAsync()
     {
         var result = new List<NhanVien>();
-        
+
         try
         {
             using var conn = GetConnection();
             await conn.OpenAsync();
-            
+
             var sql = @"SELECT NhanVienID, HoTen, NgaySinh, DiaChi, SDT, Email, ChucVuID, TrangThai, HinhAnh
                        FROM NhanVien WHERE TrangThai = 1";
-            
+
             using var cmd = new SqlCommand(sql, conn);
             using var reader = await cmd.ExecuteReaderAsync();
-            
+
             while (await reader.ReadAsync())
             {
                 result.Add(new NhanVien
@@ -756,11 +811,8 @@ public class PhieuNhapService : DatabaseContext
                 });
             }
         }
-        catch (Exception ex)
-        {
-            System.Diagnostics.Debug.WriteLine($"Error loading NhanVien: {ex.Message}");
-        }
-        
+        catch { }
+
         return result;
     }
 
@@ -774,57 +826,55 @@ public class PhieuNhapService : DatabaseContext
         {
             using var conn = GetConnection();
             await conn.OpenAsync();
-            
+
             var sql = @"SELECT ISNULL(SUM(TongTien), 0) FROM PhieuNhap WHERE 1=1";
-            
+
             if (nhanVienId.HasValue)
             {
                 sql += " AND NhanVienNhapID = @NhanVienID";
             }
-            
+
             if (nhaCungCapId.HasValue)
             {
                 sql += " AND NhaCungCapID = @NhaCungCapID";
             }
-            
+
             if (tuNgay.HasValue)
             {
                 sql += " AND NgayNhap >= @TuNgay";
             }
-            
+
             if (denNgay.HasValue)
             {
                 sql += " AND NgayNhap <= @DenNgay";
             }
-            
+
             using var cmd = new SqlCommand(sql, conn);
-            
+
             if (nhanVienId.HasValue)
             {
                 cmd.Parameters.AddWithValue("@NhanVienID", nhanVienId.Value);
             }
-            
+
             if (nhaCungCapId.HasValue)
             {
                 cmd.Parameters.AddWithValue("@NhaCungCapID", nhaCungCapId.Value);
             }
-            
+
             if (tuNgay.HasValue)
             {
                 cmd.Parameters.AddWithValue("@TuNgay", tuNgay.Value.Date);
             }
-            
+
             if (denNgay.HasValue)
             {
                 cmd.Parameters.AddWithValue("@DenNgay", denNgay.Value.Date.AddDays(1).AddSeconds(-1));
             }
-            
+
             var result = await cmd.ExecuteScalarAsync();
             return Convert.ToDecimal(result);
         }
-        catch (Exception ex)
-        {
-            System.Diagnostics.Debug.WriteLine($"Error getting total TongTien: {ex.Message}");
+        catch {
             return 0;
         }
     }

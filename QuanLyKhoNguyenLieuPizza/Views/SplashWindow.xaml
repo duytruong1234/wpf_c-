@@ -1,4 +1,4 @@
-<Window x:Class="QuanLyKhoNguyenLieuPizza.Views.SplashWindow"
+﻿<Window x:Class="QuanLyKhoNguyenLieuPizza.Views.SplashWindow"
         xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
         WindowStyle="None"
@@ -51,7 +51,7 @@
         <Grid>
             <!-- Nội dung Chính -->
             <StackPanel VerticalAlignment="Center" HorizontalAlignment="Center">
-                
+
                 <!-- Logo & Subtitle -->
                 <StackPanel Orientation="Horizontal" HorizontalAlignment="Center" Margin="0,0,0,20">
                     <TextBlock Text="PizzaInn"
@@ -62,7 +62,7 @@
                             <DropShadowEffect BlurRadius="6" ShadowDepth="1" Color="Black" Opacity="0.5"/>
                         </TextBlock.Effect>
                     </TextBlock>
-                    
+
                     <TextBlock Text="W A R E H O U S E"
                                FontSize="13" FontWeight="Bold" Foreground="#F59E0B"
                                FontFamily="Segoe UI Variable, Segoe UI, Arial"

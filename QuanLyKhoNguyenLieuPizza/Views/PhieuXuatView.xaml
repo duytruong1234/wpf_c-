@@ -1,15 +1,15 @@
 <UserControl x:Class="QuanLyKhoNguyenLieuPizza.Views.PhieuXuatView"
              xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
              xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
-             xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006" 
-             xmlns:d="http://schemas.microsoft.com/expression/blend/2008" 
+             xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+             xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
              xmlns:vm="clr-namespace:QuanLyKhoNguyenLieuPizza.ViewModels"
              xmlns:converters="clr-namespace:QuanLyKhoNguyenLieuPizza.Converters"
              xmlns:behaviors="clr-namespace:QuanLyKhoNguyenLieuPizza.Behaviors"
              xmlns:ui="http://schemas.lepo.co/wpfui/2022/xaml"
-             mc:Ignorable="d" 
+             mc:Ignorable="d"
              d:DesignHeight="800" d:DesignWidth="1200">
-    
+
     <d:UserControl.DataContext>
         <vm:PhieuXuatViewModel/>
     </d:UserControl.DataContext>
@@ -20,6 +20,7 @@
         <converters:StringToVisibilityConverter x:Key="StringToVisibilityConverter"/>
         <converters:IntToVisibilityConverter x:Key="IntToVisibilityConverter"/>
         <converters:ImagePathConverter x:Key="ImagePathConverter"/>
+        <converters:RowToIndexConverter x:Key="RowToIndexConverter"/>
 
         <!-- BẢNG MÀU HIỆN ĐẠI -->
         <SolidColorBrush x:Key="PrimaryBlue" Color="#5B6AFF"/>
@@ -97,6 +98,8 @@
                     <ColumnDefinition Width="*"/>
                     <ColumnDefinition Width="Auto"/>
                     <ColumnDefinition Width="12"/>
+                    <ColumnDefinition Width="Auto"/>
+                    <ColumnDefinition Width="8"/>
                     <ColumnDefinition Width="Auto"/>
                 </Grid.ColumnDefinitions>
 
@@ -187,6 +190,8 @@
                         </ControlTemplate>
                     </Button.Template>
                 </Button>
+
+
             </Grid>
 
             <!-- Summary THẺ THỐNG KÊ -->
@@ -272,6 +277,7 @@
                         <ColumnDefinition Width="*"/>
                         <ColumnDefinition Width="*"/>
                         <ColumnDefinition Width="*"/>
+                        <ColumnDefinition Width="*"/>
                         <ColumnDefinition Width="Auto"/>
                         <ColumnDefinition Width="Auto"/>
                     </Grid.ColumnDefinitions>
@@ -281,7 +287,7 @@
                     </Grid.RowDefinitions>
 
                     <!-- Filter Tiêu đề -->
-                    <StackPanel Grid.ColumnSpan="5" Orientation="Horizontal" Margin="0,0,0,14">
+                    <StackPanel Grid.ColumnSpan="6" Orientation="Horizontal" Margin="0,0,0,14">
                         <TextBlock Text="&#xE71C;" FontFamily="Segoe MDL2 Assets" FontSize="14" Foreground="{StaticResource Gray500}" VerticalAlignment="Center" Margin="0,0,8,0"/>
                         <TextBlock Text="Bộ lọc" FontSize="14" FontWeight="SemiBold" Foreground="{StaticResource Gray800}"/>
                     </StackPanel>
@@ -316,7 +322,15 @@
                         </Border>
                     </StackPanel>
 
-                    <Button Grid.Row="1" Grid.Column="4" Command="{Binding ClearFilterCommand}" Cursor="Hand" VerticalAlignment="Bottom" Margin="12,0,0,0">
+                    <StackPanel Grid.Row="1" Grid.Column="4" Margin="0,0,10,0">
+                        <TextBlock Text="Loại phiếu" FontSize="12" Foreground="{StaticResource Gray500}" Margin="0,0,0,6"/>
+                        <Border Style="{StaticResource ModernInputBorder}">
+                            <ComboBox ItemsSource="{Binding FilterLoaiPhieuOptions}" SelectedItem="{Binding SelectedFilterLoaiPhieu}"
+                                      BorderThickness="0" Background="Transparent" FontSize="13"/>
+                        </Border>
+                    </StackPanel>
+
+                    <Button Grid.Row="1" Grid.Column="5" Command="{Binding ClearFilterCommand}" Cursor="Hand" VerticalAlignment="Bottom" Margin="12,0,0,0">
                         <Button.Template>
                             <ControlTemplate TargetType="Button">
                                 <Border x:Name="border" Background="{StaticResource Gray100}" CornerRadius="10" Padding="16,10">
@@ -482,6 +496,7 @@
                     <ColumnDefinition Width="Auto"/>
                     <ColumnDefinition Width="*"/>
                     <ColumnDefinition Width="Auto"/>
+                    <ColumnDefinition Width="Auto"/>
                 </Grid.ColumnDefinitions>
 
                 <StackPanel Orientation="Horizontal" VerticalAlignment="Center">
@@ -540,6 +555,7 @@
                         </ControlTemplate>
                     </Button.Template>
                 </Button>
+
             </Grid>
 
             <!-- Employee Filters Card -->
@@ -737,21 +753,74 @@
         <!-- ========== MANAGER CREATE DIALOG ========== -->
         <Grid Visibility="{Binding IsDialogOpen, Converter={StaticResource BoolToVisibilityConverter}}" Background="#80000000">
             <!-- Manager Dialog -->
-            <Border Background="White" CornerRadius="20" Width="1000" Height="680" VerticalAlignment="Center" HorizontalAlignment="Center" Padding="32"
+            <Border Background="White" CornerRadius="20" Width="1150" Height="750" VerticalAlignment="Center" HorizontalAlignment="Center" Padding="32"
                     Visibility="{Binding IsQuanLy, Converter={StaticResource BoolToVisibilityConverter}}">
                 <Grid>
                     <Grid.RowDefinitions>
+                        <RowDefinition Height="Auto"/>
                         <RowDefinition Height="Auto"/>
                         <RowDefinition Height="*"/>
                         <RowDefinition Height="Auto"/>
                     </Grid.RowDefinitions>
 
                     <Grid Grid.Row="0" Margin="0,0,0,20">
-                        <TextBlock FontSize="26" FontWeight="Bold" Foreground="{StaticResource Gray800}" HorizontalAlignment="Center" Text="Tạo phiếu xuất mới"/>
+                        <StackPanel Orientation="Horizontal" HorizontalAlignment="Center">
+                            <TextBlock FontSize="22" FontWeight="Bold" Foreground="{StaticResource Gray800}" Text="{Binding FormDialogTitle}"/>
+                            <Border CornerRadius="10" Padding="10,4" Margin="12,0,0,0" VerticalAlignment="Center" Background="#EEF2FF">
+                                <TextBlock Text="{Binding FormDialogBadge}" FontSize="11" FontWeight="SemiBold" Foreground="#6366F1"/>
+                            </Border>
+                        </StackPanel>
                         <Button Style="{StaticResource CircularCloseButtonStyle}" Command="{Binding CancelDialogCommand}" Margin="0,-16,-16,0" Panel.ZIndex="10"/>
                     </Grid>
 
-                    <Grid Grid.Row="1">
+                    <!-- Loại phiếu + Lý do hủy hàng -->
+                    <Border Grid.Row="1" Margin="0,0,0,16" Padding="20,14" Background="#F8FAFC" CornerRadius="12" BorderBrush="{StaticResource Gray200}" BorderThickness="1">
+                        <StackPanel>
+                            <!-- Loại phiếu row -->
+                            <Grid Margin="0,0,0,10">
+                                <Grid.ColumnDefinitions>
+                                    <ColumnDefinition Width="*"/>
+                                    <ColumnDefinition Width="*"/>
+                                </Grid.ColumnDefinitions>
+                                <StackPanel>
+                                    <TextBlock Text="Loại phiếu xuất" FontSize="11" Foreground="{StaticResource Gray500}" Margin="0,0,0,4"/>
+                                    <Border Style="{StaticResource ModernInputBorder}" Width="300" HorizontalAlignment="Left">
+                                        <ComboBox ItemsSource="{Binding LoaiPhieuOptions}" SelectedItem="{Binding FormLoaiPhieu}"
+                                                  BorderThickness="0" Background="Transparent" FontSize="13"
+                                                  IsEnabled="{Binding IsLoaiPhieuEnabled}"/>
+                                    </Border>
+                                </StackPanel>
+                                <StackPanel Grid.Column="1" Margin="12,0,0,0">
+                                    <TextBlock Text="Người yêu cầu" FontSize="11" Foreground="{StaticResource Gray500}" Margin="0,0,0,4"/>
+                                    <TextBlock Text="{Binding CurrentUserName}" FontSize="13" Foreground="{StaticResource Gray800}" FontWeight="SemiBold" VerticalAlignment="Center" Margin="0,10,0,0"/>
+                                </StackPanel>
+                            </Grid>
+
+                            <!-- Lý do hủy hàng (chỉ hiện khi ở chế độ hủy) -->
+                            <StackPanel Visibility="{Binding IsHuyMode, Converter={StaticResource BoolToVisibilityConverter}}" Margin="0,10,0,0">
+                                <TextBlock Text="Lý do hủy hàng" FontSize="12" FontWeight="SemiBold" Foreground="#92400E" Margin="0,0,0,6"/>
+                                <Border Background="White" BorderBrush="#FDE68A" BorderThickness="1" CornerRadius="10" Padding="12,10">
+                                    <TextBox Text="{Binding LyDoHuy, UpdateSourceTrigger=PropertyChanged}"
+                                             BorderThickness="0" Background="Transparent" FontSize="13"
+                                             AcceptsReturn="True" TextWrapping="Wrap" MinHeight="60"
+                                             VerticalScrollBarVisibility="Auto"/>
+                                </Border>
+                            </StackPanel>
+
+                            <!-- Ghi chú (luôn hiện) -->
+                            <StackPanel Margin="0,10,0,0">
+                                <TextBlock Text="Ghi chú" FontSize="12" FontWeight="SemiBold" Foreground="{StaticResource Gray600}" Margin="0,0,0,6"/>
+                                <Border Background="White" BorderBrush="{StaticResource Gray200}" BorderThickness="1" CornerRadius="10" Padding="12,10">
+                                    <TextBox Text="{Binding FormGhiChu, UpdateSourceTrigger=PropertyChanged}"
+                                             BorderThickness="0" Background="Transparent" FontSize="13"
+                                             AcceptsReturn="True" TextWrapping="Wrap" MinHeight="40"
+                                             VerticalScrollBarVisibility="Auto"/>
+                                </Border>
+                            </StackPanel>
+                        </StackPanel>
+                    </Border>
+
+                    <Grid Grid.Row="2">
                         <Grid.ColumnDefinitions>
                             <ColumnDefinition Width="0.9*"/>
                             <ColumnDefinition Width="1.3*"/>
@@ -785,7 +854,7 @@
                                                                         <Image Source="{Binding HinhAnh, Converter={StaticResource ImagePathConverter}}" Stretch="UniformToFill"/>
                                                                     </Border>
                                                                     <StackPanel Margin="6,6,6,8" HorizontalAlignment="Center">
-                                                                        <TextBlock Text="{Binding TenNguyenLieu}" FontSize="11" FontWeight="Medium" Foreground="{StaticResource Gray800}" 
+                                                                        <TextBlock Text="{Binding TenNguyenLieu}" FontSize="11" FontWeight="Medium" Foreground="{StaticResource Gray800}"
                                                                                    HorizontalAlignment="Center" TextTrimming="CharacterEllipsis" MaxWidth="100"/>
                                                                         <TextBlock FontSize="10" Foreground="{StaticResource PrimaryBlue}" HorizontalAlignment="Center" Margin="0,2,0,0">
                                                                             <Run Text="Tồn: "/>
@@ -846,7 +915,7 @@
                                                             <ColumnDefinition Width="Auto"/>
                                                         </Grid.ColumnDefinitions>
 
-                                                        <TextBlock Grid.Column="0" Text="{Binding NguyenLieu.TenNguyenLieu}" 
+                                                        <TextBlock Grid.Column="0" Text="{Binding NguyenLieu.TenNguyenLieu}"
                                                                    FontSize="12" Foreground="{StaticResource Gray800}" VerticalAlignment="Center" HorizontalAlignment="Center"/>
 
                                                         <StackPanel Grid.Column="1" Orientation="Horizontal" HorizontalAlignment="Center" VerticalAlignment="Center">
@@ -856,7 +925,7 @@
                                                                     <ControlTemplate TargetType="Button">
                                                                         <Border x:Name="btnBorder" Background="{StaticResource Gray100}" CornerRadius="6" Width="28" Height="28"
                                                                                 BorderBrush="{StaticResource Gray200}" BorderThickness="1">
-                                                                            <TextBlock Text="&#xE738;" FontFamily="Segoe MDL2 Assets" FontSize="10" 
+                                                                            <TextBlock Text="&#xE738;" FontFamily="Segoe MDL2 Assets" FontSize="10"
                                                                                        HorizontalAlignment="Center" VerticalAlignment="Center" Foreground="{StaticResource Gray600}"/>
                                                                         </Border>
                                                                         <ControlTemplate.Triggers>
@@ -876,7 +945,7 @@
                                                                     <ControlTemplate TargetType="Button">
                                                                         <Border x:Name="btnBorder" Background="{StaticResource Gray100}" CornerRadius="6" Width="28" Height="28"
                                                                                 BorderBrush="{StaticResource Gray200}" BorderThickness="1">
-                                                                            <TextBlock Text="&#xE710;" FontFamily="Segoe MDL2 Assets" FontSize="10" 
+                                                                            <TextBlock Text="&#xE710;" FontFamily="Segoe MDL2 Assets" FontSize="10"
                                                                                        HorizontalAlignment="Center" VerticalAlignment="Center" Foreground="{StaticResource Gray600}"/>
                                                                         </Border>
                                                                         <ControlTemplate.Triggers>
@@ -889,8 +958,8 @@
                                                             </Button>
                                                         </StackPanel>
 
-                                                        <ComboBox Grid.Column="2" 
-                                                                  ItemsSource="{Binding DonViOptions}" 
+                                                        <ComboBox Grid.Column="2"
+                                                                  ItemsSource="{Binding DonViOptions}"
                                                                   SelectedItem="{Binding SelectedDonVi}"
                                                                   DisplayMemberPath="TenDonVi"
                                                                   Style="{StaticResource PizzaComboBoxStyle}"
@@ -928,12 +997,12 @@
                         </Border>
                     </Grid>
 
-                    <StackPanel Grid.Row="2" Orientation="Horizontal" HorizontalAlignment="Right" Margin="0,20,0,0">
+                    <StackPanel Grid.Row="3" Orientation="Horizontal" HorizontalAlignment="Right" Margin="0,20,0,0">
                         <Button Command="{Binding CancelDialogCommand}" Cursor="Hand" Margin="0,0,12,0">
                             <Button.Template>
                                 <ControlTemplate TargetType="Button">
-                                    <Border x:Name="border" Background="{StaticResource Gray100}" CornerRadius="10" Padding="32,14">
-                                        <TextBlock Text="Hủy" FontSize="14" FontWeight="SemiBold" Foreground="{StaticResource Gray600}"/>
+                                    <Border x:Name="border" Background="{StaticResource Gray100}" BorderBrush="{StaticResource Gray200}" BorderThickness="1" CornerRadius="10" Padding="32,14">
+                                        <TextBlock Text="Hủy bỏ" FontSize="14" FontWeight="SemiBold" Foreground="{StaticResource Gray600}"/>
                                     </Border>
                                     <ControlTemplate.Triggers>
                                         <Trigger Property="IsMouseOver" Value="True">
@@ -944,20 +1013,65 @@
                             </Button.Template>
                         </Button>
 
+                        <Button Command="{Binding SaveDraftPhieuXuatCommand}" Cursor="Hand" Margin="0,0,12,0"
+                                Visibility="{Binding IsHuyMode, Converter={StaticResource BoolToVisibilityConverter}}">
+                            <Button.Template>
+                                <ControlTemplate TargetType="Button">
+                                    <Border x:Name="border" Background="{StaticResource Gray600}" CornerRadius="10" Padding="32,14">
+                                        <TextBlock Text="Lưu Nháp" FontSize="14" FontWeight="SemiBold" Foreground="White"/>
+                                    </Border>
+                                    <ControlTemplate.Triggers>
+                                        <Trigger Property="IsMouseOver" Value="True">
+                                            <Setter TargetName="border" Property="Opacity" Value="0.9"/>
+                                        </Trigger>
+                                    </ControlTemplate.Triggers>
+                                </ControlTemplate>
+                            </Button.Template>
+                        </Button>
+
                         <Button Command="{Binding SavePhieuXuatCommand}" Cursor="Hand">
                             <Button.Template>
                                 <ControlTemplate TargetType="Button">
                                     <Border x:Name="border" CornerRadius="10" Padding="32,14">
-                                        <Border.Background>
-                                            <LinearGradientBrush StartPoint="0,0" EndPoint="1,0">
-                                                <GradientStop Color="#5B6AFF" Offset="0"/>
-                                                <GradientStop Color="#818CF8" Offset="1"/>
-                                            </LinearGradientBrush>
-                                        </Border.Background>
+                                        <Border.Style>
+                                            <Style TargetType="Border">
+                                                <Setter Property="Background">
+                                                    <Setter.Value>
+                                                        <LinearGradientBrush StartPoint="0,0" EndPoint="1,0">
+                                                            <GradientStop Color="#0284C7" Offset="0"/>
+                                                            <GradientStop Color="#0369A1" Offset="1"/>
+                                                        </LinearGradientBrush>
+                                                    </Setter.Value>
+                                                </Setter>
+                                                <Style.Triggers>
+                                                    <DataTrigger Binding="{Binding IsHuyMode}" Value="False">
+                                                        <Setter Property="Background">
+                                                            <Setter.Value>
+                                                                <LinearGradientBrush StartPoint="0,0" EndPoint="1,0">
+                                                                    <GradientStop Color="#5B6AFF" Offset="0"/>
+                                                                    <GradientStop Color="#818CF8" Offset="1"/>
+                                                                </LinearGradientBrush>
+                                                            </Setter.Value>
+                                                        </Setter>
+                                                    </DataTrigger>
+                                                </Style.Triggers>
+                                            </Style>
+                                        </Border.Style>
                                         <Border.Effect>
                                             <DropShadowEffect BlurRadius="12" ShadowDepth="2" Direction="270" Color="#5B6AFF" Opacity="0.2"/>
                                         </Border.Effect>
-                                        <TextBlock Text="Lưu phiếu" FontSize="14" FontWeight="SemiBold" Foreground="White"/>
+                                        <TextBlock FontSize="14" FontWeight="SemiBold" Foreground="White">
+                                            <TextBlock.Style>
+                                                <Style TargetType="TextBlock">
+                                                    <Setter Property="Text" Value="Gửi Quản Lý Phê Duyệt"/>
+                                                    <Style.Triggers>
+                                                        <DataTrigger Binding="{Binding IsHuyMode}" Value="False">
+                                                            <Setter Property="Text" Value="Lưu phiếu"/>
+                                                        </DataTrigger>
+                                                    </Style.Triggers>
+                                                </Style>
+                                            </TextBlock.Style>
+                                        </TextBlock>
                                     </Border>
                                     <ControlTemplate.Triggers>
                                         <Trigger Property="IsMouseOver" Value="True">
@@ -972,10 +1086,11 @@
             </Border>
 
             <!-- Employee Dialog -->
-            <Border Background="White" CornerRadius="20" Width="1000" Height="680" VerticalAlignment="Center" HorizontalAlignment="Center" Padding="32"
+            <Border Background="White" CornerRadius="20" Width="1150" Height="750" VerticalAlignment="Center" HorizontalAlignment="Center" Padding="32"
                     Visibility="{Binding IsNhanVien, Converter={StaticResource BoolToVisibilityConverter}}">
                 <Grid>
                     <Grid.RowDefinitions>
+                        <RowDefinition Height="Auto"/>
                         <RowDefinition Height="Auto"/>
                         <RowDefinition Height="*"/>
                         <RowDefinition Height="Auto"/>
@@ -986,14 +1101,17 @@
                             <ColumnDefinition Width="*"/>
                             <ColumnDefinition Width="Auto"/>
                         </Grid.ColumnDefinitions>
-                        
+
                         <StackPanel Orientation="Horizontal" VerticalAlignment="Center">
                             <Border Background="{StaticResource LightBlue}" CornerRadius="12" Width="44" Height="44" Margin="0,0,14,0">
                                 <TextBlock Text="&#xE710;" FontFamily="Segoe MDL2 Assets" FontSize="20" Foreground="{StaticResource PrimaryBlue}"
                                            HorizontalAlignment="Center" VerticalAlignment="Center"/>
                             </Border>
-                            <TextBlock Text="Tạo phiếu xuất kho" FontSize="24" FontWeight="Bold"
+                            <TextBlock Text="{Binding FormDialogTitle}" FontSize="22" FontWeight="Bold"
                                        Foreground="{StaticResource Gray900}" VerticalAlignment="Center"/>
+                            <Border CornerRadius="10" Padding="10,4" Margin="12,0,0,0" VerticalAlignment="Center" Background="#EEF2FF">
+                                <TextBlock Text="{Binding FormDialogBadge}" FontSize="11" FontWeight="SemiBold" Foreground="#6366F1"/>
+                            </Border>
                         </StackPanel>
 
                         <Button Grid.Column="1" Command="{Binding CancelDialogCommand}"
@@ -1017,7 +1135,53 @@
                         </Button>
                     </Grid>
 
-                    <Grid Grid.Row="1">
+                    <!-- Loại phiếu + Lý do hủy hàng (nhân viên) -->
+                    <Border Grid.Row="1" Margin="0,0,0,12" Padding="16,12" Background="#F8FAFC" CornerRadius="12" BorderBrush="{StaticResource Gray200}" BorderThickness="1">
+                        <StackPanel>
+                            <Grid Margin="0,0,0,6">
+                                <Grid.ColumnDefinitions>
+                                    <ColumnDefinition Width="*"/>
+                                    <ColumnDefinition Width="*"/>
+                                </Grid.ColumnDefinitions>
+                                <StackPanel>
+                                    <TextBlock Text="Loại phiếu xuất" FontSize="11" Foreground="{StaticResource Gray500}" Margin="0,0,0,4"/>
+                                    <Border Style="{StaticResource ModernInputBorder}" Width="300" HorizontalAlignment="Left">
+                                        <ComboBox ItemsSource="{Binding LoaiPhieuOptions}" SelectedItem="{Binding FormLoaiPhieu}"
+                                                  BorderThickness="0" Background="Transparent" FontSize="13"
+                                                  IsEnabled="{Binding IsLoaiPhieuEnabled}"/>
+                                    </Border>
+                                </StackPanel>
+                                <StackPanel Grid.Column="1" Margin="12,0,0,0">
+                                    <TextBlock Text="Người yêu cầu" FontSize="11" Foreground="{StaticResource Gray500}" Margin="0,0,0,4"/>
+                                    <TextBlock Text="{Binding CurrentUserName}" FontSize="13" Foreground="{StaticResource Gray800}" FontWeight="SemiBold" VerticalAlignment="Center" Margin="0,10,0,0"/>
+                                </StackPanel>
+                            </Grid>
+
+                            <!-- Lý do hủy hàng (nhân viên) -->
+                            <StackPanel Visibility="{Binding IsHuyMode, Converter={StaticResource BoolToVisibilityConverter}}" Margin="0,6,0,0">
+                                <TextBlock Text="Lý do hủy hàng" FontSize="12" FontWeight="SemiBold" Foreground="#92400E" Margin="0,0,0,6"/>
+                                <Border Background="White" BorderBrush="#FDE68A" BorderThickness="1" CornerRadius="10" Padding="10,8">
+                                    <TextBox Text="{Binding LyDoHuy, UpdateSourceTrigger=PropertyChanged}"
+                                             BorderThickness="0" Background="Transparent" FontSize="13"
+                                             AcceptsReturn="True" TextWrapping="Wrap" MinHeight="40"
+                                             VerticalScrollBarVisibility="Auto"/>
+                                </Border>
+                            </StackPanel>
+
+                            <!-- Ghi chú (nhân viên - luôn hiện) -->
+                            <StackPanel Margin="0,6,0,0">
+                                <TextBlock Text="Ghi chú" FontSize="12" FontWeight="SemiBold" Foreground="{StaticResource Gray600}" Margin="0,0,0,6"/>
+                                <Border Background="White" BorderBrush="{StaticResource Gray200}" BorderThickness="1" CornerRadius="10" Padding="10,8">
+                                    <TextBox Text="{Binding FormGhiChu, UpdateSourceTrigger=PropertyChanged}"
+                                             BorderThickness="0" Background="Transparent" FontSize="13"
+                                             AcceptsReturn="True" TextWrapping="Wrap" MinHeight="40"
+                                             VerticalScrollBarVisibility="Auto"/>
+                                </Border>
+                            </StackPanel>
+                        </StackPanel>
+                    </Border>
+
+                    <Grid Grid.Row="2" Visibility="{Binding IsHuyMode, Converter={StaticResource InverseBoolToVisibilityConverter}}">
                         <Grid.ColumnDefinitions>
                             <ColumnDefinition Width="0.9*"/>
                             <ColumnDefinition Width="1.3*"/>
@@ -1051,7 +1215,7 @@
                                                                         <Image Source="{Binding HinhAnh, Converter={StaticResource ImagePathConverter}}" Stretch="UniformToFill"/>
                                                                     </Border>
                                                                     <StackPanel Margin="6,6,6,8" HorizontalAlignment="Center">
-                                                                        <TextBlock Text="{Binding TenNguyenLieu}" FontSize="11" FontWeight="Medium" Foreground="{StaticResource Gray800}" 
+                                                                        <TextBlock Text="{Binding TenNguyenLieu}" FontSize="11" FontWeight="Medium" Foreground="{StaticResource Gray800}"
                                                                                    HorizontalAlignment="Center" TextTrimming="CharacterEllipsis" MaxWidth="100"/>
                                                                         <TextBlock FontSize="10" Foreground="{StaticResource PrimaryBlue}" HorizontalAlignment="Center" Margin="0,2,0,0">
                                                                             <Run Text="Tồn: "/>
@@ -1112,7 +1276,7 @@
                                                             <ColumnDefinition Width="Auto"/>
                                                         </Grid.ColumnDefinitions>
 
-                                                        <TextBlock Grid.Column="0" Text="{Binding NguyenLieu.TenNguyenLieu}" 
+                                                        <TextBlock Grid.Column="0" Text="{Binding NguyenLieu.TenNguyenLieu}"
                                                                    FontSize="12" Foreground="{StaticResource Gray800}" VerticalAlignment="Center" HorizontalAlignment="Center"/>
 
                                                         <StackPanel Grid.Column="1" Orientation="Horizontal" HorizontalAlignment="Center" VerticalAlignment="Center">
@@ -1122,7 +1286,7 @@
                                                                     <ControlTemplate TargetType="Button">
                                                                         <Border x:Name="btnBorder" Background="{StaticResource Gray100}" CornerRadius="6" Width="28" Height="28"
                                                                                 BorderBrush="{StaticResource Gray200}" BorderThickness="1">
-                                                                            <TextBlock Text="&#xE738;" FontFamily="Segoe MDL2 Assets" FontSize="10" 
+                                                                            <TextBlock Text="&#xE738;" FontFamily="Segoe MDL2 Assets" FontSize="10"
                                                                                        HorizontalAlignment="Center" VerticalAlignment="Center" Foreground="{StaticResource Gray600}"/>
                                                                         </Border>
                                                                         <ControlTemplate.Triggers>
@@ -1142,7 +1306,7 @@
                                                                     <ControlTemplate TargetType="Button">
                                                                         <Border x:Name="btnBorder" Background="{StaticResource Gray100}" CornerRadius="6" Width="28" Height="28"
                                                                                 BorderBrush="{StaticResource Gray200}" BorderThickness="1">
-                                                                            <TextBlock Text="&#xE710;" FontFamily="Segoe MDL2 Assets" FontSize="10" 
+                                                                            <TextBlock Text="&#xE710;" FontFamily="Segoe MDL2 Assets" FontSize="10"
                                                                                        HorizontalAlignment="Center" VerticalAlignment="Center" Foreground="{StaticResource Gray600}"/>
                                                                         </Border>
                                                                         <ControlTemplate.Triggers>
@@ -1155,8 +1319,8 @@
                                                             </Button>
                                                         </StackPanel>
 
-                                                        <ComboBox Grid.Column="2" 
-                                                                  ItemsSource="{Binding DonViOptions}" 
+                                                        <ComboBox Grid.Column="2"
+                                                                  ItemsSource="{Binding DonViOptions}"
                                                                   SelectedItem="{Binding SelectedDonVi}"
                                                                   DisplayMemberPath="TenDonVi"
                                                                   Style="{StaticResource PizzaComboBoxStyle}"
@@ -1194,36 +1358,219 @@
                         </Border>
                     </Grid>
 
-                    <Button Grid.Row="2" Command="{Binding SavePhieuXuatCommand}" HorizontalAlignment="Right" Margin="0,20,0,0" Cursor="Hand">
-                        <Button.Template>
-                            <ControlTemplate TargetType="Button">
-                                <Border x:Name="border" CornerRadius="12" Padding="48,16">
-                                    <Border.Background>
-                                        <LinearGradientBrush StartPoint="0,0" EndPoint="1,0">
-                                            <GradientStop Color="#5B6AFF" Offset="0"/>
-                                            <GradientStop Color="#818CF8" Offset="1"/>
-                                        </LinearGradientBrush>
-                                    </Border.Background>
-                                    <Border.Effect>
-                                        <DropShadowEffect BlurRadius="12" ShadowDepth="2" Direction="270" Color="#5B6AFF" Opacity="0.2"/>
-                                    </Border.Effect>
-                                    <TextBlock Text="Gửi yêu cầu" FontSize="16" FontWeight="SemiBold" Foreground="White"/>
-                                </Border>
-                                <ControlTemplate.Triggers>
-                                    <Trigger Property="IsMouseOver" Value="True">
-                                        <Setter TargetName="border" Property="Opacity" Value="0.9"/>
-                                    </Trigger>
-                                </ControlTemplate.Triggers>
-                            </ControlTemplate>
-                        </Button.Template>
-                    </Button>
+                    <!-- GIAO DIỆN PHIẾU HỦY (INLINE DATAGRID) -->
+                    <StackPanel Grid.Row="2" Visibility="{Binding IsHuyMode, Converter={StaticResource BoolToVisibilityConverter}}">
+                        <Grid Margin="0,0,0,12">
+                            <TextBlock Text="DANH SÁCH HÀNG HÓA CẦN HỦY" FontSize="14" FontWeight="Bold" Foreground="{StaticResource Gray800}" VerticalAlignment="Center"/>
+                            <Button Command="{Binding AddEmptyChiTietCommand}" HorizontalAlignment="Right" Cursor="Hand">
+                                <Button.Template>
+                                    <ControlTemplate TargetType="Button">
+                                        <Border x:Name="border" Background="#EEF2FF" BorderBrush="#C7D2FE" BorderThickness="1" CornerRadius="8" Padding="12,8">
+                                            <StackPanel Orientation="Horizontal">
+                                                <TextBlock Text="+" FontWeight="Bold" Foreground="#4F46E5" Margin="0,0,6,0" VerticalAlignment="Center"/>
+                                                <TextBlock Text="Thêm Nguyên Liệu" FontSize="13" FontWeight="SemiBold" Foreground="#4F46E5" VerticalAlignment="Center"/>
+                                            </StackPanel>
+                                        </Border>
+                                        <ControlTemplate.Triggers>
+                                            <Trigger Property="IsMouseOver" Value="True">
+                                                <Setter TargetName="border" Property="Background" Value="#E0E7FF"/>
+                                            </Trigger>
+                                        </ControlTemplate.Triggers>
+                                    </ControlTemplate>
+                                </Button.Template>
+                            </Button>
+                        </Grid>
+
+                        <Border Background="White" BorderBrush="{StaticResource Gray200}" BorderThickness="1" CornerRadius="12" MinHeight="150" MaxHeight="300">
+                            <DataGrid ItemsSource="{Binding ChiTietForm}" AutoGenerateColumns="False" HeadersVisibility="Column"
+                                      CanUserAddRows="False" Background="Transparent" BorderThickness="0"
+                                      RowHeight="50" ColumnHeaderHeight="42" GridLinesVisibility="Horizontal" HorizontalGridLinesBrush="#F1F5F9"
+                                      VerticalScrollBarVisibility="Auto">
+                                <DataGrid.ColumnHeaderStyle>
+                                    <Style TargetType="DataGridColumnHeader">
+                                        <Setter Property="Background" Value="#0F172A"/>
+                                        <Setter Property="Foreground" Value="White"/>
+                                        <Setter Property="FontWeight" Value="SemiBold"/>
+                                        <Setter Property="FontSize" Value="12"/>
+                                        <Setter Property="Padding" Value="12,0"/>
+                                        <Setter Property="BorderBrush" Value="#334155"/>
+                                        <Setter Property="BorderThickness" Value="0,0,1,0"/>
+                                        <Setter Property="HorizontalContentAlignment" Value="Center"/>
+                                    </Style>
+                                </DataGrid.ColumnHeaderStyle>
+                                <DataGrid.Columns>
+                                    <!-- STT -->
+                                    <DataGridTextColumn Header="STT" Width="50" IsReadOnly="True" Binding="{Binding RelativeSource={RelativeSource AncestorType=DataGridRow}, Converter={StaticResource RowToIndexConverter}}">
+                                        <DataGridTextColumn.ElementStyle>
+                                            <Style TargetType="TextBlock">
+                                                <Setter Property="HorizontalAlignment" Value="Center"/>
+                                                <Setter Property="VerticalAlignment" Value="Center"/>
+                                            </Style>
+                                        </DataGridTextColumn.ElementStyle>
+                                    </DataGridTextColumn>
+
+                                    <!-- Tên Nguyên Liệu -->
+                                    <DataGridTemplateColumn Header="Tên Nguyên Liệu (NguyenLieuID)" Width="*">
+                                        <DataGridTemplateColumn.CellTemplate>
+                                            <DataTemplate>
+                                                <ComboBox ItemsSource="{Binding DataContext.NguyenLieus, RelativeSource={RelativeSource AncestorType=UserControl}}"
+                                                          SelectedItem="{Binding NguyenLieu, UpdateSourceTrigger=PropertyChanged}"
+                                                          DisplayMemberPath="TenNguyenLieu"
+                                                          Style="{StaticResource PizzaComboBoxStyle}"
+                                                          ItemContainerStyle="{StaticResource PizzaComboBoxItemStyle}"
+                                                          VerticalAlignment="Center" Margin="8,0" Height="36"/>
+                                            </DataTemplate>
+                                        </DataGridTemplateColumn.CellTemplate>
+                                    </DataGridTemplateColumn>
+
+                                    <!-- Đơn vị -->
+                                    <DataGridTemplateColumn Header="Đơn vị (DonViID)" Width="200">
+                                        <DataGridTemplateColumn.CellTemplate>
+                                            <DataTemplate>
+                                                <ComboBox ItemsSource="{Binding DonViOptions}"
+                                                          SelectedItem="{Binding SelectedDonVi, UpdateSourceTrigger=PropertyChanged}"
+                                                          DisplayMemberPath="TenDonVi"
+                                                          Style="{StaticResource PizzaComboBoxStyle}"
+                                                          ItemContainerStyle="{StaticResource PizzaComboBoxItemStyle}"
+                                                          VerticalAlignment="Center" Margin="8,0" Height="36"/>
+                                            </DataTemplate>
+                                        </DataGridTemplateColumn.CellTemplate>
+                                    </DataGridTemplateColumn>
+
+                                    <!-- Số lượng hủy -->
+                                    <DataGridTemplateColumn Header="Số lượng hủy" Width="150">
+                                        <DataGridTemplateColumn.CellTemplate>
+                                            <DataTemplate>
+                                                <Border Style="{StaticResource ModernInputBorder}" Padding="0" Height="36" Margin="8,0">
+                                                    <TextBox Style="{StaticResource BorderlessTextBoxStyle}" Text="{Binding SoLuongText, UpdateSourceTrigger=PropertyChanged}"
+                                                             BorderThickness="0" Background="Transparent"
+                                                             FontSize="13" FontWeight="Bold" Foreground="#EF4444"
+                                                             TextAlignment="Center" VerticalContentAlignment="Center"
+                                                             behaviors:NumericInputBehavior.IsDecimalOnly="True"/>
+                                                </Border>
+                                            </DataTemplate>
+                                        </DataGridTemplateColumn.CellTemplate>
+                                    </DataGridTemplateColumn>
+
+                                    <!-- Xóa -->
+                                    <DataGridTemplateColumn Header="Xóa" Width="60">
+                                        <DataGridTemplateColumn.CellTemplate>
+                                            <DataTemplate>
+                                                <Button Command="{Binding DataContext.RemoveChiTietCommand, RelativeSource={RelativeSource AncestorType=UserControl}}"
+                                                        CommandParameter="{Binding}" Cursor="Hand" HorizontalAlignment="Center" VerticalAlignment="Center">
+                                                    <Button.Template>
+                                                        <ControlTemplate TargetType="Button">
+                                                            <Border x:Name="border" Padding="8" CornerRadius="6" Background="Transparent">
+                                                                <TextBlock Text="X" FontSize="14" FontWeight="Bold" Foreground="#EF4444"/>
+                                                            </Border>
+                                                            <ControlTemplate.Triggers>
+                                                                <Trigger Property="IsMouseOver" Value="True">
+                                                                    <Setter TargetName="border" Property="Background" Value="#FEE2E2"/>
+                                                                </Trigger>
+                                                            </ControlTemplate.Triggers>
+                                                        </ControlTemplate>
+                                                    </Button.Template>
+                                                </Button>
+                                            </DataTemplate>
+                                        </DataGridTemplateColumn.CellTemplate>
+                                    </DataGridTemplateColumn>
+                                </DataGrid.Columns>
+                            </DataGrid>
+                        </Border>
+                    </StackPanel>
+
+                    <StackPanel Grid.Row="3" Orientation="Horizontal" HorizontalAlignment="Right" Margin="0,20,0,0">
+                        <Button Command="{Binding CancelDialogCommand}" Cursor="Hand" Margin="0,0,12,0">
+                            <Button.Template>
+                                <ControlTemplate TargetType="Button">
+                                    <Border x:Name="border" Background="{StaticResource Gray100}" BorderBrush="{StaticResource Gray200}" BorderThickness="1" CornerRadius="10" Padding="32,14">
+                                        <TextBlock Text="Hủy bỏ" FontSize="14" FontWeight="SemiBold" Foreground="{StaticResource Gray600}"/>
+                                    </Border>
+                                    <ControlTemplate.Triggers>
+                                        <Trigger Property="IsMouseOver" Value="True">
+                                            <Setter TargetName="border" Property="Background" Value="{StaticResource Gray200}"/>
+                                        </Trigger>
+                                    </ControlTemplate.Triggers>
+                                </ControlTemplate>
+                            </Button.Template>
+                        </Button>
+
+                        <Button Command="{Binding SaveDraftPhieuXuatCommand}" Cursor="Hand" Margin="0,0,12,0"
+                                Visibility="{Binding IsHuyMode, Converter={StaticResource BoolToVisibilityConverter}}">
+                            <Button.Template>
+                                <ControlTemplate TargetType="Button">
+                                    <Border x:Name="border" Background="{StaticResource Gray600}" CornerRadius="10" Padding="32,14">
+                                        <TextBlock Text="Lưu Nháp" FontSize="14" FontWeight="SemiBold" Foreground="White"/>
+                                    </Border>
+                                    <ControlTemplate.Triggers>
+                                        <Trigger Property="IsMouseOver" Value="True">
+                                            <Setter TargetName="border" Property="Opacity" Value="0.9"/>
+                                        </Trigger>
+                                    </ControlTemplate.Triggers>
+                                </ControlTemplate>
+                            </Button.Template>
+                        </Button>
+
+                        <Button Command="{Binding SavePhieuXuatCommand}" Cursor="Hand">
+                            <Button.Template>
+                                <ControlTemplate TargetType="Button">
+                                    <Border x:Name="border" CornerRadius="12" Padding="48,16">
+                                        <Border.Style>
+                                            <Style TargetType="Border">
+                                                <Setter Property="Background">
+                                                    <Setter.Value>
+                                                        <LinearGradientBrush StartPoint="0,0" EndPoint="1,0">
+                                                            <GradientStop Color="#0284C7" Offset="0"/>
+                                                            <GradientStop Color="#0369A1" Offset="1"/>
+                                                        </LinearGradientBrush>
+                                                    </Setter.Value>
+                                                </Setter>
+                                                <Style.Triggers>
+                                                    <DataTrigger Binding="{Binding IsHuyMode}" Value="False">
+                                                        <Setter Property="Background">
+                                                            <Setter.Value>
+                                                                <LinearGradientBrush StartPoint="0,0" EndPoint="1,0">
+                                                                    <GradientStop Color="#5B6AFF" Offset="0"/>
+                                                                    <GradientStop Color="#818CF8" Offset="1"/>
+                                                                </LinearGradientBrush>
+                                                            </Setter.Value>
+                                                        </Setter>
+                                                    </DataTrigger>
+                                                </Style.Triggers>
+                                            </Style>
+                                        </Border.Style>
+                                        <Border.Effect>
+                                            <DropShadowEffect BlurRadius="12" ShadowDepth="2" Direction="270" Color="#5B6AFF" Opacity="0.2"/>
+                                        </Border.Effect>
+                                        <TextBlock FontSize="16" FontWeight="SemiBold" Foreground="White">
+                                            <TextBlock.Style>
+                                                <Style TargetType="TextBlock">
+                                                    <Setter Property="Text" Value="Gửi Quản Lý Phê Duyệt"/>
+                                                    <Style.Triggers>
+                                                        <DataTrigger Binding="{Binding IsHuyMode}" Value="False">
+                                                            <Setter Property="Text" Value="Gửi yêu cầu"/>
+                                                        </DataTrigger>
+                                                    </Style.Triggers>
+                                                </Style>
+                                            </TextBlock.Style>
+                                        </TextBlock>
+                                    </Border>
+                                    <ControlTemplate.Triggers>
+                                        <Trigger Property="IsMouseOver" Value="True">
+                                            <Setter TargetName="border" Property="Opacity" Value="0.9"/>
+                                        </Trigger>
+                                    </ControlTemplate.Triggers>
+                                </ControlTemplate>
+                            </Button.Template>
+                        </Button>
+                    </StackPanel>
                 </Grid>
             </Border>
         </Grid>
 
         <!-- ========== DETAIL DIALOG ========== -->
         <Grid Visibility="{Binding IsDetailDialogOpen, Converter={StaticResource BoolToVisibilityConverter}}" Background="#80000000">
-            <Border Background="White" CornerRadius="20" Width="850" MaxHeight="650" VerticalAlignment="Center" HorizontalAlignment="Center" Padding="32">
+            <Border Background="White" CornerRadius="20" Width="1000" MaxHeight="750" VerticalAlignment="Center" HorizontalAlignment="Center" Padding="32">
                 <Grid>
                     <Grid.RowDefinitions>
                         <RowDefinition Height="Auto"/>
@@ -1254,6 +1601,10 @@
                                 <TextBlock FontSize="13" Foreground="{StaticResource Gray500}" Margin="0,4,0,0">
                                     <Run Text="Ngày yêu cầu: "/>
                                     <Run Text="{Binding SelectedPhieuXuat.NgayYeuCau, StringFormat=\{0:dd/MM/yyyy HH:mm\}}" FontWeight="SemiBold" Foreground="{StaticResource Gray800}"/>
+                                </TextBlock>
+                                <TextBlock FontSize="13" Foreground="{StaticResource Gray500}" Margin="0,4,0,0">
+                                    <Run Text="Loại phiếu: "/>
+                                    <Run Text="{Binding SelectedPhieuXuat.LoaiPhieu, Converter={StaticResource NullOrEmptyToTextConverter}}" FontWeight="SemiBold" Foreground="{StaticResource Gray800}"/>
                                 </TextBlock>
                                 <StackPanel Orientation="Horizontal" Margin="0,4,0,0">
                                     <TextBlock Text="Trạng thái: " FontSize="13" Foreground="{StaticResource Gray500}"/>
@@ -1296,14 +1647,26 @@
                             <StackPanel Grid.Column="1">
                                 <TextBlock FontSize="13" Foreground="{StaticResource Gray500}">
                                     <Run Text="Nhân viên duyệt: "/>
-                                    <Run Text="{Binding SelectedPhieuXuat.NhanVienDuyet.HoTen, TargetNullValue='(Chưa duyệt)'}" FontWeight="SemiBold" Foreground="{StaticResource Gray800}"/>
+                                    <Run Text="{Binding SelectedPhieuXuat.NhanVienDuyet.HoTen, FallbackValue='Không có', TargetNullValue='Không có'}" FontWeight="SemiBold" Foreground="{StaticResource Gray800}"/>
                                 </TextBlock>
                                 <TextBlock FontSize="13" Foreground="{StaticResource Gray500}" Margin="0,4,0,0">
                                     <Run Text="Ngày duyệt: "/>
-                                    <Run Text="{Binding SelectedPhieuXuat.NgayDuyet, StringFormat=\{0:dd/MM/yyyy HH:mm\}, TargetNullValue='(Chưa duyệt)'}" FontWeight="SemiBold" Foreground="{StaticResource Gray800}"/>
+                                    <Run Text="{Binding SelectedPhieuXuat.NgayDuyet, StringFormat=\{0:dd/MM/yyyy HH:mm\}, FallbackValue='Không có', TargetNullValue='Không có'}" FontWeight="SemiBold" Foreground="{StaticResource Gray800}"/>
                                 </TextBlock>
                             </StackPanel>
                         </Grid>
+
+                        <!-- Ghi chú / Lý do hủy (nếu có) -->
+                        <Border Margin="0,10,0,0" Padding="12,8" CornerRadius="8"
+                                Visibility="{Binding SelectedPhieuXuat.GhiChu, Converter={StaticResource StringToVisibilityConverter}}">
+                            <Border.Background>
+                                <SolidColorBrush Color="#F8FAFC"/>
+                            </Border.Background>
+                            <TextBlock TextWrapping="Wrap">
+                                <Run Text="Ghi chú: " FontSize="13" Foreground="{StaticResource Gray500}"/>
+                                <Run Text="{Binding SelectedPhieuXuat.GhiChu}" FontSize="13" FontWeight="SemiBold" Foreground="{StaticResource Gray800}"/>
+                            </TextBlock>
+                        </Border>
                     </StackPanel>
 
                     <Border Grid.Row="2" BorderBrush="{StaticResource Gray200}" BorderThickness="1" CornerRadius="12">
@@ -1317,14 +1680,16 @@
                                 <Grid>
                                     <Grid.ColumnDefinitions>
                                         <ColumnDefinition Width="2*"/>
-                                        <ColumnDefinition Width="1*"/>
-                                        <ColumnDefinition Width="1*"/>
-                                        <ColumnDefinition Width="1*"/>
+                                        <ColumnDefinition Width="0.8*"/>
+                                        <ColumnDefinition Width="0.8*"/>
+                                        <ColumnDefinition Width="0.7*"/>
+                                        <ColumnDefinition Width="1.8*"/>
                                     </Grid.ColumnDefinitions>
                                     <TextBlock Grid.Column="0" Text="Tên nguyên liệu" Style="{StaticResource TableHeaderStyle}"/>
                                     <TextBlock Grid.Column="1" Text="Số lượng" Style="{StaticResource TableHeaderStyle}"/>
-                                    <TextBlock Grid.Column="2" Text="Đơn vị tính" Style="{StaticResource TableHeaderStyle}"/>
+                                    <TextBlock Grid.Column="2" Text="Đơn vị xuất" Style="{StaticResource TableHeaderStyle}"/>
                                     <TextBlock Grid.Column="3" Text="Hệ số" Style="{StaticResource TableHeaderStyle}"/>
+                                    <TextBlock Grid.Column="4" Text="ĐV lưu tồn kho (Hệ số)" Style="{StaticResource TableHeaderStyle}"/>
                                 </Grid>
                             </Border>
 
@@ -1336,14 +1701,21 @@
                                                 <Grid>
                                                     <Grid.ColumnDefinitions>
                                                         <ColumnDefinition Width="2*"/>
-                                                        <ColumnDefinition Width="1*"/>
-                                                        <ColumnDefinition Width="1*"/>
-                                                        <ColumnDefinition Width="1*"/>
+                                                        <ColumnDefinition Width="0.8*"/>
+                                                        <ColumnDefinition Width="0.8*"/>
+                                                        <ColumnDefinition Width="0.7*"/>
+                                                        <ColumnDefinition Width="1.8*"/>
                                                     </Grid.ColumnDefinitions>
                                                     <TextBlock Grid.Column="0" Text="{Binding NguyenLieu.TenNguyenLieu}" Style="{StaticResource TableCellStyle}" TextAlignment="Left" Padding="20,16"/>
-                                                    <TextBlock Grid.Column="1" Text="{Binding SoLuong, StringFormat=\{0:N4\}}" Style="{StaticResource TableCellStyle}"/>
+                                                    <TextBlock Grid.Column="1" Text="{Binding SoLuong, StringFormat=\{0:0.####\}}" Style="{StaticResource TableCellStyle}"/>
                                                     <TextBlock Grid.Column="2" Text="{Binding DonViTinh.TenDonVi}" Style="{StaticResource TableCellStyle}"/>
                                                     <TextBlock Grid.Column="3" Text="{Binding HeSo, StringFormat=\{0:0.##\}}" Style="{StaticResource TableCellStyle}"/>
+                                                    <TextBlock Grid.Column="4" Style="{StaticResource TableCellStyle}" Foreground="{StaticResource Gray500}">
+                                                        <Run Text="{Binding TenDonViChuan, Mode=OneWay}"/>
+                                                        <Run Text=" ("/>
+                                                        <Run Text="{Binding HeSoDonViChuan, StringFormat=\{0:0.##\}, Mode=OneWay}"/>
+                                                        <Run Text=")"/>
+                                                    </TextBlock>
                                                 </Grid>
                                             </Border>
                                         </DataTemplate>
@@ -1468,5 +1840,3 @@
         </Grid>
     </Grid>
 </UserControl>
-
-

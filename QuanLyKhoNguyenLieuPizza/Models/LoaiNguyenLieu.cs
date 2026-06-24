@@ -8,4 +8,3 @@ public class LoaiNguyenLieu
     // Thuộc tính điều hướng
     public virtual ICollection<NguyenLieu> NguyenLieus { get; set; } = new List<NguyenLieu>();
 }
-

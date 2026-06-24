@@ -1,4 +1,4 @@
-<UserControl x:Class="QuanLyKhoNguyenLieuPizza.Views.SearchableComboBox"
+﻿<UserControl x:Class="QuanLyKhoNguyenLieuPizza.Views.SearchableComboBox"
              xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
              xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
              xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
@@ -99,7 +99,7 @@
                     </Grid.RowDefinitions>
 
                     <!-- Search Box -->
-                    <Border Grid.Row="0" 
+                    <Border Grid.Row="0"
                             Background="{StaticResource SCB_Gray50}"
                             BorderBrush="{StaticResource SCB_Gray200}"
                             BorderThickness="0,0,0,1"

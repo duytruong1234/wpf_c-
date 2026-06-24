@@ -142,8 +142,7 @@ public class SaoLuuViewModel : BaseViewModel
                 LastBackupInfo = "Chưa có bản sao lưu nào.\nHãy tạo bản sao lưu đầu tiên để bảo vệ dữ liệu!";
             }
         }
-        catch (Exception ex)
-        {
+        catch (Exception ex) {
             LastBackupInfo = $"Không thể đọc thông tin sao lưu: {ex.Message}";
         }
     }
@@ -195,9 +194,9 @@ public class SaoLuuViewModel : BaseViewModel
 
                 // Thực hiện backup
                 var sql = $@"
-                    BACKUP DATABASE [QuanLyKhoNguyenLieuPizza] 
-                    TO DISK = N'{backupPath}' 
-                    WITH FORMAT, INIT, 
+                    BACKUP DATABASE [QuanLyKhoNguyenLieuPizza]
+                    TO DISK = N'{backupPath}'
+                    WITH FORMAT, INIT,
                     NAME = N'PizzaInn Backup - {DateTime.Now:dd/MM/yyyy HH:mm}',
                     COMPRESSION,
                     STATS = 10";
@@ -218,8 +217,7 @@ public class SaoLuuViewModel : BaseViewModel
                 MessageBoxButton.OK,
                 MessageBoxImage.Information);
         }
-        catch (Exception ex)
-        {
+        catch (Exception ex) {
             StatusMessage = $"Lỗi sao lưu: {ex.Message}";
             MessageBox.Show(
                 $"Sao lưu thất bại!\n\nLỗi: {ex.Message}",
@@ -250,7 +248,7 @@ public class SaoLuuViewModel : BaseViewModel
 
             // Cảnh báo trước khi restore
             var confirm = MessageBox.Show(
-                "⚠️ CẢNH BÁO: Phục hồi database sẽ GHI ĐÈ toàn bộ dữ liệu hiện tại!\n\n" +
+                "CẢNH BÁO: Phục hồi database sẽ GHI ĐÈ toàn bộ dữ liệu hiện tại!\n\n" +
                 "Tất cả hóa đơn, nguyên liệu, nhân viên... hiện có sẽ bị thay thế bằng dữ liệu trong file sao lưu.\n\n" +
                 "Bạn có chắc chắn muốn tiếp tục?",
                 "Xác nhận phục hồi",
@@ -284,7 +282,7 @@ public class SaoLuuViewModel : BaseViewModel
                 var connectionString = GetConnectionString();
                 var builder = new SqlConnectionStringBuilder(connectionString);
                 builder.InitialCatalog = "master";
-                
+
                 using var connection = new SqlConnection(builder.ConnectionString);
                 connection.Open();
 
@@ -304,8 +302,8 @@ public class SaoLuuViewModel : BaseViewModel
 
                 // Thực hiện restore
                 var sql = $@"
-                    RESTORE DATABASE [QuanLyKhoNguyenLieuPizza] 
-                    FROM DISK = N'{backupPath}' 
+                    RESTORE DATABASE [QuanLyKhoNguyenLieuPizza]
+                    FROM DISK = N'{backupPath}'
                     WITH REPLACE, STATS = 10";
 
                 using var command = new SqlCommand(sql, connection);
@@ -330,8 +328,7 @@ public class SaoLuuViewModel : BaseViewModel
                 MessageBoxButton.OK,
                 MessageBoxImage.Information);
         }
-        catch (Exception ex)
-        {
+        catch (Exception ex) {
             StatusMessage = $"Lỗi phục hồi: {ex.Message}";
             MessageBox.Show(
                 $"Phục hồi thất bại!\n\nLỗi: {ex.Message}\n\n" +
@@ -363,8 +360,7 @@ public class SaoLuuViewModel : BaseViewModel
                 UseShellExecute = true
             });
         }
-        catch (Exception ex)
-        {
+        catch (Exception ex) {
             MessageBox.Show($"Không thể mở thư mục: {ex.Message}", "Lỗi", MessageBoxButton.OK, MessageBoxImage.Error);
         }
     }

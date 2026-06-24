@@ -1,4 +1,4 @@
-using System.Collections.ObjectModel;
+﻿using System.Collections.ObjectModel;
 using System.Text.RegularExpressions;
 using System.Windows.Input;
 using QuanLyKhoNguyenLieuPizza.Core.Interfaces;
@@ -175,7 +175,7 @@ public class NhaCungCapViewModel : BaseViewModel
             {
                 ErrorTinhTP = string.Empty;
                 if (value != null) FormTinhTP = value.name;
-                
+
                 if (!_isProgrammaticAddressUpdate)
                 {
                     SelectedWard = null;
@@ -494,10 +494,7 @@ public class NhaCungCapViewModel : BaseViewModel
         {
             await LoadNhaCungCapsAsync();
         }
-        catch (Exception ex)
-        {
-            System.Diagnostics.Debug.WriteLine($"Error loading data: {ex.Message}");
-        }
+        catch { }
         finally
         {
             IsLoading = false;
@@ -509,7 +506,7 @@ public class NhaCungCapViewModel : BaseViewModel
         try
         {
             bool? trangThaiFilter = null;
-            
+
             if (FilterDangHopTac && !FilterNgungHopTac)
             {
                 trangThaiFilter = true;
@@ -529,10 +526,7 @@ public class NhaCungCapViewModel : BaseViewModel
             CountDangHopTac = nhaCungCaps.Count(n => n.TrangThai);
             CountNgungHopTac = nhaCungCaps.Count(n => !n.TrangThai);
         }
-        catch (Exception ex)
-        {
-            System.Diagnostics.Debug.WriteLine($"Error loading NhaCungCaps: {ex.Message}");
-        }
+        catch { }
     }
 
     private void ClearFilter()
@@ -579,11 +573,10 @@ public class NhaCungCapViewModel : BaseViewModel
         }
     }
 
-
     private async Task SetupAddressAsync(string provinceName, string districtName, string wardName)
     {
         _isProgrammaticAddressUpdate = true;
-        
+
         if (Provinces.Count == 0)
         {
             var p = await LocationService.Instance.GetProvincesAsync();
@@ -593,7 +586,7 @@ public class NhaCungCapViewModel : BaseViewModel
 
         var prov = Provinces.FirstOrDefault(x => x.name == provinceName);
         SelectedProvince = prov;
-        
+
         if (prov != null)
         {
             var wards = await LocationService.Instance.GetWardsAsync(prov.code);
@@ -601,12 +594,12 @@ public class NhaCungCapViewModel : BaseViewModel
             foreach (var w in wards) Wards.Add(w);
             SelectedWard = Wards.FirstOrDefault(x => x.name == wardName);
         }
-        else 
+        else
         {
             SelectedWard = null;
             Wards.Clear();
         }
-        
+
         _isProgrammaticAddressUpdate = false;
     }
 
@@ -686,7 +679,7 @@ public class NhaCungCapViewModel : BaseViewModel
     private async Task ViewDetailAsync(object? parameter)
     {
         int nhaCungCapId = 0;
-        
+
         if (parameter is NhaCungCap ncc)
         {
             nhaCungCapId = ncc.NhaCungCapID;
@@ -706,10 +699,7 @@ public class NhaCungCapViewModel : BaseViewModel
             NguyenLieusOfNCC = new ObservableCollection<NguyenLieu>(nguyenLieus);
             IsDetailDialogOpen = true;
         }
-        catch (Exception ex)
-        {
-            System.Diagnostics.Debug.WriteLine($"Error loading detail: {ex.Message}");
-        }
+        catch { }
     }
 
     private bool ValidateForm()
@@ -821,14 +811,11 @@ public class NhaCungCapViewModel : BaseViewModel
             }
 
             await _databaseService.SaveNhaCungCapAsync(nhaCungCap);
-            
+
             CloseDialog();
             await LoadNhaCungCapsAsync();
         }
-        catch (Exception ex)
-        {
-            System.Diagnostics.Debug.WriteLine($"Error saving NhaCungCap: {ex.Message}");
-        }
+        catch { }
     }
 
     private async Task ToggleStatusAsync()
@@ -839,17 +826,14 @@ public class NhaCungCapViewModel : BaseViewModel
         {
             var newStatus = !SelectedNhaCungCap.TrangThai;
             var result = await _databaseService.UpdateNhaCungCapTrangThaiAsync(SelectedNhaCungCap.NhaCungCapID, newStatus);
-            
+
             if (result)
             {
                 IsStatusDialogOpen = false;
                 await LoadNhaCungCapsAsync();
             }
         }
-        catch (Exception ex)
-        {
-            System.Diagnostics.Debug.WriteLine($"Error toggling status: {ex.Message}");
-        }
+        catch { }
     }
 
     private async Task DeleteNhaCungCapAsync(object? parameter)
@@ -870,10 +854,7 @@ public class NhaCungCapViewModel : BaseViewModel
                 await LoadNhaCungCapsAsync();
             }
         }
-        catch (Exception ex)
-        {
-            System.Diagnostics.Debug.WriteLine($"Error deleting NhaCungCap: {ex.Message}");
-        }
+        catch { }
     }
 
     private void CloseDialog()
@@ -910,10 +891,7 @@ public class NhaCungCapViewModel : BaseViewModel
             IsEditingNL = false;
             IsAddNLDialogOpen = true;
         }
-        catch (Exception ex)
-        {
-            System.Diagnostics.Debug.WriteLine($"Error loading NguyenLieus: {ex.Message}");
-        }
+        catch { }
     }
 
     private async Task OpenEditNLDialogAsync(object? parameter)
@@ -929,17 +907,14 @@ public class NhaCungCapViewModel : BaseViewModel
             DonViTinhs = new ObservableCollection<DonViTinh>(dvtList);
 
             SelectedNguyenLieuToAdd = AllNguyenLieus.FirstOrDefault(x => x.NguyenLieuID == nl.NguyenLieuID);
-            
+
             var giaNhap = nl.NguyenLieuNhaCungCaps?.FirstOrDefault()?.GiaNhap ?? 0;
             FormGiaNhap = giaNhap.ToString("G");
-            
+
             IsEditingNL = true;
             IsAddNLDialogOpen = true;
         }
-        catch (Exception ex)
-        {
-            System.Diagnostics.Debug.WriteLine($"Error loading NguyenLieus: {ex.Message}");
-        }
+        catch { }
     }
 
     private async Task SaveAddNLAsync()
@@ -965,10 +940,7 @@ public class NhaCungCapViewModel : BaseViewModel
                 NguyenLieusOfNCC = new ObservableCollection<NguyenLieu>(nguyenLieus);
             }
         }
-        catch (Exception ex)
-        {
-            System.Diagnostics.Debug.WriteLine($"Error adding NL to NCC: {ex.Message}");
-        }
+        catch { }
     }
 
     private async Task DeleteNLFromNCCAsync(object? parameter)
@@ -993,12 +965,7 @@ public class NhaCungCapViewModel : BaseViewModel
                 NguyenLieusOfNCC = new ObservableCollection<NguyenLieu>(nguyenLieus);
             }
         }
-        catch (Exception ex)
-        {
-            System.Diagnostics.Debug.WriteLine($"Error deleting NL from NCC: {ex.Message}");
-        }
+        catch { }
     }
     #endregion
 }
-
-

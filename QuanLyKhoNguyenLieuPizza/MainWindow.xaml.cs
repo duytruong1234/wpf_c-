@@ -17,7 +17,7 @@ namespace QuanLyKhoNguyenLieuPizza
         {
             // Tự động điều chỉnh cửa sổ theo màn hình, nhưng giới hạn kích thước tối đa hợp lý
             var workArea = SystemParameters.WorkArea;
-            
+
             // Trên màn hình nhỏ (laptop), sử dụng 90% màn hình
             // Trên màn hình lớn (27"), giới hạn tối đa để tránh cửa sổ quá rộng
             double maxWidth = 1450;

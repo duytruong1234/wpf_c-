@@ -10,10 +10,10 @@ public partial class OTPView : UserControl
 {
     private OTPViewModel? ViewModel => DataContext as OTPViewModel;
     private bool _isSetup;
-    
+
     // Cờ toàn cục để ngăn chặn sự kiện gọi lại lồng nhau
     private bool _isProcessing;
-    
+
     // Lưu cache các ô OTP để truy cập theo chỉ mục dễ dàng
     private TextBox[] _otpBoxes = null!;
 
@@ -27,8 +27,7 @@ public partial class OTPView : UserControl
             Loaded += OTPView_Loaded;
             App.LogToFile("OTPView: Constructor DONE");
         }
-        catch (Exception ex)
-        {
+        catch (Exception ex) {
             App.LogToFile($"OTPView: Constructor ERROR: {ex}");
             throw;
         }
@@ -50,7 +49,7 @@ public partial class OTPView : UserControl
                 {
                     // Tắt IME (bàn phím tiếng Việt, v.v.) — OTP chỉ cần chữ số
                     InputMethod.SetIsInputMethodEnabled(box, false);
-                    
+
                     box.PreviewKeyDown += OTPBox_PreviewKeyDown;
                     box.PreviewTextInput += OTPBox_PreviewTextInput;
                     box.TextChanged += OTPBox_TextChanged;
@@ -72,13 +71,11 @@ public partial class OTPView : UserControl
             {
                 try { otp1.Focus(); } catch { }
             }), System.Windows.Threading.DispatcherPriority.Input);
-            
+
             App.LogToFile("OTPView: Loaded DONE");
         }
-        catch (Exception ex)
-        {
+        catch (Exception ex) {
             App.LogToFile($"OTPView: Loaded ERROR: {ex}");
-            System.Diagnostics.Debug.WriteLine($"OTPView_Loaded ERROR: {ex}");
         }
     }
 
@@ -97,10 +94,7 @@ public partial class OTPView : UserControl
             }
             SyncOTPCode();
         }
-        catch (Exception ex)
-        {
-            System.Diagnostics.Debug.WriteLine($"ClearAllBoxes ERROR: {ex}");
-        }
+        catch { }
         finally
         {
             _isProcessing = false;
@@ -115,15 +109,15 @@ public partial class OTPView : UserControl
         // LUÔN kiểm tra _isProcessing để ngăn gọi lại lồng nhau
         if (_isProcessing) return;
         _isProcessing = true;
-        
+
         try
         {
             var current = (TextBox)sender;
             var text = current.Text ?? string.Empty;
-            
+
             // Loại bỏ các ký tự không phải chữ số (chữ cái từ IME, v.v.)
             var digitsOnly = new string(text.Where(char.IsDigit).ToArray());
-            
+
             if (digitsOnly.Length == 0)
             {
                 // Không có chữ số — xóa ô
@@ -134,34 +128,31 @@ public partial class OTPView : UserControl
                 SyncOTPCode();
                 return;
             }
-            
+
             if (digitsOnly.Length == 1 && text == digitsOnly)
             {
                 // Đúng 1 chữ số, nội dung sạch — chỉ đồng bộ
                 SyncOTPCode();
                 return;
             }
-            
+
             // Có ký tự không phải số hoặc nhiều hơn 1 chữ số — sửa lại
             var index = GetBoxIndex(current);
-            
+
             // Giữ chữ số cuối cùng (chữ số mới nhất được nhập)
             var keepDigit = digitsOnly[digitsOnly.Length - 1].ToString();
             current.Text = keepDigit;
             current.CaretIndex = 1;
-            
+
             // Tự động chuyển sang ô tiếp theo
             if (index >= 0 && index < 5)
             {
                 _otpBoxes[index + 1].Focus();
             }
-            
+
             SyncOTPCode();
         }
-        catch (Exception ex)
-        {
-            System.Diagnostics.Debug.WriteLine($"OTPBox_TextChanged ERROR: {ex}");
-        }
+        catch { }
         finally
         {
             _isProcessing = false;
@@ -198,10 +189,7 @@ public partial class OTPView : UserControl
 
             SyncOTPCode();
         }
-        catch (Exception ex)
-        {
-            System.Diagnostics.Debug.WriteLine($"PreviewTextInput ERROR: {ex}");
-        }
+        catch { }
         finally
         {
             _isProcessing = false;
@@ -277,10 +265,8 @@ public partial class OTPView : UserControl
                     break;
             }
         }
-        catch (Exception ex)
-        {
+        catch {
             _isProcessing = false;
-            System.Diagnostics.Debug.WriteLine($"PreviewKeyDown ERROR: {ex}");
         }
     }
 
@@ -315,10 +301,8 @@ public partial class OTPView : UserControl
                 }
             }
         }
-        catch (Exception ex)
-        {
+        catch {
             _isProcessing = false;
-            System.Diagnostics.Debug.WriteLine($"OnPaste ERROR: {ex}");
         }
         e.CancelCommand();
     }
@@ -351,9 +335,6 @@ public partial class OTPView : UserControl
                 vm.OTPCode = code;
             }
         }
-        catch (Exception ex)
-        {
-            System.Diagnostics.Debug.WriteLine($"SyncOTPCode ERROR: {ex}");
-        }
+        catch { }
     }
 }

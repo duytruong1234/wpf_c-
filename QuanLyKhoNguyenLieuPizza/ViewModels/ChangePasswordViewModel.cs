@@ -1,4 +1,4 @@
-using System.Windows.Input;
+﻿using System.Windows.Input;
 using QuanLyKhoNguyenLieuPizza.Core.Commands;
 using QuanLyKhoNguyenLieuPizza.Core.Interfaces;
 using QuanLyKhoNguyenLieuPizza.Services;
@@ -148,7 +148,7 @@ public class ChangePasswordViewModel : BaseViewModel
         }
 
         int strength = 0;
-        
+
         if (NewPassword.Length >= 8) strength++;
         if (NewPassword.Any(char.IsUpper)) strength++;
         if (NewPassword.Any(char.IsDigit)) strength++;
@@ -200,7 +200,7 @@ public class ChangePasswordViewModel : BaseViewModel
             }
 
             bool success = await _databaseService.ChangePasswordAsync(Email, NewPassword);
-            
+
             if (success)
             {
                 OnChangePasswordSuccess?.Invoke();
@@ -210,8 +210,7 @@ public class ChangePasswordViewModel : BaseViewModel
                 ErrorMessage = "Không thể đổi mật khẩu. Vui lòng thử lại!";
             }
         }
-        catch (Exception ex)
-        {
+        catch (Exception ex) {
             ErrorMessage = ex.Message;
         }
         finally
@@ -220,4 +219,3 @@ public class ChangePasswordViewModel : BaseViewModel
         }
     }
 }
-

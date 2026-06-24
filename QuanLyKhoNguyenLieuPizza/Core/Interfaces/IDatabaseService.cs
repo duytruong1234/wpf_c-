@@ -9,39 +9,39 @@ public interface IDatabaseService
 {
     // Xác thực
     Task<TaiKhoan?> AuthenticateAsync(string username, string password);
-    
+
     // Loại Nguyên Liệu
     Task<List<LoaiNguyenLieu>> GetLoaiNguyenLieusAsync();
     Task<bool> SaveLoaiNguyenLieuAsync(LoaiNguyenLieu loaiNguyenLieu);
     Task<bool> DeleteLoaiNguyenLieuAsync(int loaiNLID);
-    
+
     // Nhà Cung Cấp
     Task<List<NhaCungCap>> GetNhaCungCapsAsync();
     Task<List<NhaCungCap>> GetNhaCungCapsByNguyenLieuAsync(int nguyenLieuId);
     Task<List<NguyenLieuNhaCungCap>> GetNguyenLieuNhaCungCapsAsync(int nguyenLieuId);
     Task<bool> UpsertNguyenLieuNhaCungCapAsync(int nguyenLieuId, int nhaCungCapId, decimal giaNhap);
-    
+
     // Nguyên Liệu
     Task<List<NguyenLieu>> GetNguyenLieusAsync(int? loaiNLID = null);
     Task<List<NguyenLieu>> GetAllNguyenLieusWithDetailsAsync();
     Task<NguyenLieu?> GetNguyenLieuByIdAsync(int id);
     Task<bool> SaveNguyenLieuAsync(NguyenLieu nguyenLieu);
     Task<bool> DeleteNguyenLieuAsync(int nguyenLieuId);
-    
+
     // Tồn Kho
     Task<List<TonKho>> GetTonKhosAsync();
     Task<TonKho?> GetTonKhoByNguyenLieuIdAsync(int nguyenLieuId);
     Task<bool> UpdateTonKhoAsync(int nguyenLieuId, decimal soLuong);
     Task<bool> UpdateTonKhoDonViAsync(int nguyenLieuId, decimal soLuong, int donViId);
-    
+
     // Đơn Vị Tính
     Task<List<DonViTinh>> GetDonViTinhsAsync();
-    
+
     // Quy Đổi Đơn Vị
     Task<List<QuyDoiDonVi>> GetQuyDoiDonVisAsync(int nguyenLieuID);
     Task<bool> SaveQuyDoiDonViAsync(QuyDoiDonVi quyDoi);
     Task<bool> DeleteQuyDoiDonViAsync(int quyDoiId);
-    
+
     // Thống kê cho Dashboard
     Task<int> GetTotalNguyenLieuCountAsync();
     Task<int> GetTotalTonKhoCountAsync();
@@ -99,7 +99,7 @@ public interface IDatabaseService
     // DoanhMuc_Size & DoanhMuc_De
     Task<List<DoanhMuc_Size>> GetDoanhMucSizesAsync();
     Task<List<DoanhMuc_De>> GetDoanhMucDesAsync();
-    
+
     // Loại Hàng Hóa
     Task<List<LoaiHangHoa>> GetLoaiHangHoasAsync();
 
@@ -130,14 +130,11 @@ public interface IDatabaseService
     Task<PhieuNhap?> GetPhieuNhapByIdAsync(int phieuNhapId);
     Task<List<CT_PhieuNhap>> GetChiTietPhieuNhapAsync(int phieuNhapId);
     Task<bool> DeletePhieuNhapAsync(int phieuNhapId);
-    Task<bool> ApprovePhieuNhapAsync(int phieuNhapId, int nguoiDuyetId);
-    Task<bool> CancelPhieuNhapAsync(int phieuNhapId, int nguoiHuyId, string? lyDoHuy = null);
+    Task<bool> ApprovePhieuNhapAsync(int phieuNhapId, int nguoiDuyetId, string? chuKySo = null);
+    Task<bool> CancelPhieuNhapAsync(int phieuNhapId, int nguoiHuyId, string? lyDoHuy = null, string? chuKyHuy = null);
     Task<string> GenerateMaPhieuNhapAsync();
     Task<int> SavePhieuNhapAsync(PhieuNhap phieuNhap, List<CT_PhieuNhap> chiTiets);
     Task<decimal> GetTotalTongTienPhieuNhapAsync(int? nhanVienId = null, int? nhaCungCapId = null, DateTime? tuNgay = null, DateTime? denNgay = null);
     Task<List<NguyenLieu>> GetAllNguyenLieusWithPriceAsync();
     Task<List<NguyenLieu>> GetNguyenLieusByNhaCungCapAsync(int nhaCungCapId);
 }
-
-
-

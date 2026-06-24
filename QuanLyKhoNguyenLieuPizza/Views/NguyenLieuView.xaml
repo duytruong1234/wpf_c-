@@ -1,17 +1,17 @@
-<?xml version="1.0" encoding="utf-8"?>
+﻿<?xml version="1.0" encoding="utf-8"?>
 <UserControl x:Class="QuanLyKhoNguyenLieuPizza.Views.NguyenLieuView"
              xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
              xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
-             xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006" 
-             xmlns:d="http://schemas.microsoft.com/expression/blend/2008" 
+             xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+             xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
              xmlns:vm="clr-namespace:QuanLyKhoNguyenLieuPizza.ViewModels"
              xmlns:views="clr-namespace:QuanLyKhoNguyenLieuPizza.Views"
              xmlns:converters="clr-namespace:QuanLyKhoNguyenLieuPizza.Converters"
          xmlns:ui="http://schemas.lepo.co/wpfui/2022/xaml"
          xmlns:behaviors="clr-namespace:QuanLyKhoNguyenLieuPizza.Behaviors"
-             mc:Ignorable="d" 
+             mc:Ignorable="d"
              d:DesignHeight="750" d:DesignWidth="1100">
-    
+
     <d:UserControl.DataContext>
         <vm:NguyenLieuViewModel/>
     </d:UserControl.DataContext>
@@ -20,7 +20,7 @@
         <converters:BoolToVisibilityConverter x:Key="BoolToVisibilityConverter"/>
         <converters:InverseBoolToVisibilityConverter x:Key="InverseBoolToVisibilityConverter"/>
         <converters:ImagePathConverter x:Key="ImagePathConverter"/>
-        
+
         <!-- Gradient cho Tiêu đề Popup -->
         <LinearGradientBrush x:Key="HeaderGradient" StartPoint="0,0" EndPoint="1,0">
             <GradientStop Color="#5B6AFF" Offset="0"/>
@@ -39,8 +39,8 @@
             <Setter Property="Template">
                 <Setter.Value>
                     <ControlTemplate TargetType="Button">
-                        <Border x:Name="border" 
-                                Background="{TemplateBinding Background}" 
+                        <Border x:Name="border"
+                                Background="{TemplateBinding Background}"
                                 CornerRadius="10"
                                 Padding="{TemplateBinding Padding}">
                             <ContentPresenter HorizontalAlignment="Center" VerticalAlignment="Center"/>
@@ -74,8 +74,8 @@
             <Setter Property="Template">
                 <Setter.Value>
                     <ControlTemplate TargetType="Button">
-                        <Border x:Name="border" 
-                                Background="{TemplateBinding Background}" 
+                        <Border x:Name="border"
+                                Background="{TemplateBinding Background}"
                                 CornerRadius="10"
                                 Padding="{TemplateBinding Padding}">
                             <ContentPresenter HorizontalAlignment="Center" VerticalAlignment="Center"/>
@@ -102,8 +102,8 @@
             <Setter Property="Template">
                 <Setter.Value>
                     <ControlTemplate TargetType="Button">
-                        <Border x:Name="border" 
-                                Background="{TemplateBinding Background}" 
+                        <Border x:Name="border"
+                                Background="{TemplateBinding Background}"
                                 BorderBrush="{TemplateBinding BorderBrush}"
                                 BorderThickness="{TemplateBinding BorderThickness}"
                                 CornerRadius="10"
@@ -130,8 +130,8 @@
             <Setter Property="Template">
                 <Setter.Value>
                     <ControlTemplate TargetType="Button">
-                        <Border x:Name="border" 
-                                Background="{TemplateBinding Background}" 
+                        <Border x:Name="border"
+                                Background="{TemplateBinding Background}"
                                 CornerRadius="6">
                             <ContentPresenter HorizontalAlignment="Center" VerticalAlignment="Center"/>
                         </Border>
@@ -155,7 +155,7 @@
             </Setter>
         </Style>
     </UserControl.Resources>
-    
+
     <Grid>
     <Grid.Background>
         <LinearGradientBrush StartPoint="0,0" EndPoint="1,1">
@@ -203,7 +203,7 @@
                     </StackPanel>
 
                     <!-- Hộp Tìm kiếm -->
-                    <Border Grid.Column="1" 
+                    <Border Grid.Column="1"
                             Background="White"
                             BorderBrush="{StaticResource Gray200}"
                             BorderThickness="1"
@@ -232,9 +232,9 @@
                                     </Style>
                                 </TextBlock.Style>
                             </TextBlock>
-                            <TextBox x:Name="SearchTextBox" Grid.Column="1" 
+                            <TextBox x:Name="SearchTextBox" Grid.Column="1"
                                      Text="{Binding SearchText, UpdateSourceTrigger=PropertyChanged}"
-                                     BorderThickness="0" Background="Transparent" FontSize="14" 
+                                     BorderThickness="0" Background="Transparent" FontSize="14"
                                      Foreground="{StaticResource Gray800}" Padding="0" VerticalContentAlignment="Center"/>
                         </Grid>
                     </Border>
@@ -356,8 +356,8 @@
                 </Grid>
 
                 <!-- Filters Section -->
-                <Border Grid.Row="2" 
-                        Style="{StaticResource CardStyle}" 
+                <Border Grid.Row="2"
+                        Style="{StaticResource CardStyle}"
                         Padding="20"
                         Margin="0,0,0,20">
                     <Grid>
@@ -489,7 +489,7 @@
                                     <Setter Property="Template">
                                         <Setter.Value>
                                             <ControlTemplate TargetType="DataGridCell">
-                                                <Border Background="{TemplateBinding Background}" 
+                                                <Border Background="{TemplateBinding Background}"
                                                         BorderBrush="{TemplateBinding BorderBrush}"
                                                         BorderThickness="{TemplateBinding BorderThickness}"
                                                         Padding="{TemplateBinding Padding}">
@@ -515,7 +515,7 @@
                                         </Style>
                                     </DataGridTextColumn.ElementStyle>
                                 </DataGridTextColumn>
-                                
+
                                 <DataGridTextColumn Header="Tên nguyên liệu" Binding="{Binding TenNguyenLieu}" Width="*">
                                     <DataGridTextColumn.ElementStyle>
                                         <Style TargetType="TextBlock">
@@ -527,11 +527,11 @@
                                         </Style>
                                     </DataGridTextColumn.ElementStyle>
                                 </DataGridTextColumn>
-                                
+
                                 <DataGridTemplateColumn Header="Hình ảnh" Width="100">
                                     <DataGridTemplateColumn.CellTemplate>
                                         <DataTemplate>
-                                            <Border Width="46" Height="46" 
+                                            <Border Width="46" Height="46"
                                                     CornerRadius="23"
                                                     BorderBrush="{StaticResource Gray200}"
                                                     BorderThickness="1"
@@ -547,7 +547,7 @@
                                         </DataTemplate>
                                     </DataGridTemplateColumn.CellTemplate>
                                 </DataGridTemplateColumn>
-                                
+
                                 <DataGridTextColumn Header="Loại nguyên liệu" Binding="{Binding LoaiNguyenLieu}" Width="180">
                                     <DataGridTextColumn.ElementStyle>
                                         <Style TargetType="TextBlock">
@@ -555,7 +555,7 @@
                                         </Style>
                                     </DataGridTextColumn.ElementStyle>
                                 </DataGridTextColumn>
-                                
+
                                 <DataGridTextColumn Header="Đơn vị tính" Binding="{Binding DonViTinh}" Width="110">
                                     <DataGridTextColumn.ElementStyle>
                                         <Style TargetType="TextBlock">
@@ -563,11 +563,11 @@
                                         </Style>
                                     </DataGridTextColumn.ElementStyle>
                                 </DataGridTextColumn>
-                                
+
                                 <DataGridTemplateColumn Header="Thông tin nguồn hàng" Width="170">
                                     <DataGridTemplateColumn.CellTemplate>
                                         <DataTemplate>
-                                            <Button Style="{StaticResource OutlineButton}" 
+                                            <Button Style="{StaticResource OutlineButton}"
                                                     Margin="0,0,0,0" Padding="12,6"
                                                     Command="{Binding DataContext.OpenNguonHangCommand, RelativeSource={RelativeSource AncestorType=UserControl}}"
                                                     CommandParameter="{Binding}"
@@ -579,11 +579,11 @@
                                         </DataTemplate>
                                     </DataGridTemplateColumn.CellTemplate>
                                 </DataGridTemplateColumn>
-                                
+
                                 <DataGridTemplateColumn Header="Trạng thái" Width="130">
                                     <DataGridTemplateColumn.CellTemplate>
                                         <DataTemplate>
-                                            <Border CornerRadius="12" 
+                                            <Border CornerRadius="12"
                                                     Padding="12,6"
                                                     HorizontalAlignment="Center">
                                                 <Border.Style>
@@ -596,7 +596,7 @@
                                                         </Style.Triggers>
                                                     </Style>
                                                 </Border.Style>
-                                                <TextBlock Text="{Binding TrangThaiText}" 
+                                                <TextBlock Text="{Binding TrangThaiText}"
                                                            FontSize="12"
                                                            FontWeight="SemiBold"
                                                            HorizontalAlignment="Center">
@@ -615,7 +615,22 @@
                                         </DataTemplate>
                                     </DataGridTemplateColumn.CellTemplate>
                                 </DataGridTemplateColumn>
-                                
+
+                                <!-- Hạn cảnh báo hết hạn -->
+                                <DataGridTemplateColumn Header="Hạn cảnh báo" Width="120">
+                                    <DataGridTemplateColumn.CellTemplate>
+                                        <DataTemplate>
+                                            <Border CornerRadius="10" Padding="10,5" HorizontalAlignment="Center" VerticalAlignment="Center"
+                                                    Background="#EFF6FF" BorderBrush="#BFDBFE" BorderThickness="1">
+                                                <TextBlock HorizontalAlignment="Center" FontSize="12" FontWeight="SemiBold" Foreground="#2563EB">
+                                                    <Run Text="{Binding HanCanhBao, Mode=OneWay}"/>
+                                                    <Run Text=" ngày"/>
+                                                </TextBlock>
+                                            </Border>
+                                        </DataTemplate>
+                                    </DataGridTemplateColumn.CellTemplate>
+                                </DataGridTemplateColumn>
+
                                 <DataGridTemplateColumn Header="Thao tác" Width="110">
                                     <DataGridTemplateColumn.CellTemplate>
                                         <DataTemplate>
@@ -656,7 +671,7 @@
                         </DataGrid>
 
                         <!-- Màn hình Chờ -->
-                        <Border Background="#80FFFFFF" 
+                        <Border Background="#80FFFFFF"
                                 Visibility="{Binding IsLoading, Converter={StaticResource BoolToVisibilityConverter}}">
                             <StackPanel HorizontalAlignment="Center" VerticalAlignment="Center">
                                 <ui:SymbolIcon Symbol="ArrowSync24" FontSize="36" HorizontalAlignment="Center" Foreground="{StaticResource PrimaryBlue}"/>
@@ -669,8 +684,8 @@
 
             <!-- Add/Edit Popup Overlay -->
             <Grid Visibility="{Binding IsAddEditPopupOpen, Converter={StaticResource BoolToVisibilityConverter}}" Background="#80000000">
-                <Border Background="White" 
-                        CornerRadius="20" 
+                <Border Background="White"
+                        CornerRadius="20"
                         Width="540"
                         MaxHeight="720"
                         VerticalAlignment="Center"
@@ -835,9 +850,23 @@
 
 
 
+                                <!-- Hạn cảnh báo (số ngày) -->
+                                <TextBlock Text="Hạn cảnh báo (ngày)" FontSize="12" FontWeight="Medium" Foreground="{StaticResource Gray500}" Margin="0,0,0,6"/>
+                                <Border Background="White" BorderBrush="{StaticResource Gray200}" BorderThickness="1" CornerRadius="10" Padding="12,10" Margin="0,0,0,16">
+                                    <Grid>
+                                        <Grid.ColumnDefinitions>
+                                            <ColumnDefinition Width="*"/>
+                                            <ColumnDefinition Width="Auto"/>
+                                        </Grid.ColumnDefinitions>
+                                        <TextBox Text="{Binding FormHanCanhBao, UpdateSourceTrigger=PropertyChanged}"
+                                                 BorderThickness="0" Background="Transparent" FontSize="13"/>
+                                        <TextBlock Grid.Column="1" Text="ngày trước HSD" FontSize="11" Foreground="{StaticResource Gray400}" VerticalAlignment="Center"/>
+                                    </Grid>
+                                </Border>
+
                                 <!-- Trạng thái -->
                                 <Border Background="{StaticResource Gray50}" CornerRadius="10" Padding="14,12" Margin="0,0,0,8">
-                                    <CheckBox Content="Đang sử dụng" 
+                                    <CheckBox Content="Đang sử dụng"
                                               IsChecked="{Binding FormTrangThai}" FontSize="13"/>
                                 </Border>
                             </StackPanel>
@@ -1025,7 +1054,7 @@
                                 <TextBlock Text="Quản Lý Hệ Số Quy Đổi" FontSize="20" FontWeight="Bold" Foreground="White"/>
                                 <TextBlock Text="Cài đặt hệ số chuyển đổi giữa các đơn vị tính" FontSize="12" Foreground="#FFFFFFCC" Margin="0,4,0,0"/>
                             </StackPanel>
-                            <Button HorizontalAlignment="Right" VerticalAlignment="Top" 
+                            <Button HorizontalAlignment="Right" VerticalAlignment="Top"
                                     Command="{Binding QuyDoiVM.CloseCommand}" Cursor="Hand">
                                 <Button.Template>
                                     <ControlTemplate TargetType="Button">
@@ -1084,7 +1113,7 @@
                                                             <Border x:Name="itemBorder" Width="95" Padding="6,8" CornerRadius="10" Background="White"
                                                                     BorderBrush="{StaticResource Gray200}" BorderThickness="1">
                                                                 <StackPanel HorizontalAlignment="Center">
-                                                                    <Border Width="48" Height="48" CornerRadius="24" ClipToBounds="True" 
+                                                                    <Border Width="48" Height="48" CornerRadius="24" ClipToBounds="True"
                                                                             Background="{StaticResource Gray100}" HorizontalAlignment="Center" Margin="0,0,0,6">
                                                                         <Border.Style>
                                                                             <Style TargetType="Border">
@@ -1097,7 +1126,7 @@
                                                                             </Border.Background>
                                                                         </Border>
                                                                     </Border>
-                                                                    <TextBlock Text="{Binding TenNguyenLieu}" FontSize="11" FontWeight="Medium" 
+                                                                    <TextBlock Text="{Binding TenNguyenLieu}" FontSize="11" FontWeight="Medium"
                                                                                Foreground="{StaticResource Gray800}" TextAlignment="Center"
                                                                                TextWrapping="Wrap" MaxWidth="85"/>
                                                                 </StackPanel>
@@ -1180,14 +1209,14 @@
                                                             </Grid.ColumnDefinitions>
 
                                                             <!-- Tên đơn vị -->
-                                                            <TextBlock Grid.Column="0" Text="{Binding TenDonVi}" FontSize="14" FontWeight="Medium" 
+                                                            <TextBlock Grid.Column="0" Text="{Binding TenDonVi}" FontSize="14" FontWeight="Medium"
                                                                        Foreground="{StaticResource Gray800}" Padding="14,8" VerticalAlignment="Center"/>
 
                                                             <!-- Hệ số (editable) -->
-                                                            <Border Grid.Column="1" Background="White" BorderBrush="{StaticResource Gray200}" BorderThickness="1" 
+                                                            <Border Grid.Column="1" Background="White" BorderBrush="{StaticResource Gray200}" BorderThickness="1"
                                                                     CornerRadius="6" Margin="4,4" Padding="6,4">
                                                                 <TextBox Text="{Binding HeSoText, UpdateSourceTrigger=PropertyChanged}" behaviors:NumericInputBehavior.IsDecimalOnly="True"
-                                                                         BorderThickness="0" Background="Transparent" FontSize="13" 
+                                                                         BorderThickness="0" Background="Transparent" FontSize="13"
                                                                          HorizontalContentAlignment="Center" VerticalContentAlignment="Center"/>
                                                             </Border>
 
@@ -1208,7 +1237,7 @@
                                                             </Border>
 
                                                             <!-- Mặc định checkbox -->
-                                                            <CheckBox Grid.Column="3" IsChecked="{Binding LaDonViChuan}" 
+                                                            <CheckBox Grid.Column="3" IsChecked="{Binding LaDonViChuan}"
                                                                       HorizontalAlignment="Center" VerticalAlignment="Center"/>
 
                                                             <!-- Xóa button - ẩn với đơn vị gốc -->
@@ -1218,7 +1247,7 @@
                                                                 <Button.Template>
                                                                     <ControlTemplate TargetType="Button">
                                                                         <Border x:Name="delBorder" Width="28" Height="28" CornerRadius="6" Background="{StaticResource DangerRedLight}">
-                                                                            <TextBlock Text="&#xE74D;" FontFamily="Segoe MDL2 Assets" FontSize="12" 
+                                                                            <TextBlock Text="&#xE74D;" FontFamily="Segoe MDL2 Assets" FontSize="12"
                                                                                        Foreground="{StaticResource DangerRed}" HorizontalAlignment="Center" VerticalAlignment="Center"/>
                                                                         </Border>
                                                                         <ControlTemplate.Triggers>
@@ -1245,7 +1274,7 @@
                                     <ColumnDefinition Width="Auto"/>
                                 </Grid.ColumnDefinitions>
                                 <Border Background="White" BorderBrush="{StaticResource Gray200}" BorderThickness="1" CornerRadius="8" Padding="8,4">
-                                    <ComboBox ItemsSource="{Binding QuyDoiVM.DonViTinhs}" 
+                                    <ComboBox ItemsSource="{Binding QuyDoiVM.DonViTinhs}"
                                               SelectedItem="{Binding QuyDoiVM.SelectedNewDonVi}"
                                               DisplayMemberPath="TenDonVi"
                                               BorderThickness="0" Background="Transparent" FontSize="13"/>
@@ -1311,7 +1340,7 @@
                         <RowDefinition Height="Auto"/>
                         <RowDefinition Height="*"/>
                     </Grid.RowDefinitions>
-                    
+
                     <!-- Header -->
                     <Border Grid.Row="0" BorderBrush="{StaticResource Gray200}" BorderThickness="0,0,0,1" Padding="24,20">
                         <Grid>
@@ -1319,15 +1348,15 @@
                             <Button Style="{StaticResource CircularCloseButtonStyle}" Command="{Binding CloseNguonHangCommand}" Margin="0,-16,-16,0" Panel.ZIndex="10"/>
                         </Grid>
                     </Border>
-                    
+
                     <!-- Content -->
                     <Border Grid.Row="1" Padding="24" MaxHeight="450">
-                        <DataGrid ItemsSource="{Binding NguonHangList}" 
-                                  AutoGenerateColumns="False" 
-                                  IsReadOnly="True" 
+                        <DataGrid ItemsSource="{Binding NguonHangList}"
+                                  AutoGenerateColumns="False"
+                                  IsReadOnly="True"
                                   HeadersVisibility="Column"
-                                  Background="Transparent" 
-                                  BorderThickness="1" 
+                                  Background="Transparent"
+                                  BorderThickness="1"
                                   BorderBrush="{StaticResource Gray200}"
                                   GridLinesVisibility="Horizontal"
                                   RowHeaderWidth="0">

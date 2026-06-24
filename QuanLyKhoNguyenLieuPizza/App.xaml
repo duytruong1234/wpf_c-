@@ -16,8 +16,9 @@
             <!-- Custom Pizza Theme (overrides Fluent defaults) -->
             <ResourceDictionary Source="Themes/PizzaTheme.xaml"/>
         </ResourceDictionary.MergedDictionaries>
-            
+
         <!-- Bộ chuyển đổi (Converters) -->
+        <converters:AddOneConverter x:Key="AddOneConverter"/>
         <converters:StringToVisibilityConverter x:Key="StringToVisibilityConverter"/>
         <converters:StringLengthToVisibilityConverter x:Key="StringLengthToVisibilityConverter"/>
         <converters:IntToVisibilityConverter x:Key="IntToVisibilityConverter"/>
@@ -31,6 +32,9 @@
         <converters:DonutChartPathConverter x:Key="DonutChartPathConverter"/>
         <converters:InverseBoolToVisibilityConverter x:Key="InverseBoolToVisibilityConverter"/>
         <converters:StringToBoolConverter x:Key="StringToBoolConverter"/>
+        <converters:RowToIndexConverter x:Key="RowToIndexConverter"/>
+        <converters:NullOrEmptyToTextConverter x:Key="NullOrEmptyToTextConverter"/>
+        <converters:StringTruncateConverter x:Key="StringTruncateConverter"/>
 
         <!-- ==================== COMPATIBILITY ALIASES ==================== -->
         <!-- Keep old resource keys working to avoid breaking existing bindings -->
@@ -40,14 +44,14 @@
         <Color x:Key="SuccessColorValue">#10B981</Color>
         <Color x:Key="WarningColorValue">#FFBA08</Color>
         <Color x:Key="DangerColorValue">#D00000</Color>
-        
+
         <SolidColorBrush x:Key="PrimaryColor" Color="{StaticResource PrimaryColorValue}"/>
         <SolidColorBrush x:Key="PrimaryDarkColor" Color="{StaticResource PrimaryDarkColorValue}"/>
         <SolidColorBrush x:Key="SecondaryColor" Color="{StaticResource SecondaryColorValue}"/>
         <SolidColorBrush x:Key="SuccessColor" Color="{StaticResource SuccessColorValue}"/>
         <SolidColorBrush x:Key="WarningColor" Color="{StaticResource WarningColorValue}"/>
         <SolidColorBrush x:Key="DangerColor" Color="{StaticResource DangerColorValue}"/>
-        
+
         <SolidColorBrush x:Key="TextPrimary" Color="#1E293B"/>
         <SolidColorBrush x:Key="TextSecondary" Color="#64748B"/>
         <SolidColorBrush x:Key="BorderColor" Color="#E2E8F0"/>
@@ -58,25 +62,25 @@
             <GradientStop Color="#E85D04" Offset="0"/>
             <GradientStop Color="#F48C06" Offset="1"/>
         </LinearGradientBrush>
-        
+
         <LinearGradientBrush x:Key="SecondaryGradient" StartPoint="0,0" EndPoint="1,1">
             <GradientStop Color="#F48C06" Offset="0"/>
             <GradientStop Color="#FFBA08" Offset="1"/>
         </LinearGradientBrush>
-        
+
         <LinearGradientBrush x:Key="SuccessGradient" StartPoint="0,0" EndPoint="1,1">
             <GradientStop Color="#10B981" Offset="0"/>
             <GradientStop Color="#34D399" Offset="1"/>
         </LinearGradientBrush>
-        
+
         <LinearGradientBrush x:Key="WarningGradient" StartPoint="0,0" EndPoint="1,1">
             <GradientStop Color="#FFBA08" Offset="0"/>
             <GradientStop Color="#FAA307" Offset="1"/>
         </LinearGradientBrush>
 
         <!-- Shadow Effect -->
-        <DropShadowEffect x:Key="CardShadow" 
-                          BlurRadius="40" ShadowDepth="8" Direction="270" 
+        <DropShadowEffect x:Key="CardShadow"
+                          BlurRadius="40" ShadowDepth="8" Direction="270"
                           Color="#1E293B" Opacity="0.1"/>
 
         <!-- ==================== TEXT & INPUT STYLES ==================== -->
@@ -107,13 +111,7 @@
                     <Setter Property="BorderBrush" Value="{StaticResource PrimaryColor}"/>
                 </Trigger>
                 <Trigger Property="IsKeyboardFocusWithin" Value="True">
-                    <Setter Property="BorderBrush" Value="{StaticResource PrimaryBlue}"/>
-                    <Setter Property="Effect">
-                        <Setter.Value>
-                            <DropShadowEffect BlurRadius="12" ShadowDepth="0" 
-                                              Color="#5B6AFF" Opacity="0.15"/>
-                        </Setter.Value>
-                    </Setter>
+                    <Setter Property="BorderBrush" Value="{StaticResource Gray500}"/>
                 </Trigger>
             </Style.Triggers>
         </Style>
@@ -169,11 +167,11 @@
             <Setter Property="Template">
                 <Setter.Value>
                     <ControlTemplate TargetType="Button">
-                        <Border x:Name="border" 
-                                Background="{TemplateBinding Background}" 
+                        <Border x:Name="border"
+                                Background="{TemplateBinding Background}"
                                 CornerRadius="12"
                                 Padding="{TemplateBinding Padding}">
-                            <ContentPresenter HorizontalAlignment="Center" 
+                            <ContentPresenter HorizontalAlignment="Center"
                                               VerticalAlignment="Center"/>
                         </Border>
                         <ControlTemplate.Triggers>
@@ -215,12 +213,12 @@
             <Setter Property="Template">
                 <Setter.Value>
                     <ControlTemplate TargetType="Button">
-                        <Border x:Name="border" 
-                                Background="{TemplateBinding Background}" 
+                        <Border x:Name="border"
+                                Background="{TemplateBinding Background}"
                                 CornerRadius="18"
                                 Width="{TemplateBinding Width}"
                                 Height="{TemplateBinding Height}">
-                            <ContentPresenter HorizontalAlignment="Center" 
+                            <ContentPresenter HorizontalAlignment="Center"
                                               VerticalAlignment="Center"/>
                         </Border>
                         <ControlTemplate.Triggers>
@@ -245,11 +243,11 @@
             <Setter Property="Template">
                 <Setter.Value>
                     <ControlTemplate TargetType="Button">
-                        <Border x:Name="border" 
-                                Background="{TemplateBinding Background}" 
+                        <Border x:Name="border"
+                                Background="{TemplateBinding Background}"
                                 CornerRadius="10"
                                 Padding="{TemplateBinding Padding}">
-                            <ContentPresenter HorizontalAlignment="{TemplateBinding HorizontalContentAlignment}" 
+                            <ContentPresenter HorizontalAlignment="{TemplateBinding HorizontalContentAlignment}"
                                               VerticalAlignment="Center"/>
                         </Border>
                         <ControlTemplate.Triggers>
@@ -274,7 +272,7 @@
                 <Setter.Value>
                     <ControlTemplate TargetType="Button">
                         <Border x:Name="border" Background="{TemplateBinding Background}" CornerRadius="16">
-                            <TextBlock Text="&#xE711;" FontFamily="Segoe MDL2 Assets" FontSize="12" 
+                            <TextBlock Text="&#xE711;" FontFamily="Segoe MDL2 Assets" FontSize="12"
                                        Foreground="{TemplateBinding Foreground}"
                                        HorizontalAlignment="Center" VerticalAlignment="Center"/>
                         </Border>

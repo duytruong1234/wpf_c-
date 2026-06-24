@@ -45,10 +45,7 @@ public class AsyncRelayCommand : ICommand
         {
             await _execute(parameter);
         }
-        catch (Exception ex)
-        {
-            System.Diagnostics.Debug.WriteLine($"AsyncRelayCommand Error: {ex}");
-        }
+        catch { }
         finally
         {
             _isExecuting = false;
@@ -86,10 +83,10 @@ public class AsyncRelayCommand<T> : ICommand
     public bool CanExecute(object? parameter)
     {
         if (_isExecuting) return false;
-        
+
         if (parameter is T typedParam)
             return _canExecute?.Invoke(typedParam) ?? true;
-            
+
         return _canExecute?.Invoke(default) ?? true;
     }
 
@@ -106,10 +103,7 @@ public class AsyncRelayCommand<T> : ICommand
             T? typedParam = parameter is T t ? t : default;
             await _execute(typedParam);
         }
-        catch (Exception ex)
-        {
-            System.Diagnostics.Debug.WriteLine($"AsyncRelayCommand<T> Error: {ex}");
-        }
+        catch { }
         finally
         {
             _isExecuting = false;
@@ -122,4 +116,3 @@ public class AsyncRelayCommand<T> : ICommand
         CommandManager.InvalidateRequerySuggested();
     }
 }
-

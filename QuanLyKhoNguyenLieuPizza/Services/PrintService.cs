@@ -1,4 +1,4 @@
-﻿using System.Drawing;
+using System.Drawing;
 using System.Drawing.Imaging;
 using System.IO;
 using System.Printing;
@@ -29,8 +29,7 @@ public class PrintService
                 printDialog.PrintDocument(((IDocumentPaginatorSource)document).DocumentPaginator, $"Phiếu Nhập - {phieuNhap.MaPhieuNhap}");
             }
         }
-        catch (Exception ex)
-        {
+        catch (Exception ex) {
             MessageBox.Show($"Lỗi khi in phiếu: {ex.Message}", "Lỗi", MessageBoxButton.OK, MessageBoxImage.Error);
         }
     }
@@ -65,6 +64,15 @@ public class PrintService
         };
         document.Blocks.Add(companyPara);
 
+        // Trạng thái duyệt
+        string trangThaiNhap = phieuNhap.TrangThai switch
+        {
+            1 => "Chờ duyệt",
+            2 => "Đã duyệt",
+            3 => "Đã hủy",
+            _ => "Không xác định"
+        };
+
         // Thông tin phiếu
         var infoPara = new Paragraph
         {
@@ -72,12 +80,24 @@ public class PrintService
         };
         infoPara.Inlines.Add(new Run("Mã phiếu: ") { FontWeight = FontWeights.Bold });
         infoPara.Inlines.Add(new Run($"{phieuNhap.MaPhieuNhap}\n"));
+        infoPara.Inlines.Add(new Run("Trạng thái: ") { FontWeight = FontWeights.Bold });
+        infoPara.Inlines.Add(new Run($"{trangThaiNhap}\n") { Foreground = phieuNhap.TrangThai == 2 ? Brushes.Green : (phieuNhap.TrangThai == 3 ? Brushes.Red : Brushes.Orange) });
         infoPara.Inlines.Add(new Run("Ngày nhập: ") { FontWeight = FontWeights.Bold });
         infoPara.Inlines.Add(new Run($"{phieuNhap.NgayNhap:dd/MM/yyyy HH:mm}\n"));
         infoPara.Inlines.Add(new Run("Nhân viên nhập: ") { FontWeight = FontWeights.Bold });
         infoPara.Inlines.Add(new Run($"{phieuNhap.NhanVienNhap?.HoTen ?? "N/A"}\n"));
         infoPara.Inlines.Add(new Run("Nhà cung cấp: ") { FontWeight = FontWeights.Bold });
         infoPara.Inlines.Add(new Run($"{phieuNhap.NhaCungCap?.TenNCC ?? "N/A"}\n"));
+        if (phieuNhap.NgayDuyet.HasValue)
+        {
+            infoPara.Inlines.Add(new Run("Ngày duyệt: ") { FontWeight = FontWeights.Bold });
+            infoPara.Inlines.Add(new Run($"{phieuNhap.NgayDuyet:dd/MM/yyyy HH:mm}\n"));
+        }
+        if (phieuNhap.NhanVienDuyet != null)
+        {
+            infoPara.Inlines.Add(new Run("Người duyệt: ") { FontWeight = FontWeights.Bold });
+            infoPara.Inlines.Add(new Run($"{phieuNhap.NhanVienDuyet.HoTen}\n"));
+        }
         document.Blocks.Add(infoPara);
 
         // Bảng chi tiết
@@ -139,12 +159,14 @@ public class PrintService
         var signatureTable = new Table { CellSpacing = 0, Margin = new Thickness(0, 50, 0, 0) };
         signatureTable.Columns.Add(new TableColumn { Width = new GridLength(1, GridUnitType.Star) });
         signatureTable.Columns.Add(new TableColumn { Width = new GridLength(1, GridUnitType.Star) });
-        
+        signatureTable.Columns.Add(new TableColumn { Width = new GridLength(1, GridUnitType.Star) });
+
         var signatureRowGroup = new TableRowGroup();
         signatureTable.RowGroups.Add(signatureRowGroup);
-        
+
         var signatureRow = new TableRow();
-        signatureRow.Cells.Add(CreateSignatureCell("Người lập phiếu"));
+        signatureRow.Cells.Add(CreateSignatureCellWithImage("Người lập phiếu", phieuNhap.NhanVienNhap?.HoTen, phieuNhap.ChuKyNhap));
+        signatureRow.Cells.Add(CreateSignatureCellWithImage("Người duyệt", phieuNhap.NhanVienDuyet?.HoTen, phieuNhap.ChuKySoDuyet));
         signatureRow.Cells.Add(CreateSignatureCell("Người nhận hàng"));
         signatureRowGroup.Rows.Add(signatureRow);
 
@@ -176,8 +198,7 @@ public class PrintService
                 printDialog.PrintDocument(((IDocumentPaginatorSource)document).DocumentPaginator, $"Phiếu Xuất - {phieuXuat.MaPhieuXuat}");
             }
         }
-        catch (Exception ex)
-        {
+        catch (Exception ex) {
             MessageBox.Show($"Lỗi khi in phiếu: {ex.Message}", "Lỗi", MessageBoxButton.OK, MessageBoxImage.Error);
         }
     }
@@ -291,14 +312,175 @@ public class PrintService
         signatureTable.Columns.Add(new TableColumn { Width = new GridLength(1, GridUnitType.Star) });
         signatureTable.Columns.Add(new TableColumn { Width = new GridLength(1, GridUnitType.Star) });
         signatureTable.Columns.Add(new TableColumn { Width = new GridLength(1, GridUnitType.Star) });
-        
+
         var signatureRowGroup = new TableRowGroup();
         signatureTable.RowGroups.Add(signatureRowGroup);
-        
+
         var signatureRow = new TableRow();
-        signatureRow.Cells.Add(CreateSignatureCell("Người yêu cầu"));
-        signatureRow.Cells.Add(CreateSignatureCell("Người duyệt"));
+        signatureRow.Cells.Add(CreateSignatureCellWithImage("Người yêu cầu", phieuXuat.NhanVienYeuCau?.HoTen, phieuXuat.ChuKyXuat));
+        signatureRow.Cells.Add(CreateSignatureCellWithImage("Người duyệt", phieuXuat.NhanVienDuyet?.HoTen, phieuXuat.ChuKySoDuyet));
         signatureRow.Cells.Add(CreateSignatureCell("Thủ kho"));
+        signatureRowGroup.Rows.Add(signatureRow);
+
+        document.Blocks.Add(signatureTable);
+
+        // Ngày in
+        var printDatePara = new Paragraph(new Run($"Ngày in: {DateTime.Now:dd/MM/yyyy HH:mm}"))
+        {
+            FontSize = 10,
+            FontStyle = FontStyles.Italic,
+            TextAlignment = TextAlignment.Right,
+            Margin = new Thickness(0, 30, 0, 0)
+        };
+        document.Blocks.Add(printDatePara);
+
+        return document;
+    }
+    #endregion
+
+    #region In Phiếu Kiểm Kê
+    public static void PrintPhieuKiemKe(PhieuKiemKe phieuKiem, IEnumerable<CT_PhieuKiemKe> chiTiets)
+    {
+        try
+        {
+            var printDialog = new PrintDialog();
+            if (printDialog.ShowDialog() == true)
+            {
+                var document = CreatePhieuKiemKeDocument(phieuKiem, chiTiets, printDialog.PrintableAreaWidth);
+                printDialog.PrintDocument(((IDocumentPaginatorSource)document).DocumentPaginator, $"Phiếu Kiểm Kê - {phieuKiem.MaPhieuKiem}");
+            }
+        }
+        catch (Exception ex) {
+            MessageBox.Show($"Lỗi khi in phiếu: {ex.Message}", "Lỗi", MessageBoxButton.OK, MessageBoxImage.Error);
+        }
+    }
+
+    private static FlowDocument CreatePhieuKiemKeDocument(PhieuKiemKe phieuKiem, IEnumerable<CT_PhieuKiemKe> chiTiets, double pageWidth)
+    {
+        var document = new FlowDocument
+        {
+            PageWidth = pageWidth,
+            PagePadding = new Thickness(50),
+            ColumnWidth = double.MaxValue,
+            FontFamily = new FontFamily("Segoe UI"),
+            FontSize = 12
+        };
+
+        // Tiêu đề
+        var headerPara = new Paragraph(new Run("PHIẾU KIỂM KÊ KHO"))
+        {
+            FontSize = 24,
+            FontWeight = FontWeights.Bold,
+            TextAlignment = TextAlignment.Center,
+            Margin = new Thickness(0, 0, 0, 20)
+        };
+        document.Blocks.Add(headerPara);
+
+        // Tên công ty
+        var companyPara = new Paragraph(new Run("PIZZINN - Quản Lý Kho Nguyên Liệu"))
+        {
+            FontSize = 14,
+            TextAlignment = TextAlignment.Center,
+            Margin = new Thickness(0, 0, 0, 30)
+        };
+        document.Blocks.Add(companyPara);
+
+        // Thông tin phiếu
+        var infoPara = new Paragraph
+        {
+            Margin = new Thickness(0, 0, 0, 20)
+        };
+        infoPara.Inlines.Add(new Run("Mã phiếu: ") { FontWeight = FontWeights.Bold });
+        infoPara.Inlines.Add(new Run($"{phieuKiem.MaPhieuKiem}\n"));
+        infoPara.Inlines.Add(new Run("Trạng thái: ") { FontWeight = FontWeights.Bold });
+        infoPara.Inlines.Add(new Run($"{phieuKiem.TrangThai}\n") { Foreground = phieuKiem.TrangThai == "Đã Duyệt" ? Brushes.Green : (phieuKiem.TrangThai == "Đã Hủy" ? Brushes.Red : Brushes.Orange) });
+        infoPara.Inlines.Add(new Run("Ngày kiểm: ") { FontWeight = FontWeights.Bold });
+        infoPara.Inlines.Add(new Run($"{phieuKiem.NgayKiem:dd/MM/yyyy HH:mm}\n"));
+        infoPara.Inlines.Add(new Run("Nhân viên kiểm: ") { FontWeight = FontWeights.Bold });
+        infoPara.Inlines.Add(new Run($"{phieuKiem.NhanVienKiem?.HoTen ?? "N/A"}\n"));
+        infoPara.Inlines.Add(new Run("Loại kiểm kê: ") { FontWeight = FontWeights.Bold });
+        infoPara.Inlines.Add(new Run($"{phieuKiem.LoaiKiemKe ?? "Kiểm kê định kỳ"}\n"));
+        if (!string.IsNullOrEmpty(phieuKiem.LyDoKiemKe))
+        {
+            infoPara.Inlines.Add(new Run("Lý do kiểm kê: ") { FontWeight = FontWeights.Bold });
+            infoPara.Inlines.Add(new Run($"{phieuKiem.LyDoKiemKe}\n"));
+        }
+        if (phieuKiem.NgayDuyet.HasValue)
+        {
+            infoPara.Inlines.Add(new Run("Ngày duyệt: ") { FontWeight = FontWeights.Bold });
+            infoPara.Inlines.Add(new Run($"{phieuKiem.NgayDuyet:dd/MM/yyyy HH:mm}\n"));
+        }
+        if (phieuKiem.NhanVienDuyet != null)
+        {
+            infoPara.Inlines.Add(new Run("Người duyệt: ") { FontWeight = FontWeights.Bold });
+            infoPara.Inlines.Add(new Run($"{phieuKiem.NhanVienDuyet.HoTen}\n"));
+        }
+        if (!string.IsNullOrEmpty(phieuKiem.GhiChuDuyet))
+        {
+            infoPara.Inlines.Add(new Run("Ghi chú duyệt: ") { FontWeight = FontWeights.Bold });
+            infoPara.Inlines.Add(new Run($"{phieuKiem.GhiChuDuyet}\n"));
+        }
+        document.Blocks.Add(infoPara);
+
+        // Bảng chi tiết
+        var table = new Table
+        {
+            CellSpacing = 0,
+            BorderBrush = Brushes.Black,
+            BorderThickness = new Thickness(1)
+        };
+
+        table.Columns.Add(new TableColumn { Width = new GridLength(0.5, GridUnitType.Star) });  // STT
+        table.Columns.Add(new TableColumn { Width = new GridLength(2.5, GridUnitType.Star) }); // Tên nguyên liệu
+        table.Columns.Add(new TableColumn { Width = new GridLength(1.0, GridUnitType.Star) });  // Đơn vị kho
+        table.Columns.Add(new TableColumn { Width = new GridLength(1.2, GridUnitType.Star) });  // Tồn hệ thống
+        table.Columns.Add(new TableColumn { Width = new GridLength(1.2, GridUnitType.Star) });  // Tồn thực tế
+        table.Columns.Add(new TableColumn { Width = new GridLength(1.0, GridUnitType.Star) });  // Đơn vị kiểm
+        table.Columns.Add(new TableColumn { Width = new GridLength(1.2, GridUnitType.Star) });  // Chênh lệch
+
+        var rowGroup = new TableRowGroup();
+        table.RowGroups.Add(rowGroup);
+
+        // Dòng tiêu đề
+        var headerRow = new TableRow { Background = Brushes.LightGray };
+        headerRow.Cells.Add(CreateTableCell("STT", true));
+        headerRow.Cells.Add(CreateTableCell("Tên nguyên liệu", true));
+        headerRow.Cells.Add(CreateTableCell("Đơn vị kho", true));
+        headerRow.Cells.Add(CreateTableCell("Tồn hệ thống", true));
+        headerRow.Cells.Add(CreateTableCell("Tồn thực tế", true));
+        headerRow.Cells.Add(CreateTableCell("Đơn vị kiểm", true));
+        headerRow.Cells.Add(CreateTableCell("Chênh lệch", true));
+        rowGroup.Rows.Add(headerRow);
+
+        // Dòng dữ liệu
+        int stt = 1;
+        foreach (var ct in chiTiets)
+        {
+            var row = new TableRow();
+            row.Cells.Add(CreateTableCell(stt.ToString()));
+            row.Cells.Add(CreateTableCell(ct.NguyenLieu?.TenNguyenLieu ?? "N/A"));
+            row.Cells.Add(CreateTableCell(ct.DonViKho?.TenDonVi ?? "N/A"));
+            row.Cells.Add(CreateTableCell($"{ct.TonHeThong:0.##}"));
+            row.Cells.Add(CreateTableCell($"{ct.TonThucTe:0.##}"));
+            row.Cells.Add(CreateTableCell(ct.DonViKiem?.TenDonVi ?? "N/A"));
+            row.Cells.Add(CreateTableCell(ct.ChenhLechDisplay));
+            rowGroup.Rows.Add(row);
+            stt++;
+        }
+
+        document.Blocks.Add(table);
+
+        // Chân trang - Chữ ký
+        var signatureTable = new Table { CellSpacing = 0, Margin = new Thickness(0, 50, 0, 0) };
+        signatureTable.Columns.Add(new TableColumn { Width = new GridLength(1, GridUnitType.Star) });
+        signatureTable.Columns.Add(new TableColumn { Width = new GridLength(1, GridUnitType.Star) });
+
+        var signatureRowGroup = new TableRowGroup();
+        signatureTable.RowGroups.Add(signatureRowGroup);
+
+        var signatureRow = new TableRow();
+        signatureRow.Cells.Add(CreateSignatureCellWithImage("Nhân viên kiểm kê", phieuKiem.NhanVienKiem?.HoTen, phieuKiem.ChuKyKiem));
+        signatureRow.Cells.Add(CreateSignatureCellWithImage("Người duyệt", phieuKiem.NhanVienDuyet?.HoTen, phieuKiem.ChuKyDuyet));
         signatureRowGroup.Rows.Add(signatureRow);
 
         document.Blocks.Add(signatureTable);
@@ -330,8 +512,7 @@ public class PrintService
                 printDialog.PrintDocument(((IDocumentPaginatorSource)document).DocumentPaginator, docTitle);
             }
         }
-        catch (Exception ex)
-        {
+        catch (Exception ex) {
             MessageBox.Show($"Lỗi khi in hóa đơn: {ex.Message}", "Lỗi", MessageBoxButton.OK, MessageBoxImage.Error);
         }
     }
@@ -569,10 +750,7 @@ public class PrintService
                 bankInfoPara.Inlines.Add(new Run($"Số tiền: {donHang.ThanhToan:N0} VNĐ") { FontSize = 11 });
                 document.Blocks.Add(bankInfoPara);
             }
-            catch (Exception ex)
-            {
-                System.Diagnostics.Debug.WriteLine($"Error generating QR code: {ex.Message}");
-            }
+            catch { }
         }
 
         // Ngày in
@@ -611,20 +789,111 @@ public class PrintService
         return cell;
     }
 
-    private static TableCell CreateSignatureCell(string title)
+    private static TableCell CreateSignatureCell(string title, string? name = null)
     {
-        var cell = new TableCell();
+        var cell = new TableCell
+        {
+            BorderThickness = new Thickness(0),
+            BorderBrush = Brushes.Transparent
+        };
         var para = new Paragraph
         {
             TextAlignment = TextAlignment.Center
         };
         para.Inlines.Add(new Run(title) { FontWeight = FontWeights.Bold });
         para.Inlines.Add(new Run("\n\n\n\n"));
-        para.Inlines.Add(new Run("(Ký và ghi rõ họ tên)") { FontStyle = FontStyles.Italic, FontSize = 10 });
+        if (!string.IsNullOrEmpty(name))
+        {
+            para.Inlines.Add(new Run(name) { FontWeight = FontWeights.SemiBold, FontSize = 11 });
+        }
+        else
+        {
+            para.Inlines.Add(new Run("(Ký và ghi rõ họ tên)") { FontStyle = FontStyles.Italic, FontSize = 10 });
+        }
         cell.Blocks.Add(para);
         return cell;
     }
+
+    /// <summary>
+    /// Tạo cell chữ ký có render ảnh chữ ký số từ Base64
+    /// </summary>
+    private static TableCell CreateSignatureCellWithImage(string title, string? name, string? chuKySoBase64)
+    {
+        var cell = new TableCell
+        {
+            BorderThickness = new Thickness(0),
+            BorderBrush = Brushes.Transparent
+        };
+        var para = new Paragraph
+        {
+            TextAlignment = TextAlignment.Center
+        };
+        para.Inlines.Add(new Run(title) { FontWeight = FontWeights.Bold });
+        para.Inlines.Add(new Run("\n"));
+
+        // Render ảnh chữ ký số nếu có
+        if (!string.IsNullOrEmpty(chuKySoBase64))
+        {
+            try
+            {
+                var imageSource = Base64ToImageSource(chuKySoBase64);
+                if (imageSource != null)
+                {
+                    var sigImage = new Image
+                    {
+                        Source = imageSource,
+                        Width = 120,
+                        Height = 60,
+                        Stretch = Stretch.Uniform
+                    };
+                    para.Inlines.Add(new InlineUIContainer(sigImage));
+                    para.Inlines.Add(new Run("\n"));
+                }
+            }
+            catch
+            {
+                para.Inlines.Add(new Run("[Chữ ký số đã xác nhận]\n") { FontStyle = FontStyles.Italic, FontSize = 9, Foreground = Brushes.Green });
+            }
+        }
+        else
+        {
+            para.Inlines.Add(new Run("\n\n\n"));
+        }
+
+        if (!string.IsNullOrEmpty(name))
+        {
+            para.Inlines.Add(new Run(name) { FontWeight = FontWeights.SemiBold, FontSize = 11 });
+        }
+        else
+        {
+            para.Inlines.Add(new Run("(Ký và ghi rõ họ tên)") { FontStyle = FontStyles.Italic, FontSize = 10 });
+        }
+
+        cell.Blocks.Add(para);
+        return cell;
+    }
+
+    /// <summary>
+    /// Chuyển đổi chuỗi Base64 PNG thành WPF BitmapImage
+    /// </summary>
+    private static BitmapImage? Base64ToImageSource(string base64String)
+    {
+        try
+        {
+            var bytes = Convert.FromBase64String(base64String);
+            using var ms = new MemoryStream(bytes);
+            var bitmapImage = new BitmapImage();
+            bitmapImage.BeginInit();
+            bitmapImage.CacheOption = BitmapCacheOption.OnLoad;
+            bitmapImage.StreamSource = ms;
+            bitmapImage.EndInit();
+            bitmapImage.Freeze();
+            return bitmapImage;
+        }
+        catch
+        {
+            return null;
+        }
+    }
     #endregion
 }
-
-

@@ -28,6 +28,7 @@ public class DonHangViewModel : BaseViewModel
     private decimal _tongDoanhThu;
     private string _topNhanVienName = "—";
     private decimal _topNhanVienDoanhThu;
+    private string _selectedFilterPhuongThucTT = "Tất cả";
 
     public ObservableCollection<DonHang> DonHangs
     {
@@ -147,6 +148,17 @@ public class DonHangViewModel : BaseViewModel
         set => SetProperty(ref _topNhanVienDoanhThu, value);
     }
 
+    public List<string> FilterPhuongThucTTOptions { get; } = new() { "Tất cả", "Tiền mặt", "Chuyển khoản" };
+    public string SelectedFilterPhuongThucTT
+    {
+        get => _selectedFilterPhuongThucTT;
+        set
+        {
+            if (SetProperty(ref _selectedFilterPhuongThucTT, value))
+                _ = LoadDataAsync();
+        }
+    }
+
     public ICommand RefreshCommand { get; }
     public ICommand ViewDetailCommand { get; }
     public ICommand CloseDetailCommand { get; }
@@ -206,6 +218,12 @@ public class DonHangViewModel : BaseViewModel
                 );
             }
 
+            // Lọc theo phương thức thanh toán
+            if (!string.IsNullOrEmpty(SelectedFilterPhuongThucTT) && SelectedFilterPhuongThucTT != "Tất cả")
+            {
+                filtered = filtered.Where(d => d.PhuongThucTT == SelectedFilterPhuongThucTT);
+            }
+
             var filteredList = filtered.ToList();
 
             // Tính thống kê từ danh sách đã lọc
@@ -234,10 +252,7 @@ public class DonHangViewModel : BaseViewModel
 
             DonHangs = new ObservableCollection<DonHang>(filteredList);
         }
-        catch (Exception ex)
-        {
-            System.Diagnostics.Debug.WriteLine($"Error loading DonHangs: {ex.Message}");
-        }
+        catch { }
         finally
         {
             IsLoading = false;
@@ -276,10 +291,7 @@ public class DonHangViewModel : BaseViewModel
                 ChiTietDonHangs = [];
             }
         }
-        catch (Exception ex)
-        {
-            System.Diagnostics.Debug.WriteLine($"Error loading ChiTiet: {ex.Message}");
-        }
+        catch { }
     }
 
     private void ExecuteViewDetail(object? parameter)
@@ -318,8 +330,7 @@ public class DonHangViewModel : BaseViewModel
                 MessageBox.Show("Không thể xóa đơn hàng. Vui lòng thử lại.", "Lỗi", MessageBoxButton.OK, MessageBoxImage.Error);
             }
         }
-        catch (Exception ex)
-        {
+        catch (Exception ex) {
             MessageBox.Show($"Lỗi khi xóa đơn hàng: {ex.Message}", "Lỗi", MessageBoxButton.OK, MessageBoxImage.Error);
         }
     }
@@ -330,10 +341,12 @@ public class DonHangViewModel : BaseViewModel
         _tuNgay = null;
         _denNgay = null;
         _selectedNhanVien = null;
+        _selectedFilterPhuongThucTT = "Tất cả";
         OnPropertyChanged(nameof(SearchText));
         OnPropertyChanged(nameof(TuNgay));
         OnPropertyChanged(nameof(DenNgay));
         OnPropertyChanged(nameof(SelectedNhanVien));
+        OnPropertyChanged(nameof(SelectedFilterPhuongThucTT));
         _ = LoadDataAsync();
     }
 

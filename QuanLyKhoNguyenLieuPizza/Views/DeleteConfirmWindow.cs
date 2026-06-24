@@ -80,8 +80,10 @@ public class DeleteConfirmWindow : Window
         };
         innerCircle.Child = new TextBlock
         {
-            Text = "🗑️",
+            Text = "\xE74D",
+            FontFamily = new System.Windows.Media.FontFamily("Segoe MDL2 Assets"),
             FontSize = 24,
+            Foreground = Brush("#EF4444"),
             HorizontalAlignment = HorizontalAlignment.Center,
             VerticalAlignment = VerticalAlignment.Center
         };
@@ -160,7 +162,10 @@ public class DeleteConfirmWindow : Window
         };
         deleteStack.Children.Add(new TextBlock
         {
-            Text = "🗑", FontSize = 13, Foreground = Brushes.White,
+            Text = "\xE74D",
+            FontFamily = new System.Windows.Media.FontFamily("Segoe MDL2 Assets"),
+            FontSize = 13,
+            Foreground = Brushes.White,
             Margin = new Thickness(0, 0, 8, 0),
             VerticalAlignment = VerticalAlignment.Center
         });

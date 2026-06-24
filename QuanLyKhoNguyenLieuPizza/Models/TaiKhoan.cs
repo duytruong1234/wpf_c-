@@ -11,4 +11,3 @@ public class TaiKhoan
     // Thuộc tính điều hướng
     public virtual NhanVien? NhanVien { get; set; }
 }
-

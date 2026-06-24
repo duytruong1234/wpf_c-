@@ -19,4 +19,3 @@ public class HangHoa
     public virtual ICollection<GiaTheo_Size> GiaTheoSizes { get; set; } = new List<GiaTheo_Size>();
     public virtual ICollection<CongThuc_Pizza> CongThucs { get; set; } = new List<CongThuc_Pizza>();
 }
-

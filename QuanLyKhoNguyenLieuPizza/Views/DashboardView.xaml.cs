@@ -1,4 +1,4 @@
-using System.ComponentModel;
+﻿using System.ComponentModel;
 using System.Windows;
 using System.Windows.Controls;
 using System.Windows.Media;
@@ -15,7 +15,7 @@ namespace QuanLyKhoNguyenLieuPizza.Views;
 public partial class DashboardView : UserControl
 {
     private WpfPlot? _barChart;
-    // ⚡ Lưu reference để có thể unsubscribe — tránh memory leak
+    // Lưu reference để có thể unsubscribe — tránh memory leak
     private DashboardViewModel? _vm;
 
     public DashboardView()
@@ -31,7 +31,7 @@ public partial class DashboardView : UserControl
 
         if (DataContext is DashboardViewModel vm)
         {
-            // ⚡ Unsubscribe cũ trước (phòng trường hợp Loaded gọi nhiều lần)
+            // Unsubscribe cũ trước (phòng trường hợp Loaded gọi nhiều lần)
             if (_vm != null)
                 _vm.OnDataLoaded -= OnVmDataLoaded;
 
@@ -46,7 +46,7 @@ public partial class DashboardView : UserControl
     }
 
     /// <summary>
-    /// ⚡ Hủy đăng ký event khi View unload — tránh memory leak
+    /// Hủy đăng ký event khi View unload — tránh memory leak
     /// </summary>
     private void OnUnloaded(object sender, RoutedEventArgs e)
     {
@@ -62,11 +62,11 @@ public partial class DashboardView : UserControl
     }
 
     /// <summary>
-    /// ⚡ Named method thay vì lambda — có thể unsubscribe
+    /// Named method thay vì lambda — có thể unsubscribe
     /// </summary>
     private void OnVmDataLoaded()
     {
-        // ⚡ BeginInvoke (async, không block) thay vì Invoke (sync, block)
+        // BeginInvoke (async, không block) thay vì Invoke (sync, block)
         Dispatcher.BeginInvoke(() =>
         {
             if (_vm != null) UpdateCharts(_vm);
@@ -348,17 +348,17 @@ public partial class DashboardView : UserControl
 
         int total = vm.TongSoNguyenLieu;
         if (total <= 0) total = 1;
-        
+
         // Bình thường = Số lượng có trong kho (SoLuongTonKho) - Tồn kho thấp - Sắp hết hạn - Đã hết hạn
         int normal = Math.Max(vm.SoLuongTonKho - vm.SoLuongTonKhoThap - vm.SoLuongSapHetHan - vm.SoLuongHetHan, 0);
 
-        var categories = new List<(string Label, int Value, string Color, string BgColor, string Icon)>
+        var categories = new List<(string Label, int Value, string Color, string BgColor)>
         {
-            ("Bình thường", normal, "#5B6AFF", "#EEF2FF", "✓"),
-            ("Tồn kho thấp", vm.SoLuongTonKhoThap, "#F59E0B", "#FFF7ED", "⚠"),
-            ("Sắp hết hạn", vm.SoLuongSapHetHan, "#06B6D4", "#ECFEFF", "⏱"),
-            ("Đã hết hạn", vm.SoLuongHetHan, "#EF4444", "#FEF2F2", "✕"),
-            ("Hết hàng", vm.SoLuongHetHang, "#64748b", "#f1f5f9", "✕")
+            ("Bình thường", normal, "#5B6AFF", "#EEF2FF"),
+            ("Tồn kho thấp", vm.SoLuongTonKhoThap, "#F59E0B", "#FFF7ED"),
+            ("Sắp hết hạn", vm.SoLuongSapHetHan, "#06B6D4", "#ECFEFF"),
+            ("Đã hết hạn", vm.SoLuongHetHan, "#EF4444", "#FEF2F2"),
+            ("Hết hàng", vm.SoLuongHetHang, "#64748b", "#f1f5f9")
         };
 
         // Tổng số ở trên cùng
@@ -391,7 +391,7 @@ public partial class DashboardView : UserControl
             CornerRadius = new CornerRadius(4),
             Opacity = 0
         };
-        
+
         var anim = new DoubleAnimation(0, 1, TimeSpan.FromMilliseconds(500))
         {
             EasingFunction = new CubicEase { EasingMode = EasingMode.EaseOut }
@@ -419,7 +419,7 @@ public partial class DashboardView : UserControl
             var currentStatusKey = statusKeys[delayIndex];
 
             var itemGrid = new Grid
-            { 
+            {
                 Margin = new Thickness(0, 0, 0, 14),
                 Cursor = System.Windows.Input.Cursors.Hand
             };

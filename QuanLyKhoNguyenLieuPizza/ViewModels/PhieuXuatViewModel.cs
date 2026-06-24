@@ -20,6 +20,13 @@ public class PhieuXuatViewModel : BaseViewModel
         set => SetProperty(ref _isNhanVien, value);
     }
 
+    private bool _isNhanVienBep;
+    public bool IsNhanVienBep
+    {
+        get => _isNhanVienBep;
+        set => SetProperty(ref _isNhanVienBep, value);
+    }
+
     public bool IsQuanLy => !IsNhanVien;
 
     private string _currentUserName = string.Empty;
@@ -61,6 +68,7 @@ public class PhieuXuatViewModel : BaseViewModel
                 OnPropertyChanged(nameof(IsEditDeleteVisible));
                 OnPropertyChanged(nameof(CanDelete));
                 OnPropertyChanged(nameof(IsDeleteVisible));
+                OnPropertyChanged(nameof(IsLoaiPhieuEnabled));
             }
         }
     }
@@ -188,9 +196,9 @@ public class PhieuXuatViewModel : BaseViewModel
     }
 
     // Trang thai filter
-    public ObservableCollection<string> TrangThaiOptions { get; } = new ObservableCollection<string> 
-    { 
-        "Tất cả", "Chờ duyệt", "Đã duyệt", "Đã hủy" 
+    public ObservableCollection<string> TrangThaiOptions { get; } = new ObservableCollection<string>
+    {
+        "Tất cả", "Chờ duyệt", "Đã duyệt", "Đã hủy"
     };
 
     private string _selectedTrangThaiFilter = "Tất cả";
@@ -269,6 +277,25 @@ public class PhieuXuatViewModel : BaseViewModel
         }
     }
 
+    // Lọc loại phiếu
+    public ObservableCollection<string> FilterLoaiPhieuOptions { get; } = new ObservableCollection<string>
+    {
+        "Tất cả", "Xuất kho chế biến", "Xuất hủy hàng", "Xuất trả nhà cung cấp", "Xuất điều chỉnh hao hụt"
+    };
+
+    private string _selectedFilterLoaiPhieu = "Tất cả";
+    public string SelectedFilterLoaiPhieu
+    {
+        get => _selectedFilterLoaiPhieu;
+        set
+        {
+            if (SetProperty(ref _selectedFilterLoaiPhieu, value))
+            {
+                _ = LoadPhieuXuatsAsync();
+            }
+        }
+    }
+
     // Thuộc tính hộp thoại
     private bool _isDialogOpen;
     public bool IsDialogOpen
@@ -298,7 +325,71 @@ public class PhieuXuatViewModel : BaseViewModel
     public bool IsCreateMode
     {
         get => _isCreateMode;
-        set => SetProperty(ref _isCreateMode, value);
+        set
+        {
+            if (SetProperty(ref _isCreateMode, value))
+            {
+                OnPropertyChanged(nameof(IsLoaiPhieuEnabled));
+            }
+        }
+    }
+
+    // CHẾ ĐỘ HỦY NGUYÊN LIỆU ═══
+    private bool _isHuyMode;
+    public bool IsHuyMode
+    {
+        get => _isHuyMode;
+        set
+        {
+            if (SetProperty(ref _isHuyMode, value))
+            {
+                OnPropertyChanged(nameof(IsLoaiPhieuEnabled));
+            }
+        }
+    }
+
+    public bool IsNotHuyMode => !IsHuyMode;
+
+    private string? _lyDoHuy;
+    public string? LyDoHuy
+    {
+        get => _lyDoHuy;
+        set => SetProperty(ref _lyDoHuy, value);
+    }
+
+    private string _formLoaiPhieu = "Xuất kho chế biến";
+    public string FormLoaiPhieu
+    {
+        get => _formLoaiPhieu;
+        set => SetProperty(ref _formLoaiPhieu, value);
+    }
+
+    public ObservableCollection<string> LoaiPhieuOptions { get; } = new()
+    {
+        "Xuất kho chế biến", "Xuất hủy hàng", "Xuất trả nhà cung cấp", "Xuất điều chỉnh hao hụt"
+    };
+
+    public bool IsLoaiPhieuEnabled => !IsHuyMode && (IsCreateMode || (SelectedPhieuXuat != null && SelectedPhieuXuat.KiemKeID == null));
+
+    private string _formDialogTitle = "LẬP PHIẾU XUẤT KHO";
+    public string FormDialogTitle
+    {
+        get => _formDialogTitle;
+        set => SetProperty(ref _formDialogTitle, value);
+    }
+
+    private string _formDialogBadge = "Mới lập (Nhập)";
+    public string FormDialogBadge
+    {
+        get => _formDialogBadge;
+        set => SetProperty(ref _formDialogBadge, value);
+    }
+
+    private string? _formGhiChu;
+    public string? FormGhiChu
+    {
+        get => _formGhiChu;
+        set => SetProperty(ref _formGhiChu, value);
     }
 
     // Thuộc tính form
@@ -316,7 +407,7 @@ public class PhieuXuatViewModel : BaseViewModel
         set => SetProperty(ref _isLoading, value);
     }
 
-    public bool CanEditDelete => SelectedPhieuXuat != null && 
+    public bool CanEditDelete => SelectedPhieuXuat != null &&
                                   SelectedPhieuXuat.TrangThai == 1 &&
                                   (DateTime.Now - SelectedPhieuXuat.NgayYeuCau).TotalHours <= 24;
 
@@ -361,6 +452,7 @@ public class PhieuXuatViewModel : BaseViewModel
     public ICommand PrintPhieuXuatCommand { get; }
     public ICommand IncreaseQuantityCommand { get; }
     public ICommand DecreaseQuantityCommand { get; }
+    public ICommand AddEmptyChiTietCommand { get; }
     #endregion
 
     public PhieuXuatViewModel()
@@ -374,6 +466,7 @@ public class PhieuXuatViewModel : BaseViewModel
         bool isNhanVienBep = !isQuanLy && (chucVuTen.Contains("bếp") || chucVuTen.Contains("bep"));
         bool isNhanVienKho = !isQuanLy && !isNhanVienBep && chucVuTen.Contains("kho");
         IsNhanVien = isNhanVienBep || isNhanVienKho;
+        IsNhanVienBep = isNhanVienBep;
         CurrentUserName = currentUser?.NhanVien?.HoTen ?? "Nhân viên";
 
         LoadDataCommand = new AsyncRelayCommand(async _ => await LoadDataAsync());
@@ -392,6 +485,7 @@ public class PhieuXuatViewModel : BaseViewModel
         PrintPhieuXuatCommand = new AsyncRelayCommand(async p => await PrintPhieuXuatAsync(p));
         IncreaseQuantityCommand = new RelayCommand(p => IncreaseQuantity(p));
         DecreaseQuantityCommand = new RelayCommand(p => DecreaseQuantity(p));
+        AddEmptyChiTietCommand = new RelayCommand(_ => AddEmptyChiTiet());
 
         // Tải dữ liệu khi khởi tạo
         SafeInitializeAsync(() => LoadDataAsync(true));
@@ -435,10 +529,7 @@ public class PhieuXuatViewModel : BaseViewModel
                 OpenCreateDialog();
             }
         }
-        catch (Exception ex)
-        {
-            System.Diagnostics.Debug.WriteLine($"Error loading data: {ex.Message}");
-        }
+        catch { }
         finally
         {
             IsLoading = false;
@@ -473,15 +564,19 @@ public class PhieuXuatViewModel : BaseViewModel
 
             PhieuXuats = new ObservableCollection<PhieuXuat>(phieuXuats);
 
+            // Filter theo loại phiếu (client-side)
+            if (!string.IsNullOrEmpty(SelectedFilterLoaiPhieu) && SelectedFilterLoaiPhieu != "Tất cả")
+            {
+                phieuXuats = phieuXuats.Where(p => p.LoaiPhieu == SelectedFilterLoaiPhieu).ToList();
+                PhieuXuats = new ObservableCollection<PhieuXuat>(phieuXuats);
+            }
+
             SoPhieuChoDuyet = phieuXuats.Count(p => p.TrangThai == 1);
             SoPhieuDaDuyet = phieuXuats.Count(p => p.TrangThai == 2);
             SoPhieuDaHuy = phieuXuats.Count(p => p.TrangThai == 3);
             SoPhieuHomNay = phieuXuats.Count(p => p.NgayYeuCau.Date == DateTime.Today);
         }
-        catch (Exception ex)
-        {
-            System.Diagnostics.Debug.WriteLine($"Error loading PhieuXuats: {ex.Message}");
-        }
+        catch { }
     }
 
     private void ApplyTimeFilter(string thoiGian)
@@ -521,6 +616,7 @@ public class PhieuXuatViewModel : BaseViewModel
         TuNgay = null;
         DenNgay = null;
         SelectedTrangThaiFilter = "Tất cả";
+        SelectedFilterLoaiPhieu = "Tất cả";
         FilterChoDuyet = true;
         FilterDaDuyet = true;
         FilterDaHuy = true;
@@ -529,13 +625,84 @@ public class PhieuXuatViewModel : BaseViewModel
     private async void OpenCreateDialog()
     {
         IsCreateMode = true;
+        IsHuyMode = false;
+        FormLoaiPhieu = "Xuất kho chế biến";
+        OnPropertyChanged(nameof(IsNotHuyMode));
+        FormDialogTitle = "LẬP PHIẾU XUẤT KHO";
+        FormDialogBadge = "Mới lập (Nhập)";
+        LyDoHuy = null;
+        FormGhiChu = null;
         ChiTietForm = new ObservableCollection<CT_PhieuXuat>();
-        
+
         // Tải lại nguyên liệu với tồn kho mới nhất
         var nguyenLieus = await _databaseService.GetNguyenLieusWithTonKhoAsync();
         NguyenLieus = new ObservableCollection<NguyenLieu>(nguyenLieus);
-        
+
         IsDialogOpen = true;
+    }
+
+
+    private void AddEmptyChiTiet()
+    {
+        var chiTiet = new CT_PhieuXuat
+        {
+            SoLuong = 1
+        };
+        chiTiet.PropertyChanged += ChiTiet_PropertyChanged;
+        ChiTietForm.Add(chiTiet);
+    }
+
+    private async void ChiTiet_PropertyChanged(object? sender, System.ComponentModel.PropertyChangedEventArgs e)
+    {
+        if (sender is CT_PhieuXuat chiTiet && e.PropertyName == nameof(CT_PhieuXuat.NguyenLieu))
+        {
+            if (chiTiet.NguyenLieu != null)
+            {
+                var nguyenLieu = chiTiet.NguyenLieu;
+                chiTiet.NguyenLieuID = nguyenLieu.NguyenLieuID;
+
+                // Load danh sách đơn vị quy đổi
+                var donViOptions = new System.Collections.ObjectModel.ObservableCollection<DonViOption>();
+                var defaultOption = new DonViOption
+                {
+                    DonViID = nguyenLieu.DonViID ?? 0,
+                    TenDonVi = nguyenLieu.DonViTinh?.TenDonVi ?? "",
+                    HeSo = 1
+                };
+
+                try
+                {
+                    var quyDois = await _databaseService.GetQuyDoiDonVisAsync(nguyenLieu.NguyenLieuID);
+                    var donViXuat = quyDois.FirstOrDefault(q => q.LaDonViChuan);
+                    if (donViXuat != null)
+                    {
+                        defaultOption = new DonViOption
+                        {
+                            DonViID = donViXuat.DonViID ?? 0,
+                            TenDonVi = donViXuat.DonViTinh?.TenDonVi ?? "",
+                            HeSo = donViXuat.HeSo
+                        };
+                    }
+                    donViOptions.Add(defaultOption);
+                    foreach (var qd in quyDois)
+                    {
+                        if (qd.DonViID == defaultOption.DonViID) continue;
+                        donViOptions.Add(new DonViOption
+                        {
+                            DonViID = qd.DonViID ?? 0,
+                            TenDonVi = qd.DonViTinh?.TenDonVi ?? "",
+                            HeSo = qd.HeSo
+                        });
+                    }
+                }
+                catch {
+                    if (!donViOptions.Any()) donViOptions.Add(defaultOption);
+                }
+
+                chiTiet.DonViOptions = donViOptions;
+                chiTiet.SelectedDonVi = defaultOption;
+            }
+        }
     }
 
     private async void AddNguyenLieuToForm(object? parameter)
@@ -550,7 +717,7 @@ public class PhieuXuatViewModel : BaseViewModel
 
             // Load danh sách đơn vị quy đổi
             var donViOptions = new System.Collections.ObjectModel.ObservableCollection<DonViOption>();
-            
+
             var defaultOption = new DonViOption
             {
                 DonViID = nguyenLieu.DonViID ?? 0,
@@ -562,7 +729,7 @@ public class PhieuXuatViewModel : BaseViewModel
             {
                 var quyDois = await _databaseService.GetQuyDoiDonVisAsync(nguyenLieu.NguyenLieuID);
                 var donViXuat = quyDois.FirstOrDefault(q => q.LaDonViChuan);
-                
+
                 if (donViXuat != null)
                 {
                     defaultOption = new DonViOption
@@ -586,9 +753,7 @@ public class PhieuXuatViewModel : BaseViewModel
                     });
                 }
             }
-            catch (Exception ex)
-            {
-                System.Diagnostics.Debug.WriteLine($"Error loading QuyDoiDonVi: {ex.Message}");
+            catch {
                 if (!donViOptions.Any()) donViOptions.Add(defaultOption);
             }
 
@@ -604,6 +769,7 @@ public class PhieuXuatViewModel : BaseViewModel
             };
             chiTiet.SelectedDonVi = defaultOption;
 
+            chiTiet.PropertyChanged += ChiTiet_PropertyChanged;
             ChiTietForm.Add(chiTiet);
         }
     }
@@ -612,6 +778,7 @@ public class PhieuXuatViewModel : BaseViewModel
     {
         if (parameter is CT_PhieuXuat chiTiet)
         {
+            chiTiet.PropertyChanged -= ChiTiet_PropertyChanged;
             ChiTietForm.Remove(chiTiet);
         }
     }
@@ -619,7 +786,7 @@ public class PhieuXuatViewModel : BaseViewModel
     private async Task ViewDetailAsync(object? parameter)
     {
         int phieuXuatId = 0;
-        
+
         if (parameter is PhieuXuat phieuXuat)
         {
             phieuXuatId = phieuXuat.PhieuXuatID;
@@ -638,10 +805,7 @@ public class PhieuXuatViewModel : BaseViewModel
             ChiTietPhieuXuats = new ObservableCollection<CT_PhieuXuat>(chiTiets);
             IsDetailDialogOpen = true;
         }
-        catch (Exception ex)
-        {
-            System.Diagnostics.Debug.WriteLine($"Error loading detail: {ex.Message}");
-        }
+        catch { }
     }
 
     private async Task EditPhieuXuatAsync(object? parameter)
@@ -649,13 +813,13 @@ public class PhieuXuatViewModel : BaseViewModel
         if (SelectedPhieuXuat == null || !CanEditDelete) return;
 
         IsCreateMode = false;
-        
+
         // Tải lại nguyên liệu trước
         var nguyenLieus = await _databaseService.GetNguyenLieusWithTonKhoAsync();
         NguyenLieus = new ObservableCollection<NguyenLieu>(nguyenLieus);
 
         var chiTiets = await _databaseService.GetChiTietPhieuXuatAsync(SelectedPhieuXuat.PhieuXuatID);
-        
+
         // Tái tạo lại tham chiếu NguyenLieu và DonViOptions cho form
         foreach (var ct in chiTiets)
         {
@@ -663,7 +827,7 @@ public class PhieuXuatViewModel : BaseViewModel
             if (matchingNl != null)
             {
                 ct.NguyenLieu = matchingNl;
-                
+
                 var donViOptions = new System.Collections.ObjectModel.ObservableCollection<DonViOption>();
                 var defaultOption = new DonViOption
                 {
@@ -717,9 +881,11 @@ public class PhieuXuatViewModel : BaseViewModel
                 }
             }
         }
-        
+
         ChiTietForm = new ObservableCollection<CT_PhieuXuat>(chiTiets);
-        
+        FormLoaiPhieu = SelectedPhieuXuat.LoaiPhieu ?? "Xuất kho chế biến";
+        FormGhiChu = SelectedPhieuXuat.GhiChu;
+
         IsDetailDialogOpen = false;
         IsDialogOpen = true;
     }
@@ -744,10 +910,7 @@ public class PhieuXuatViewModel : BaseViewModel
                 SelectedPhieuXuat = null;
             }
         }
-        catch (Exception ex)
-        {
-            System.Diagnostics.Debug.WriteLine($"Error deleting PhieuXuat: {ex.Message}");
-        }
+        catch { }
     }
 
     private async Task ApprovePhieuXuatAsync()
@@ -759,10 +922,75 @@ public class PhieuXuatViewModel : BaseViewModel
             var currentUser = CurrentUserSession.Instance.CurrentUser;
             if (currentUser?.NhanVienID == null) return;
 
+            // === PRE-CHECK: Kiểm tra tồn kho trước khi duyệt ===
+            var chiTiets = await _databaseService.GetChiTietPhieuXuatAsync(SelectedPhieuXuat.PhieuXuatID);
+            if (chiTiets.Any())
+            {
+                // Dùng GetTonKhosAsync để lấy TẤT CẢ nguyên liệu (kể cả tồn = 0)
+                var tonKhos = await _databaseService.GetTonKhosAsync();
+                var insufficientItems = new List<string>();
+
+                var chiTietGroups = chiTiets.GroupBy(x => x.NguyenLieuID);
+                foreach (var group in chiTietGroups)
+                {
+                    var nlId = group.Key ?? 0;
+                    var tk = tonKhos.FirstOrDefault(t => t.NguyenLieuID == nlId);
+                    var tonKhoHienTai = tk?.SoLuongTon ?? 0;
+                    var tenNL = tk?.NguyenLieu?.TenNguyenLieu ?? group.First().NguyenLieu?.TenNguyenLieu ?? $"ID {nlId}";
+                    var donVi = tk?.NguyenLieu?.DonViTinh?.TenDonVi ?? "";
+
+                    // Lấy hệ số của đơn vị chuẩn để quy đổi
+                    decimal donViChuanHeSo = 1m;
+                    try
+                    {
+                        var quyDois = await _databaseService.GetQuyDoiDonVisAsync(nlId);
+                        var donViChuan = quyDois.FirstOrDefault(q => q.LaDonViChuan);
+                        if (donViChuan != null && donViChuan.HeSo > 0)
+                        {
+                            donViChuanHeSo = donViChuan.HeSo;
+                        }
+                    }
+                    catch { }
+
+                    // Tính tổng số lượng xuất (quy đổi về đơn vị chuẩn)
+                    decimal tongSoLuong = group.Sum(x => x.SoLuong * x.HeSo / donViChuanHeSo);
+
+                    if (tongSoLuong > tonKhoHienTai)
+                    {
+                        insufficientItems.Add($"• {tenNL}: cần {tongSoLuong:N2} {donVi}, tồn kho chỉ còn {tonKhoHienTai:N2} {donVi}");
+                    }
+                }
+
+                if (insufficientItems.Any())
+                {
+                    var message = "Không thể duyệt phiếu xuất vì tồn kho không đủ:\n\n"
+                        + string.Join("\n", insufficientItems)
+                        + "\n\nVui lòng kiểm tra và điều chỉnh số lượng tồn kho trước khi duyệt.";
+
+                    System.Windows.MessageBox.Show(
+                        message,
+                        "Không đủ tồn kho",
+                        System.Windows.MessageBoxButton.OK,
+                        System.Windows.MessageBoxImage.Warning);
+                    return;
+                }
+            }
+
+            // Mở popup chữ ký số để quản lý ký duyệt
+            var nguoiDuyet = currentUser.NhanVien?.HoTen ?? "Quản lý";
+            var maPhieu = SelectedPhieuXuat.MaPhieuXuat ?? $"PX-{SelectedPhieuXuat.PhieuXuatID}";
+
+            var signaturePopup = new Views.SignaturePopup(maPhieu, nguoiDuyet);
+            var dialogResult = signaturePopup.ShowDialog();
+
+            if (dialogResult != true || string.IsNullOrEmpty(signaturePopup.SignatureBase64))
+                return; // Hủy duyệt nếu không ký
+
             var result = await _databaseService.ApprovePhieuXuatAsync(
-                SelectedPhieuXuat.PhieuXuatID, 
-                currentUser.NhanVienID.Value);
-                
+                SelectedPhieuXuat.PhieuXuatID,
+                currentUser.NhanVienID.Value,
+                signaturePopup.SignatureBase64);
+
             if (result)
             {
                 await LoadPhieuXuatsAsync();
@@ -770,10 +998,12 @@ public class PhieuXuatViewModel : BaseViewModel
                 SelectedPhieuXuat = null;
             }
         }
-        catch (Exception ex)
-        {
-            System.Diagnostics.Debug.WriteLine($"Error approving PhieuXuat: {ex.Message}");
-            System.Windows.MessageBox.Show(ex.Message, "Lỗi khi duyệt phiếu", System.Windows.MessageBoxButton.OK, System.Windows.MessageBoxImage.Error);
+        catch (Exception ex) {
+            System.Windows.MessageBox.Show(
+                $"Lỗi khi duyệt phiếu xuất: Tồn kho không đủ để xuất.\n\nChi tiết: {ex.Message}",
+                "Lỗi khi duyệt phiếu",
+                System.Windows.MessageBoxButton.OK,
+                System.Windows.MessageBoxImage.Error);
         }
     }
 
@@ -783,7 +1013,64 @@ public class PhieuXuatViewModel : BaseViewModel
 
         try
         {
-            var result = await _databaseService.CancelPhieuXuatAsync(SelectedPhieuXuat.PhieuXuatID);
+            var currentUser = CurrentUserSession.Instance.CurrentUser;
+            if (currentUser?.NhanVienID == null) return;
+
+            // Yêu cầu nhập lý do hủy
+            var inputDialog = new System.Windows.Window
+            {
+                Title = "Lý do hủy phiếu xuất",
+                Width = 420, Height = 200,
+                WindowStartupLocation = System.Windows.WindowStartupLocation.CenterScreen,
+                ResizeMode = System.Windows.ResizeMode.NoResize
+            };
+            var sp = new System.Windows.Controls.StackPanel { Margin = new System.Windows.Thickness(20) };
+            sp.Children.Add(new System.Windows.Controls.TextBlock
+            {
+                Text = "Vui lòng nhập lý do hủy phiếu:",
+                FontSize = 14, Margin = new System.Windows.Thickness(0, 0, 0, 10)
+            });
+            var tbInput = new System.Windows.Controls.TextBox
+            {
+                FontSize = 13, Padding = new System.Windows.Thickness(8, 6, 8, 6),
+                AcceptsReturn = false
+            };
+            sp.Children.Add(tbInput);
+            var btnPanel = new System.Windows.Controls.StackPanel
+            {
+                Orientation = System.Windows.Controls.Orientation.Horizontal,
+                HorizontalAlignment = System.Windows.HorizontalAlignment.Right,
+                Margin = new System.Windows.Thickness(0, 16, 0, 0)
+            };
+            var btnOk = new System.Windows.Controls.Button
+            {
+                Content = "Xác nhận hủy", Width = 120, Height = 32,
+                Margin = new System.Windows.Thickness(0, 0, 8, 0), IsDefault = true
+            };
+            btnOk.Click += (s, e) => { inputDialog.DialogResult = true; };
+            var btnCancel = new System.Windows.Controls.Button
+            {
+                Content = "Quay lại", Width = 80, Height = 32, IsCancel = true
+            };
+            btnPanel.Children.Add(btnOk);
+            btnPanel.Children.Add(btnCancel);
+            sp.Children.Add(btnPanel);
+            inputDialog.Content = sp;
+
+            if (inputDialog.ShowDialog() != true || string.IsNullOrWhiteSpace(tbInput.Text)) return;
+            var lyDoHuy = tbInput.Text.Trim();
+
+            // Yêu cầu chữ ký xác nhận hủy
+            var nguoiHuy = currentUser.NhanVien?.HoTen ?? "Nhân viên";
+            var maPhieu = SelectedPhieuXuat.MaPhieuXuat ?? $"PX-{SelectedPhieuXuat.PhieuXuatID}";
+            var signaturePopup = new Views.SignaturePopup(maPhieu, nguoiHuy);
+            signaturePopup.Owner = System.Windows.Application.Current.MainWindow;
+
+            if (signaturePopup.ShowDialog() != true || string.IsNullOrEmpty(signaturePopup.SignatureBase64))
+                return;
+
+            var result = await _databaseService.CancelPhieuXuatAsync(
+                SelectedPhieuXuat.PhieuXuatID, currentUser.NhanVienID.Value, lyDoHuy, signaturePopup.SignatureBase64);
             if (result)
             {
                 await LoadPhieuXuatsAsync();
@@ -791,16 +1078,28 @@ public class PhieuXuatViewModel : BaseViewModel
                 SelectedPhieuXuat = null;
             }
         }
-        catch (Exception ex)
-        {
-            System.Diagnostics.Debug.WriteLine($"Error canceling PhieuXuat: {ex.Message}");
-        }
+        catch { }
     }
 
     private async Task SavePhieuXuatAsync()
     {
         if (!ChiTietForm.Any())
         {
+            return;
+        }
+
+        if (ChiTietForm.Any(ct => ct.SoLuong <= 0))
+        {
+            System.Windows.MessageBox.Show("Số lượng nguyên liệu xuất phải lớn hơn 0!", "Cảnh báo", System.Windows.MessageBoxButton.OK, System.Windows.MessageBoxImage.Warning);
+            return;
+        }
+
+        // Validation cho phiếu hủy: bắt buộc nhập lý do
+        if (IsHuyMode && string.IsNullOrWhiteSpace(LyDoHuy))
+        {
+            System.Windows.MessageBox.Show(
+                "Vui lòng nhập lý do hủy hàng.",
+                "Thiếu thông tin", System.Windows.MessageBoxButton.OK, System.Windows.MessageBoxImage.Warning);
             return;
         }
 
@@ -813,8 +1112,8 @@ public class PhieuXuatViewModel : BaseViewModel
         foreach (var group in chiTietGroups)
         {
             var firstItem = group.First();
-            
-            // Tìm kiếm đối tượng NguyenLieu có chứa Tồn Kho mới nhất 
+
+            // Tìm kiếm đối tượng NguyenLieu có chứa Tồn Kho mới nhất
             var nl = NguyenLieus.FirstOrDefault(n => n.NguyenLieuID == firstItem.NguyenLieuID) ?? firstItem.NguyenLieu;
             var tonKhoHienTai = nl?.TonKho?.SoLuongTon ?? 0;
 
@@ -830,16 +1129,16 @@ public class PhieuXuatViewModel : BaseViewModel
 
             // Quy đổi tổng số lượng xuất về đơn vị chuẩn
             var tongSoLuongChuanHoa = group.Sum(x => x.SoLuong * x.HeSo / donViChuanHeSo);
-            
+
             // Lấy tên đơn vị chuẩn để hiển thị
             var tenDonViChuan = firstItem.DonViOptions?.FirstOrDefault()?.TenDonVi ?? nl?.DonViTinh?.TenDonVi ?? "";
-            
+
             if (tongSoLuongChuanHoa > tonKhoHienTai)
             {
                 System.Windows.MessageBox.Show(
-                    $"Số lượng xuất của '{nl?.TenNguyenLieu}' ({tongSoLuongChuanHoa:N2} {tenDonViChuan}) đang vượt mức tồn kho hiện tại ({tonKhoHienTai:N2} {tenDonViChuan}).\nVui lòng kiểm tra và điều chỉnh lại!", 
-                    "Cảnh báo tồn kho", 
-                    System.Windows.MessageBoxButton.OK, 
+                    $"Số lượng xuất của '{nl?.TenNguyenLieu}' ({tongSoLuongChuanHoa:N2} {tenDonViChuan}) đang vượt mức tồn kho hiện tại ({tonKhoHienTai:N2} {tenDonViChuan}).\nVui lòng kiểm tra và điều chỉnh lại!",
+                    "Cảnh báo tồn kho",
+                    System.Windows.MessageBoxButton.OK,
                     System.Windows.MessageBoxImage.Warning);
                 return;
             }
@@ -848,17 +1147,51 @@ public class PhieuXuatViewModel : BaseViewModel
         try
         {
             var currentUser = CurrentUserSession.Instance.CurrentUser;
-            
+
             var phieuXuat = new PhieuXuat
             {
                 NhanVienYeuID = currentUser?.NhanVienID,
                 NgayYeuCau = DateTime.Now,
-                TrangThai = 1 // Cho duyet
+                TrangThai = 1, // Cho duyet
+                LoaiPhieu = FormLoaiPhieu,
+                KiemKeID = IsCreateMode ? null : SelectedPhieuXuat?.KiemKeID,
+                GhiChu = BuildGhiChu()
             };
+
+            string maPhieuForSign;
+            if (IsCreateMode)
+            {
+                if (IsHuyMode)
+                {
+                    var maXuat = await _databaseService.GenerateMaPhieuXuatAsync();
+                    maPhieuForSign = maXuat?.Replace("PX-", "XH-") ?? "XH";
+                }
+                else
+                {
+                    maPhieuForSign = await _databaseService.GenerateMaPhieuXuatAsync();
+                }
+            }
+            else
+            {
+                maPhieuForSign = SelectedPhieuXuat?.MaPhieuXuat ?? "PX";
+            }
+
+            // Mở popup ký tên xác nhận (ChuKyXuat) cho nhân viên gửi phiếu
+            var nguoiXuat = currentUser?.NhanVien?.HoTen ?? "Nhân viên";
+            var signaturePopup = new Views.SignaturePopup(maPhieuForSign, nguoiXuat);
+            signaturePopup.Owner = System.Windows.Application.Current.MainWindow;
+            if (signaturePopup.ShowDialog() == true)
+            {
+                phieuXuat.ChuKyXuat = signaturePopup.SignatureBase64;
+            }
+            else
+            {
+                return; // Hủy nếu không ký
+            }
 
             if (IsCreateMode)
             {
-                phieuXuat.MaPhieuXuat = await _databaseService.GenerateMaPhieuXuatAsync();
+                phieuXuat.MaPhieuXuat = maPhieuForSign;
             }
             else
             {
@@ -868,14 +1201,21 @@ public class PhieuXuatViewModel : BaseViewModel
             }
 
             await _databaseService.SavePhieuXuatAsync(phieuXuat, ChiTietForm.ToList());
-            
+
             CloseDialog();
             await LoadPhieuXuatsAsync();
         }
-        catch (Exception ex)
-        {
-            System.Diagnostics.Debug.WriteLine($"Error saving PhieuXuat: {ex.Message}");
-        }
+        catch { }
+    }
+
+    private string? BuildGhiChu()
+    {
+        var parts = new List<string>();
+        if (IsHuyMode && !string.IsNullOrWhiteSpace(LyDoHuy))
+            parts.Add($"Lý do hủy: {LyDoHuy.Trim()}");
+        if (!string.IsNullOrWhiteSpace(FormGhiChu))
+            parts.Add(FormGhiChu.Trim());
+        return parts.Any() ? string.Join(" | ", parts) : null;
     }
 
     private void CloseDialog()
@@ -920,7 +1260,7 @@ public class PhieuXuatViewModel : BaseViewModel
     private async Task PrintPhieuXuatAsync(object? parameter)
     {
         PhieuXuat? phieuXuat = null;
-        
+
         if (parameter is PhieuXuat px)
         {
             phieuXuat = px;
@@ -936,16 +1276,11 @@ public class PhieuXuatViewModel : BaseViewModel
         {
             // Load chi tiết nếu chưa có
             var chiTiets = await _databaseService.GetChiTietPhieuXuatAsync(phieuXuat.PhieuXuatID);
-            
+
             // Gọi PrintService
             PrintService.PrintPhieuXuat(phieuXuat, chiTiets);
         }
-        catch (Exception ex)
-        {
-            System.Diagnostics.Debug.WriteLine($"Error printing PhieuXuat: {ex.Message}");
-        }
+        catch { }
     }
     #endregion
 }
-
-

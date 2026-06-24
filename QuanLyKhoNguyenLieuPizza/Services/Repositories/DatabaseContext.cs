@@ -20,6 +20,136 @@ public abstract class DatabaseContext
 
     protected SqlConnection GetConnection() => new SqlConnection(_connectionString);
 
+    /// <summary>
+    /// Tự động migration: đảm bảo schema phù hợp khi khởi động app.
+    /// - Rename ChuKySo → ChuKySoDuyet (PhieuNhap, PhieuXuat)
+    /// - Thêm cột mới: ChuKyNhap/ChuKyXuat, LoaiPhieu, KiemKeID, HanCanhBao
+    /// - Tạo bảng PhieuKiemKe, CT_PhieuKiemKe
+    /// </summary>
+    public async Task EnsureChuKySoColumnsAsync()
+    {
+        try
+        {
+            using var conn = GetConnection();
+            await conn.OpenAsync();
+
+            // Phase 1: Thêm các cột phụ trợ còn thiếu
+            var addColumnMigrations = new[]
+            {
+                ("PhieuXuat", "GhiChu", "NVARCHAR(500)"),
+                ("PhieuNhap", "GhiChu", "NVARCHAR(500)")
+            };
+
+            foreach (var (table, column, dataType) in addColumnMigrations)
+            {
+                var checkSql = $@"IF NOT EXISTS (SELECT 1 FROM sys.columns
+                                  WHERE object_id = OBJECT_ID('{table}') AND name = '{column}')
+                                  ALTER TABLE [{table}] ADD [{column}] {dataType} NULL";
+                using var cmd = new SqlCommand(checkSql, conn);
+                await cmd.ExecuteNonQueryAsync();
+            }
+
+            // Phase 2: Chuyển ChuKySo cũ sang ChuKySoDuyet, không để lại cột cũ gây nhầm lẫn
+            var renameMigrations = new[]
+            {
+                ("PhieuNhap", "ChuKySo", "ChuKySoDuyet"),
+                ("PhieuXuat", "ChuKySo", "ChuKySoDuyet")
+            };
+
+            foreach (var (table, oldCol, newCol) in renameMigrations)
+            {
+                var renameSql = $@"
+                    IF EXISTS (SELECT 1 FROM sys.columns WHERE object_id = OBJECT_ID('{table}') AND name = '{oldCol}')
+                       AND NOT EXISTS (SELECT 1 FROM sys.columns WHERE object_id = OBJECT_ID('{table}') AND name = '{newCol}')
+                    BEGIN
+                        EXEC sp_rename '{table}.{oldCol}', '{newCol}', 'COLUMN'
+                    END
+
+                    IF EXISTS (SELECT 1 FROM sys.columns WHERE object_id = OBJECT_ID('{table}') AND name = '{oldCol}')
+                       AND EXISTS (SELECT 1 FROM sys.columns WHERE object_id = OBJECT_ID('{table}') AND name = '{newCol}')
+                    BEGIN
+                        UPDATE [{table}]
+                        SET [{newCol}] = [{oldCol}]
+                        WHERE [{newCol}] IS NULL AND [{oldCol}] IS NOT NULL
+
+                        ALTER TABLE [{table}] DROP COLUMN [{oldCol}]
+                    END";
+                using var cmd = new SqlCommand(renameSql, conn);
+                await cmd.ExecuteNonQueryAsync();
+            }
+
+            // Phase 3: Thêm các cột mới cho kiểm kê
+            var newColumnMigrations = new[]
+            {
+                ("PhieuNhap", "ChuKySoDuyet", "NVARCHAR(MAX)"),
+                ("PhieuNhap", "ChuKyNhap", "NVARCHAR(MAX)"),
+                ("PhieuNhap", "LoaiPhieu", "NVARCHAR(100)"),
+                ("PhieuNhap", "KiemKeID", "INT"),
+                ("PhieuXuat", "ChuKySoDuyet", "NVARCHAR(MAX)"),
+                ("PhieuXuat", "ChuKyXuat", "NVARCHAR(MAX)"),
+                ("PhieuXuat", "LoaiPhieu", "NVARCHAR(100)"),
+                ("PhieuXuat", "KiemKeID", "INT"),
+                ("NguyenLieu", "HanCanhBao", "INT")
+            };
+
+            foreach (var (table, column, dataType) in newColumnMigrations)
+            {
+                var checkSql = $@"IF NOT EXISTS (SELECT 1 FROM sys.columns
+                                  WHERE object_id = OBJECT_ID('{table}') AND name = '{column}')
+                                  ALTER TABLE [{table}] ADD [{column}] {dataType} NULL";
+                using var cmd = new SqlCommand(checkSql, conn);
+                await cmd.ExecuteNonQueryAsync();
+            }
+
+            // Phase 4: Tạo bảng PhieuKiemKe
+            var createPhieuKiemKeSql = @"IF NOT EXISTS (SELECT 1 FROM sys.tables WHERE name = 'PhieuKiemKe')
+                CREATE TABLE PhieuKiemKe
+                (
+                    KiemKeID INT IDENTITY(1,1) PRIMARY KEY,
+                    MaPhieuKiem NVARCHAR(50),
+                    NhanVienKiemID INT,
+                    NhanVienDuyetID INT,
+                    NgayKiem DATETIME,
+                    NgayDuyet DATETIME,
+                    GhiChuDuyet NVARCHAR(500),
+                    LyDoKiemKe NVARCHAR(255),
+                    LoaiKiemKe NVARCHAR(50),
+                    TrangThai NVARCHAR(50),
+                    ChuKyKiem NVARCHAR(MAX),
+                    ChuKyDuyet NVARCHAR(MAX),
+                    CONSTRAINT FK_PhieuKiemKe_NhanVienKiem FOREIGN KEY (NhanVienKiemID) REFERENCES NhanVien(NhanVienID),
+                    CONSTRAINT FK_PhieuKiemKe_NhanVienDuyet FOREIGN KEY (NhanVienDuyetID) REFERENCES NhanVien(NhanVienID)
+                )";
+            using (var cmd = new SqlCommand(createPhieuKiemKeSql, conn))
+                await cmd.ExecuteNonQueryAsync();
+
+            // Phase 5: Tạo bảng CT_PhieuKiemKe
+            var createCTPhieuKiemKeSql = @"IF NOT EXISTS (SELECT 1 FROM sys.tables WHERE name = 'CT_PhieuKiemKe')
+                CREATE TABLE CT_PhieuKiemKe
+                (
+                    ChiTietKiemID INT IDENTITY(1,1) PRIMARY KEY,
+                    KiemKeID INT NOT NULL,
+                    NguyenLieuID INT NOT NULL,
+                    TonHeThong DECIMAL(18,4) DEFAULT 0,
+                    DonViKhoID INT,
+                    TonThucTe DECIMAL(18,4) DEFAULT 0,
+                    DonViKiemID INT,
+                    HeSoKiem DECIMAL(18,4) DEFAULT 1,
+                    ChenhLech DECIMAL(18,4) DEFAULT 0,
+                    GhiChuNhanVien NVARCHAR(500),
+                    PhanHoiDuyet NVARCHAR(500),
+                    CONSTRAINT FK_CT_PhieuKiemKe_PhieuKiemKe FOREIGN KEY (KiemKeID) REFERENCES PhieuKiemKe(KiemKeID),
+                    CONSTRAINT FK_CT_PhieuKiemKe_NguyenLieu FOREIGN KEY (NguyenLieuID) REFERENCES NguyenLieu(NguyenLieuID),
+                    CONSTRAINT FK_CT_PhieuKiemKe_DonViKho FOREIGN KEY (DonViKhoID) REFERENCES DonViTinh(DonViID),
+                    CONSTRAINT FK_CT_PhieuKiemKe_DonViKiem FOREIGN KEY (DonViKiemID) REFERENCES DonViTinh(DonViID)
+                )";
+            using (var cmd = new SqlCommand(createCTPhieuKiemKeSql, conn))
+                await cmd.ExecuteNonQueryAsync();
+
+        }
+        catch { }
+    }
+
     protected sealed class IngredientUnitContext
     {
         public int IngredientId { get; init; }
@@ -252,11 +382,11 @@ public abstract class DatabaseContext
 
         var context = await GetIngredientUnitContextAsync(conn, transaction, ingredientId, contextCache);
 
-        // ĐẢM BẢO TOÀN VẸN: Phải có đơn vị chuẩn trong QuyDoiDonVi
+        // ĐẢM BẢO TOÀN VẸN: Phải có đơn vị lưu tồn kho trong QuyDoiDonVi
         if (context.StockUnitId == null)
             throw new InvalidOperationException(
-                $"Nguyên liệu '{context.Name}' chưa cấu hình đơn vị chuẩn trong QuyDoiDonVi. " +
-                $"Vui lòng vào Tồn Kho → chọn nguyên liệu → thêm đơn vị và tích chọn ĐV Chuẩn.");
+                $"Nguyên liệu '{context.Name}' chưa cấu hình đơn vị lưu tồn kho trong QuyDoiDonVi. " +
+                $"Vui lòng vào Tồn Kho → chọn nguyên liệu → thêm đơn vị và tích chọn ĐV Lưu Tồn Kho.");
 
         // ĐẢM BẢO TOÀN VẸN: Công thức/cấu hình phải chỉ định đơn vị
         if (sourceUnitId == null)
@@ -268,7 +398,7 @@ public abstract class DatabaseContext
         if (sourceUnitId != context.StockUnitId)
         {
             var sourceUnitName = await GetUnitNameAsync(conn, transaction, sourceUnitId, unitNameCache);
-            
+
             if (TryConvertByConfiguredFactors(context, sourceUnitId.Value, sourceUnitName, amount, out var convertedAmount))
             {
                 return convertedAmount;
@@ -276,7 +406,7 @@ public abstract class DatabaseContext
 
             throw new InvalidOperationException(
                 $"Nguyên liệu '{context.Name}': Đơn vị trong công thức/cấu hình là '{sourceUnitName ?? $"ID {sourceUnitId.Value}"}' " +
-                $"nhưng đơn vị chuẩn tồn kho là '{context.StockUnitName}'. Không tìm thấy tỷ lệ quy đổi hợp lệ. " +
+                $"nhưng đơn vị lưu tồn kho là '{context.StockUnitName}'. Không tìm thấy tỷ lệ quy đổi hợp lệ. " +
                 $"Vui lòng vào phần Quy Đổi Đơn Vị để thiết lập tỷ lệ quy đổi.");
         }
 
@@ -302,10 +432,7 @@ public abstract class DatabaseContext
                 result.Add(mapper(reader));
             }
         }
-        catch (Exception ex)
-        {
-            System.Diagnostics.Debug.WriteLine($"DB Query Error: {ex.Message}");
-        }
+        catch { }
         return result;
     }
 
@@ -324,10 +451,7 @@ public abstract class DatabaseContext
             if (result != null && result != DBNull.Value)
                 return (T)Convert.ChangeType(result, typeof(T));
         }
-        catch (Exception ex)
-        {
-            System.Diagnostics.Debug.WriteLine($"DB Scalar Error: {ex.Message}");
-        }
+        catch { }
         return defaultValue;
     }
 
@@ -345,9 +469,7 @@ public abstract class DatabaseContext
             await cmd.ExecuteNonQueryAsync();
             return true;
         }
-        catch (Exception ex)
-        {
-            System.Diagnostics.Debug.WriteLine($"DB Command Error: {ex.Message}");
+        catch {
             return false;
         }
     }
@@ -369,10 +491,7 @@ public abstract class DatabaseContext
                 return mapper(reader);
             }
         }
-        catch (Exception ex)
-        {
-            System.Diagnostics.Debug.WriteLine($"DB Query Error: {ex.Message}");
-        }
+        catch { }
         return null;
     }
 }

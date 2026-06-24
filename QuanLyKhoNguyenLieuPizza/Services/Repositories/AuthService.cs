@@ -1,4 +1,4 @@
-using System.Text;
+﻿using System.Text;
 using System.Globalization;
 using Microsoft.Data.SqlClient;
 using System.Data;
@@ -16,7 +16,7 @@ public class AuthService : DatabaseContext
         {
             using var conn = GetConnection();
             await conn.OpenAsync();
-            
+
             var sql = @"SELECT tk.TaiKhoanID, tk.NhanVienID, tk.Username, tk.Password, tk.TrangThai,
                               nv.NhanVienID, nv.HoTen, nv.HinhAnh, nv.NgaySinh, nv.DiaChi, nv.SDT, nv.Email, nv.ChucVuID, nv.TrangThai,
                               cv.TenChucVu
@@ -24,13 +24,13 @@ public class AuthService : DatabaseContext
                        LEFT JOIN NhanVien nv ON tk.NhanVienID = nv.NhanVienID
                        LEFT JOIN ChucVu cv ON nv.ChucVuID = cv.ChucVuID
                        WHERE tk.Username = @Username AND tk.Password = @Password";
-            
+
             using var cmd = new SqlCommand(sql, conn);
             cmd.Parameters.AddWithValue("@Username", username);
             cmd.Parameters.AddWithValue("@Password", password);
-            
+
             using var reader = await cmd.ExecuteReaderAsync();
-            
+
             if (await reader.ReadAsync())
             {
                 var tkTrangThai = reader.GetBoolean(4);
@@ -56,7 +56,7 @@ public class AuthService : DatabaseContext
                     Password = reader.GetString(3),
                     TrangThai = reader.GetBoolean(4)
                 };
-                
+
                 if (!reader.IsDBNull(5))
                 {
                     taiKhoan.NhanVien = new NhanVien
@@ -71,7 +71,7 @@ public class AuthService : DatabaseContext
                         ChucVuID = reader.IsDBNull(12) ? null : reader.GetInt32(12),
                         TrangThai = reader.GetBoolean(13)
                     };
-                    
+
                     if (!reader.IsDBNull(14))
                     {
                         taiKhoan.NhanVien.ChucVu = new ChucVu
@@ -80,7 +80,7 @@ public class AuthService : DatabaseContext
                         };
                     }
                 }
-                
+
                 return taiKhoan;
             }
         }
@@ -88,12 +88,11 @@ public class AuthService : DatabaseContext
         {
             throw new Exception($"Lá»—i káº¿t ná»‘i database: {sqlEx.Message}", sqlEx);
         }
-        catch (Exception ex)
-        {
+        catch (Exception ex) {
             if (ex.Message.Contains("TÃ i khoáº£n")) throw;
             throw new Exception($"Lá»—i xÃ¡c thá»±c: {ex.Message}", ex);
         }
-        
+
         return null;
     }
 
@@ -107,13 +106,13 @@ public class AuthService : DatabaseContext
         {
             using var conn = GetConnection();
             await conn.OpenAsync();
-            
+
             // XÃ¡c thá»±c ná»›i lá»ng: TÃ¬m ngÆ°á»i dÃ¹ng theo Email trÆ°á»›c (Ä‘á»™c nháº¥t), sau Ä‘Ã³ xÃ¡c minh thÃ´ng tin khÃ¡c trong bá»™ nhá»›
             // Äiá»u nÃ y xá»­ lÃ½ cÃ¡c váº¥n Ä‘á» vá» phÃ¢n biá»‡t chá»¯ hoa/thÆ°á»ng, khoáº£ng tráº¯ng, Ä‘á»‹nh dáº¡ng ngÃ y, v.v.
             var sql = @"SELECT NhanVienID, HoTen, Email, ChucVuID, NgaySinh
-                        FROM NhanVien 
+                        FROM NhanVien
                         WHERE Email = @Email AND TrangThai = 1";
-            
+
             using var cmd = new SqlCommand(sql, conn);
             cmd.Parameters.AddWithValue("@Email", email ?? string.Empty);
 
@@ -122,7 +121,7 @@ public class AuthService : DatabaseContext
             {
                 var dbNhanVienID = reader.GetInt32(0);
                 var dbHoTen = reader.IsDBNull(1) ? string.Empty : reader.GetString(1);
-                var dbEmail = reader.GetString(2); 
+                var dbEmail = reader.GetString(2);
                 var dbChucVuID = reader.IsDBNull(3) ? 0 : reader.GetInt32(3);
                 var dbNgaySinh = reader.IsDBNull(4) ? (DateTime?)null : reader.GetDateTime(4);
 
@@ -130,7 +129,7 @@ public class AuthService : DatabaseContext
                 string Normalize(string s)
                 {
                     if (string.IsNullOrEmpty(s)) return string.Empty;
-                    
+
                     // Bá» dáº¥u
                     var normalized = s.Normalize(NormalizationForm.FormD);
                     var builder = new StringBuilder();
@@ -142,29 +141,25 @@ public class AuthService : DatabaseContext
                         }
                     }
                     var withoutAccents = builder.ToString().Normalize(NormalizationForm.FormC);
-                    
+
                     // Bá» khoáº£ng tráº¯ng vÃ  chuyá»ƒn chá»¯ thÆ°á»ng
                     return withoutAccents.Replace(" ", "").ToLower();
                 }
-                
+
                 if (Normalize(dbHoTen) != Normalize(hoTen))
                 {
-                    System.Diagnostics.Debug.WriteLine($"Verify Failed: Name mismatch. DB='{dbHoTen}', Input='{hoTen}'");
-                    System.Diagnostics.Debug.WriteLine($"Normalized: DB='{Normalize(dbHoTen)}', Input='{Normalize(hoTen)}'");
                     return null;
                 }
 
                 // XÃ¡c thá»±c ngÃ y sinh (Chá»‰ pháº§n ngÃ y)
                 if (dbNgaySinh?.Date != ngaySinh.Date)
                 {
-                    System.Diagnostics.Debug.WriteLine($"Verify Failed: DoB mismatch. DB='{dbNgaySinh:d}', Input='{ngaySinh:d}'");
                     return null;
                 }
 
                 // XÃ¡c thá»±c chá»©c vá»¥
                 if (dbChucVuID != chucVuId)
                 {
-                    System.Diagnostics.Debug.WriteLine($"Verify Failed: Role mismatch. DB='{dbChucVuID}', Input='{chucVuId}'");
                     return null;
                 }
 
@@ -178,9 +173,7 @@ public class AuthService : DatabaseContext
                 };
             }
         }
-        catch (Exception ex)
-        {
-            System.Diagnostics.Debug.WriteLine($"Error verifying user info: {ex.Message}");
+        catch {
             throw;
         }
         return null; // KhÃ´ng tÃ¬m tháº¥y
@@ -192,10 +185,10 @@ public class AuthService : DatabaseContext
         {
             using var conn = GetConnection();
             await conn.OpenAsync();
-            
+
             // Cáº­p nháº­t máº­t kháº©u cho ngÆ°á»i dÃ¹ng liÃªn káº¿t vá»›i email nÃ y
-            var sql = @"UPDATE TaiKhoan 
-                        SET Password = @Password 
+            var sql = @"UPDATE TaiKhoan
+                        SET Password = @Password
                         FROM TaiKhoan tk
                         INNER JOIN NhanVien nv ON tk.NhanVienID = nv.NhanVienID
                         WHERE nv.Email = @Email";
@@ -207,9 +200,7 @@ public class AuthService : DatabaseContext
             int rows = await cmd.ExecuteNonQueryAsync();
             return rows > 0;
         }
-        catch (Exception ex)
-        {
-            System.Diagnostics.Debug.WriteLine($"Error changing password: {ex.Message}");
+        catch {
             throw;
         }
     }
