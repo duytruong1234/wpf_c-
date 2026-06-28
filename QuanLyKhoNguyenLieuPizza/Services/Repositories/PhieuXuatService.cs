@@ -189,12 +189,14 @@ public class PhieuXuatService : DatabaseContext
             var sql = @"SELECT ct.ChiTietID, ct.PhieuXuatID, ct.NguyenLieuID, ct.SoLuong,
                               ct.DonViID, ct.HeSo,
                               nl.MaNguyenLieu, nl.TenNguyenLieu, dv.TenDonVi,
-                              dvChuan.TenDonVi AS TenDonViChuan, qdChuan.HeSo AS HeSoDonViChuan
+                              dvChuan.TenDonVi AS TenDonViChuan, qdChuan.HeSo AS HeSoDonViChuan,
+                              qdXuat.HeSo AS HeSoXuat
                        FROM CT_PhieuXuat ct
                        LEFT JOIN NguyenLieu nl ON ct.NguyenLieuID = nl.NguyenLieuID
                        LEFT JOIN DonViTinh dv ON ct.DonViID = dv.DonViID
-                       LEFT JOIN QuyDoiDonVi qdChuan ON ct.NguyenLieuID = qdChuan.NguyenLieuID AND qdChuan.HeSo = 1
+                       LEFT JOIN QuyDoiDonVi qdChuan ON ct.NguyenLieuID = qdChuan.NguyenLieuID AND qdChuan.LaDonViChuan = 1
                        LEFT JOIN DonViTinh dvChuan ON qdChuan.DonViID = dvChuan.DonViID
+                       LEFT JOIN QuyDoiDonVi qdXuat ON ct.NguyenLieuID = qdXuat.NguyenLieuID AND ct.DonViID = qdXuat.DonViID
                        WHERE ct.PhieuXuatID = @PhieuXuatID";
 
             using var cmd = new SqlCommand(sql, conn);
@@ -228,6 +230,10 @@ public class PhieuXuatService : DatabaseContext
                 // Đơn vị chuẩn
                 chiTiet.TenDonViChuan = reader.IsDBNull(9) ? string.Empty : reader.GetString(9);
                 chiTiet.HeSoDonViChuan = reader.IsDBNull(10) ? 1m : reader.GetDecimal(10);
+
+                // Lấy HeSo đúng từ QuyDoiDonVi cho đơn vị xuất (dùng để tính số lượng lưu kho)
+                if (!reader.IsDBNull(11))
+                    chiTiet.HeSo = reader.GetDecimal(11);
 
                 result.Add(chiTiet);
             }
@@ -408,6 +414,10 @@ public class PhieuXuatService : DatabaseContext
                     throw new Exception($"Tồn kho không đủ để xuất nguyên liệu '{tenNL}'. (Tồn: {currentTon:N2}, Cần xuất: {soLuongTru:N2})");
                 }
 
+                await DeductLoHangTheoHsdAsync(
+                    conn, transaction, ct.NguyenLieuID, soLuongTru,
+                    contextCache, unitNameCache);
+
                 var updateSql = @"UPDATE TonKho
                                  SET SoLuongTon = SoLuongTon - @SoLuong, NgayCapNhat = GETDATE()
                                  WHERE NguyenLieuID = @NguyenLieuID";
@@ -437,6 +447,81 @@ public class PhieuXuatService : DatabaseContext
             transaction.Rollback();
             throw;
         }
+    }
+
+    private async Task DeductLoHangTheoHsdAsync(
+        SqlConnection conn,
+        SqlTransaction transaction,
+        int nguyenLieuId,
+        decimal soLuongTruTheoDonViTon,
+        Dictionary<int, IngredientUnitContext> contextCache,
+        Dictionary<int, string> unitNameCache)
+    {
+        const decimal tolerance = 0.0001m;
+        var remaining = soLuongTruTheoDonViTon;
+
+        var batches = new List<(int ChiTietID, decimal SoLuongCon, int? DonViID, DateTime? HSD, string MaPhieuNhap)>();
+        var sql = @"SELECT ct.ChiTietID, ct.SoLuongCon, ct.DonViID, ct.HSD, ISNULL(pn.MaPhieuNhap, '')
+                    FROM CT_PhieuNhap ct WITH (UPDLOCK, ROWLOCK)
+                    INNER JOIN PhieuNhap pn ON ct.PhieuNhapID = pn.PhieuNhapID
+                    WHERE ct.NguyenLieuID = @NguyenLieuID
+                      AND pn.TrangThai = 2
+                      AND ct.SoLuongCon > 0
+                    ORDER BY CASE WHEN ct.HSD IS NULL THEN 1 ELSE 0 END,
+                             ct.HSD ASC, pn.NgayNhap ASC, ct.ChiTietID ASC";
+
+        using (var cmd = new SqlCommand(sql, conn, transaction))
+        {
+            cmd.Parameters.AddWithValue("@NguyenLieuID", nguyenLieuId);
+            using var reader = await cmd.ExecuteReaderAsync();
+            while (await reader.ReadAsync())
+            {
+                batches.Add((
+                    reader.GetInt32(0),
+                    reader.GetDecimal(1),
+                    reader.IsDBNull(2) ? null : reader.GetInt32(2),
+                    reader.IsDBNull(3) ? null : reader.GetDateTime(3),
+                    reader.GetString(4)));
+            }
+        }
+
+        foreach (var batch in batches)
+        {
+            if (remaining <= tolerance)
+                break;
+
+            var batchStockAmount = await ConvertAmountToStockUnitAsync(
+                conn, transaction, nguyenLieuId, batch.SoLuongCon, batch.DonViID,
+                contextCache, unitNameCache);
+
+            if (batchStockAmount <= tolerance)
+                continue;
+
+            var takeStockAmount = remaining <= batchStockAmount ? remaining : batchStockAmount;
+            var takeBatchAmount = await ConvertStockAmountToUnitAsync(
+                conn, transaction, nguyenLieuId, takeStockAmount, batch.DonViID,
+                contextCache, unitNameCache);
+
+            if (takeBatchAmount > batch.SoLuongCon || batchStockAmount - takeStockAmount <= tolerance)
+                takeBatchAmount = batch.SoLuongCon;
+
+            var updateSql = @"UPDATE CT_PhieuNhap
+                              SET SoLuongCon = CASE
+                                  WHEN SoLuongCon - @SoLuongTru <= @Tolerance THEN 0
+                                  ELSE SoLuongCon - @SoLuongTru
+                              END
+                              WHERE ChiTietID = @ChiTietID";
+            using var updateCmd = new SqlCommand(updateSql, conn, transaction);
+            updateCmd.Parameters.AddWithValue("@SoLuongTru", takeBatchAmount);
+            updateCmd.Parameters.AddWithValue("@Tolerance", tolerance);
+            updateCmd.Parameters.AddWithValue("@ChiTietID", batch.ChiTietID);
+            await updateCmd.ExecuteNonQueryAsync();
+
+            remaining -= takeStockAmount;
+        }
+
+        if (remaining > tolerance)
+            throw new InvalidOperationException("Khong du SoLuongCon theo lo de xuat kho.");
     }
 
     public async Task<bool> CancelPhieuXuatAsync(int phieuXuatId, int nhanVienDuyetId, string? lyDoHuy = null, string? chuKyHuy = null)

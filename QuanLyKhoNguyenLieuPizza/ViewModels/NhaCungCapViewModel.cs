@@ -1,4 +1,4 @@
-﻿using System.Collections.ObjectModel;
+using System.Collections.ObjectModel;
 using System.Text.RegularExpressions;
 using System.Windows.Input;
 using QuanLyKhoNguyenLieuPizza.Core.Interfaces;
@@ -613,22 +613,14 @@ public class NhaCungCapViewModel : BaseViewModel
 
         if (string.IsNullOrWhiteSpace(diaChi)) return;
 
-        // Phân tích: "Địa chỉ chi tiết, Thôn/Xóm, Phường/Xã, Quận/Huyện, Tỉnh/TP"
+        // Phân tích: "Địa chỉ chi tiết, Thôn/Xóm, Phường/Xã, Tỉnh/TP"
         var parts = diaChi.Split(',').Select(p => p.Trim()).ToArray();
-        if (parts.Length >= 5)
+        if (parts.Length >= 4)
         {
             FormDiaChiChiTiet = parts[0];
             FormThonXom = parts[1];
             FormPhuongXa = parts[2];
-            FormQuanHuyen = parts[3];
-            FormTinhTP = string.Join(", ", parts.Skip(4));
-        }
-        else if (parts.Length == 4)
-        {
-            FormDiaChiChiTiet = parts[0];
-            FormPhuongXa = parts[1];
-            FormQuanHuyen = parts[2];
-            FormTinhTP = parts[3];
+            FormTinhTP = string.Join(", ", parts.Skip(3));
         }
         else if (parts.Length == 3)
         {

@@ -1,4 +1,4 @@
-﻿using System.Collections.ObjectModel;
+using System.Collections.ObjectModel;
 using System.IO;
 using System.Windows.Input;
 using Microsoft.Win32;
@@ -667,25 +667,17 @@ public class NhanVienViewModel : BaseViewModel
             if (!string.IsNullOrWhiteSpace(nv.DiaChi))
             {
                 var parts = nv.DiaChi.Split(new[] { ", " }, StringSplitOptions.RemoveEmptyEntries);
-                if (parts.Length >= 5)
+                if (parts.Length >= 4)
                 {
                     FormDiaChiChiTiet = parts[0];
                     FormThonXom = parts[1];
                     FormPhuongXa = parts[2];
-                    FormQuanHuyen = parts[3];
-                    FormTinhTP = string.Join(", ", parts.Skip(4));
-                }
-                else if (parts.Length == 4)
-                {
-                    FormDiaChiChiTiet = parts[0];
-                    FormPhuongXa = parts[1];
-                    FormQuanHuyen = parts[2];
-                    FormTinhTP = parts[3];
+                    FormTinhTP = string.Join(", ", parts.Skip(3));
                 }
                 else if (parts.Length == 3)
                 {
                     FormDiaChiChiTiet = parts[0];
-                    FormQuanHuyen = parts[1];
+                    FormPhuongXa = parts[1];
                     FormTinhTP = parts[2];
                 }
                 else if (parts.Length == 2)
@@ -765,51 +757,7 @@ public class NhanVienViewModel : BaseViewModel
 
     private async Task SaveNhanVienAsync()
     {
-        if (string.IsNullOrWhiteSpace(FormHoTen))
-        {
-            System.Windows.MessageBox.Show("Vui lòng nhập họ tên nhân viên.", "Lỗi", System.Windows.MessageBoxButton.OK, System.Windows.MessageBoxImage.Warning);
-            return;
-        }
-
-        if (!FormNgaySinh.HasValue)
-        {
-            System.Windows.MessageBox.Show("Vui lòng chọn ngày sinh.", "Lỗi", System.Windows.MessageBoxButton.OK, System.Windows.MessageBoxImage.Warning);
-            return;
-        }
-
-        if (FormNgaySinh.HasValue && FormNgaySinh.Value.AddYears(16) > DateTime.Today)
-        {
-            System.Windows.MessageBox.Show("Nhân viên phải từ đủ 16 tuổi trở lên.", "Lỗi", System.Windows.MessageBoxButton.OK, System.Windows.MessageBoxImage.Warning);
-            return;
-        }
-
-        if (FormChucVu == null)
-        {
-            System.Windows.MessageBox.Show("Vui lòng chọn chức vụ.", "Lỗi", System.Windows.MessageBoxButton.OK, System.Windows.MessageBoxImage.Warning);
-            return;
-        }
-
-        if (string.IsNullOrWhiteSpace(FormSDT))
-        {
-            System.Windows.MessageBox.Show("Vui lòng nhập số điện thoại.", "Lỗi", System.Windows.MessageBoxButton.OK, System.Windows.MessageBoxImage.Warning);
-            return;
-        }
-
-        if (!string.IsNullOrWhiteSpace(FormSDT))
-        {
-            var sdt = FormSDT.Trim();
-            if (sdt.Length != 10 || !sdt.StartsWith("0") || !sdt.All(char.IsDigit))
-            {
-                System.Windows.MessageBox.Show("Số điện thoại phải có 10 chữ số và bắt đầu bằng 0.", "Lỗi", System.Windows.MessageBoxButton.OK, System.Windows.MessageBoxImage.Warning);
-                return;
-            }
-        }
-
-        if (string.IsNullOrWhiteSpace(FormTinhTP) || string.IsNullOrWhiteSpace(FormPhuongXa) || string.IsNullOrWhiteSpace(FormThonXom) || string.IsNullOrWhiteSpace(FormDiaChiChiTiet))
-        {
-            System.Windows.MessageBox.Show("Vui lòng nhập đầy đủ địa chỉ (Số nhà/Đường, Thôn/Xóm, Phường/Xã, Tỉnh/TP).", "Lỗi", System.Windows.MessageBoxButton.OK, System.Windows.MessageBoxImage.Warning);
-            return;
-        }
+        if (!ValidateForm()) return;
 
         if (!string.IsNullOrWhiteSpace(FormEmail))
         {

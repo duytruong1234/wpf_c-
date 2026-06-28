@@ -36,6 +36,8 @@ public interface IDatabaseService
 
     // Đơn Vị Tính
     Task<List<DonViTinh>> GetDonViTinhsAsync();
+    Task<bool> SaveDonViTinhAsync(DonViTinh donVi);
+    Task<bool> DeleteDonViTinhAsync(int donViId);
 
     // Quy Đổi Đơn Vị
     Task<List<QuyDoiDonVi>> GetQuyDoiDonVisAsync(int nguyenLieuID);

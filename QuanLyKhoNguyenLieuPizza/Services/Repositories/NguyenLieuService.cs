@@ -1,4 +1,4 @@
-﻿using System.Text;
+using System.Text;
 using System.Globalization;
 using Microsoft.Data.SqlClient;
 using System.Data;
@@ -13,6 +13,30 @@ public class NguyenLieuService : DatabaseContext
     public async Task<List<LoaiNguyenLieu>> GetLoaiNguyenLieusAsync() =>
         await ExecuteQueryListAsync("SELECT LoaiNLID, TenLoai FROM LoaiNguyenLieu",
             r => new LoaiNguyenLieu { LoaiNLID = r.GetInt32(0), TenLoai = r.GetString(1) });
+
+    public async Task<bool> CheckMaNguyenLieuExistAsync(string maNguyenLieu, int? excludeId = null)
+    {
+        try
+        {
+            using var conn = GetConnection();
+            await conn.OpenAsync();
+            var sql = "SELECT COUNT(1) FROM NguyenLieu WHERE MaNguyenLieu = @MaNguyenLieu";
+            if (excludeId.HasValue && excludeId.Value > 0)
+                sql += " AND NguyenLieuID != @ExcludeId";
+
+            using var cmd = new SqlCommand(sql, conn);
+            cmd.Parameters.AddWithValue("@MaNguyenLieu", maNguyenLieu);
+            if (excludeId.HasValue && excludeId.Value > 0)
+                cmd.Parameters.AddWithValue("@ExcludeId", excludeId.Value);
+
+            var count = Convert.ToInt32(await cmd.ExecuteScalarAsync());
+            return count > 0;
+        }
+        catch
+        {
+            return false;
+        }
+    }
 
     public async Task<bool> SaveLoaiNguyenLieuAsync(LoaiNguyenLieu loaiNguyenLieu)
     {
@@ -222,6 +246,27 @@ public class NguyenLieuService : DatabaseContext
     public async Task<List<DonViTinh>> GetDonViTinhsAsync() =>
         await ExecuteQueryListAsync("SELECT DonViID, TenDonVi FROM DonViTinh",
             r => new DonViTinh { DonViID = r.GetInt32(0), TenDonVi = r.GetString(1) });
+
+    public async Task<bool> SaveDonViTinhAsync(DonViTinh donVi)
+    {
+        if (donVi.DonViID == 0)
+        {
+            return await ExecuteCommandAsync(
+                "INSERT INTO DonViTinh (TenDonVi) VALUES (@TenDonVi)",
+                new SqlParameter("@TenDonVi", donVi.TenDonVi));
+        }
+        else
+        {
+            return await ExecuteCommandAsync(
+                "UPDATE DonViTinh SET TenDonVi = @TenDonVi WHERE DonViID = @DonViID",
+                new SqlParameter("@TenDonVi", donVi.TenDonVi),
+                new SqlParameter("@DonViID", donVi.DonViID));
+        }
+    }
+
+    public async Task<bool> DeleteDonViTinhAsync(int donViId) =>
+        await ExecuteCommandAsync("DELETE FROM DonViTinh WHERE DonViID = @DonViID",
+            new SqlParameter("@DonViID", donViId));
     public async Task<List<QuyDoiDonVi>> GetQuyDoiDonVisAsync(int nguyenLieuID)
     {
         var result = new List<QuyDoiDonVi>();

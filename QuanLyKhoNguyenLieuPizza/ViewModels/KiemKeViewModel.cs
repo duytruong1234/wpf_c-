@@ -564,16 +564,6 @@ public class KiemKeViewModel : BaseViewModel
     {
         if (SelectedNguyenLieu == null) return;
 
-        var exists = ChiTietKiemKeForm.Any(x => x.NguyenLieuID == SelectedNguyenLieu.NguyenLieuID);
-        if (exists)
-        {
-            PizzaMessageBox.Show("Nguyên liệu này đã có trong danh sách kiểm kê.", "Thông báo",
-                PizzaMessageBoxButtons.Ok, PizzaMessageBoxImage.Info);
-            return;
-        }
-
-        var donViKhoId = SelectedNguyenLieu.TonKho?.DonViID ?? SelectedNguyenLieu.DonViID;
-
         var ct = new CT_PhieuKiemKe
         {
             NguyenLieuID = SelectedNguyenLieu.NguyenLieuID,
@@ -583,36 +573,12 @@ public class KiemKeViewModel : BaseViewModel
                 MaNguyenLieu = SelectedNguyenLieu.MaNguyenLieu,
                 TenNguyenLieu = SelectedNguyenLieu.TenNguyenLieu
             },
-            TonHeThong = SelectedNguyenLieu.TonKho?.SoLuongTon ?? 0,
-            DonViKhoID = donViKhoId,
-            DonViKho = SelectedNguyenLieu.DonViTinh,
             TonThucTe = 0,
             HeSoKiem = 1m
         };
 
-        try
-        {
-            var quyDois = await _dbService.GetQuyDoiDonVisAsync(SelectedNguyenLieu.NguyenLieuID);
-            ct.DonViKiemOptions = new ObservableCollection<QuyDoiDonVi>(quyDois);
-
-            var chuanUnit = quyDois.FirstOrDefault(q => q.LaDonViChuan) ?? quyDois.FirstOrDefault();
-            if (chuanUnit != null)
-            {
-                ct.HeSoChuan = chuanUnit.HeSo > 0 ? chuanUnit.HeSo : 1m;
-                ct.SelectedDonViKiem = chuanUnit;
-                ct.DonViKiemID = chuanUnit.DonViID;
-                ct.DonViKiem = chuanUnit.DonViTinh;
-            }
-            else
-            {
-                ct.DonViKiemID = donViKhoId;
-                ct.DonViKiem = SelectedNguyenLieu.DonViTinh;
-            }
-        }
-        catch {
-            ct.DonViKiemID = donViKhoId;
-            ct.DonViKiem = SelectedNguyenLieu.DonViTinh;
-        }
+        var hasBatch = await PopulateLoKiemKeOptionsAsync(ct, SelectedNguyenLieu, showMessage: true, preserveCurrentValues: false);
+        if (!hasBatch) return;
 
         ct.PropertyChanged += ChiTiet_PropertyChanged;
         ChiTietKiemKeForm.Add(ct);
@@ -632,42 +598,124 @@ public class KiemKeViewModel : BaseViewModel
 
     private async void ChiTiet_PropertyChanged(object? sender, PropertyChangedEventArgs e)
     {
-        if (sender is CT_PhieuKiemKe ct && e.PropertyName == nameof(CT_PhieuKiemKe.NguyenLieu))
+        if (sender is CT_PhieuKiemKe ct)
         {
-            if (ct.NguyenLieu != null)
+            if (e.PropertyName == nameof(CT_PhieuKiemKe.NguyenLieu))
             {
-                var nguyenLieu = ct.NguyenLieu;
-                ct.NguyenLieuID = nguyenLieu.NguyenLieuID;
-                ct.TonHeThong = nguyenLieu.TonKho?.SoLuongTon ?? 0;
-
-                var donViKhoId = nguyenLieu.TonKho?.DonViID ?? nguyenLieu.DonViID;
-                ct.DonViKhoID = donViKhoId;
-                ct.DonViKho = nguyenLieu.DonViTinh;
-
-                try
+                if (ct.NguyenLieu != null)
                 {
-                    var quyDois = await _dbService.GetQuyDoiDonVisAsync(nguyenLieu.NguyenLieuID);
-                    ct.DonViKiemOptions = new ObservableCollection<QuyDoiDonVi>(quyDois);
-
-                    var chuanUnit = quyDois.FirstOrDefault(q => q.LaDonViChuan) ?? quyDois.FirstOrDefault();
-                    if (chuanUnit != null)
-                    {
-                        ct.HeSoChuan = chuanUnit.HeSo > 0 ? chuanUnit.HeSo : 1m;
-                        ct.SelectedDonViKiem = chuanUnit;
-                        ct.DonViKiemID = chuanUnit.DonViID;
-                        ct.DonViKiem = chuanUnit.DonViTinh;
-                    }
-                    else
-                    {
-                        ct.DonViKiemID = donViKhoId;
-                        ct.DonViKiem = nguyenLieu.DonViTinh;
-                    }
-                }
-                catch {
-                    ct.DonViKiemID = donViKhoId;
-                    ct.DonViKiem = nguyenLieu.DonViTinh;
+                    await PopulateLoKiemKeOptionsAsync(ct, ct.NguyenLieu, showMessage: true, preserveCurrentValues: false);
                 }
             }
+            else if (e.PropertyName == nameof(CT_PhieuKiemKe.NgayHetHanNhap))
+            {
+                FilterLoKiemKeByHSD(ct);
+            }
+        }
+    }
+
+    private async Task<bool> PopulateLoKiemKeOptionsAsync(CT_PhieuKiemKe ct, NguyenLieu nguyenLieu, bool showMessage, bool preserveCurrentValues)
+    {
+        ct.NguyenLieuID = nguyenLieu.NguyenLieuID;
+
+        var loHangs = await _dbService.GetLoHangsForKiemKeAsync(nguyenLieu.NguyenLieuID);
+        ct.AllLoKiemKe = new List<LoKiemKeOption>(loHangs);
+        ct.LoKiemKeOptions = new ObservableCollection<LoKiemKeOption>(loHangs);
+        
+        if (loHangs.Count > 0)
+        {
+            ct.NgayHetHanNhap = loHangs.First().HSD;
+        }
+        else
+        {
+            ct.NgayHetHanNhap = null;
+        }
+
+        if (loHangs.Count == 0)
+        {
+            if (preserveCurrentValues)
+                return true;
+
+            ct.ChiTietPhieuNhapID = null;
+            ct.TonHeThong = 0;
+            ct.DonViKhoID = null;
+            ct.DonViKho = null;
+            ct.DonViKiemOptions.Clear();
+
+            if (showMessage)
+            {
+                PizzaMessageBox.Show("Nguyên liệu này hiện chưa có lô nhập nào trong hệ thống.", "Thông báo",
+                    PizzaMessageBoxButtons.Ok, PizzaMessageBoxImage.Warning);
+            }
+
+            return false;
+        }
+
+        var selectedLo = ct.ChiTietPhieuNhapID.HasValue
+            ? loHangs.FirstOrDefault(x => x.ChiTietPhieuNhapID == ct.ChiTietPhieuNhapID.Value) ?? loHangs.First()
+            : loHangs.First();
+
+        try
+        {
+            var quyDois = await _dbService.GetQuyDoiDonVisAsync(nguyenLieu.NguyenLieuID);
+            ct.DonViKiemOptions = new ObservableCollection<QuyDoiDonVi>(quyDois);
+            var loUnit = quyDois.FirstOrDefault(q => q.DonViID == selectedLo.DonViID);
+
+            if (!preserveCurrentValues)
+            {
+                ct.SelectedLoKiemKe = selectedLo;
+                if (loUnit != null)
+                    ct.SelectedDonViKiem = loUnit;
+            }
+        }
+        catch
+        {
+            if (!preserveCurrentValues)
+                ct.SelectedLoKiemKe = selectedLo;
+        }
+
+        if (!preserveCurrentValues && ct.SelectedLoKiemKe == null)
+            ct.SelectedLoKiemKe = selectedLo;
+
+        return true;
+    }
+
+    private void FilterLoKiemKeByHSD(CT_PhieuKiemKe ct)
+    {
+        if (ct.NgayHetHanNhap == null || ct.AllLoKiemKe == null || ct.AllLoKiemKe.Count == 0)
+        {
+            // No date selected - show all batches
+            ct.LoKiemKeOptions = new ObservableCollection<LoKiemKeOption>(ct.AllLoKiemKe ?? new());
+            if (ct.LoKiemKeOptions.Count > 0 && ct.SelectedLoKiemKe == null)
+                ct.SelectedLoKiemKe = ct.LoKiemKeOptions[0];
+            return;
+        }
+
+        var ngayChon = ct.NgayHetHanNhap.Value.Date;
+        var filtered = ct.AllLoKiemKe.Where(lo => lo.HSD.HasValue && lo.HSD.Value.Date == ngayChon).ToList();
+
+        ct.LoKiemKeOptions = new ObservableCollection<LoKiemKeOption>(filtered);
+
+        if (filtered.Count == 0)
+        {
+            ct.SelectedLoKiemKe = null;
+            ct.ChiTietPhieuNhapID = null;
+            ct.TonHeThong = 0;
+            ct.DonViKhoID = null;
+            ct.DonViKho = null;
+            ct.MaPhieuNhap = null;
+            ct.HSD = null;
+            ct.PhieuNhapID = null;
+
+            PizzaMessageBox.Show(
+                "Không tìm thấy lô nguyên liệu có hạn sử dụng này.",
+                "Thông báo",
+                PizzaMessageBoxButtons.Ok,
+                PizzaMessageBoxImage.Warning);
+        }
+        else
+        {
+            ct.SelectedLoKiemKe = filtered[0];
         }
     }
 
@@ -782,6 +830,7 @@ public class KiemKeViewModel : BaseViewModel
         try
         {
             IsLoading = true;
+            IsViewOnly = true;
 
             // Luôn mở trang chi tiết full-page
             await LoadPhieuData(phieu);
@@ -1054,6 +1103,10 @@ public class KiemKeViewModel : BaseViewModel
 
         foreach (var ct in chiTiets)
         {
+            var snapshotTonHeThong = ct.TonHeThong;
+            var snapshotTonThucTe = ct.TonThucTe;
+            var snapshotChenhLech = ct.ChenhLech;
+
             if (ct.NguyenLieuID.HasValue)
             {
                 if (NguyenLieus != null && NguyenLieus.Count > 0)
@@ -1085,6 +1138,18 @@ public class KiemKeViewModel : BaseViewModel
                     }
                 }
                 catch { /* ignore */ }
+
+                if (ct.NguyenLieu != null)
+                {
+                    await PopulateLoKiemKeOptionsAsync(ct, ct.NguyenLieu, showMessage: false, preserveCurrentValues: IsViewOnly);
+                }
+
+                if (IsViewOnly)
+                {
+                    ct.TonHeThong = snapshotTonHeThong;
+                    ct.TonThucTe = snapshotTonThucTe;
+                    ct.ChenhLech = snapshotChenhLech;
+                }
             }
         }
 
@@ -1119,6 +1184,40 @@ public class KiemKeViewModel : BaseViewModel
             PizzaMessageBox.Show("Mã phiếu không được để trống.", "Lỗi", PizzaMessageBoxButtons.Ok, PizzaMessageBoxImage.Warning);
             return false;
         }
+
+        if (string.IsNullOrWhiteSpace(LoaiKiemKe))
+        {
+            PizzaMessageBox.Show("Vui lòng chọn loại kiểm kê.", "Thông báo",
+                PizzaMessageBoxButtons.Ok, PizzaMessageBoxImage.Warning);
+            return false;
+        }
+
+        if (ChiTietKiemKeForm.Count == 0)
+        {
+            PizzaMessageBox.Show("Vui lòng thêm ít nhất một lô nguyên liệu kiểm kê.", "Thông báo",
+                PizzaMessageBoxButtons.Ok, PizzaMessageBoxImage.Warning);
+            return false;
+        }
+
+        if (ChiTietKiemKeForm.Any(ct => !ct.NguyenLieuID.HasValue || !ct.ChiTietPhieuNhapID.HasValue))
+        {
+            PizzaMessageBox.Show("Vui lòng chọn nguyên liệu và lô/HSD cho tất cả dòng kiểm kê.", "Thông báo",
+                PizzaMessageBoxButtons.Ok, PizzaMessageBoxImage.Warning);
+            return false;
+        }
+
+        var duplicatedBatch = ChiTietKiemKeForm
+            .Where(ct => ct.ChiTietPhieuNhapID.HasValue)
+            .GroupBy(ct => ct.ChiTietPhieuNhapID!.Value)
+            .Any(g => g.Count() > 1);
+
+        if (duplicatedBatch)
+        {
+            PizzaMessageBox.Show("Một lô nguyên liệu chỉ được kiểm kê một lần trong cùng phiếu.", "Thông báo",
+                PizzaMessageBoxButtons.Ok, PizzaMessageBoxImage.Warning);
+            return false;
+        }
+
         return true;
     }
 

@@ -1,4 +1,4 @@
-﻿using System.Text;
+using System.Text;
 using System.Globalization;
 using Microsoft.Data.SqlClient;
 using System.Data;
@@ -9,6 +9,34 @@ namespace QuanLyKhoNguyenLieuPizza.Services.Repositories;
 public class KiemKeService : DatabaseContext
 {
     public KiemKeService(string connectionString) : base(connectionString) { }
+
+    private async Task EnsureKiemKeSchemaAsync(SqlConnection conn, SqlTransaction? transaction = null)
+    {
+        var sql = @"
+            IF OBJECT_ID('dbo.CT_PhieuNhap', 'U') IS NOT NULL
+               AND COL_LENGTH('dbo.CT_PhieuNhap', 'SoLuongCon') IS NULL
+            BEGIN
+                ALTER TABLE dbo.CT_PhieuNhap
+                ADD SoLuongCon DECIMAL(18,4) NOT NULL DEFAULT (0);
+
+                EXEC(N'UPDATE dbo.CT_PhieuNhap SET SoLuongCon = SoLuong');
+            END
+
+            IF OBJECT_ID('dbo.CT_PhieuKiemKe', 'U') IS NOT NULL
+            BEGIN
+                IF COL_LENGTH('dbo.CT_PhieuKiemKe', 'ChiTietPhieuNhapID') IS NULL
+                    ALTER TABLE dbo.CT_PhieuKiemKe ADD ChiTietPhieuNhapID INT NULL;
+
+                IF COL_LENGTH('dbo.CT_PhieuKiemKe', 'LoaiDieuChinh') IS NULL
+                    ALTER TABLE dbo.CT_PhieuKiemKe ADD LoaiDieuChinh NVARCHAR(10) NULL;
+
+                IF COL_LENGTH('dbo.CT_PhieuKiemKe', 'PhieuDieuChinhID') IS NULL
+                    ALTER TABLE dbo.CT_PhieuKiemKe ADD PhieuDieuChinhID UNIQUEIDENTIFIER NULL;
+            END";
+
+        using var cmd = new SqlCommand(sql, conn, transaction);
+        await cmd.ExecuteNonQueryAsync();
+    }
 
     // DANH SÁCH PHIẾU KIỂM KÊ ═══════════════
 
@@ -99,13 +127,18 @@ public class KiemKeService : DatabaseContext
         {
             using var conn = GetConnection();
             await conn.OpenAsync();
+            await EnsureKiemKeSchemaAsync(conn);
 
             var sql = @"SELECT ct.ChiTietKiemID, ct.KiemKeID, ct.NguyenLieuID,
                               ct.TonHeThong, ct.DonViKhoID, ct.TonThucTe, ct.DonViKiemID,
                               ct.HeSoKiem, ct.ChenhLech, ct.GhiChuNhanVien, ct.PhanHoiDuyet,
+                              ct.ChiTietPhieuNhapID, ctpn.HSD,
+                              ctpn.PhieuNhapID, pn.MaPhieuNhap, ctpn.HSD,
                               nl.MaNguyenLieu, nl.TenNguyenLieu,
                               dvk.TenDonVi as TenDVKho, dvkm.TenDonVi as TenDVKiem
                        FROM CT_PhieuKiemKe ct
+                       LEFT JOIN CT_PhieuNhap ctpn ON ct.ChiTietPhieuNhapID = ctpn.ChiTietID
+                       LEFT JOIN PhieuNhap pn ON ctpn.PhieuNhapID = pn.PhieuNhapID
                        LEFT JOIN NguyenLieu nl ON ct.NguyenLieuID = nl.NguyenLieuID
                        LEFT JOIN DonViTinh dvk ON ct.DonViKhoID = dvk.DonViID
                        LEFT JOIN DonViTinh dvkm ON ct.DonViKiemID = dvkm.DonViID
@@ -130,19 +163,26 @@ public class KiemKeService : DatabaseContext
                     HeSoKiem = reader.IsDBNull(7) ? 1m : reader.GetDecimal(7),
                     ChenhLech = reader.IsDBNull(8) ? 0 : reader.GetDecimal(8),
                     GhiChuNhanVien = reader.IsDBNull(9) ? null : reader.GetString(9),
-                    PhanHoiDuyet = reader.IsDBNull(10) ? null : reader.GetString(10)
+                    PhanHoiDuyet = reader.IsDBNull(10) ? null : reader.GetString(10),
+                    ChiTietPhieuNhapID = reader.IsDBNull(11) ? null : reader.GetInt32(11),
+                    NgayHetHanNhap = reader.IsDBNull(12) ? null : reader.GetDateTime(12),
+                    PhieuNhapID = reader.IsDBNull(13) ? null : reader.GetInt32(13),
+                    MaPhieuNhap = reader.IsDBNull(14) ? null : reader.GetString(14),
+                    HSD = reader.IsDBNull(15)
+                        ? (reader.IsDBNull(12) ? null : reader.GetDateTime(12))
+                        : reader.GetDateTime(15)
                 };
 
                 ct.NguyenLieu = new NguyenLieu
                 {
-                    MaNguyenLieu = reader.IsDBNull(11) ? null : reader.GetString(11),
-                    TenNguyenLieu = reader.IsDBNull(12) ? string.Empty : reader.GetString(12)
+                    MaNguyenLieu = reader.IsDBNull(16) ? null : reader.GetString(16),
+                    TenNguyenLieu = reader.IsDBNull(17) ? string.Empty : reader.GetString(17)
                 };
 
-                if (!reader.IsDBNull(13))
-                    ct.DonViKho = new DonViTinh { TenDonVi = reader.GetString(13) };
-                if (!reader.IsDBNull(14))
-                    ct.DonViKiem = new DonViTinh { TenDonVi = reader.GetString(14) };
+                if (!reader.IsDBNull(18))
+                    ct.DonViKho = new DonViTinh { TenDonVi = reader.GetString(18) };
+                if (!reader.IsDBNull(19))
+                    ct.DonViKiem = new DonViTinh { TenDonVi = reader.GetString(19) };
 
                 result.Add(ct);
             }
@@ -158,12 +198,11 @@ public class KiemKeService : DatabaseContext
     {
         try
         {
-            var prefix = $"KK-{DateTime.Now:yyyyMMdd}-";
             using var conn = GetConnection();
             await conn.OpenAsync();
 
-            var sql = $@"SELECT TOP 1 MaPhieuKiem FROM PhieuKiemKe
-                         WHERE MaPhieuKiem LIKE '{prefix}%'
+            var sql = @"SELECT TOP 1 MaPhieuKiem FROM PhieuKiemKe
+                         WHERE MaPhieuKiem LIKE 'PK%'
                          ORDER BY KiemKeID DESC";
 
             using var cmd = new SqlCommand(sql, conn);
@@ -172,15 +211,16 @@ public class KiemKeService : DatabaseContext
             if (result != null && result != DBNull.Value)
             {
                 var lastCode = result.ToString()!;
-                var lastPart = lastCode.Substring(prefix.Length);
-                if (int.TryParse(lastPart, out int lastNumber))
-                    return $"{prefix}{(lastNumber + 1):D3}";
+                if (int.TryParse(lastCode.Substring(2), out int lastNumber))
+                {
+                    return $"PK{(lastNumber + 1):D6}";
+                }
             }
 
-            return $"{prefix}001";
+            return "PK000001";
         }
         catch {
-            return $"KK-{DateTime.Now:yyyyMMddHHmmss}";
+            return $"PK{DateTime.Now:yyyyMMddHHmmss}";
         }
     }
 
@@ -190,6 +230,7 @@ public class KiemKeService : DatabaseContext
     {
         using var conn = GetConnection();
         await conn.OpenAsync();
+        await EnsureKiemKeSchemaAsync(conn);
         using var transaction = conn.BeginTransaction();
 
         try
@@ -207,7 +248,7 @@ public class KiemKeService : DatabaseContext
                 cmd.Parameters.AddWithValue("@NhanVienKiemID", phieuKiemKe.NhanVienKiemID ?? (object)DBNull.Value);
                 cmd.Parameters.AddWithValue("@NgayKiem", phieuKiemKe.NgayKiem ?? DateTime.Now);
                 cmd.Parameters.AddWithValue("@LyDoKiemKe", phieuKiemKe.LyDoKiemKe ?? (object)DBNull.Value);
-                cmd.Parameters.AddWithValue("@LoaiKiemKe", phieuKiemKe.LoaiKiemKe ?? "Kiểm kê định kỳ");
+                cmd.Parameters.AddWithValue("@LoaiKiemKe", phieuKiemKe.LoaiKiemKe ?? (object)DBNull.Value);
                 cmd.Parameters.AddWithValue("@TrangThai", phieuKiemKe.TrangThai);
 
                 var result = await cmd.ExecuteScalarAsync();
@@ -224,7 +265,7 @@ public class KiemKeService : DatabaseContext
                 using var cmd = new SqlCommand(sql, conn, transaction);
                 cmd.Parameters.AddWithValue("@KiemKeID", kiemKeId);
                 cmd.Parameters.AddWithValue("@LyDoKiemKe", phieuKiemKe.LyDoKiemKe ?? (object)DBNull.Value);
-                cmd.Parameters.AddWithValue("@LoaiKiemKe", phieuKiemKe.LoaiKiemKe ?? "Kiểm kê định kỳ");
+                cmd.Parameters.AddWithValue("@LoaiKiemKe", phieuKiemKe.LoaiKiemKe ?? (object)DBNull.Value);
                 cmd.Parameters.AddWithValue("@TrangThai", phieuKiemKe.TrangThai);
 
                 await cmd.ExecuteNonQueryAsync();
@@ -240,10 +281,13 @@ public class KiemKeService : DatabaseContext
             foreach (var ct in chiTiets)
             {
                 var ctSql = @"INSERT INTO CT_PhieuKiemKe
-                             (KiemKeID, NguyenLieuID, TonHeThong, DonViKhoID, TonThucTe, DonViKiemID, HeSoKiem, ChenhLech, GhiChuNhanVien)
-                             VALUES (@KiemKeID, @NguyenLieuID, @TonHeThong, @DonViKhoID, @TonThucTe, @DonViKiemID, @HeSoKiem, @ChenhLech, @GhiChuNhanVien)";
+                             (KiemKeID, NguyenLieuID, TonHeThong, DonViKhoID, TonThucTe, DonViKiemID, HeSoKiem, ChenhLech,
+                              GhiChuNhanVien, ChiTietPhieuNhapID, LoaiDieuChinh)
+                             VALUES (@KiemKeID, @NguyenLieuID, @TonHeThong, @DonViKhoID, @TonThucTe, @DonViKiemID,
+                                     @HeSoKiem, @ChenhLech, @GhiChuNhanVien, @ChiTietPhieuNhapID, @LoaiDieuChinh)";
 
                 using var ctCmd = new SqlCommand(ctSql, conn, transaction);
+                var loaiDieuChinh = ct.ChenhLech > 0 ? "Nhập" : ct.ChenhLech < 0 ? "Xuất" : null;
                 ctCmd.Parameters.AddWithValue("@KiemKeID", kiemKeId);
                 ctCmd.Parameters.AddWithValue("@NguyenLieuID", ct.NguyenLieuID ?? (object)DBNull.Value);
                 ctCmd.Parameters.AddWithValue("@TonHeThong", ct.TonHeThong);
@@ -253,6 +297,8 @@ public class KiemKeService : DatabaseContext
                 ctCmd.Parameters.AddWithValue("@HeSoKiem", ct.HeSoKiem);
                 ctCmd.Parameters.AddWithValue("@ChenhLech", ct.ChenhLech);
                 ctCmd.Parameters.AddWithValue("@GhiChuNhanVien", ct.GhiChuNhanVien ?? (object)DBNull.Value);
+                ctCmd.Parameters.AddWithValue("@ChiTietPhieuNhapID", ct.ChiTietPhieuNhapID ?? (object)DBNull.Value);
+                ctCmd.Parameters.AddWithValue("@LoaiDieuChinh", loaiDieuChinh ?? (object)DBNull.Value);
 
                 await ctCmd.ExecuteNonQueryAsync();
             }
@@ -297,6 +343,7 @@ public class KiemKeService : DatabaseContext
     {
         using var conn = GetConnection();
         await conn.OpenAsync();
+        await EnsureKiemKeSchemaAsync(conn);
         using var transaction = conn.BeginTransaction();
 
         try
@@ -334,9 +381,12 @@ public class KiemKeService : DatabaseContext
             }
 
             // 2. Lấy chi tiết phiếu kiểm kê
-            var chiTiets = new List<(int NguyenLieuID, decimal ChenhLech, int? DonViKhoID)>();
+            var chiTiets = new List<(int NguyenLieuID, decimal ChenhLech, int? DonViKhoID, int? ChiTietPhieuNhapID, DateTime? HSD)>();
 
-            var getSql = "SELECT NguyenLieuID, ChenhLech, DonViKhoID FROM CT_PhieuKiemKe WHERE KiemKeID = @KiemKeID";
+            var getSql = @"SELECT ct.NguyenLieuID, ct.ChenhLech, ct.DonViKhoID, ct.ChiTietPhieuNhapID, ctpn.HSD
+                           FROM CT_PhieuKiemKe ct
+                           LEFT JOIN CT_PhieuNhap ctpn ON ct.ChiTietPhieuNhapID = ctpn.ChiTietID
+                           WHERE ct.KiemKeID = @KiemKeID";
             using var getCmd = new SqlCommand(getSql, conn, transaction);
             getCmd.Parameters.AddWithValue("@KiemKeID", kiemKeId);
 
@@ -346,7 +396,9 @@ public class KiemKeService : DatabaseContext
                 chiTiets.Add((
                     reader.GetInt32(0),
                     reader.IsDBNull(1) ? 0 : reader.GetDecimal(1),
-                    reader.IsDBNull(2) ? null : reader.GetInt32(2)));
+                    reader.IsDBNull(2) ? null : reader.GetInt32(2),
+                    reader.IsDBNull(3) ? null : reader.GetInt32(3),
+                    reader.IsDBNull(4) ? null : reader.GetDateTime(4)));
             }
             reader.Close();
 
@@ -380,13 +432,14 @@ public class KiemKeService : DatabaseContext
 
                 foreach (var ct in tang)
                 {
-                    var ctSql = @"INSERT INTO CT_PhieuNhap (PhieuNhapID, NguyenLieuID, SoLuong, DonViID, HeSo, DonGia, ThanhTien)
-                                 VALUES (@PNID, @NLID, @SoLuong, @DVID, 1, 0, 0)";
+                    var ctSql = @"INSERT INTO CT_PhieuNhap (PhieuNhapID, NguyenLieuID, SoLuong, DonViID, HeSo, DonGia, ThanhTien, HSD, SoLuongCon)
+                                 VALUES (@PNID, @NLID, @SoLuong, @DVID, 1, 0, 0, @HSD, @SoLuong)";
                     using var ctCmd = new SqlCommand(ctSql, conn, transaction);
                     ctCmd.Parameters.AddWithValue("@PNID", phieuNhapId);
                     ctCmd.Parameters.AddWithValue("@NLID", ct.NguyenLieuID);
                     ctCmd.Parameters.AddWithValue("@SoLuong", ct.ChenhLech);
                     ctCmd.Parameters.AddWithValue("@DVID", ct.DonViKhoID ?? (object)DBNull.Value);
+                    ctCmd.Parameters.AddWithValue("@HSD", ct.HSD ?? (object)DBNull.Value);
                     await ctCmd.ExecuteNonQueryAsync();
 
                     // Cập nhật tồn kho: + chênh lệch
@@ -418,6 +471,9 @@ public class KiemKeService : DatabaseContext
                 insertPXCmd.Parameters.AddWithValue("@GhiChu", $"Xuất trừ phần hao hụt thất thoát từ đợt kiểm kê {maPhieuKiem}");
                 var phieuXuatId = Convert.ToInt32(await insertPXCmd.ExecuteScalarAsync());
 
+                var contextCache = new Dictionary<int, IngredientUnitContext>();
+                var unitNameCache = new Dictionary<int, string>();
+
                 foreach (var ct in giam)
                 {
                     var soLuongXuat = Math.Abs(ct.ChenhLech);
@@ -429,6 +485,11 @@ public class KiemKeService : DatabaseContext
                     ctCmd.Parameters.AddWithValue("@SoLuong", soLuongXuat);
                     ctCmd.Parameters.AddWithValue("@DVID", ct.DonViKhoID ?? (object)DBNull.Value);
                     await ctCmd.ExecuteNonQueryAsync();
+
+                    await DeductLoKiemKeAsync(
+                        conn, transaction, ct.NguyenLieuID, soLuongXuat,
+                        ct.ChiTietPhieuNhapID, ct.HSD,
+                        contextCache, unitNameCache);
 
                     // Cập nhật tồn kho: - chênh lệch (đã âm nên ChenhLech < 0)
                     await AdjustTonKhoAsync(conn, transaction, ct.NguyenLieuID, ct.ChenhLech, ct.DonViKhoID);
@@ -583,6 +644,110 @@ public class KiemKeService : DatabaseContext
 
     // HELPER: ĐIỀU CHỈNH TỒN KHO ═══════════════
 
+    private async Task DeductLoKiemKeAsync(
+        SqlConnection conn,
+        SqlTransaction transaction,
+        int nguyenLieuId,
+        decimal soLuongTruTheoDonViTon,
+        int? chiTietPhieuNhapId,
+        DateTime? hsd,
+        Dictionary<int, IngredientUnitContext> contextCache,
+        Dictionary<int, string> unitNameCache)
+    {
+        const decimal tolerance = 0.0001m;
+        if (soLuongTruTheoDonViTon <= tolerance)
+            return;
+
+        var batches = new List<(int ChiTietID, decimal SoLuongCon, int? DonViID, DateTime? HSD, string MaPhieuNhap)>();
+        var sql = chiTietPhieuNhapId.HasValue
+            ? @"SELECT ctpn.ChiTietID, ctpn.SoLuongCon, ctpn.DonViID, ctpn.HSD, ISNULL(pn.MaPhieuNhap, '')
+                FROM CT_PhieuNhap ctpn WITH (UPDLOCK, ROWLOCK)
+                LEFT JOIN PhieuNhap pn ON ctpn.PhieuNhapID = pn.PhieuNhapID
+                WHERE ctpn.ChiTietID = @ChiTietPhieuNhapID
+                  AND ctpn.NguyenLieuID = @NguyenLieuID
+                  AND ctpn.SoLuongCon > 0"
+            : @"SELECT ctpn.ChiTietID, ctpn.SoLuongCon, ctpn.DonViID, ctpn.HSD, ISNULL(pn.MaPhieuNhap, '')
+                FROM CT_PhieuNhap ctpn WITH (UPDLOCK, ROWLOCK)
+                LEFT JOIN PhieuNhap pn ON ctpn.PhieuNhapID = pn.PhieuNhapID
+                WHERE ctpn.NguyenLieuID = @NguyenLieuID
+                  AND ctpn.SoLuongCon > 0
+                  AND ((@HSD IS NULL AND ctpn.HSD IS NULL) OR ctpn.HSD = @HSD)
+                ORDER BY ctpn.ChiTietID ASC";
+
+        using (var cmd = new SqlCommand(sql, conn, transaction))
+        {
+            cmd.Parameters.AddWithValue("@NguyenLieuID", nguyenLieuId);
+            if (chiTietPhieuNhapId.HasValue)
+            {
+                cmd.Parameters.AddWithValue("@ChiTietPhieuNhapID", chiTietPhieuNhapId.Value);
+            }
+            else
+            {
+                var hsdParam = cmd.Parameters.Add("@HSD", SqlDbType.Date);
+                hsdParam.Value = hsd?.Date ?? (object)DBNull.Value;
+            }
+
+            using var reader = await cmd.ExecuteReaderAsync();
+            while (await reader.ReadAsync())
+            {
+                batches.Add((
+                    reader.GetInt32(0),
+                    reader.GetDecimal(1),
+                    reader.IsDBNull(2) ? null : reader.GetInt32(2),
+                    reader.IsDBNull(3) ? null : reader.GetDateTime(3),
+                    reader.GetString(4)));
+            }
+        }
+
+        if (batches.Count == 0)
+        {
+            var hsdText = hsd?.ToString("dd/MM/yyyy") ?? "không có HSD";
+            throw new InvalidOperationException($"Không tìm thấy lô nhập còn tồn đúng HSD {hsdText} để trừ hao hụt kiểm kê.");
+        }
+
+        var remaining = soLuongTruTheoDonViTon;
+        foreach (var batch in batches)
+        {
+            if (remaining <= tolerance)
+                break;
+
+            var batchStockAmount = await ConvertAmountToStockUnitAsync(
+                conn, transaction, nguyenLieuId, batch.SoLuongCon, batch.DonViID,
+                contextCache, unitNameCache);
+
+            if (batchStockAmount <= tolerance)
+                continue;
+
+            var takeStockAmount = remaining <= batchStockAmount ? remaining : batchStockAmount;
+            var takeBatchAmount = await ConvertStockAmountToUnitAsync(
+                conn, transaction, nguyenLieuId, takeStockAmount, batch.DonViID,
+                contextCache, unitNameCache);
+
+            if (takeBatchAmount > batch.SoLuongCon || batchStockAmount - takeStockAmount <= tolerance)
+                takeBatchAmount = batch.SoLuongCon;
+
+            var updateSql = @"UPDATE CT_PhieuNhap
+                              SET SoLuongCon = CASE
+                                  WHEN SoLuongCon - @SoLuongTru <= @Tolerance THEN 0
+                                  ELSE SoLuongCon - @SoLuongTru
+                              END
+                              WHERE ChiTietID = @ChiTietID";
+            using var updateCmd = new SqlCommand(updateSql, conn, transaction);
+            updateCmd.Parameters.AddWithValue("@SoLuongTru", takeBatchAmount);
+            updateCmd.Parameters.AddWithValue("@Tolerance", tolerance);
+            updateCmd.Parameters.AddWithValue("@ChiTietID", batch.ChiTietID);
+            await updateCmd.ExecuteNonQueryAsync();
+
+            remaining -= takeStockAmount;
+        }
+
+        if (remaining > tolerance)
+        {
+            var hsdText = hsd?.ToString("dd/MM/yyyy") ?? "không có HSD";
+            throw new InvalidOperationException($"Số lượng còn của lô/HSD {hsdText} không đủ để trừ hao hụt kiểm kê.");
+        }
+    }
+
     private async Task AdjustTonKhoAsync(SqlConnection conn, SqlTransaction transaction, int nguyenLieuId, decimal chenhLech, int? donViKhoId)
     {
         // Kiểm tra tồn kho đã tồn tại chưa
@@ -611,5 +776,61 @@ public class KiemKeService : DatabaseContext
             insertCmd.Parameters.AddWithValue("@DonViID", donViKhoId ?? (object)DBNull.Value);
             await insertCmd.ExecuteNonQueryAsync();
         }
+    }
+
+    public async Task<List<LoKiemKeOption>> GetLoHangsForKiemKeAsync(int nguyenLieuId)
+    {
+        var result = new List<LoKiemKeOption>();
+        try
+        {
+            using var conn = GetConnection();
+            await conn.OpenAsync();
+            await EnsureKiemKeSchemaAsync(conn);
+            var sql = @"
+                SELECT 
+                    ctpn.ChiTietID, ctpn.PhieuNhapID, pn.MaPhieuNhap, pn.NgayNhap,
+                    ctpn.NguyenLieuID, nl.TenNguyenLieu, 
+                    COALESCE(qdChuan.DonViID, ctpn.DonViID) AS DonViID,
+                    COALESCE(dvChuan.TenDonVi, dv.TenDonVi) AS TenDonVi,
+                    COALESCE(qdChuan.HeSo, ctpn.HeSo) AS HeSo,
+                    (ctpn.SoLuongCon * COALESCE(qdNhap.HeSo, ctpn.HeSo) / COALESCE(qdChuan.HeSo, 1.0)) AS SoLuongCon,
+                    ctpn.HSD
+                FROM CT_PhieuNhap ctpn
+                JOIN PhieuNhap pn ON ctpn.PhieuNhapID = pn.PhieuNhapID
+                JOIN NguyenLieu nl ON ctpn.NguyenLieuID = nl.NguyenLieuID
+                LEFT JOIN DonViTinh dv ON ctpn.DonViID = dv.DonViID
+                LEFT JOIN QuyDoiDonVi qdChuan ON ctpn.NguyenLieuID = qdChuan.NguyenLieuID AND qdChuan.LaDonViChuan = 1
+                LEFT JOIN DonViTinh dvChuan ON qdChuan.DonViID = dvChuan.DonViID
+                LEFT JOIN QuyDoiDonVi qdNhap ON ctpn.NguyenLieuID = qdNhap.NguyenLieuID AND ctpn.DonViID = qdNhap.DonViID
+                WHERE ctpn.NguyenLieuID = @NguyenLieuID
+                  AND pn.TrangThai = 2
+                  AND ctpn.SoLuongCon > 0
+                ORDER BY ctpn.HSD ASC";
+            using var cmd = new SqlCommand(sql, conn);
+            cmd.Parameters.AddWithValue("@NguyenLieuID", nguyenLieuId);
+            using var reader = await cmd.ExecuteReaderAsync();
+            while (await reader.ReadAsync())
+            {
+                result.Add(new LoKiemKeOption
+                {
+                    ChiTietPhieuNhapID = reader.GetInt32(0),
+                    PhieuNhapID = reader.GetInt32(1),
+                    MaPhieuNhap = reader.IsDBNull(2) ? "" : reader.GetString(2),
+                    NgayNhap = reader.IsDBNull(3) ? DateTime.MinValue : reader.GetDateTime(3),
+                    NguyenLieuID = reader.GetInt32(4),
+                    TenNguyenLieu = reader.IsDBNull(5) ? "" : reader.GetString(5),
+                    DonViID = reader.IsDBNull(6) ? null : reader.GetInt32(6),
+                    TenDonVi = reader.IsDBNull(7) ? "" : reader.GetString(7),
+                    HeSo = reader.IsDBNull(8) ? 1m : reader.GetDecimal(8),
+                    SoLuongCon = reader.IsDBNull(9) ? 0m : reader.GetDecimal(9),
+                    HSD = reader.IsDBNull(10) ? null : reader.GetDateTime(10)
+                });
+            }
+        }
+        catch (Exception ex)
+        { 
+            System.Windows.MessageBox.Show(ex.ToString(), "DB Error");
+        }
+        return result;
     }
 }

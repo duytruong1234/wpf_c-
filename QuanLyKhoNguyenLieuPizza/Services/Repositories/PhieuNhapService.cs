@@ -220,14 +220,16 @@ public class PhieuNhapService : DatabaseContext
             await conn.OpenAsync();
 
             var sql = @"SELECT ct.ChiTietID, ct.PhieuNhapID, ct.NguyenLieuID, ct.SoLuong,
-                              ct.DonViID, ct.HeSo, ct.DonGia, ct.ThanhTien, ct.HSD,
+                              ct.DonViID, ct.HeSo, ct.DonGia, ct.ThanhTien, ct.HSD, ct.SoLuongCon,
                               nl.MaNguyenLieu, nl.TenNguyenLieu, dv.TenDonVi,
-                              dvChuan.TenDonVi AS TenDonViChuan, qdChuan.HeSo AS HeSoDonViChuan
+                              dvChuan.TenDonVi AS TenDonViChuan, qdChuan.HeSo AS HeSoDonViChuan,
+                              qdNhap.HeSo AS HeSoNhap
                        FROM CT_PhieuNhap ct
                        LEFT JOIN NguyenLieu nl ON ct.NguyenLieuID = nl.NguyenLieuID
                        LEFT JOIN DonViTinh dv ON ct.DonViID = dv.DonViID
-                       LEFT JOIN QuyDoiDonVi qdChuan ON ct.NguyenLieuID = qdChuan.NguyenLieuID AND qdChuan.HeSo = 1
+                       LEFT JOIN QuyDoiDonVi qdChuan ON ct.NguyenLieuID = qdChuan.NguyenLieuID AND qdChuan.LaDonViChuan = 1
                        LEFT JOIN DonViTinh dvChuan ON qdChuan.DonViID = dvChuan.DonViID
+                       LEFT JOIN QuyDoiDonVi qdNhap ON ct.NguyenLieuID = qdNhap.NguyenLieuID AND ct.DonViID = qdNhap.DonViID
                        WHERE ct.PhieuNhapID = @PhieuNhapID";
 
             using var cmd = new SqlCommand(sql, conn);
@@ -247,23 +249,28 @@ public class PhieuNhapService : DatabaseContext
                     HeSo = reader.GetDecimal(5),
                     DonGia = reader.GetDecimal(6),
                     ThanhTien = reader.IsDBNull(7) ? null : reader.GetDecimal(7),
-                    HSD = reader.IsDBNull(8) ? null : reader.GetDateTime(8)
+                    HSD = reader.IsDBNull(8) ? null : reader.GetDateTime(8),
+                    SoLuongCon = reader.IsDBNull(9) ? 0 : reader.GetDecimal(9)
                 };
 
                 chiTiet.NguyenLieu = new NguyenLieu
                 {
-                    MaNguyenLieu = reader.IsDBNull(9) ? null : reader.GetString(9),
-                    TenNguyenLieu = reader.IsDBNull(10) ? string.Empty : reader.GetString(10)
+                    MaNguyenLieu = reader.IsDBNull(10) ? null : reader.GetString(10),
+                    TenNguyenLieu = reader.IsDBNull(11) ? string.Empty : reader.GetString(11)
                 };
 
-                if (!reader.IsDBNull(11))
+                if (!reader.IsDBNull(12))
                 {
-                    chiTiet.DonViTinh = new DonViTinh { TenDonVi = reader.GetString(11) };
+                    chiTiet.DonViTinh = new DonViTinh { TenDonVi = reader.GetString(12) };
                 }
 
-                // Đơn vị chuẩn
-                chiTiet.TenDonViChuan = reader.IsDBNull(12) ? string.Empty : reader.GetString(12);
-                chiTiet.HeSoDonViChuan = reader.IsDBNull(13) ? 1m : reader.GetDecimal(13);
+                // Đơn vị chuẩn (lưu tồn kho)
+                chiTiet.TenDonViChuan = reader.IsDBNull(13) ? string.Empty : reader.GetString(13);
+                chiTiet.HeSoDonViChuan = reader.IsDBNull(14) ? 1m : reader.GetDecimal(14);
+
+                // Lấy HeSo đúng từ QuyDoiDonVi cho đơn vị nhập (dùng để tính số lượng lưu kho)
+                if (!reader.IsDBNull(15))
+                    chiTiet.HeSo = reader.GetDecimal(15);
 
                 result.Add(chiTiet);
             }
@@ -504,8 +511,8 @@ public class PhieuNhapService : DatabaseContext
             // ThÃªm chi tiáº¿t
             foreach (var ct in chiTiets)
             {
-                var ctSql = @"INSERT INTO CT_PhieuNhap (PhieuNhapID, NguyenLieuID, SoLuong, DonViID, HeSo, DonGia, ThanhTien, HSD)
-                             VALUES (@PhieuNhapID, @NguyenLieuID, @SoLuong, @DonViID, @HeSo, @DonGia, @ThanhTien, @HSD)";
+                var ctSql = @"INSERT INTO CT_PhieuNhap (PhieuNhapID, NguyenLieuID, SoLuong, DonViID, HeSo, DonGia, ThanhTien, HSD, SoLuongCon)
+                             VALUES (@PhieuNhapID, @NguyenLieuID, @SoLuong, @DonViID, @HeSo, @DonGia, @ThanhTien, @HSD, @SoLuongCon)";
 
                 using var ctCmd = new SqlCommand(ctSql, conn, transaction);
                 ctCmd.Parameters.AddWithValue("@PhieuNhapID", phieuNhapId);
@@ -516,6 +523,7 @@ public class PhieuNhapService : DatabaseContext
                 ctCmd.Parameters.AddWithValue("@DonGia", ct.DonGia);
                 ctCmd.Parameters.AddWithValue("@ThanhTien", ct.ThanhTien ?? (object)DBNull.Value);
                 ctCmd.Parameters.AddWithValue("@HSD", ct.HSD ?? (object)DBNull.Value);
+                ctCmd.Parameters.AddWithValue("@SoLuongCon", ct.SoLuongCon > 0 ? ct.SoLuongCon : ct.SoLuong);
 
                 await ctCmd.ExecuteNonQueryAsync();
 
@@ -565,6 +573,15 @@ public class PhieuNhapService : DatabaseContext
             }
 
             // Láº¥y chi tiáº¿t phiáº¿u nháº­p Ä‘á»ƒ cáº­p nháº­t Tá»“nKho
+            var initSoLuongConSql = @"UPDATE CT_PhieuNhap
+                                      SET SoLuongCon = SoLuong
+                                      WHERE PhieuNhapID = @PhieuNhapID AND SoLuongCon = 0";
+            using (var initSoLuongConCmd = new SqlCommand(initSoLuongConSql, conn, transaction))
+            {
+                initSoLuongConCmd.Parameters.AddWithValue("@PhieuNhapID", phieuNhapId);
+                await initSoLuongConCmd.ExecuteNonQueryAsync();
+            }
+
             var getSql = "SELECT NguyenLieuID, SoLuong, DonViID FROM CT_PhieuNhap WHERE PhieuNhapID = @PhieuNhapID";
             using var getCmd = new SqlCommand(getSql, conn, transaction);
             getCmd.Parameters.AddWithValue("@PhieuNhapID", phieuNhapId);

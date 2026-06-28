@@ -1,4 +1,4 @@
-﻿using System.Globalization;
+using System.Globalization;
 using System.Windows;
 using System.Windows.Data;
 using System.Windows.Media;
@@ -264,6 +264,64 @@ public class ValueToBarHeightConverter : IValueConverter
 
         if (maxValue == 0) return 20.0;
         return Math.Max(20, (intValue / maxValue) * maxHeight);
+    }
+
+    public object ConvertBack(object value, Type targetType, object parameter, CultureInfo culture)
+    {
+        throw new NotImplementedException();
+    }
+}
+
+public class AvailableSizeConverter : IValueConverter
+{
+    public object Convert(object value, Type targetType, object parameter, CultureInfo culture)
+    {
+        if (value is not double available || double.IsNaN(available) || available <= 0)
+            return Binding.DoNothing;
+
+        double maxSize = available;
+        double reservedSpace = 0;
+
+        if (parameter is string paramStr)
+        {
+            var parts = paramStr.Split(',', ';');
+            if (parts.Length >= 1 && double.TryParse(parts[0], NumberStyles.Float, CultureInfo.InvariantCulture, out var parsedMax))
+                maxSize = parsedMax;
+            if (parts.Length >= 2 && double.TryParse(parts[1], NumberStyles.Float, CultureInfo.InvariantCulture, out var parsedReserved))
+                reservedSpace = parsedReserved;
+        }
+
+        return Math.Max(0, Math.Min(maxSize, available - reservedSpace));
+    }
+
+    public object ConvertBack(object value, Type targetType, object parameter, CultureInfo culture)
+    {
+        throw new NotImplementedException();
+    }
+}
+
+/// <summary>
+/// Converts a percentage (0-100) to a pixel width for progress bars.
+/// MaxWidth defaults to 120 pixels. Use via x:Static.
+/// </summary>
+public class PercentToWidthConverter : IValueConverter
+{
+    public static readonly PercentToWidthConverter Instance = new();
+
+    public object Convert(object value, Type targetType, object parameter, CultureInfo culture)
+    {
+        double maxWidth = 120;
+        if (parameter is string paramStr && double.TryParse(paramStr, NumberStyles.Any, CultureInfo.InvariantCulture, out var mw))
+            maxWidth = mw;
+
+        double percent = 0;
+        if (value is double d) percent = d;
+        else if (value is float f) percent = f;
+        else if (value is decimal dec) percent = (double)dec;
+        else if (value is int i) percent = i;
+
+        percent = Math.Max(0, Math.Min(100, percent));
+        return percent / 100.0 * maxWidth;
     }
 
     public object ConvertBack(object value, Type targetType, object parameter, CultureInfo culture)

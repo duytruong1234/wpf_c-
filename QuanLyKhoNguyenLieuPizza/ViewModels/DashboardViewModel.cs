@@ -1,118 +1,82 @@
 using System.Collections.ObjectModel;
+using System.IO;
+using System.Text;
+using System.Windows;
 using System.Windows.Input;
-using QuanLyKhoNguyenLieuPizza.Core.Interfaces;
+using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Win32;
 using QuanLyKhoNguyenLieuPizza.Models;
 using QuanLyKhoNguyenLieuPizza.Services;
-using Microsoft.Extensions.DependencyInjection;
+using QuestPDF.Fluent;
+using QuestPDF.Helpers;
+using QuestPDF.Infrastructure;
 
 namespace QuanLyKhoNguyenLieuPizza.ViewModels;
 
-// Item hiển thị trong popup chi tiết trạng thái
-public class StockDetailItem : BaseViewModel
+// Model items cho Dashboard
+public class CanhBaoHSDItem : BaseViewModel
 {
+    public string MaPhieuNhap { get; set; } = string.Empty;
     public string TenNguyenLieu { get; set; } = string.Empty;
-    public decimal SoLuongTon { get; set; }
-    public string DonVi { get; set; } = string.Empty;
-    public DateTime? HanSuDung { get; set; }
-    public bool HasExpiry => HanSuDung.HasValue;
-    public string HanSuDungText => HanSuDung?.ToString("dd/MM/yyyy") ?? "—";
+    public DateTime HanSuDung { get; set; }
+    public string SoLuongCon { get; set; } = string.Empty;
+    public int SoNgayConLai { get; set; }
+    public string TrangThai => SoNgayConLai <= 0 ? "Đã hết hạn" 
+        : SoNgayConLai <= 3 ? "Sắp hết hạn - Ưu tiên xuất"
+        : "Cần theo dõi";
+    public string TrangThaiColor => SoNgayConLai <= 0 ? "#DC2626"
+        : SoNgayConLai <= 3 ? "#EA580C" : "#D97706";
+    public string TrangThaiBg => SoNgayConLai <= 0 ? "#FEE2E2"
+        : SoNgayConLai <= 3 ? "#FFF7ED" : "#FEF9C3";
 }
 
-public class TopPizzaItem : BaseViewModel
+public class DoiSoatRangeItem : BaseViewModel
 {
-    public string TenPizza { get; set; } = string.Empty;
-    public string KichThuoc { get; set; } = "M";
+    public string MaNL { get; set; } = string.Empty;
+    public string TenNguyenLieu { get; set; } = string.Empty;
+    public string DonVi { get; set; } = string.Empty;
+    public decimal TongLuongNhap { get; set; }
+    public decimal TongLuongTieuHao { get; set; }
+}
+
+public class BienDongHaoHutItem : BaseViewModel
+{
+    public DateTime NgayKiem { get; set; }
+    public string MaNL { get; set; } = string.Empty;
+    public string HSD { get; set; } = string.Empty;
+    public decimal TonHeThong { get; set; }
+    public decimal TonThucTe { get; set; }
+    public decimal ChenhLech { get; set; }
+    public string ChenhLechDisplay => ChenhLech == 0 ? "0" : ChenhLech > 0 ? $"+{ChenhLech:0.##}" : $"{ChenhLech:0.##}";
+    public string ChenhLechColor => ChenhLech > 0 ? "#10B981" : ChenhLech < 0 ? "#DC2626" : "#6B7280";
+    public string LoaiDieuChinh { get; set; } = string.Empty;
+    public string MaPhieuDieuChinh { get; set; } = string.Empty;
+    public string ChungTuDisplay => string.IsNullOrEmpty(MaPhieuDieuChinh) ? "" : $"{MaPhieuDieuChinh} ({LoaiDieuChinh})";
+    public string ChungTuColor => LoaiDieuChinh.Contains("Xuất") ? "#DC2626" : "#2563EB";
+    public string ChungTuBg => LoaiDieuChinh.Contains("Xuất") ? "#FEE2E2" : "#DBEAFE";
+}
+
+public class TopMonAnItem : BaseViewModel
+{
+    public string MaMon { get; set; } = string.Empty;
+    public string TenMon { get; set; } = string.Empty;
     public int SoLuongBan { get; set; }
     public decimal DoanhThu { get; set; }
-    public int Rank { get; set; }
-}
-
-// Item đối soát tiêu hao nguyên liệu
-public class DoiSoatItem : BaseViewModel
-{
-    public string TenNguyenLieu { get; set; } = string.Empty;
-    public string DonVi { get; set; } = string.Empty;
-    public decimal LuongXuatCheBien { get; set; }
-    public decimal LuongTieuHaoBanHang { get; set; }
-    public decimal ChenhLech => LuongXuatCheBien - LuongTieuHaoBanHang;
-    public double TyLeChenhLech => LuongXuatCheBien > 0
-        ? (double)((LuongXuatCheBien - LuongTieuHaoBanHang) / LuongXuatCheBien * 100m)
-        : 0;
-    public string TrangThaiChenhLech => ChenhLech == 0 ? "Cân bằng"
-        : ChenhLech > 0 ? "Nhập nhiều hơn" : "Xuất nhiều hơn";
-    public string MauChenhLech => Math.Abs(TyLeChenhLech) < 5 ? "#10B981"
-        : Math.Abs(TyLeChenhLech) < 10 ? "#F59E0B" : "#EF4444";
+    public double TyTrong { get; set; }
 }
 
 public class DashboardViewModel : BaseViewModel
 {
     private readonly DatabaseService _databaseService;
-    private readonly ExpiryNotificationService? _expiryNotificationService;
 
-    private string _selectedMenuItem = "BaoCaoThongKe";
-    private string _tenNguoiDung = string.Empty;
-    private NguyenLieu? _selectedNguyenLieu;
-    private DateTime? _ngayBatDau;
-    private DateTime? _ngayKetThuc;
     private bool _isLoading;
-    private DateTime _ngayDoiSoat = DateTime.Today;
+    private DateTime _ngayBatDau;
+    private DateTime _ngayKetThuc;
 
-    // Thống kê kho hàng
-    private int _tongSoNguyenLieu;
-    private int _soLuongTonKho;
-    private int _soLuongTonKhoThap;
-    private int _soLuongSapHetHan;
-    private int _soLuongHetHan;
-    private int _soLuongHetHang;
-    private int _soLuongNhap;
-    private int _soLuongXuat;
-    private int _tonKho;
-
-    // Thống kê bán hàng
-    private decimal _doanhThuHomNay;
-    private decimal _doanhThuThang;
-    private int _tongDonHomNay;
-    private int _tongDonThang;
-    private decimal _loiNhuanThang;
-    private decimal _chiPhiNguyenLieuThang;
-
-    // Đối soát tiêu hao
-    private decimal _tongXuatCheBien;
-    private decimal _tongTieuHaoBanHang;
-    private decimal _tongChenhLech;
-
-    // Popup trạng thái nguyên liệu
-    private bool _isStatusPopupOpen;
-    private string _statusPopupTitle = string.Empty;
-    private string _statusPopupColor = "#5B6AFF";
-
-    // Email cảnh báo HSD
-    private bool _isSendingEmail;
-    private string _emailStatusMessage = string.Empty;
-    private bool _canSendExpiryEmail;
-
-    // Dữ liệu biểu đồ
-    private double[] _dailyRevenueValues = [];
-    private string[] _dailyRevenueLabels = [];
-    private List<(string TenPizza, string KichThuoc, int SoLuongBan, decimal DoanhThu)> _topPizzaData = [];
-
-    public string SelectedMenuItem
-    {
-        get => _selectedMenuItem;
-        set => SetProperty(ref _selectedMenuItem, value);
-    }
-
-    public string TenNguoiDung
-    {
-        get => _tenNguoiDung;
-        set => SetProperty(ref _tenNguoiDung, value);
-    }
-
-    public NguyenLieu? SelectedNguyenLieu
-    {
-        get => _selectedNguyenLieu;
-        set => SetProperty(ref _selectedNguyenLieu, value);
-    }
+    // Section 1
+    private decimal _tongDoanhThuBanHang;
+    private decimal _tongChiPhiNhapHang;
+    private decimal _chenhLechLoiNhuan;
 
     public bool IsLoading
     {
@@ -120,363 +84,98 @@ public class DashboardViewModel : BaseViewModel
         set => SetProperty(ref _isLoading, value);
     }
 
-    public int TongSoNguyenLieu
+    public DateTime NgayBatDau
     {
-        get => _tongSoNguyenLieu;
-        set => SetProperty(ref _tongSoNguyenLieu, value);
+        get => _ngayBatDau;
+        set => SetProperty(ref _ngayBatDau, value);
     }
 
-    public int SoLuongTonKho
+    public DateTime NgayKetThuc
     {
-        get => _soLuongTonKho;
-        set => SetProperty(ref _soLuongTonKho, value);
+        get => _ngayKetThuc;
+        set => SetProperty(ref _ngayKetThuc, value);
     }
 
-    public int SoLuongTonKhoThap
+    public decimal TongDoanhThuBanHang
     {
-        get => _soLuongTonKhoThap;
-        set => SetProperty(ref _soLuongTonKhoThap, value);
+        get => _tongDoanhThuBanHang;
+        set => SetProperty(ref _tongDoanhThuBanHang, value);
     }
 
-    public int SoLuongSapHetHan
+    public decimal TongChiPhiNhapHang
     {
-        get => _soLuongSapHetHan;
-        set => SetProperty(ref _soLuongSapHetHan, value);
+        get => _tongChiPhiNhapHang;
+        set => SetProperty(ref _tongChiPhiNhapHang, value);
     }
 
-    public int SoLuongHetHan
+    public decimal ChenhLechLoiNhuan
     {
-        get => _soLuongHetHan;
-        set => SetProperty(ref _soLuongHetHan, value);
+        get => _chenhLechLoiNhuan;
+        set => SetProperty(ref _chenhLechLoiNhuan, value);
     }
 
-    public int SoLuongHetHang
-    {
-        get => _soLuongHetHang;
-        set => SetProperty(ref _soLuongHetHang, value);
-    }
+    // Collections
+    public ObservableCollection<CanhBaoHSDItem> CanhBaoHSDItems { get; } = new();
+    public ObservableCollection<DoiSoatRangeItem> DoiSoatItems { get; } = new();
+    public ObservableCollection<BienDongHaoHutItem> BienDongItems { get; } = new();
+    public ObservableCollection<TopMonAnItem> TopMonAnItems { get; } = new();
 
-    public int SoLuongNhap
-    {
-        get => _soLuongNhap;
-        set => SetProperty(ref _soLuongNhap, value);
-    }
-
-    public int SoLuongXuat
-    {
-        get => _soLuongXuat;
-        set => SetProperty(ref _soLuongXuat, value);
-    }
-
-    public int TonKho
-    {
-        get => _tonKho;
-        set => SetProperty(ref _tonKho, value);
-    }
-
-    // Thuộc tính bán hàng
-    public decimal DoanhThuHomNay
-    {
-        get => _doanhThuHomNay;
-        set => SetProperty(ref _doanhThuHomNay, value);
-    }
-
-    public decimal DoanhThuThang
-    {
-        get => _doanhThuThang;
-        set => SetProperty(ref _doanhThuThang, value);
-    }
-
-    public int TongDonHomNay
-    {
-        get => _tongDonHomNay;
-        set => SetProperty(ref _tongDonHomNay, value);
-    }
-
-    public int TongDonThang
-    {
-        get => _tongDonThang;
-        set => SetProperty(ref _tongDonThang, value);
-    }
-
-    public decimal LoiNhuanThang
-    {
-        get => _loiNhuanThang;
-        set => SetProperty(ref _loiNhuanThang, value);
-    }
-
-    public decimal ChiPhiNguyenLieuThang
-    {
-        get => _chiPhiNguyenLieuThang;
-        set => SetProperty(ref _chiPhiNguyenLieuThang, value);
-    }
-
-    // Thuộc tính dữ liệu biểu đồ
-    public double[] DailyRevenueValues
-    {
-        get => _dailyRevenueValues;
-        set => SetProperty(ref _dailyRevenueValues, value);
-    }
-
-    public string[] DailyRevenueLabels
-    {
-        get => _dailyRevenueLabels;
-        set => SetProperty(ref _dailyRevenueLabels, value);
-    }
-
-    public List<(string TenPizza, string KichThuoc, int SoLuongBan, decimal DoanhThu)> TopPizzaData
-    {
-        get => _topPizzaData;
-        set => SetProperty(ref _topPizzaData, value);
-    }
-
-    // Tổng nguyên liệu cho tính toán biểu đồ (mặc định là 10 nếu bằng 0)
-    public int TotalNguyenLieu => Math.Max(TongSoNguyenLieu, 10);
-
-    public ObservableCollection<NguyenLieu> NguyenLieus { get; } = [];
-    public ObservableCollection<TopPizzaItem> TopPizzas { get; } = [];
-    public ObservableCollection<DonHang> RecentDonHangs { get; } = [];
-    public ObservableCollection<DoiSoatItem> DoiSoatItems { get; } = [];
-
-    public decimal TongXuatCheBien
-    {
-        get => _tongXuatCheBien;
-        set => SetProperty(ref _tongXuatCheBien, value);
-    }
-
-    public decimal TongTieuHaoBanHang
-    {
-        get => _tongTieuHaoBanHang;
-        set => SetProperty(ref _tongTieuHaoBanHang, value);
-    }
-
-    public decimal TongChenhLech
-    {
-        get => _tongChenhLech;
-        set => SetProperty(ref _tongChenhLech, value);
-    }
-    public ObservableCollection<StockDetailItem> StatusDetailItems { get; } = [];
-
-    public bool IsStatusPopupOpen
-    {
-        get => _isStatusPopupOpen;
-        set => SetProperty(ref _isStatusPopupOpen, value);
-    }
-
-    public string StatusPopupTitle
-    {
-        get => _statusPopupTitle;
-        set => SetProperty(ref _statusPopupTitle, value);
-    }
-
-    public string StatusPopupColor
-    {
-        get => _statusPopupColor;
-        set => SetProperty(ref _statusPopupColor, value);
-    }
-
-    // Email cảnh báo HSD properties
-    public bool IsSendingEmail
-    {
-        get => _isSendingEmail;
-        set => SetProperty(ref _isSendingEmail, value);
-    }
-
-    public string EmailStatusMessage
-    {
-        get => _emailStatusMessage;
-        set => SetProperty(ref _emailStatusMessage, value);
-    }
-
-    public bool CanSendExpiryEmail
-    {
-        get => _canSendExpiryEmail;
-        set => SetProperty(ref _canSendExpiryEmail, value);
-    }
-
-    // Ngày đối soát
-    public DateTime NgayDoiSoat
-    {
-        get => _ngayDoiSoat;
-        set
-        {
-            if (SetProperty(ref _ngayDoiSoat, value))
-            {
-                SafeInitializeAsync(LoadDoiSoatDataAsync);
-            }
-        }
-    }
-
-    // Lệnh
-    public ICommand NavigateCommand { get; }
-    public ICommand LogoutCommand { get; }
+    // Commands
+    public ICommand ApDungCommand { get; }
+    public ICommand XoaLocCommand { get; }
     public ICommand RefreshCommand { get; }
-    public ICommand ShowStatusDetailCommand { get; }
-    public ICommand CloseStatusPopupCommand { get; }
-    public ICommand SendExpiryEmailCommand { get; }
-
-    // Sự kiện cập nhật biểu đồ
-    public event Action? OnDataLoaded;
-    public event Action? OnLogout;
+    public ICommand ExportReportCommand { get; }
 
     public DashboardViewModel()
     {
         _databaseService = App.Services.GetRequiredService<DatabaseService>();
 
-        NavigateCommand = new RelayCommand(ExecuteNavigate);
-        LogoutCommand = new RelayCommand(_ => OnLogout?.Invoke());
-        RefreshCommand = new AsyncRelayCommand(async _ => await LoadDataAsync());
-        ShowStatusDetailCommand = new AsyncRelayCommand(async p => await LoadStatusDetailAsync(p));
-        CloseStatusPopupCommand = new RelayCommand(_ => IsStatusPopupOpen = false);
-        SendExpiryEmailCommand = new AsyncRelayCommand(async _ => await SendExpiryEmailAsync());
-
-        // Khởi tạo ExpiryNotificationService
-        try
-        {
-            var emailService = App.Services.GetService<IEmailService>();
-            if (emailService != null)
-                _expiryNotificationService = new ExpiryNotificationService(_databaseService, emailService);
-        }
-        catch { /* EmailService chưa được đăng ký */ }
-
-        // Chỉ quản lý mới được gửi email cảnh báo
-        var chucVu = CurrentUserSession.Instance.CurrentUser?.NhanVien?.ChucVu?.TenChucVu?.ToLower() ?? "";
-        CanSendExpiryEmail = chucVu.Contains("quản lý") || chucVu.Contains("quan ly");
-
-        // Tải tên người dùng hiện tại
-        var currentUser = CurrentUserSession.Instance.CurrentUser;
-        TenNguoiDung = currentUser?.NhanVien?.HoTen ?? currentUser?.Username ?? "Người dùng";
-
-        // Khởi tạo ngày mặc định
         _ngayBatDau = new DateTime(DateTime.Today.Year, DateTime.Today.Month, 1);
         _ngayKetThuc = DateTime.Today;
 
-        // SafeInitializeAsync thay vì fire-and-forget
-        SafeInitializeAsync(LoadDataAsync);
+        ApDungCommand = new AsyncRelayCommand(async _ => await LoadFilteredDataAsync());
+        XoaLocCommand = new AsyncRelayCommand(async _ => 
+        {
+            NgayBatDau = new DateTime(DateTime.Today.Year, DateTime.Today.Month, 1);
+            NgayKetThuc = DateTime.Today;
+            await LoadFilteredDataAsync();
+        });
+        RefreshCommand = new AsyncRelayCommand(async _ => await LoadAllDataAsync());
+        ExportReportCommand = new RelayCommand(_ => ExportReport());
+
+        SafeInitializeAsync(LoadAllDataAsync);
     }
 
     public DashboardViewModel(DatabaseService databaseService)
     {
         _databaseService = databaseService;
 
-        NavigateCommand = new RelayCommand(ExecuteNavigate);
-        LogoutCommand = new RelayCommand(_ => OnLogout?.Invoke());
-        RefreshCommand = new AsyncRelayCommand(async _ => await LoadDataAsync());
-        ShowStatusDetailCommand = new AsyncRelayCommand(async p => await LoadStatusDetailAsync(p));
-        CloseStatusPopupCommand = new RelayCommand(_ => IsStatusPopupOpen = false);
-        SendExpiryEmailCommand = new AsyncRelayCommand(async _ => await SendExpiryEmailAsync());
-
-        // Khởi tạo ngày mặc định
         _ngayBatDau = new DateTime(DateTime.Today.Year, DateTime.Today.Month, 1);
         _ngayKetThuc = DateTime.Today;
 
-        SafeInitializeAsync(LoadDataAsync);
-    }
-
-    private void ExecuteNavigate(object? parameter)
-    {
-        if (parameter is string menuItem)
+        ApDungCommand = new AsyncRelayCommand(async _ => await LoadFilteredDataAsync());
+        XoaLocCommand = new AsyncRelayCommand(async _ => 
         {
-            SelectedMenuItem = menuItem;
-        }
+            NgayBatDau = new DateTime(DateTime.Today.Year, DateTime.Today.Month, 1);
+            NgayKetThuc = DateTime.Today;
+            await LoadFilteredDataAsync();
+        });
+        RefreshCommand = new AsyncRelayCommand(async _ => await LoadAllDataAsync());
+        ExportReportCommand = new RelayCommand(_ => ExportReport());
+
+        SafeInitializeAsync(LoadAllDataAsync);
     }
 
-    private async Task LoadDataAsync()
+    private async Task LoadAllDataAsync()
     {
         IsLoading = true;
-
         try
         {
-            var today = DateTime.Today;
-            var fromDate = _ngayBatDau ?? new DateTime(today.Year, today.Month, 1);
-            var toDate = _ngayKetThuc ?? today;
-            var toDateQuery = toDate.Date.AddDays(1).AddTicks(-1);
+            // Load cảnh báo HSD (real-time, không phụ thuộc bộ lọc)
+            await LoadCanhBaoHSDAsync();
 
-            // Đợt 1: Chạy tất cả truy vấn độc lập song song
-            var tongNguyenLieuTask = _databaseService.GetTotalNguyenLieuCountAsync();
-            var tonKhoTask = _databaseService.GetTotalTonKhoCountAsync();
-            var lowStockTask = _databaseService.GetLowStockCountAsync(20);
-            var nearExpiryTask = _databaseService.GetNearExpiryCountAsync(7);
-            var expiredTask = _databaseService.GetExpiredCountAsync();
-            var doanhThuTodayTask = _databaseService.GetDoanhThuBanHangAsync(today, today.Date.AddDays(1).AddTicks(-1));
-            var tongDonTodayTask = _databaseService.GetTotalPhieuBanCountAsync(today, today.Date.AddDays(1).AddTicks(-1));
-            // Doanh thu theo lọc
-            var doanhThuMonthTask = _databaseService.GetDoanhThuBanHangAsync(fromDate, toDateQuery);
-            var tongDonMonthTask = _databaseService.GetTotalPhieuBanCountAsync(fromDate, toDateQuery);
-            var loiNhuanTask = _databaseService.GetTotalLoiNhuanAsync(fromDate, toDateQuery);
-            var chiPhiTask = _databaseService.GetChiPhiNguyenLieuAsync(fromDate, toDateQuery);
-            var topPizzasTask = _databaseService.GetTopPizzasAsync(fromDate, toDateQuery, 5);
-            var recentOrdersTask = _databaseService.GetRecentDonHangsAsync(8);
-
-            // Doanh thu 7 ngày gần nhất
-            var dailyRevenueTasks = new List<Task<decimal>>();
-            var dailyLabels = new List<string>();
-            for (int i = 6; i >= 0; i--)
-            {
-                var date = today.AddDays(-i);
-                dailyRevenueTasks.Add(_databaseService.GetDoanhThuBanHangAsync(date, date));
-                dailyLabels.Add(date.ToString("dd/MM"));
-            }
-
-            await Task.WhenAll(
-                tongNguyenLieuTask, tonKhoTask, lowStockTask, nearExpiryTask, expiredTask,
-                doanhThuTodayTask, tongDonTodayTask, doanhThuMonthTask, tongDonMonthTask,
-                loiNhuanTask, chiPhiTask, topPizzasTask, recentOrdersTask);
-
-            await Task.WhenAll(dailyRevenueTasks);
-
-            // Gán kết quả
-            TongSoNguyenLieu = tongNguyenLieuTask.Result;
-            SoLuongTonKho = tonKhoTask.Result;
-            SoLuongTonKhoThap = lowStockTask.Result;
-            SoLuongSapHetHan = nearExpiryTask.Result;
-            SoLuongHetHan = expiredTask.Result;
-
-            // Tính số lượng hết hàng
-            SoLuongHetHang = Math.Max(0, TongSoNguyenLieu - SoLuongTonKho);
-
-            // Doanh thu theo bộ lọc
-            var monthRevenue = doanhThuMonthTask.Result;
-            var monthOrders = tongDonMonthTask.Result;
-            DoanhThuHomNay = doanhThuTodayTask.Result;
-            TongDonHomNay = tongDonTodayTask.Result;
-            DoanhThuThang = monthRevenue;
-            TongDonThang = monthOrders;
-            LoiNhuanThang = loiNhuanTask.Result;
-            ChiPhiNguyenLieuThang = chiPhiTask.Result;
-
-            // Lưu dữ liệu biểu đồ
-            DailyRevenueValues = dailyRevenueTasks.Select(t => (double)(t.Result / 1000m)).ToArray();
-            DailyRevenueLabels = dailyLabels.ToArray();
-
-            // Cập nhật các danh sách
-            TopPizzas.Clear();
-            int rank = 1;
-            foreach (var (tenPizza, kichThuoc, soLuongBan, doanhThu) in topPizzasTask.Result)
-            {
-                TopPizzas.Add(new TopPizzaItem
-                {
-                    TenPizza = tenPizza,
-                    KichThuoc = kichThuoc,
-                    SoLuongBan = soLuongBan,
-                    DoanhThu = doanhThu,
-                    Rank = rank++
-                });
-            }
-
-            TopPizzaData = topPizzasTask.Result;
-
-            RecentDonHangs.Clear();
-            foreach (var order in recentOrdersTask.Result)
-            {
-                RecentDonHangs.Add(order);
-            }
-
-            // === Đối soát tiêu hao NL ===
-            await LoadDoiSoatDataAsync();
-
-            // Thông báo cập nhật biểu đồ
-            OnDataLoaded?.Invoke();
+            // Load dữ liệu theo bộ lọc
+            await LoadFilteredDataAsync();
         }
         catch { }
         finally
@@ -485,145 +184,326 @@ public class DashboardViewModel : BaseViewModel
         }
     }
 
-    /// <summary>
-    /// Tải dữ liệu đối soát tiêu hao theo ngày đã chọn (NgayDoiSoat)
-    /// </summary>
-    private async Task LoadDoiSoatDataAsync()
+    private async Task LoadCanhBaoHSDAsync()
     {
         try
         {
-            var doiSoatData = await _databaseService.GetDoiSoatTieuHaoAsync(_ngayDoiSoat);
-            DoiSoatItems.Clear();
-            decimal sumXuat = 0, sumTieuHao = 0;
-            foreach (var (nlId, tenNL, donVi, xuatCB, tieuHao) in doiSoatData)
+            var data = await _databaseService.GetLoHangCanhBaoHSDAsync();
+            CanhBaoHSDItems.Clear();
+            foreach (var item in data)
             {
-                DoiSoatItems.Add(new DoiSoatItem
+                var donVi = item.DonVi;
+                CanhBaoHSDItems.Add(new CanhBaoHSDItem
                 {
-                    TenNguyenLieu = tenNL,
-                    DonVi = donVi,
-                    LuongXuatCheBien = xuatCB,
-                    LuongTieuHaoBanHang = tieuHao
+                    MaPhieuNhap = item.MaPhieuNhap,
+                    TenNguyenLieu = item.TenNguyenLieu,
+                    HanSuDung = item.HSD,
+                    SoLuongCon = $"{item.SoLuongNhap:G29} {donVi}",
+                    SoNgayConLai = item.SoNgayConLai
                 });
-                sumXuat += xuatCB;
-                sumTieuHao += tieuHao;
             }
-            TongXuatCheBien = sumXuat;
-            TongTieuHaoBanHang = sumTieuHao;
-            TongChenhLech = sumXuat - sumTieuHao;
         }
         catch { }
     }
 
-    private async Task LoadStatusDetailAsync(object? parameter)
+    private async Task LoadFilteredDataAsync()
     {
-        if (parameter is not string statusType) return;
-
-        StatusDetailItems.Clear();
-
-        switch (statusType)
+        IsLoading = true;
+        try
         {
-            case "BinhThuong":
-                StatusPopupTitle = "Nguyên liệu bình thường";
-                StatusPopupColor = "#5B6AFF";
-                var normalItems = await _databaseService.GetNormalStockItemsAsync(20);
-                foreach (var item in normalItems)
-                    StatusDetailItems.Add(new StockDetailItem { TenNguyenLieu = item.TenNguyenLieu, SoLuongTon = item.SoLuongTon, DonVi = item.DonVi, HanSuDung = item.HanSuDung });
-                break;
+            var fromDate = NgayBatDau.Date;
+            var toDate = NgayKetThuc.Date;
+            var toDateEnd = toDate.AddDays(1).AddTicks(-1);
 
-            case "TonThap":
-                StatusPopupTitle = "Nguyên liệu tồn kho thấp";
-                StatusPopupColor = "#F59E0B";
-                var lowItems = await _databaseService.GetLowStockItemsAsync(20);
-                foreach (var item in lowItems)
-                    StatusDetailItems.Add(new StockDetailItem { TenNguyenLieu = item.TenNguyenLieu, SoLuongTon = item.SoLuongTon, DonVi = item.DonVi, HanSuDung = item.HanSuDung });
-                break;
+            // Parallel load all filtered sections
+            var doanhThuTask = _databaseService.GetDoanhThuBanHangAsync(fromDate, toDateEnd);
+            var chiPhiTask = _databaseService.GetTotalTongTienPhieuNhapAsync(null, null, fromDate, toDate);
+            var doiSoatTask = _databaseService.GetDoiSoatTieuHaoByRangeAsync(fromDate, toDate);
+            var bienDongTask = _databaseService.GetBienDongHaoHutAsync(fromDate, toDate);
+            var topMonAnTask = _databaseService.GetTopMonAnBanChayAsync(fromDate, toDate, 10);
 
-            case "SapHetHan":
-                StatusPopupTitle = "Nguyên liệu sắp hết hạn";
-                StatusPopupColor = "#06B6D4";
-                var nearExpiryItems = await _databaseService.GetNearExpiryItemsAsync(7);
-                foreach (var item in nearExpiryItems)
-                    StatusDetailItems.Add(new StockDetailItem { TenNguyenLieu = item.TenNguyenLieu, SoLuongTon = item.SoLuongTon, DonVi = item.DonVi, HanSuDung = item.HanSuDung });
-                break;
+            await Task.WhenAll(doanhThuTask, chiPhiTask, doiSoatTask, bienDongTask, topMonAnTask);
 
-            case "HetHan":
-                StatusPopupTitle = "Nguyên liệu đã hết hạn";
-                StatusPopupColor = "#EF4444";
-                var expiredItems = await _databaseService.GetExpiredItemsAsync();
-                foreach (var item in expiredItems)
-                    StatusDetailItems.Add(new StockDetailItem { TenNguyenLieu = item.TenNguyenLieu, SoLuongTon = item.SoLuongTon, DonVi = item.DonVi, HanSuDung = item.HanSuDung });
-                break;
+            // Section 1: Cards
+            TongDoanhThuBanHang = doanhThuTask.Result;
+            TongChiPhiNhapHang = chiPhiTask.Result;
+            ChenhLechLoiNhuan = TongDoanhThuBanHang - TongChiPhiNhapHang;
 
-            case "HetHang":
-                StatusPopupTitle = "Nguyên liệu đã hết hàng";
-                StatusPopupColor = "#64748B";
-                var outOfStockItems = await _databaseService.GetOutOfStockItemsAsync();
-                foreach (var item in outOfStockItems)
-                    StatusDetailItems.Add(new StockDetailItem { TenNguyenLieu = item.TenNguyenLieu, SoLuongTon = item.SoLuongTon, DonVi = item.DonVi, HanSuDung = item.HanSuDung });
-                break;
+            // Section 2: Đối soát tiêu hao
+            DoiSoatItems.Clear();
+            foreach (var (maNL, tenNL, donVi, tongNhap, tongTieuHao) in doiSoatTask.Result)
+            {
+                DoiSoatItems.Add(new DoiSoatRangeItem
+                {
+                    MaNL = maNL,
+                    TenNguyenLieu = tenNL,
+                    DonVi = donVi,
+                    TongLuongNhap = tongNhap,
+                    TongLuongTieuHao = tongTieuHao
+                });
+            }
+
+            // Section 3: Biến động hao hụt
+            BienDongItems.Clear();
+            foreach (var (ngayKiem, maNL, tenNL, hsd, tonHT, tonTT, chenhLech, loaiDC, maPhieuDC) in bienDongTask.Result)
+            {
+                BienDongItems.Add(new BienDongHaoHutItem
+                {
+                    NgayKiem = ngayKiem,
+                    MaNL = maNL,
+                    HSD = hsd,
+                    TonHeThong = tonHT,
+                    TonThucTe = tonTT,
+                    ChenhLech = chenhLech,
+                    LoaiDieuChinh = loaiDC,
+                    MaPhieuDieuChinh = maPhieuDC
+                });
+            }
+
+            // Section 4: Top món ăn
+            TopMonAnItems.Clear();
+            foreach (var (maMon, tenMon, soLuongBan, doanhThu, tyTrong) in topMonAnTask.Result)
+            {
+                TopMonAnItems.Add(new TopMonAnItem
+                {
+                    MaMon = maMon,
+                    TenMon = tenMon,
+                    SoLuongBan = soLuongBan,
+                    DoanhThu = doanhThu,
+                    TyTrong = tyTrong
+                });
+            }
         }
-
-        IsStatusPopupOpen = true;
+        catch { }
+        finally
+        {
+            IsLoading = false;
+        }
     }
 
-    /// <summary>
-    /// Gửi email cảnh báo nguyên liệu sắp/đã hết hạn đến email quản lý hiện tại
-    /// </summary>
-    private async Task SendExpiryEmailAsync()
+    private static string CsvEscape(string? value)
     {
-        if (_expiryNotificationService == null || IsSendingEmail) return;
+        if (string.IsNullOrEmpty(value)) return "";
+        if (value.Contains(',') || value.Contains('"') || value.Contains('\n'))
+            return $"\"{value.Replace("\"", "\"\"")}\""; 
+        return value;
+    }
+
+    private void ExportReport()
+    {
+        var dialog = new SaveFileDialog
+        {
+            Title = "Xuất Báo Cáo Dashboard",
+            Filter = "PDF (*.pdf)|*.pdf",
+            FileName = $"BaoCao_Dashboard_{NgayBatDau:ddMMyyyy}_{NgayKetThuc:ddMMyyyy}.pdf",
+            DefaultExt = ".pdf"
+        };
+
+        if (dialog.ShowDialog() != true) return;
 
         try
         {
-            IsSendingEmail = true;
-            EmailStatusMessage = "Đang gửi email...";
+            QuestPDF.Settings.License = LicenseType.Community;
 
-            // Lấy email quản lý hiện tại
-            var currentEmail = CurrentUserSession.Instance.CurrentUser?.NhanVien?.Email;
-            if (string.IsNullOrWhiteSpace(currentEmail))
+            Document.Create(container =>
             {
-                EmailStatusMessage = "Tài khoản chưa có email!";
-                return;
-            }
-
-            var result = await _expiryNotificationService.CheckAndNotifyAsync(currentEmail, days: 7, forceResend: true);
-
-            if (result.Success)
-            {
-                EmailStatusMessage = result.ItemCount > 0
-                    ? $"Đã gửi email ({result.ItemCount} nguyên liệu)"
-                    : "Không có NL cần cảnh báo";
-
-                System.Windows.Application.Current?.Dispatcher.Invoke(() =>
+                container.Page(page =>
                 {
-                    System.Windows.MessageBox.Show(result.ItemCount > 0
-                        ? $"Gửi thành công email báo cáo nguyên liệu sắp hết hạn đến {currentEmail}.\nTổng cộng: {result.ItemCount} nguyên liệu."
-                        : "Không có nguyên liệu nào sắp hết hạn hoặc quá hạn cần báo cáo.",
-                        "Thông báo", System.Windows.MessageBoxButton.OK, System.Windows.MessageBoxImage.Information);
+                    page.Size(PageSizes.A4);
+                    page.Margin(1.5f, Unit.Centimetre);
+                    page.PageColor(Colors.White);
+                    page.DefaultTextStyle(x => x.FontSize(10).FontFamily(Fonts.Arial));
+
+                    page.Header().Column(col =>
+                    {
+                        col.Item().PaddingBottom(8).Text("BÁO CÁO TỔNG HỢP DASHBOARD - PIZZA INN").FontSize(18).Bold().FontColor(Colors.Black);
+                        col.Item().Text($"Kỳ báo cáo: {NgayBatDau:dd/MM/yyyy} - {NgayKetThuc:dd/MM/yyyy}").FontSize(11).FontColor(Colors.Black);
+                        col.Item().Text($"Ngày xuất: {DateTime.Now:dd/MM/yyyy HH:mm:ss}").FontSize(11).FontColor(Colors.Black);
+                        col.Item().PaddingTop(10).LineHorizontal(1f).LineColor(Colors.Black);
+                    });
+
+                    page.Content().PaddingVertical(10).Column(col =>
+                    {
+                        // Section 1: Tổng hợp doanh thu
+                        col.Item().PaddingTop(10).PaddingBottom(5).Text("TỔNG HỢP DOANH THU & CHI PHÍ").FontSize(12).Bold().FontColor(Colors.Black);
+                        col.Item().Table(table =>
+                        {
+                            table.ColumnsDefinition(columns =>
+                            {
+                                columns.RelativeColumn();
+                                columns.RelativeColumn();
+                            });
+
+                            table.Header(header =>
+                            {
+                                header.Cell().Border(1).BorderColor(Colors.Black).Padding(5).Text("Chỉ tiêu").SemiBold();
+                                header.Cell().Border(1).BorderColor(Colors.Black).Padding(5).Text("Giá trị (VNĐ)").SemiBold().AlignRight();
+                            });
+
+                            table.Cell().Border(1).BorderColor(Colors.Black).Padding(5).Text("Tổng doanh thu bán hàng");
+                            table.Cell().Border(1).BorderColor(Colors.Black).Padding(5).Text($"{TongDoanhThuBanHang:N0} đ").AlignRight();
+                            
+                            table.Cell().Border(1).BorderColor(Colors.Black).Padding(5).Text("Tổng chi phí nhập hàng");
+                            table.Cell().Border(1).BorderColor(Colors.Black).Padding(5).Text($"{TongChiPhiNhapHang:N0} đ").AlignRight();
+                            
+                            table.Cell().Border(1).BorderColor(Colors.Black).Padding(5).Text("Chênh lệch lợi nhuận");
+                            table.Cell().Border(1).BorderColor(Colors.Black).Padding(5).Text($"{ChenhLechLoiNhuan:N0} đ").AlignRight().Bold();
+                        });
+
+                        // Section 2: Cảnh báo HSD
+                        col.Item().PaddingTop(20).PaddingBottom(5).Text("CẢNH BÁO HẠN SỬ DỤNG").FontSize(12).Bold().FontColor(Colors.Black);
+                        col.Item().Table(table =>
+                        {
+                            table.ColumnsDefinition(columns =>
+                            {
+                                columns.RelativeColumn(1.5f);
+                                columns.RelativeColumn(2);
+                                columns.RelativeColumn(1);
+                                columns.RelativeColumn(1);
+                                columns.RelativeColumn(1);
+                                columns.RelativeColumn(1.5f);
+                            });
+
+                            table.Header(header =>
+                            {
+                                header.Cell().Border(1).BorderColor(Colors.Black).Padding(5).Text("Mã lô").SemiBold();
+                                header.Cell().Border(1).BorderColor(Colors.Black).Padding(5).Text("Nguyên liệu").SemiBold();
+                                header.Cell().Border(1).BorderColor(Colors.Black).Padding(5).Text("HSD").SemiBold();
+                                header.Cell().Border(1).BorderColor(Colors.Black).Padding(5).Text("SL Còn").SemiBold();
+                                header.Cell().Border(1).BorderColor(Colors.Black).Padding(5).Text("Còn lại").SemiBold();
+                                header.Cell().Border(1).BorderColor(Colors.Black).Padding(5).Text("Trạng thái").SemiBold();
+                            });
+
+                            foreach (var item in CanhBaoHSDItems)
+                            {
+                                table.Cell().Border(1).BorderColor(Colors.Black).Padding(5).Text(item.MaPhieuNhap);
+                                table.Cell().Border(1).BorderColor(Colors.Black).Padding(5).Text(item.TenNguyenLieu);
+                                table.Cell().Border(1).BorderColor(Colors.Black).Padding(5).Text(item.HanSuDung.ToString("dd/MM/yyyy"));
+                                table.Cell().Border(1).BorderColor(Colors.Black).Padding(5).Text(item.SoLuongCon);
+                                table.Cell().Border(1).BorderColor(Colors.Black).Padding(5).Text($"{item.SoNgayConLai} ngày");
+                                table.Cell().Border(1).BorderColor(Colors.Black).Padding(5).Text(item.TrangThai);
+                            }
+                        });
+
+                        // Section 3: Đối soát tiêu hao
+                        col.Item().PaddingTop(20).PaddingBottom(5).Text("ĐỐI SOÁT TIÊU HAO NGUYÊN LIỆU").FontSize(12).Bold().FontColor(Colors.Black);
+                        col.Item().Table(table =>
+                        {
+                            table.ColumnsDefinition(columns =>
+                            {
+                                columns.RelativeColumn(1);
+                                columns.RelativeColumn(2);
+                                columns.RelativeColumn(1);
+                                columns.RelativeColumn(1.5f);
+                                columns.RelativeColumn(1.5f);
+                            });
+
+                            table.Header(header =>
+                            {
+                                header.Cell().Border(1).BorderColor(Colors.Black).Padding(5).Text("Mã NL").SemiBold();
+                                header.Cell().Border(1).BorderColor(Colors.Black).Padding(5).Text("Tên nguyên liệu").SemiBold();
+                                header.Cell().Border(1).BorderColor(Colors.Black).Padding(5).Text("Đơn vị").SemiBold();
+                                header.Cell().Border(1).BorderColor(Colors.Black).Padding(5).Text("Tổng nhập").SemiBold().AlignRight();
+                                header.Cell().Border(1).BorderColor(Colors.Black).Padding(5).Text("Tổng tiêu hao").SemiBold().AlignRight();
+                            });
+
+                            foreach (var item in DoiSoatItems)
+                            {
+                                table.Cell().Border(1).BorderColor(Colors.Black).Padding(5).Text(item.MaNL);
+                                table.Cell().Border(1).BorderColor(Colors.Black).Padding(5).Text(item.TenNguyenLieu);
+                                table.Cell().Border(1).BorderColor(Colors.Black).Padding(5).Text(item.DonVi);
+                                table.Cell().Border(1).BorderColor(Colors.Black).Padding(5).Text($"{item.TongLuongNhap:G29}").AlignRight();
+                                table.Cell().Border(1).BorderColor(Colors.Black).Padding(5).Text($"{item.TongLuongTieuHao:G29}").AlignRight();
+                            }
+                        });
+
+                        // Section 4: Biến động hao hụt
+                        col.Item().PaddingTop(20).PaddingBottom(5).Text("BIẾN ĐỘNG HAO HỤT (KIỂM KÊ)").FontSize(12).Bold().FontColor(Colors.Black);
+                        col.Item().Table(table =>
+                        {
+                            table.ColumnsDefinition(columns =>
+                            {
+                                columns.RelativeColumn(1);
+                                columns.RelativeColumn(1.5f);
+                                columns.RelativeColumn(1);
+                                columns.RelativeColumn(1);
+                                columns.RelativeColumn(1);
+                                columns.RelativeColumn(1);
+                                columns.RelativeColumn(1.5f);
+                            });
+
+                            table.Header(header =>
+                            {
+                                header.Cell().Border(1).BorderColor(Colors.Black).Padding(5).Text("Ngày kiểm").SemiBold();
+                                header.Cell().Border(1).BorderColor(Colors.Black).Padding(5).Text("Mã NL").SemiBold();
+                                header.Cell().Border(1).BorderColor(Colors.Black).Padding(5).Text("Tồn HT").SemiBold().AlignRight();
+                                header.Cell().Border(1).BorderColor(Colors.Black).Padding(5).Text("Tồn TT").SemiBold().AlignRight();
+                                header.Cell().Border(1).BorderColor(Colors.Black).Padding(5).Text("Chênh lệch").SemiBold().AlignRight();
+                                header.Cell().Border(1).BorderColor(Colors.Black).Padding(5).Text("Loại ĐC").SemiBold();
+                                header.Cell().Border(1).BorderColor(Colors.Black).Padding(5).Text("Chứng từ").SemiBold();
+                            });
+
+                            foreach (var item in BienDongItems)
+                            {
+                                table.Cell().Border(1).BorderColor(Colors.Black).Padding(5).Text(item.NgayKiem.ToString("dd/MM/yyyy"));
+                                table.Cell().Border(1).BorderColor(Colors.Black).Padding(5).Text(item.MaNL);
+                                table.Cell().Border(1).BorderColor(Colors.Black).Padding(5).Text($"{item.TonHeThong:G29}").AlignRight();
+                                table.Cell().Border(1).BorderColor(Colors.Black).Padding(5).Text($"{item.TonThucTe:G29}").AlignRight();
+                                table.Cell().Border(1).BorderColor(Colors.Black).Padding(5).Text(item.ChenhLechDisplay).AlignRight();
+                                table.Cell().Border(1).BorderColor(Colors.Black).Padding(5).Text(item.LoaiDieuChinh);
+                                table.Cell().Border(1).BorderColor(Colors.Black).Padding(5).Text(item.MaPhieuDieuChinh);
+                            }
+                        });
+
+                        // Section 5: Top món ăn
+                        col.Item().PaddingTop(20).PaddingBottom(5).Text("TOP MÓN ĂN BÁN CHẠY").FontSize(12).Bold().FontColor(Colors.Black);
+                        col.Item().Table(table =>
+                        {
+                            table.ColumnsDefinition(columns =>
+                            {
+                                columns.RelativeColumn(1);
+                                columns.RelativeColumn(2);
+                                columns.RelativeColumn(1);
+                                columns.RelativeColumn(1.5f);
+                                columns.RelativeColumn(1);
+                            });
+
+                            table.Header(header =>
+                            {
+                                header.Cell().Border(1).BorderColor(Colors.Black).Padding(5).Text("Mã món").SemiBold();
+                                header.Cell().Border(1).BorderColor(Colors.Black).Padding(5).Text("Tên món").SemiBold();
+                                header.Cell().Border(1).BorderColor(Colors.Black).Padding(5).Text("SL bán").SemiBold().AlignRight();
+                                header.Cell().Border(1).BorderColor(Colors.Black).Padding(5).Text("Doanh thu").SemiBold().AlignRight();
+                                header.Cell().Border(1).BorderColor(Colors.Black).Padding(5).Text("Tỷ trọng").SemiBold().AlignRight();
+                            });
+
+                            foreach (var item in TopMonAnItems)
+                            {
+                                table.Cell().Border(1).BorderColor(Colors.Black).Padding(5).Text(item.MaMon);
+                                table.Cell().Border(1).BorderColor(Colors.Black).Padding(5).Text(item.TenMon);
+                                table.Cell().Border(1).BorderColor(Colors.Black).Padding(5).Text($"{item.SoLuongBan:N0}").AlignRight();
+                                table.Cell().Border(1).BorderColor(Colors.Black).Padding(5).Text($"{item.DoanhThu:N0}").AlignRight();
+                                table.Cell().Border(1).BorderColor(Colors.Black).Padding(5).Text($"{item.TyTrong}%").AlignRight();
+                            }
+                        });
+                    });
+
+                    page.Footer().AlignCenter().Text(x =>
+                    {
+                        x.Span("Trang ");
+                        x.CurrentPageNumber();
+                        x.Span(" / ");
+                        x.TotalPages();
+                    });
                 });
-            }
-            else
-            {
-                EmailStatusMessage = $"Lỗi: {result.Message}";
-                System.Windows.Application.Current?.Dispatcher.Invoke(() =>
-                {
-                    System.Windows.MessageBox.Show($"Có lỗi xảy ra khi gửi email:\n{result.Message}",
-                        "Lỗi", System.Windows.MessageBoxButton.OK, System.Windows.MessageBoxImage.Error);
-                });
-            }
+            })
+            .GeneratePdf(dialog.FileName);
+
+            MessageBox.Show($"Xuất báo cáo PDF thành công!\n{dialog.FileName}", "Thành công", MessageBoxButton.OK, MessageBoxImage.Information);
         }
-        catch (Exception ex) {
-            EmailStatusMessage = $"Lỗi: {ex.Message}";
-        }
-        finally
+        catch (Exception ex)
         {
-            IsSendingEmail = false;
-            // Tự động ẩn message sau 5 giây
-            _ = Task.Delay(5000).ContinueWith(_ =>
-            {
-                System.Windows.Application.Current?.Dispatcher.Invoke(() =>
-                    EmailStatusMessage = string.Empty);
-            });
+            MessageBox.Show($"Lỗi khi xuất báo cáo:\n{ex.Message}", "Lỗi", MessageBoxButton.OK, MessageBoxImage.Error);
         }
     }
 }

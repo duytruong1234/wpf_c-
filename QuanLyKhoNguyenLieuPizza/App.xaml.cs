@@ -139,5 +139,6 @@ namespace QuanLyKhoNguyenLieuPizza
             MainWindow = mainWindow;
             mainWindow.Show();
         }
+
     }
 }

@@ -257,6 +257,10 @@ public class BanHangService : DatabaseContext
                             var tenNL = await nlNameCmd.ExecuteScalarAsync() as string ?? $"ID {recipe.NguyenLieuID}";
                             throw new Exception($"Nguyên liệu '{tenNL}' không đủ tồn kho để chế biến.");
                         }
+
+                        await DeductSoLuongConTheoLoAsync(
+                            conn, transaction, recipe.NguyenLieuID, convertedAmount,
+                            unitContextCache, unitNameCache);
                     }
                 }
 
@@ -974,6 +978,10 @@ public class BanHangService : DatabaseContext
                     var tenNL = await nlNameCmd.ExecuteScalarAsync() as string ?? $"ID {kvp.Key}";
                     throw new Exception($"Nguyên liệu '{tenNL}' không đủ tồn kho để chế biến.");
                 }
+
+                await DeductSoLuongConTheoLoAsync(
+                    conn, transaction, kvp.Key, kvp.Value,
+                    unitContextCache, unitNameCache);
             }
 
             transaction.Commit();
@@ -983,6 +991,79 @@ public class BanHangService : DatabaseContext
             transaction.Rollback();
             throw;
         }
+    }
+
+    private async Task DeductSoLuongConTheoLoAsync(
+        SqlConnection conn,
+        SqlTransaction transaction,
+        int nguyenLieuId,
+        decimal soLuongTruTheoDonViTon,
+        Dictionary<int, IngredientUnitContext> contextCache,
+        Dictionary<int, string> unitNameCache)
+    {
+        const decimal tolerance = 0.0001m;
+        var remaining = soLuongTruTheoDonViTon;
+
+        var batches = new List<(int ChiTietID, decimal SoLuongCon, int? DonViID)>();
+        var sql = @"SELECT ct.ChiTietID, ct.SoLuongCon, ct.DonViID
+                    FROM CT_PhieuNhap ct WITH (UPDLOCK, ROWLOCK)
+                    INNER JOIN PhieuNhap pn ON ct.PhieuNhapID = pn.PhieuNhapID
+                    WHERE ct.NguyenLieuID = @NguyenLieuID
+                      AND pn.TrangThai = 2
+                      AND ct.SoLuongCon > 0
+                    ORDER BY CASE WHEN ct.HSD IS NULL THEN 1 ELSE 0 END,
+                             ct.HSD ASC, pn.NgayNhap ASC, ct.ChiTietID ASC";
+
+        using (var cmd = new SqlCommand(sql, conn, transaction))
+        {
+            cmd.Parameters.AddWithValue("@NguyenLieuID", nguyenLieuId);
+            using var reader = await cmd.ExecuteReaderAsync();
+            while (await reader.ReadAsync())
+            {
+                batches.Add((
+                    reader.GetInt32(0),
+                    reader.GetDecimal(1),
+                    reader.IsDBNull(2) ? null : reader.GetInt32(2)));
+            }
+        }
+
+        foreach (var batch in batches)
+        {
+            if (remaining <= tolerance)
+                break;
+
+            var batchStockAmount = await ConvertAmountToStockUnitAsync(
+                conn, transaction, nguyenLieuId, batch.SoLuongCon, batch.DonViID,
+                contextCache, unitNameCache);
+
+            if (batchStockAmount <= tolerance)
+                continue;
+
+            var takeStockAmount = remaining <= batchStockAmount ? remaining : batchStockAmount;
+            var takeBatchAmount = await ConvertStockAmountToUnitAsync(
+                conn, transaction, nguyenLieuId, takeStockAmount, batch.DonViID,
+                contextCache, unitNameCache);
+
+            if (takeBatchAmount > batch.SoLuongCon || batchStockAmount - takeStockAmount <= tolerance)
+                takeBatchAmount = batch.SoLuongCon;
+
+            var updateSql = @"UPDATE CT_PhieuNhap
+                              SET SoLuongCon = CASE
+                                  WHEN SoLuongCon - @SoLuongTru <= @Tolerance THEN 0
+                                  ELSE SoLuongCon - @SoLuongTru
+                              END
+                              WHERE ChiTietID = @ChiTietID";
+            using var updateCmd = new SqlCommand(updateSql, conn, transaction);
+            updateCmd.Parameters.AddWithValue("@SoLuongTru", takeBatchAmount);
+            updateCmd.Parameters.AddWithValue("@Tolerance", tolerance);
+            updateCmd.Parameters.AddWithValue("@ChiTietID", batch.ChiTietID);
+            await updateCmd.ExecuteNonQueryAsync();
+
+            remaining -= takeStockAmount;
+        }
+
+        if (remaining > tolerance)
+            throw new InvalidOperationException("Không đủ SoLuongCon theo lô để trừ tồn bán hàng.");
     }
 
     private async Task<List<(int Id, string Name, decimal Required, decimal Available)>> GetInsufficientIngredientsAsync(

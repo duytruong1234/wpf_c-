@@ -1,6 +1,7 @@
 <UserControl x:Class="QuanLyKhoNguyenLieuPizza.Views.KiemKeView"
          xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
          xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:components="clr-namespace:QuanLyKhoNguyenLieuPizza.Views.Components"
          xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
          xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
          xmlns:vm="clr-namespace:QuanLyKhoNguyenLieuPizza.ViewModels"
@@ -537,13 +538,16 @@
 
                                 <!-- Loại kiểm -->
                                 <StackPanel Grid.Column="0">
-                                    <TextBlock Text="Loại kiểm kê" FontSize="12" Foreground="{StaticResource Gray500}" Margin="4,0,0,6" FontWeight="SemiBold"/>
+                                    <TextBlock FontSize="12" Foreground="{StaticResource Gray500}" Margin="4,0,0,6" FontWeight="SemiBold">
+                                        <Run Text="Loại kiểm kê"/>
+                                        <Run Text=" *" Foreground="#EF4444"/>
+                                    </TextBlock>
                                     <Border Style="{StaticResource ModernInputBorder}" BorderThickness="1">
                                         <ComboBox ItemsSource="{Binding LoaiKiemKeOptions}"
                                                   SelectedItem="{Binding LoaiKiemKe, UpdateSourceTrigger=PropertyChanged}"
                                                   Style="{StaticResource PizzaComboBoxStyle}"
                                                   ItemContainerStyle="{StaticResource PizzaComboBoxItemStyle}"
-                                                  BorderThickness="0" Background="Transparent"
+                                                            BorderThickness="0" Background="Transparent"
                                                   Padding="8,8" VerticalContentAlignment="Center"
                                                   IsEnabled="{Binding IsViewOnly, Converter={StaticResource InverseBoolConverter}}"/>
                                     </Border>
@@ -596,57 +600,164 @@
                         <!-- Bảng chi tiết kiểm kê -->
                         <DataGrid ItemsSource="{Binding ChiTietKiemKeForm}"
                                   AutoGenerateColumns="False" CanUserAddRows="False"
-                                  HeadersVisibility="Column" GridLinesVisibility="None" RowHeight="80"
+                                  CanUserResizeColumns="False"
+                                  HeadersVisibility="Column" GridLinesVisibility="None" RowHeight="64"
                                   Background="White" BorderThickness="1" BorderBrush="#E2E8F0"
-                                  ColumnHeaderHeight="56">
+                                  ColumnHeaderHeight="75"
+                                  ScrollViewer.HorizontalScrollBarVisibility="Disabled"
+                                  ScrollViewer.VerticalScrollBarVisibility="Auto">
 
                             <DataGrid.ColumnHeaderStyle>
                                 <Style TargetType="DataGridColumnHeader">
                                     <Setter Property="Background" Value="#1E293B"/>
                                     <Setter Property="Foreground" Value="White"/>
-                                    <Setter Property="FontSize" Value="13"/>
-                                    <Setter Property="FontWeight" Value="SemiBold"/>
-                                    <Setter Property="FontFamily" Value="Segoe UI Variable, Segoe UI, Arial"/>
-                                    <Setter Property="Padding" Value="12,10"/>
-                                    <Setter Property="BorderBrush" Value="#334155"/>
-                                    <Setter Property="BorderThickness" Value="0,0,0,1"/>
-                                    <Setter Property="SeparatorBrush" Value="Transparent"/>
-                                </Style>
-                            </DataGrid.ColumnHeaderStyle>
+                                     <Setter Property="FontSize" Value="12"/>
+                                     <Setter Property="FontWeight" Value="SemiBold"/>
+                                     <Setter Property="FontFamily" Value="Segoe UI Variable, Segoe UI, Arial"/>
+                                     <Setter Property="Padding" Value="8,6"/>
+                                     <Setter Property="MinHeight" Value="60"/>
+                                     <Setter Property="VerticalContentAlignment" Value="Center"/>
+                                     <Setter Property="BorderBrush" Value="#334155"/>
+                                     <Setter Property="BorderThickness" Value="0,0,0,1"/>
+                                     <Setter Property="SeparatorBrush" Value="Transparent"/>
+                                 </Style>
+                             </DataGrid.ColumnHeaderStyle>
+
+                             <DataGrid.RowStyle>
+                                 <Style TargetType="DataGridRow">
+                                     <Setter Property="Background" Value="White"/>
+                                     <Setter Property="Foreground" Value="{StaticResource Gray800}"/>
+                                     <Setter Property="MinHeight" Value="64"/>
+                                     <Setter Property="BorderBrush" Value="#E2E8F0"/>
+                                     <Setter Property="BorderThickness" Value="0,0,0,1"/>
+                                     <Style.Triggers>
+                                         <Trigger Property="IsMouseOver" Value="True">
+                                             <Setter Property="Background" Value="#F8FAFC"/>
+                                         </Trigger>
+                                         <Trigger Property="IsSelected" Value="True">
+                                             <Setter Property="Background" Value="White"/>
+                                             <Setter Property="Foreground" Value="{StaticResource Gray800}"/>
+                                         </Trigger>
+                                     </Style.Triggers>
+                                 </Style>
+                             </DataGrid.RowStyle>
+
+                             <DataGrid.CellStyle>
+                                 <Style TargetType="DataGridCell">
+                                     <Setter Property="Background" Value="White"/>
+                                     <Setter Property="Foreground" Value="{StaticResource Gray800}"/>
+                                     <Setter Property="BorderThickness" Value="0"/>
+                                     <Setter Property="Padding" Value="0"/>
+                                     <Setter Property="VerticalContentAlignment" Value="Stretch"/>
+                                     <Setter Property="HorizontalContentAlignment" Value="Stretch"/>
+                                     <Setter Property="Template">
+                                         <Setter.Value>
+                                             <ControlTemplate TargetType="DataGridCell">
+                                                 <Border Background="{TemplateBinding Background}"
+                                                         Padding="{TemplateBinding Padding}">
+                                                     <ContentPresenter VerticalAlignment="Center" HorizontalAlignment="Stretch"/>
+                                                 </Border>
+                                             </ControlTemplate>
+                                         </Setter.Value>
+                                     </Setter>
+                                     <Style.Triggers>
+                                         <Trigger Property="IsSelected" Value="True">
+                                             <Setter Property="Background" Value="White"/>
+                                             <Setter Property="Foreground" Value="{StaticResource Gray800}"/>
+                                         </Trigger>
+                                         <Trigger Property="IsKeyboardFocusWithin" Value="True">
+                                             <Setter Property="Background" Value="White"/>
+                                         </Trigger>
+                                     </Style.Triggers>
+                                 </Style>
+                             </DataGrid.CellStyle>
 
                             <DataGrid.Columns>
                                 <!-- Tên Nguyên Liệu -->
-                                <DataGridTemplateColumn Width="220">
-                                    <DataGridTemplateColumn.Header>
-                                        <TextBlock Text="Tên Nguyên Liệu" HorizontalAlignment="Left" FontWeight="SemiBold"/>
-                                    </DataGridTemplateColumn.Header>
-                                    <DataGridTemplateColumn.CellTemplate>
-                                        <DataTemplate>
-                                            <StackPanel Margin="6,6" VerticalAlignment="Center">
-                                                <!-- Dropdown box style to match Image 2 -->
-                                                <Border BorderBrush="{StaticResource Gray200}" BorderThickness="1.5" CornerRadius="8" Background="White" Padding="0" Margin="0,0,0,4">
-                                                    <ComboBox ItemsSource="{Binding DataContext.NguyenLieus, RelativeSource={RelativeSource AncestorType=UserControl}}"
-                                                              SelectedItem="{Binding NguyenLieu, UpdateSourceTrigger=PropertyChanged}"
-                                                              DisplayMemberPath="TenNguyenLieu"
-                                                              Style="{StaticResource PizzaComboBoxStyle}"
-                                                              ItemContainerStyle="{StaticResource PizzaComboBoxItemStyle}"
-                                                              BorderThickness="0" Background="Transparent"
-                                                              Padding="8,6" VerticalContentAlignment="Center"
-                                                              IsEnabled="{Binding DataContext.IsViewOnly, RelativeSource={RelativeSource AncestorType=UserControl}, Converter={StaticResource InverseBoolConverter}}"/>
-                                                </Border>
-                                                <!-- Quy đổi hiển thị -->
-                                                <TextBlock Text="{Binding QuyDoiDisplay}" FontSize="11" Foreground="{StaticResource Gray500}" Visibility="{Binding QuyDoiDisplay, Converter={StaticResource StringToVisibilityConverter}}"/>
-                                            </StackPanel>
-                                        </DataTemplate>
-                                    </DataGridTemplateColumn.CellTemplate>
-                                </DataGridTemplateColumn>
+                                <DataGridTemplateColumn Width="1.35*">
+                                     <DataGridTemplateColumn.Header>
+                                        <TextBlock Text="Tên Nguyên Liệu" HorizontalAlignment="Left" FontWeight="SemiBold" TextWrapping="Wrap"/>
+                                     </DataGridTemplateColumn.Header>
+                                     <DataGridTemplateColumn.CellTemplate>
+                                         <DataTemplate>
+                                            <StackPanel Margin="5,0" VerticalAlignment="Center">
+                                                 <!-- Dropdown box style to match Image 2 -->
+                                                <Border BorderBrush="{StaticResource Gray200}" BorderThickness="1.5" CornerRadius="8" Background="White" Padding="0" Height="40">
+                                                     <ComboBox ItemsSource="{Binding DataContext.NguyenLieus, RelativeSource={RelativeSource AncestorType=UserControl}}"
+                                                               SelectedItem="{Binding NguyenLieu, UpdateSourceTrigger=PropertyChanged}"
+                                                               DisplayMemberPath="TenNguyenLieu"
+                                                               Style="{StaticResource PizzaComboBoxStyle}"
+                                                               ItemContainerStyle="{StaticResource PizzaComboBoxItemStyle}"
+                                                               BorderThickness="0" Background="Transparent"
+                                                               Padding="6,4" Height="38" VerticalContentAlignment="Center"
+                                                               IsEnabled="{Binding DataContext.IsViewOnly, RelativeSource={RelativeSource AncestorType=UserControl}, Converter={StaticResource InverseBoolConverter}}"/>
+                                                 </Border>
+                                                 <!-- Quy đổi hiển thị -->
+                                                <TextBlock Text="{Binding QuyDoiDisplay}" Visibility="Collapsed"/>
+                                             </StackPanel>
+                                         </DataTemplate>
+                                     </DataGridTemplateColumn.CellTemplate>
+                                 </DataGridTemplateColumn>
+
+                                <!-- HSD (Nhập ngày) -->
+                                <DataGridTemplateColumn Width="0.95*">
+                                     <DataGridTemplateColumn.Header>
+                                         <StackPanel HorizontalAlignment="Center">
+                                            <TextBlock Text="HSD" HorizontalAlignment="Center" FontWeight="SemiBold" TextWrapping="Wrap" TextAlignment="Center"/>
+                                            <TextBlock Text="(Nhập ngày hết hạn)" HorizontalAlignment="Center" FontSize="11" Foreground="#94A3B8" FontWeight="Normal"
+                                                       TextWrapping="Wrap" TextAlignment="Center"/>
+                                         </StackPanel>
+                                     </DataGridTemplateColumn.Header>
+                                     <DataGridTemplateColumn.CellTemplate>
+                                         <DataTemplate>
+                                            <Border BorderBrush="{StaticResource Gray200}" BorderThickness="1.5" CornerRadius="8" Background="White" Padding="0" Margin="5,0" Height="40" VerticalAlignment="Center">
+                                                <DatePicker SelectedDate="{Binding NgayHetHanNhap, UpdateSourceTrigger=PropertyChanged, Mode=TwoWay}"
+                                                            Language="vi-VN"
+                                                            BorderThickness="0" Background="Transparent"
+                                                             Padding="4,4" Height="38" VerticalContentAlignment="Center" FontSize="12"
+                                                             IsEnabled="{Binding DataContext.IsViewOnly, RelativeSource={RelativeSource AncestorType=UserControl}, Converter={StaticResource InverseBoolConverter}}"/>
+                                             </Border>
+                                         </DataTemplate>
+                                     </DataGridTemplateColumn.CellTemplate>
+                                 </DataGridTemplateColumn>
+
+                                <!-- Lô nguyên liệu -->
+                                <DataGridTemplateColumn Width="1.7*" Visibility="Collapsed">
+                                     <DataGridTemplateColumn.Header>
+                                         <StackPanel HorizontalAlignment="Center">
+                                            <TextBlock Text="Lô nguyên liệu" HorizontalAlignment="Center" FontWeight="SemiBold" TextWrapping="Wrap" TextAlignment="Center"/>
+                                            <TextBlock Text="(Chọn lô)" HorizontalAlignment="Center" FontSize="11" Foreground="#94A3B8" FontWeight="Normal"
+                                                       TextWrapping="Wrap" TextAlignment="Center"/>
+                                         </StackPanel>
+                                     </DataGridTemplateColumn.Header>
+                                     <DataGridTemplateColumn.CellTemplate>
+                                         <DataTemplate>
+                                            <StackPanel Margin="5,0" VerticalAlignment="Center">
+                                                <Border BorderBrush="{StaticResource Gray200}" BorderThickness="1.5" CornerRadius="8" Background="White" Padding="0" Height="40">
+                                                     <ComboBox ItemsSource="{Binding LoKiemKeOptions}"
+                                                               SelectedItem="{Binding SelectedLoKiemKe, UpdateSourceTrigger=PropertyChanged}"
+                                                               DisplayMemberPath="DisplayText"
+                                                               Style="{StaticResource PizzaComboBoxStyle}"
+                                                               ItemContainerStyle="{StaticResource PizzaComboBoxItemStyle}"
+                                                               BorderThickness="0" Background="Transparent"
+                                                               Padding="6,4" Height="38" MaxDropDownHeight="280"
+                                                               ToolTip="{Binding SelectedLoKiemKe.DisplayText}"
+                                                               VerticalContentAlignment="Center"
+                                                               IsEnabled="{Binding DataContext.IsViewOnly, RelativeSource={RelativeSource AncestorType=UserControl}, Converter={StaticResource InverseBoolConverter}}"/>
+                                                 </Border>
+                                                 <TextBlock Text="{Binding LoKiemKeDisplay}" Visibility="Collapsed"/>
+                                             </StackPanel>
+                                         </DataTemplate>
+                                     </DataGridTemplateColumn.CellTemplate>
+                                 </DataGridTemplateColumn>
 
                                 <!-- Tồn Hệ Thống -->
-                                <DataGridTemplateColumn Width="150">
+                                <DataGridTemplateColumn Width="0.75*">
                                     <DataGridTemplateColumn.Header>
                                         <StackPanel HorizontalAlignment="Center">
-                                            <TextBlock Text="Tồn Hệ Thống" HorizontalAlignment="Center" FontWeight="SemiBold"/>
-                                            <TextBlock Text="(Đơn vị lưu tồn kho)" HorizontalAlignment="Center" FontSize="11" Foreground="#94A3B8" FontWeight="Normal"/>
+                                            <TextBlock Text="Tồn Hệ Thống" HorizontalAlignment="Center" FontWeight="SemiBold" TextWrapping="Wrap" TextAlignment="Center"/>
+                                            <TextBlock Text="(Đơn vị lưu tồn kho)" HorizontalAlignment="Center" FontSize="11" Foreground="#94A3B8" FontWeight="Normal"
+                                                       TextWrapping="Wrap" TextAlignment="Center"/>
                                         </StackPanel>
                                     </DataGridTemplateColumn.Header>
                                     <DataGridTemplateColumn.CellTemplate>
@@ -661,34 +772,35 @@
                                 </DataGridTemplateColumn>
 
                                 <!-- Tồn Thực Tế -->
-                                <DataGridTemplateColumn Width="190">
-                                    <DataGridTemplateColumn.Header>
-                                        <StackPanel HorizontalAlignment="Center">
-                                            <TextBlock Text="Tồn Thực Tế" HorizontalAlignment="Center" FontWeight="SemiBold"/>
-                                            <TextBlock Text="(Nhập số đếm)" HorizontalAlignment="Center" FontSize="11" Foreground="#94A3B8" FontWeight="Normal"/>
-                                        </StackPanel>
-                                    </DataGridTemplateColumn.Header>
-                                    <DataGridTemplateColumn.CellTemplate>
-                                        <DataTemplate>
-                                            <Grid Width="160" HorizontalAlignment="Center" VerticalAlignment="Center">
-                                                <Grid.ColumnDefinitions>
-                                                    <ColumnDefinition Width="*"/>
-                                                    <ColumnDefinition Width="8"/>
-                                                    <ColumnDefinition Width="80"/>
-                                                </Grid.ColumnDefinitions>
-                                                <!-- TextBox for numeric input -->
-                                                <Border Grid.Column="0" Style="{StaticResource ModernInputBorder}" Padding="0" Height="36">
-                                                    <TextBox Style="{StaticResource BorderlessTextBoxStyle}" Text="{Binding TonThucTeText, UpdateSourceTrigger=PropertyChanged}"
-                                                             BorderThickness="0" Background="Transparent"
-                                                             FontSize="13" FontWeight="Bold" Foreground="{StaticResource Gray800}"
+                                <DataGridTemplateColumn Width="1.15*">
+                                     <DataGridTemplateColumn.Header>
+                                         <StackPanel HorizontalAlignment="Center">
+                                            <TextBlock Text="Tồn Thực Tế" HorizontalAlignment="Center" FontWeight="SemiBold" TextWrapping="Wrap" TextAlignment="Center"/>
+                                            <TextBlock Text="(Nhập số đếm)" HorizontalAlignment="Center" FontSize="11" Foreground="#94A3B8" FontWeight="Normal"
+                                                       TextWrapping="Wrap" TextAlignment="Center"/>
+                                         </StackPanel>
+                                     </DataGridTemplateColumn.Header>
+                                     <DataGridTemplateColumn.CellTemplate>
+                                         <DataTemplate>
+                                            <Grid Margin="5,0" HorizontalAlignment="Stretch" VerticalAlignment="Center">
+                                                 <Grid.ColumnDefinitions>
+                                                     <ColumnDefinition Width="*"/>
+                                                    <ColumnDefinition Width="6"/>
+                                                    <ColumnDefinition Width="72"/>
+                                                 </Grid.ColumnDefinitions>
+                                                 <!-- TextBox for numeric input -->
+                                                <Border Grid.Column="0" Style="{StaticResource ModernInputBorder}" Padding="0" Height="38">
+                                                     <TextBox Style="{StaticResource BorderlessTextBoxStyle}" Text="{Binding TonThucTeText, UpdateSourceTrigger=PropertyChanged}"
+                                                              BorderThickness="0" Background="Transparent"
+                                                              FontSize="13" FontWeight="Bold" Foreground="{StaticResource Gray800}"
                                                              TextAlignment="Center" VerticalContentAlignment="Center"
                                                              IsEnabled="{Binding DataContext.IsViewOnly, RelativeSource={RelativeSource AncestorType=UserControl}, Converter={StaticResource InverseBoolConverter}}"/>
-                                                </Border>
-                                                <!-- ComboBox for unit selection -->
-                                                <Border Grid.Column="2" Style="{StaticResource ModernInputBorder}" Padding="0" Height="36">
-                                                    <ComboBox ItemsSource="{Binding DonViKiemOptions}"
-                                                              SelectedItem="{Binding SelectedDonViKiem, UpdateSourceTrigger=PropertyChanged}"
-                                                              DisplayMemberPath="DonViTinh.TenDonVi"
+                                                 </Border>
+                                                 <!-- ComboBox for unit selection -->
+                                                <Border Grid.Column="2" Style="{StaticResource ModernInputBorder}" Padding="0" Height="38">
+                                                     <ComboBox ItemsSource="{Binding DonViKiemOptions}"
+                                                               SelectedItem="{Binding SelectedDonViKiem, UpdateSourceTrigger=PropertyChanged}"
+                                                               DisplayMemberPath="DonViTinh.TenDonVi"
                                                               Style="{StaticResource BlueComboBoxStyle}"
                                                               ItemContainerStyle="{StaticResource PizzaComboBoxItemStyle}"
                                                               BorderThickness="0" Background="Transparent"
@@ -700,22 +812,23 @@
                                 </DataGridTemplateColumn>
 
                                 <!-- Chênh Lệch -->
-                                <DataGridTemplateColumn Width="160">
-                                    <DataGridTemplateColumn.Header>
-                                        <StackPanel HorizontalAlignment="Center">
-                                            <TextBlock Text="Chênh Lệch" HorizontalAlignment="Center" FontWeight="SemiBold"/>
-                                            <TextBlock Text="(Hệ thống &amp; Thực tế)" HorizontalAlignment="Center" FontSize="11" Foreground="#94A3B8" FontWeight="Normal"/>
-                                        </StackPanel>
-                                    </DataGridTemplateColumn.Header>
+                                <DataGridTemplateColumn Width="1.05*">
+                                     <DataGridTemplateColumn.Header>
+                                         <StackPanel HorizontalAlignment="Center">
+                                            <TextBlock Text="Chênh Lệch" HorizontalAlignment="Center" FontWeight="SemiBold" TextWrapping="Wrap" TextAlignment="Center"/>
+                                            <TextBlock Text="(Hệ thống &amp; Thực tế)" HorizontalAlignment="Center" FontSize="11" Foreground="#94A3B8" FontWeight="Normal"
+                                                       TextWrapping="Wrap" TextAlignment="Center"/>
+                                         </StackPanel>
+                                     </DataGridTemplateColumn.Header>
                                     <DataGridTemplateColumn.CellTemplate>
                                         <DataTemplate>
-                                            <StackPanel VerticalAlignment="Center" HorizontalAlignment="Center">
+                                            <StackPanel Orientation="Horizontal" VerticalAlignment="Center" HorizontalAlignment="Center">
                                                 <StackPanel Orientation="Horizontal" HorizontalAlignment="Center">
                                                     <TextBlock Text="{Binding ChenhLechDisplay}" FontWeight="Bold" FontSize="13" Foreground="{Binding ChenhLechColor}"/>
                                                     <TextBlock Text=" "/>
                                                     <TextBlock Text="{Binding TenDonViKho}" FontWeight="Bold" FontSize="13" Foreground="{Binding ChenhLechColor}"/>
                                                 </StackPanel>
-                                                <Border CornerRadius="6" Padding="8,3" Margin="0,4,0,0" HorizontalAlignment="Center" BorderThickness="1">
+                                                <Border CornerRadius="6" Padding="7,2" Margin="8,0,0,0" HorizontalAlignment="Center" BorderThickness="1">
                                                     <Border.Style>
                                                         <Style TargetType="Border">
                                                             <Setter Property="Background" Value="Transparent"/>
@@ -756,10 +869,10 @@
                                 </DataGridTemplateColumn>
 
                                 <!-- Lý do / Giải trình -->
-                                <DataGridTemplateColumn Width="*">
-                                    <DataGridTemplateColumn.Header>
-                                        <TextBlock Text="Lý do / Giải trình" HorizontalAlignment="Left" FontWeight="SemiBold"/>
-                                    </DataGridTemplateColumn.Header>
+                                <DataGridTemplateColumn Width="0.85*" MinWidth="40">
+                                     <DataGridTemplateColumn.Header>
+                                        <TextBlock Text="Lý do / Giải trình" HorizontalAlignment="Left" FontWeight="SemiBold" TextWrapping="Wrap"/>
+                                     </DataGridTemplateColumn.Header>
                                     <DataGridTemplateColumn.CellTemplate>
                                         <DataTemplate>
                                             <Border Style="{StaticResource ModernInputBorder}" Margin="4,4" VerticalAlignment="Center">
@@ -776,20 +889,23 @@
                                 </DataGridTemplateColumn>
 
                                 <!-- Xóa -->
-                                <DataGridTemplateColumn Width="60">
-                                    <DataGridTemplateColumn.Header>
-                                        <TextBlock Text="Xóa" HorizontalAlignment="Center" FontWeight="SemiBold"/>
-                                    </DataGridTemplateColumn.Header>
-                                    <DataGridTemplateColumn.CellTemplate>
-                                        <DataTemplate>
-                                            <Button Command="{Binding DataContext.RemoveNguyenLieuCommand, RelativeSource={RelativeSource AncestorType=DataGrid}}"
-                                                    CommandParameter="{Binding}" Cursor="Hand" HorizontalAlignment="Center" VerticalAlignment="Center"
-                                                    Visibility="{Binding DataContext.IsViewOnly, RelativeSource={RelativeSource AncestorType=UserControl}, Converter={StaticResource InverseBoolToVisibilityConverter}}">
-                                                <Button.Template>
-                                                    <ControlTemplate TargetType="Button">
-                                                        <Border x:Name="border" Padding="8" CornerRadius="6" Background="Transparent">
-                                                            <TextBlock Text="X" FontSize="14" FontWeight="Bold" Foreground="#EF4444"/>
-                                                        </Border>
+                                <DataGridTemplateColumn Width="0.3*" MinWidth="36">
+                                     <DataGridTemplateColumn.Header>
+                                        <TextBlock Text="Xóa" HorizontalAlignment="Center" FontWeight="SemiBold" TextWrapping="Wrap"/>
+                                     </DataGridTemplateColumn.Header>
+                                     <DataGridTemplateColumn.CellTemplate>
+                                         <DataTemplate>
+                                             <Button Command="{Binding DataContext.RemoveNguyenLieuCommand, RelativeSource={RelativeSource AncestorType=DataGrid}}"
+                                                     CommandParameter="{Binding}" Cursor="Hand" HorizontalAlignment="Center" VerticalAlignment="Center"
+                                                     ToolTip="Xóa dòng"
+                                                     Width="36" Height="36"
+                                                     Visibility="{Binding DataContext.IsViewOnly, RelativeSource={RelativeSource AncestorType=UserControl}, Converter={StaticResource InverseBoolToVisibilityConverter}}">
+                                                 <Button.Template>
+                                                     <ControlTemplate TargetType="Button">
+                                                         <Border x:Name="border" CornerRadius="8" Background="Transparent">
+                                                             <ui:SymbolIcon Symbol="Delete24" FontSize="15" Foreground="#EF4444"
+                                                                            HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                                                          </Border>
                                                         <ControlTemplate.Triggers>
                                                             <Trigger Property="IsMouseOver" Value="True">
                                                                 <Setter TargetName="border" Property="Background" Value="#FEE2E2"/>
@@ -957,6 +1073,12 @@
                             <TextBlock Text="THỜI GIAN CHỐT ĐẾM" FontSize="11" FontWeight="Bold" Foreground="#64748B" Margin="0,0,0,4"/>
                             <TextBlock Text="{Binding NgayKiemDisplay}" FontSize="14" FontWeight="SemiBold" Foreground="#1E293B"/>
                         </StackPanel>
+
+                        <Border Width="3" Background="#64748B" Margin="60,0,12,0"/>
+                        <StackPanel VerticalAlignment="Center">
+                            <TextBlock Text="LOẠI KIỂM KÊ" FontSize="11" FontWeight="Bold" Foreground="#64748B" Margin="0,0,0,4"/>
+                            <TextBlock Text="{Binding LoaiKiemKe, Converter={StaticResource NullOrEmptyToTextConverter}}" FontSize="14" FontWeight="SemiBold" Foreground="#1E293B"/>
+                        </StackPanel>
                     </StackPanel>
                 </Border>
 
@@ -1111,18 +1233,23 @@
 
                     <Border Background="White" CornerRadius="14" BorderBrush="#E2E8F0" BorderThickness="1" Padding="0" ClipToBounds="True">
                         <DataGrid ItemsSource="{Binding ChiTietKiemKeForm}" AutoGenerateColumns="False"
-                                  IsReadOnly="True" CanUserAddRows="False" HeadersVisibility="Column"
-                                  GridLinesVisibility="None" RowHeight="62" Background="White" BorderThickness="0" ColumnHeaderHeight="56">
+                                  IsReadOnly="True" CanUserAddRows="False" CanUserResizeColumns="False"
+                                  HeadersVisibility="Column" GridLinesVisibility="None" RowHeight="68"
+                                  Background="White" BorderThickness="0" ColumnHeaderHeight="75"
+                                  ScrollViewer.HorizontalScrollBarVisibility="Disabled"
+                                  ScrollViewer.VerticalScrollBarVisibility="Auto">
                             <DataGrid.ColumnHeaderStyle>
                                 <Style TargetType="DataGridColumnHeader">
                                     <Setter Property="Background" Value="#1E293B"/>
                                     <Setter Property="Foreground" Value="White"/>
                                     <Setter Property="FontWeight" Value="Bold"/>
                                     <Setter Property="FontSize" Value="12"/>
-                                    <Setter Property="Padding" Value="12,0"/>
+                                    <Setter Property="Padding" Value="8,6"/>
+                                    <Setter Property="MinHeight" Value="60"/>
                                     <Setter Property="BorderBrush" Value="#334155"/>
                                     <Setter Property="BorderThickness" Value="0,0,1,0"/>
                                     <Setter Property="HorizontalContentAlignment" Value="Center"/>
+                                    <Setter Property="VerticalContentAlignment" Value="Center"/>
                                     <Style.Triggers>
                                         <DataTrigger Binding="{Binding DataContext.IsDaHuy, RelativeSource={RelativeSource AncestorType=UserControl}}" Value="True">
                                             <Setter Property="Background" Value="#64748B"/>
@@ -1130,16 +1257,62 @@
                                         </DataTrigger>
                                     </Style.Triggers>
                                 </Style>
-                            </DataGrid.ColumnHeaderStyle>
+                             </DataGrid.ColumnHeaderStyle>
+                             <DataGrid.RowStyle>
+                                 <Style TargetType="DataGridRow">
+                                     <Setter Property="Background" Value="White"/>
+                                     <Setter Property="Foreground" Value="{StaticResource Gray800}"/>
+                                     <Setter Property="MinHeight" Value="68"/>
+                                     <Setter Property="BorderBrush" Value="#E2E8F0"/>
+                                     <Setter Property="BorderThickness" Value="0,0,0,1"/>
+                                     <Style.Triggers>
+                                         <Trigger Property="IsMouseOver" Value="True">
+                                             <Setter Property="Background" Value="#F8FAFC"/>
+                                         </Trigger>
+                                         <Trigger Property="IsSelected" Value="True">
+                                             <Setter Property="Background" Value="White"/>
+                                             <Setter Property="Foreground" Value="{StaticResource Gray800}"/>
+                                         </Trigger>
+                                     </Style.Triggers>
+                                 </Style>
+                             </DataGrid.RowStyle>
+                             <DataGrid.CellStyle>
+                                 <Style TargetType="DataGridCell">
+                                     <Setter Property="Background" Value="White"/>
+                                     <Setter Property="Foreground" Value="{StaticResource Gray800}"/>
+                                     <Setter Property="BorderThickness" Value="0"/>
+                                     <Setter Property="Padding" Value="0"/>
+                                     <Setter Property="VerticalContentAlignment" Value="Stretch"/>
+                                     <Setter Property="HorizontalContentAlignment" Value="Stretch"/>
+                                     <Setter Property="Template">
+                                         <Setter.Value>
+                                             <ControlTemplate TargetType="DataGridCell">
+                                                 <Border Background="{TemplateBinding Background}"
+                                                         Padding="{TemplateBinding Padding}">
+                                                     <ContentPresenter VerticalAlignment="Center" HorizontalAlignment="Stretch"/>
+                                                 </Border>
+                                             </ControlTemplate>
+                                         </Setter.Value>
+                                     </Setter>
+                                     <Style.Triggers>
+                                         <Trigger Property="IsSelected" Value="True">
+                                             <Setter Property="Background" Value="White"/>
+                                             <Setter Property="Foreground" Value="{StaticResource Gray800}"/>
+                                         </Trigger>
+                                     </Style.Triggers>
+                                 </Style>
+                             </DataGrid.CellStyle>
                             <DataGrid.Columns>
                                 <!-- Nguyên Liệu -->
-                                <DataGridTemplateColumn Header="Nguyên Liệu" Width="200">
+                                <DataGridTemplateColumn Header="Nguyên Liệu" Width="1.35*">
                                     <DataGridTemplateColumn.CellTemplate>
                                         <DataTemplate>
-                                            <StackPanel Margin="12,0,0,0" VerticalAlignment="Center">
-                                                <TextBlock Text="{Binding NguyenLieu.TenNguyenLieu}" FontSize="13" FontWeight="Medium" Foreground="#1E293B"/>
+                                            <StackPanel Margin="8,0" VerticalAlignment="Center">
+                                                <TextBlock Text="{Binding NguyenLieu.TenNguyenLieu}" FontSize="13" FontWeight="Medium" Foreground="#1E293B"
+                                                           TextWrapping="Wrap" TextTrimming="CharacterEllipsis"/>
                                                 <TextBlock FontSize="11" Foreground="#94A3B8" Margin="0,2,0,0"
-                                                           Visibility="{Binding QuyDoiDisplay, Converter={StaticResource StringToVisibilityConverter}}">
+                                                           TextWrapping="NoWrap" TextTrimming="CharacterEllipsis"
+                                                           Visibility="Collapsed">
                                                     <Run Text="("/>
                                                     <Run Text="{Binding QuyDoiDisplay, Mode=OneWay}"/>
                                                     <Run Text=")"/>
@@ -1149,8 +1322,23 @@
                                     </DataGridTemplateColumn.CellTemplate>
                                 </DataGridTemplateColumn>
 
+                                <!-- Lô / HSD -->
+                                <DataGridTemplateColumn Header="Lô / HSD" Width="1.25*">
+                                    <DataGridTemplateColumn.CellTemplate>
+                                        <DataTemplate>
+                                            <StackPanel Margin="8,0" VerticalAlignment="Center">
+                                                <TextBlock Text="{Binding MaPhieuNhap, Converter={StaticResource NullOrEmptyToTextConverter}}"
+                                                           FontSize="12" FontWeight="SemiBold" Foreground="#1E293B"
+                                                           TextWrapping="Wrap" TextTrimming="CharacterEllipsis"/>
+                                                <TextBlock Text="{Binding HSDText}" FontSize="11" Foreground="#64748B" Margin="0,2,0,0"
+                                                           TextWrapping="Wrap"/>
+                                            </StackPanel>
+                                        </DataTemplate>
+                                    </DataGridTemplateColumn.CellTemplate>
+                                </DataGridTemplateColumn>
+
                                 <!-- Tồn Hệ Thống -->
-                                <DataGridTemplateColumn Header="Tồn Hệ Thống&#x0a;(ĐVT lưu tồn kho)" Width="130">
+                                <DataGridTemplateColumn Header="Tồn Hệ Thống&#x0a;(ĐVT lưu tồn kho)" Width="0.8*">
                                     <DataGridTemplateColumn.CellTemplate>
                                         <DataTemplate>
                                             <TextBlock VerticalAlignment="Center" HorizontalAlignment="Center" FontSize="13">
@@ -1163,10 +1351,10 @@
                                 </DataGridTemplateColumn>
 
                                 <!-- Tồn Thực Tế -->
-                                <DataGridTemplateColumn Width="160">
+                                <DataGridTemplateColumn Width="0.95*">
                                     <DataGridTemplateColumn.HeaderTemplate>
                                         <DataTemplate>
-                                            <TextBlock TextAlignment="Center">
+                                            <TextBlock TextAlignment="Center" TextWrapping="Wrap">
                                                 <TextBlock.Style>
                                                     <Style TargetType="TextBlock">
                                                         <Setter Property="Text" Value="Tồn Thực Tế&#x0a;(ĐVT Nhân viên đếm)"/>
@@ -1192,7 +1380,7 @@
                                 </DataGridTemplateColumn>
 
                                 <!-- Chênh Lệch Quy Đổi -->
-                                <DataGridTemplateColumn Header="Chênh Lệch Quy Đổi&#x0a;(Tính theo hệ thống)" Width="160">
+                                <DataGridTemplateColumn Header="Chênh Lệch Quy Đổi&#x0a;(Tính theo hệ thống)" Width="1.05*">
                                     <DataGridTemplateColumn.CellTemplate>
                                         <DataTemplate>
                                             <StackPanel VerticalAlignment="Center" HorizontalAlignment="Center">
@@ -1234,10 +1422,10 @@
                                 </DataGridTemplateColumn>
 
                                 <!-- Lý Do / Giải Trình -->
-                                <DataGridTemplateColumn Width="*">
+                                <DataGridTemplateColumn Width="1.2*" MinWidth="40">
                                     <DataGridTemplateColumn.HeaderTemplate>
                                         <DataTemplate>
-                                            <TextBlock>
+                                            <TextBlock TextWrapping="Wrap" TextAlignment="Center">
                                                 <TextBlock.Style>
                                                     <Style TargetType="TextBlock">
                                                         <Setter Property="Text" Value="Lý Do / Giải Trình"/>
@@ -1256,7 +1444,7 @@
                                             <TextBlock Text="{Binding GhiChuNhanVien, Converter={StaticResource StringTruncateConverter}}"
                                                        FontSize="12" FontStyle="Italic"
                                                        Foreground="#64748B" VerticalAlignment="Center" TextWrapping="Wrap"
-                                                       Margin="12,0,0,0"
+                                                       Margin="12,8"
                                                        ToolTip="{Binding GhiChuNhanVien}" Cursor="Hand"/>
                                         </DataTemplate>
                                     </DataGridTemplateColumn.CellTemplate>
@@ -1521,60 +1709,11 @@
     </Grid>
 
     <!-- Loading overlay -->
-    <Border Background="#60FFFFFF" Visibility="{Binding IsLoading, Converter={StaticResource BoolToVisibilityConverter}}">
-        <StackPanel VerticalAlignment="Center" HorizontalAlignment="Center">
-            <!-- 12-Dot Spinner (iOS Style) -->
-            <Grid Width="40" Height="40" HorizontalAlignment="Center" Margin="0,0,0,12" RenderTransformOrigin="0.5,0.5">
-                <Grid.RenderTransform>
-                    <RotateTransform x:Name="KiemKeSpinnerTransform" Angle="0" />
-                </Grid.RenderTransform>
-                <Grid.Triggers>
-                    <EventTrigger RoutedEvent="Loaded">
-                        <BeginStoryboard>
-                            <Storyboard>
-                                <DoubleAnimationUsingKeyFrames Storyboard.TargetName="KiemKeSpinnerTransform" Storyboard.TargetProperty="Angle" Duration="0:0:1" RepeatBehavior="Forever">
-                                    <DiscreteDoubleKeyFrame KeyTime="0:0:0.000" Value="0" />
-                                    <DiscreteDoubleKeyFrame KeyTime="0:0:0.083" Value="30" />
-                                    <DiscreteDoubleKeyFrame KeyTime="0:0:0.166" Value="60" />
-                                    <DiscreteDoubleKeyFrame KeyTime="0:0:0.250" Value="90" />
-                                    <DiscreteDoubleKeyFrame KeyTime="0:0:0.333" Value="120" />
-                                    <DiscreteDoubleKeyFrame KeyTime="0:0:0.416" Value="150" />
-                                    <DiscreteDoubleKeyFrame KeyTime="0:0:0.500" Value="180" />
-                                    <DiscreteDoubleKeyFrame KeyTime="0:0:0.583" Value="210" />
-                                    <DiscreteDoubleKeyFrame KeyTime="0:0:0.666" Value="240" />
-                                    <DiscreteDoubleKeyFrame KeyTime="0:0:0.750" Value="270" />
-                                    <DiscreteDoubleKeyFrame KeyTime="0:0:0.833" Value="300" />
-                                    <DiscreteDoubleKeyFrame KeyTime="0:0:0.916" Value="330" />
-                                </DoubleAnimationUsingKeyFrames>
-                            </Storyboard>
-                        </BeginStoryboard>
-                    </EventTrigger>
-                </Grid.Triggers>
-                <Grid.Resources>
-                    <Style TargetType="Ellipse">
-                        <Setter Property="Width" Value="8" />
-                        <Setter Property="Height" Value="8" />
-                        <Setter Property="Fill" Value="#64748B" />
-                        <Setter Property="HorizontalAlignment" Value="Center" />
-                        <Setter Property="VerticalAlignment" Value="Top" />
-                        <Setter Property="RenderTransformOrigin" Value="0.5, 2.5" />
-                    </Style>
-                </Grid.Resources>
-                <Ellipse Opacity="1.0"><Ellipse.RenderTransform><RotateTransform Angle="0" /></Ellipse.RenderTransform></Ellipse>
-                <Ellipse Opacity="0.8"><Ellipse.RenderTransform><RotateTransform Angle="30" /></Ellipse.RenderTransform></Ellipse>
-                <Ellipse Opacity="0.6"><Ellipse.RenderTransform><RotateTransform Angle="60" /></Ellipse.RenderTransform></Ellipse>
-                <Ellipse Opacity="0.5"><Ellipse.RenderTransform><RotateTransform Angle="90" /></Ellipse.RenderTransform></Ellipse>
-                <Ellipse Opacity="0.4"><Ellipse.RenderTransform><RotateTransform Angle="120" /></Ellipse.RenderTransform></Ellipse>
-                <Ellipse Opacity="0.3"><Ellipse.RenderTransform><RotateTransform Angle="150" /></Ellipse.RenderTransform></Ellipse>
-                <Ellipse Opacity="0.2"><Ellipse.RenderTransform><RotateTransform Angle="180" /></Ellipse.RenderTransform></Ellipse>
-                <Ellipse Opacity="0.15"><Ellipse.RenderTransform><RotateTransform Angle="210" /></Ellipse.RenderTransform></Ellipse>
-                <Ellipse Opacity="0.1"><Ellipse.RenderTransform><RotateTransform Angle="240" /></Ellipse.RenderTransform></Ellipse>
-                <Ellipse Opacity="0.05"><Ellipse.RenderTransform><RotateTransform Angle="270" /></Ellipse.RenderTransform></Ellipse>
-                <Ellipse Opacity="0.05"><Ellipse.RenderTransform><RotateTransform Angle="300" /></Ellipse.RenderTransform></Ellipse>
-                <Ellipse Opacity="0.05"><Ellipse.RenderTransform><RotateTransform Angle="330" /></Ellipse.RenderTransform></Ellipse>
-            </Grid>
-            <TextBlock Text="Đang xử lý..." FontSize="14" Foreground="#64748B" Margin="0,12,0,0" HorizontalAlignment="Center"/>
-        </StackPanel>
-    </Border>
+    <!-- Loading Overlay -->
+        <!-- Loading Overlay -->
+        <Grid Visibility="{Binding IsLoading, Converter={StaticResource BoolToVisibilityConverter}}" Panel.ZIndex="999">
+            <Border Background="Transparent" />
+            <components:LoadingSpinner HorizontalAlignment="Center" VerticalAlignment="Center"/>
+        </Grid>
 </Grid>
 </UserControl>

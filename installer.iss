@@ -38,138 +38,131 @@ Name: "{commondesktop}\QuanLyKhoNguyenLieuPizza"; Filename: "{app}\{#MyAppExeNam
 Filename: "{app}\{#MyAppExeName}"; Description: "Chạy {#MyAppName}"; Flags: nowait postinstall skipifsilent
 
 [Code]
+const
+  SQL_SERVER_DOWNLOAD_URL = 'https://go.microsoft.com/fwlink/p/?linkid=2216019';
+
 function IsSqlServerAvailable(): Boolean;
 var
   ResultCode: Integer;
 begin
-  Result := Exec(ExpandConstant('{cmd}'), '/C sqlcmd -S {#SqlInstance} -E -Q "SELECT 1" -b', '', SW_HIDE, ewWaitUntilTerminated, ResultCode) and (ResultCode = 0);
+  Result := Exec(ExpandConstant('{cmd}'),
+    '/C sqlcmd -S {#SqlInstance} -E -Q "SELECT 1" -b',
+    '', SW_HIDE, ewWaitUntilTerminated, ResultCode) and (ResultCode = 0);
 end;
 
 function IsDatabaseExists(): Boolean;
 var
   ResultCode: Integer;
-  SqlParams: string;
 begin
-  SqlParams := '/C sqlcmd -S {#SqlInstance} -E -b -h -1 -Q "IF DB_ID(N''QuanLyKhoNguyenLieuPizza'') IS NOT NULL PRINT ''EXISTS'' ELSE PRINT ''NOTEXISTS''"';
-  Result := Exec(ExpandConstant('{cmd}'), SqlParams, '', SW_HIDE, ewWaitUntilTerminated, ResultCode) and (ResultCode = 0);
-  { Nếu lệnh chạy thành công, kiểm tra xem DB có tồn tại hay không }
-  if Result then
+  Result := Exec(ExpandConstant('{cmd}'),
+    '/C sqlcmd -S {#SqlInstance} -E -b -Q "IF DB_ID(N''QLKNL_PIZZA'') IS NULL RAISERROR(''not found'', 16, 1)"',
+    '', SW_HIDE, ewWaitUntilTerminated, ResultCode) and (ResultCode = 0);
+end;
+
+function CreateAndImportDatabase(): Boolean;
+var
+  ResultCode: Integer;
+  SqlFilePath: string;
+begin
+  Result := False;
+  SqlFilePath := ExpandConstant('{app}\Resources\Database\QLKNL_PIZZA.sql');
+
+  { Kiểm tra file SQL có tồn tại không }
+  if not FileExists(SqlFilePath) then
   begin
-    { Dùng cách khác: chạy query trả về 1 nếu DB tồn tại }
-    SqlParams := '/C sqlcmd -S {#SqlInstance} -E -b -Q "IF DB_ID(N''QuanLyKhoNguyenLieuPizza'') IS NULL RAISERROR(''not found'', 16, 1)"';
-    Result := Exec(ExpandConstant('{cmd}'), SqlParams, '', SW_HIDE, ewWaitUntilTerminated, ResultCode) and (ResultCode = 0);
+    MsgBox('Không tìm thấy file script cơ sở dữ liệu:' + #13#10 +
+           SqlFilePath + #13#10 + #13#10 +
+           'Database sẽ được tạo tự động khi bạn chạy ứng dụng lần đầu.',
+           mbInformation, MB_OK);
+    Result := True;
+    Exit;
+  end;
+
+  { Bước 1: Tạo database nếu chưa tồn tại }
+  if not Exec(ExpandConstant('{cmd}'),
+    '/C sqlcmd -S {#SqlInstance} -E -Q "CREATE DATABASE [QLKNL_PIZZA]"',
+    '', SW_HIDE, ewWaitUntilTerminated, ResultCode) then
+  begin
+    MsgBox('Không thể tạo database.' + #13#10 +
+           'Database sẽ được tạo tự động khi bạn chạy ứng dụng lần đầu.',
+           mbInformation, MB_OK);
+    Result := True;
+    Exit;
+  end;
+
+  { Bước 2: Import dữ liệu từ file .sql vào database }
+  if Exec(ExpandConstant('{cmd}'),
+    '/C sqlcmd -S {#SqlInstance} -E -d QLKNL_PIZZA -i "' + SqlFilePath + '"',
+    '', SW_HIDE, ewWaitUntilTerminated, ResultCode) then
+  begin
+    Result := True;
+    MsgBox('Đã tạo và nhập dữ liệu vào cơ sở dữ liệu "QLKNL_PIZZA" thành công!' + #13#10 + #13#10 +
+           'Bạn có thể chạy ứng dụng ngay bây giờ.',
+           mbInformation, MB_OK);
+  end
+  else
+  begin
+    Result := True;
+    MsgBox('Đã tạo database nhưng có lỗi khi nhập dữ liệu.' + #13#10 +
+           'Mã lỗi: ' + IntToStr(ResultCode) + #13#10 + #13#10 +
+           'Ứng dụng sẽ thử nhập lại dữ liệu khi chạy lần đầu.',
+           mbInformation, MB_OK);
   end;
 end;
 
-function RestoreDatabase(): Boolean;
+procedure CheckAndSetupDatabase();
 var
-  SqlCmdExe, SqlParams, BackupPath, SqlQuery: string;
-  ResultCode: Integer;
-  DbExists: Boolean;
+  ErrorCode: Integer;
 begin
-  Result := False;
-
-  { Kiểm tra SQL Server có sẵn không }
-  if not IsSqlServerAvailable() then
+  if IsSqlServerAvailable() then
   begin
-    MsgBox('Không tìm thấy SQL Server instance "{#SqlInstance}".' + #13#10 +
-           'Hãy đảm bảo SQL Server đã được cài đặt và đang chạy.' + #13#10 +
-           'Bạn có thể restore database thủ công sau khi cài SQL Server.', mbError, MB_OK);
-    Exit;
-  end;
-
-  SqlCmdExe := ExpandConstant('{cmd}');
-  BackupPath := ExpandConstant('{app}\db\QuanLyKhoNguyenLieuPizza.bak');
-
-  { Kiểm tra file backup có tồn tại không }
-  if not FileExists(BackupPath) then
-  begin
-    MsgBox('Không tìm thấy file backup database tại:' + #13#10 + BackupPath + #13#10 +
-           'Hãy kiểm tra lại thư mục db trong thư mục cài đặt.', mbError, MB_OK);
-    Exit;
-  end;
-
-  { ===== KIỂM TRA DATABASE ĐÃ TỒN TẠI CHƯA ===== }
-  DbExists := IsDatabaseExists();
-
-  if DbExists then
-  begin
-    { Database đã tồn tại → Hỏi người dùng }
-    case MsgBox(
-      'Phát hiện database "QuanLyKhoNguyenLieuPizza" đã tồn tại trên SQL Server!' + #13#10 + #13#10 +
-      'Database hiện tại có thể chứa dữ liệu quan trọng (hóa đơn, khách hàng, kho...).' + #13#10 + #13#10 +
-      '• Nhấn [Yes] để GIỮ NGUYÊN dữ liệu cũ (khuyến nghị).' + #13#10 +
-      '• Nhấn [No] để XÓA dữ liệu cũ và khôi phục từ bản mẫu.' + #13#10 +
-      '• Nhấn [Cancel] để hủy bước này.',
-      mbConfirmation, MB_YESNOCANCEL) of
-
-      IDYES:
-      begin
-        { Giữ nguyên database cũ, không restore }
-        Result := True;
-        MsgBox('Đã giữ nguyên database hiện tại.' + #13#10 +
-               'Toàn bộ dữ liệu hóa đơn và thông tin cũ vẫn được bảo toàn.', mbInformation, MB_OK);
-        Exit;
-      end;
-
-      IDNO:
-      begin
-        { Xác nhận lần 2 trước khi xóa }
-        if MsgBox(
-          '⚠️ CẢNH BÁO: Bạn có CHẮC CHẮN muốn xóa toàn bộ dữ liệu cũ?' + #13#10 + #13#10 +
-          'Hành động này KHÔNG THỂ hoàn tác!' + #13#10 +
-          'Tất cả hóa đơn, dữ liệu kho, thông tin khách hàng sẽ bị mất vĩnh viễn.' + #13#10 + #13#10 +
-          'Nhấn [Yes] để tiếp tục xóa và khôi phục từ bản mẫu.' + #13#10 +
-          'Nhấn [No] để hủy và giữ nguyên dữ liệu.',
-          mbCriticalError, MB_YESNO) = IDNO then
-        begin
-          Result := True;
-          MsgBox('Đã hủy. Database hiện tại được giữ nguyên.', mbInformation, MB_OK);
-          Exit;
-        end;
-        { Nếu chọn Yes → tiếp tục restore bên dưới }
-      end;
-
-      IDCANCEL:
-      begin
-        Result := True;
-        Exit;
-      end;
-    end;
-  end;
-
-  { ===== THỰC HIỆN RESTORE DATABASE ===== }
-  SqlQuery :=
-    'IF DB_ID(N''QuanLyKhoNguyenLieuPizza'') IS NULL ' +
-    'BEGIN CREATE DATABASE [QuanLyKhoNguyenLieuPizza] END; ' +
-    'ALTER DATABASE [QuanLyKhoNguyenLieuPizza] SET SINGLE_USER WITH ROLLBACK IMMEDIATE; ' +
-    'RESTORE DATABASE [QuanLyKhoNguyenLieuPizza] FROM DISK = N''' + BackupPath + ''' WITH REPLACE; ' +
-    'ALTER DATABASE [QuanLyKhoNguyenLieuPizza] SET MULTI_USER;';
-
-  SqlParams := '/C sqlcmd -S {#SqlInstance} -E -b -Q "' + SqlQuery + '"';
-
-  if Exec(SqlCmdExe, SqlParams, '', SW_HIDE, ewWaitUntilTerminated, ResultCode) then
-  begin
-    if ResultCode = 0 then
+    { SQL Server đang chạy → Kiểm tra database }
+    if IsDatabaseExists() then
     begin
-      Result := True;
-      MsgBox('Khôi phục database thành công!', mbInformation, MB_OK);
+      { Database đã tồn tại }
+      MsgBox('Phát hiện cơ sở dữ liệu "QLKNL_PIZZA" đã tồn tại.' + #13#10 + #13#10 +
+             'Dữ liệu hiện tại được giữ nguyên.' + #13#10 +
+             'Ứng dụng đã sẵn sàng sử dụng!',
+             mbInformation, MB_OK);
     end
     else
-      MsgBox('Khôi phục database thất bại. Mã lỗi: ' + IntToStr(ResultCode) + #13#10 +
-             'Hãy kiểm tra SQL Server instance và quyền truy cập.', mbError, MB_OK);
+    begin
+      { Database chưa tồn tại → Tạo và import tự động }
+      MsgBox('SQL Server đã được phát hiện!' + #13#10 + #13#10 +
+             'Đang tiến hành tạo cơ sở dữ liệu "QLKNL_PIZZA"...' + #13#10 +
+             'Vui lòng đợi trong giây lát.',
+             mbInformation, MB_OK);
+      CreateAndImportDatabase();
+    end;
   end
   else
-    MsgBox('Không thể chạy sqlcmd. Hãy chắc chắn SQL Server Command Line Tools đã được cài đặt và sqlcmd có trong PATH.', mbError, MB_OK);
+  begin
+    { SQL Server chưa cài đặt hoặc chưa chạy }
+    if MsgBox('Không tìm thấy SQL Server trên máy tính!' + #13#10 + #13#10 +
+              'Ứng dụng cần SQL Server để lưu trữ dữ liệu.' + #13#10 +
+              'Vui lòng cài đặt SQL Server Express (miễn phí) trước khi sử dụng.' + #13#10 + #13#10 +
+              'Hướng dẫn:' + #13#10 +
+              '1. Nhấn [Yes] để mở trang tải SQL Server Express' + #13#10 +
+              '2. Tải và cài đặt SQL Server Express' + #13#10 +
+              '3. Khởi động lại ứng dụng để tự động tạo database' + #13#10 + #13#10 +
+              'Nhấn [No] để bỏ qua bước này.',
+              mbConfirmation, MB_YESNO) = IDYES then
+    begin
+      ShellExec('open', SQL_SERVER_DOWNLOAD_URL, '', '', SW_SHOWNORMAL, ewNoWait, ErrorCode);
+      MsgBox('Trình duyệt đã được mở để tải SQL Server Express.' + #13#10 + #13#10 +
+             'Sau khi cài đặt xong SQL Server:' + #13#10 +
+             '1. Đảm bảo SQL Server service đang chạy' + #13#10 +
+             '2. Khởi động ứng dụng QuanLyKhoNguyenLieuPizza' + #13#10 +
+             '3. Database sẽ được tạo tự động',
+             mbInformation, MB_OK);
+    end;
+  end;
 end;
 
 procedure CurStepChanged(CurStep: TSetupStep);
 begin
   if CurStep = ssPostInstall then
   begin
-    if not RestoreDatabase() then
-    begin
-      { Không hủy cài đặt nếu restore lỗi, chỉ thông báo cho người dùng }
-    end;
+    CheckAndSetupDatabase();
   end;
 end;

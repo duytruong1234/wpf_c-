@@ -9,6 +9,28 @@ public class CT_PhieuKiemKe : INotifyPropertyChanged
 {
     public int ChiTietKiemID { get; set; }
     public int? KiemKeID { get; set; }
+    public int? ChiTietPhieuNhapID { get; set; }
+    public int? PhieuNhapID { get; set; }
+    public string? MaPhieuNhap { get; set; }
+    public DateTime? HSD { get; set; }
+
+    private DateTime? _ngayHetHanNhap;
+    public DateTime? NgayHetHanNhap
+    {
+        get => _ngayHetHanNhap;
+        set
+        {
+            if (_ngayHetHanNhap != value)
+            {
+                _ngayHetHanNhap = value;
+                OnPropertyChanged();
+            }
+        }
+    }
+
+    public string? LoaiDieuChinh { get; set; }
+    public Guid? PhieuDieuChinhID { get; set; }
+
     private int? _nguyenLieuID;
     public int? NguyenLieuID
     {
@@ -226,6 +248,48 @@ public class CT_PhieuKiemKe : INotifyPropertyChanged
         }
     }
 
+    private ObservableCollection<LoKiemKeOption> _loKiemKeOptions = new();
+    public ObservableCollection<LoKiemKeOption> LoKiemKeOptions
+    {
+        get => _loKiemKeOptions;
+        set
+        {
+            if (!ReferenceEquals(_loKiemKeOptions, value))
+            {
+                _loKiemKeOptions = value;
+                OnPropertyChanged();
+            }
+        }
+    }
+
+    private List<LoKiemKeOption> _allLoKiemKe = new();
+    public List<LoKiemKeOption> AllLoKiemKe
+    {
+        get => _allLoKiemKe;
+        set { _allLoKiemKe = value; OnPropertyChanged(); }
+    }
+
+    private LoKiemKeOption? _selectedLoKiemKe;
+    public LoKiemKeOption? SelectedLoKiemKe
+    {
+        get => _selectedLoKiemKe;
+        set
+        {
+            if (!ReferenceEquals(_selectedLoKiemKe, value))
+            {
+                _selectedLoKiemKe = value;
+                if (value != null)
+                {
+                    ApplyLoKiemKe(value);
+                }
+
+                OnPropertyChanged();
+                OnPropertyChanged(nameof(HSDText));
+                OnPropertyChanged(nameof(LoKiemKeDisplay));
+            }
+        }
+    }
+
     private QuyDoiDonVi? _selectedDonViKiem;
     public QuyDoiDonVi? SelectedDonViKiem
     {
@@ -253,6 +317,10 @@ public class CT_PhieuKiemKe : INotifyPropertyChanged
 
     public string TenDonViKiem => SelectedDonViKiem?.DonViTinh?.TenDonVi ?? DonViKiem?.TenDonVi ?? string.Empty;
     public string TenDonViKho => DonViKho?.TenDonVi ?? string.Empty;
+    public string HSDText => HSD?.ToString("dd/MM/yyyy") ?? "Khong co HSD";
+    public string LoKiemKeDisplay => string.IsNullOrWhiteSpace(MaPhieuNhap)
+        ? HSDText
+        : $"{MaPhieuNhap} - HSD {HSDText}";
 
     /// <summary>
     /// Chuỗi hiển thị hệ số quy đổi (Ví dụ: "1 Thùng = 5 kg")
@@ -318,6 +386,33 @@ public class CT_PhieuKiemKe : INotifyPropertyChanged
         ChenhLech = tonThucTeQuyDoi - _tonHeThong;
         ChenhLechQuyDoi = ChenhLech;
         OnPropertyChanged(nameof(QuyDoiDisplay));
+    }
+
+    private void ApplyLoKiemKe(LoKiemKeOption lo)
+    {
+        ChiTietPhieuNhapID = lo.ChiTietPhieuNhapID;
+        PhieuNhapID = lo.PhieuNhapID;
+        MaPhieuNhap = lo.MaPhieuNhap;
+        HSD = lo.HSD;
+        NgayHetHanNhap = lo.HSD;
+        NguyenLieuID = lo.NguyenLieuID;
+        TonHeThong = lo.SoLuongCon;
+        DonViKhoID = lo.DonViID;
+        DonViKho = new DonViTinh { DonViID = lo.DonViID ?? 0, TenDonVi = lo.TenDonVi };
+        HeSoChuan = lo.HeSo > 0 ? lo.HeSo : 1m;
+        DonViKiemID = lo.DonViID;
+        DonViKiem = DonViKho;
+        HeSoKiem = HeSoChuan;
+
+        OnPropertyChanged(nameof(ChiTietPhieuNhapID));
+        OnPropertyChanged(nameof(PhieuNhapID));
+        OnPropertyChanged(nameof(MaPhieuNhap));
+        OnPropertyChanged(nameof(HSD));
+        OnPropertyChanged(nameof(NgayHetHanNhap));
+        OnPropertyChanged(nameof(HSDText));
+        OnPropertyChanged(nameof(LoKiemKeDisplay));
+        OnPropertyChanged(nameof(TenDonViKho));
+        OnPropertyChanged(nameof(TenDonViKiem));
     }
 
     public event PropertyChangedEventHandler? PropertyChanged;

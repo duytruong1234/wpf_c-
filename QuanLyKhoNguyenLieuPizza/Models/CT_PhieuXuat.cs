@@ -42,6 +42,8 @@ public class CT_PhieuXuat : INotifyPropertyChanged
                 _soLuongText = value.ToString("0.####", CultureInfo.InvariantCulture);
                 OnPropertyChanged();
                 OnPropertyChanged(nameof(SoLuongText));
+                OnPropertyChanged(nameof(SoLuongLuuKho));
+                OnPropertyChanged(nameof(SoLuongLuuKhoFormatted));
                 // Tự động tính lại thành tiền
                 ThanhTien = _soLuong * DonGia;
             }
@@ -86,6 +88,8 @@ public class CT_PhieuXuat : INotifyPropertyChanged
             {
                 _heSo = value;
                 OnPropertyChanged();
+                OnPropertyChanged(nameof(SoLuongLuuKho));
+                OnPropertyChanged(nameof(SoLuongLuuKhoFormatted));
                 ThanhTien = SoLuong * DonGia;
             }
         }
@@ -178,9 +182,15 @@ public class CT_PhieuXuat : INotifyPropertyChanged
             {
                 _heSoDonViChuan = value;
                 OnPropertyChanged();
+                OnPropertyChanged(nameof(SoLuongLuuKho));
+                OnPropertyChanged(nameof(SoLuongLuuKhoFormatted));
             }
         }
     }
+
+    // Số lượng lưu kho = SoLuong * HeSo / HeSoDonViChuan (quy đổi ra đơn vị lưu tồn kho)
+    public decimal SoLuongLuuKho => _heSoDonViChuan != 0 ? _soLuong * _heSo / _heSoDonViChuan : _soLuong * _heSo;
+    public string SoLuongLuuKhoFormatted => $"{SoLuongLuuKho:0.####} {TenDonViChuan}".Trim();
 
     // Thuộc tính điều hướng
     public virtual PhieuXuat? PhieuXuat { get; set; }

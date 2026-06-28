@@ -1,4 +1,4 @@
-﻿using System.Text;
+using System.Text;
 using System.Globalization;
 using Microsoft.Data.SqlClient;
 using System.Data;
@@ -82,6 +82,19 @@ public class PizzaService : DatabaseContext
     {
         // KhÃ´ng sá»­ dá»¥ng vá»›i schema dá»±a trÃªn HÃ ngHÃ³a (khÃ´ng cÃ³ báº£ng Pizza)
         return null;
+    }
+
+    public async Task<bool> CheckMaPizzaExistAsync(string maPizza)
+    {
+        try
+        {
+            using var conn = GetConnection();
+            await conn.OpenAsync();
+            using var cmd = new SqlCommand("SELECT COUNT(1) FROM HangHoa WHERE MaHangHoa = @Ma", conn);
+            cmd.Parameters.AddWithValue("@Ma", maPizza);
+            return Convert.ToInt32(await cmd.ExecuteScalarAsync()) > 0;
+        }
+        catch { return false; }
     }
 
     public async Task<bool> SavePizzaAsync(Pizza pizza)

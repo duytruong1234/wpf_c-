@@ -1,4 +1,4 @@
-﻿using System.Collections.ObjectModel;
+using System.Collections.ObjectModel;
 using System.Windows.Input;
 using QuanLyKhoNguyenLieuPizza.Models;
 using QuanLyKhoNguyenLieuPizza.Services;
@@ -569,6 +569,21 @@ public class PizzaViewModel : BaseViewModel
                 System.Windows.MessageBoxButton.OK,
                 System.Windows.MessageBoxImage.Warning);
             return;
+        }
+
+        // Check duplicate MaPizza when adding new (not editing)
+        if (!IsEditing)
+        {
+            var isDuplicate = await _databaseService.CheckMaPizzaExistAsync(FormMaPizza);
+            if (isDuplicate)
+            {
+                System.Windows.MessageBox.Show(
+                    "Mã món ăn này đã tồn tại, vui lòng nhập mã khác!",
+                    "Lỗi",
+                    System.Windows.MessageBoxButton.OK,
+                    System.Windows.MessageBoxImage.Warning);
+                return;
+            }
         }
 
         var pizza = new Pizza

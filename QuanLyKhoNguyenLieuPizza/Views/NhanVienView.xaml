@@ -671,33 +671,33 @@
                 <Border.Effect>
                     <DropShadowEffect BlurRadius="30" ShadowDepth="4" Direction="270" Color="#000000" Opacity="0.12"/>
                 </Border.Effect>
-                <ScrollViewer VerticalScrollBarVisibility="Auto">
-                    <Grid Margin="0,0,16,0">
-                        <Grid.RowDefinitions>
-                            <RowDefinition Height="Auto"/>
-                            <RowDefinition Height="Auto"/>
-                            <RowDefinition Height="Auto"/>
-                        </Grid.RowDefinitions>
+                <Grid>
+                    <Grid.RowDefinitions>
+                        <RowDefinition Height="Auto"/>
+                        <RowDefinition Height="*"/>
+                        <RowDefinition Height="Auto"/>
+                    </Grid.RowDefinitions>
 
-                        <!-- Tiêu đề -->
-                        <Grid Grid.Row="0" Margin="0,0,0,24">
-                            <TextBlock FontSize="22" FontWeight="Bold" Foreground="{StaticResource PrimaryBlue}" HorizontalAlignment="Center">
-                                <TextBlock.Style>
-                                    <Style TargetType="TextBlock">
-                                        <Setter Property="Text" Value="Thêm nhân viên"/>
-                                        <Style.Triggers>
-                                            <DataTrigger Binding="{Binding IsCreateMode}" Value="False">
-                                                <Setter Property="Text" Value="Sửa thông tin nhân viên"/>
-                                            </DataTrigger>
-                                        </Style.Triggers>
-                                    </Style>
-                                </TextBlock.Style>
-                            </TextBlock>
-                            <Button Style="{StaticResource CircularCloseButtonStyle}" Command="{Binding CancelDialogCommand}" Margin="0,-16,-16,0" Panel.ZIndex="10"/>
-                        </Grid>
+                    <!-- Tiêu đề -->
+                    <Grid Grid.Row="0" Margin="0,0,16,24">
+                        <TextBlock FontSize="22" FontWeight="Bold" Foreground="{StaticResource PrimaryBlue}" HorizontalAlignment="Center">
+                            <TextBlock.Style>
+                                <Style TargetType="TextBlock">
+                                    <Setter Property="Text" Value="Thêm nhân viên"/>
+                                    <Style.Triggers>
+                                        <DataTrigger Binding="{Binding IsCreateMode}" Value="False">
+                                            <Setter Property="Text" Value="Sửa thông tin nhân viên"/>
+                                        </DataTrigger>
+                                    </Style.Triggers>
+                                </Style>
+                            </TextBlock.Style>
+                        </TextBlock>
+                        <Button Style="{StaticResource CircularCloseButtonStyle}" Command="{Binding CancelDialogCommand}" Margin="0,-16,-16,0" Panel.ZIndex="10"/>
+                    </Grid>
 
-                        <!-- Biểu mẫu -->
-                        <Grid Grid.Row="1" Margin="0,0,0,24">
+                    <!-- Biểu mẫu -->
+                    <ScrollViewer Grid.Row="1" VerticalScrollBarVisibility="Auto" Margin="0,0,0,24">
+                        <Grid Margin="0,0,16,0">
                             <Grid.RowDefinitions>
                                 <RowDefinition Height="Auto"/>
                                 <RowDefinition Height="16"/>
@@ -917,60 +917,60 @@
                                 <CheckBox Content="Đang làm việc" IsChecked="{Binding FormTrangThai}" FontSize="13"/>
                             </StackPanel>
                         </Grid>
+                    </ScrollViewer>
 
-                        <!-- Actions -->
-                        <StackPanel Grid.Row="2" Orientation="Horizontal" HorizontalAlignment="Right">
-                            <Button Command="{Binding CancelDialogCommand}" Cursor="Hand" Margin="0,0,12,0">
-                                <Button.Template>
-                                    <ControlTemplate TargetType="Button">
-                                        <Border x:Name="border" Background="{StaticResource Gray100}" CornerRadius="10" Padding="32,14">
-                                            <TextBlock Text="Hủy" FontSize="14" FontWeight="SemiBold" Foreground="{StaticResource Gray600}"/>
-                                        </Border>
-                                        <ControlTemplate.Triggers>
-                                            <Trigger Property="IsMouseOver" Value="True">
-                                                <Setter TargetName="border" Property="Background" Value="{StaticResource Gray200}"/>
-                                            </Trigger>
-                                        </ControlTemplate.Triggers>
-                                    </ControlTemplate>
-                                </Button.Template>
-                            </Button>
-                            <Button Command="{Binding SaveNhanVienCommand}" Cursor="Hand">
-                                <Button.Template>
-                                    <ControlTemplate TargetType="Button">
-                                        <Border x:Name="border" CornerRadius="10" Padding="32,14">
-                                            <Border.Background>
-                                                <LinearGradientBrush StartPoint="0,0" EndPoint="1,0">
-                                                    <GradientStop Color="#5B6AFF" Offset="0"/>
-                                                    <GradientStop Color="#818CF8" Offset="1"/>
-                                                </LinearGradientBrush>
-                                            </Border.Background>
-                                            <Border.Effect>
-                                                <DropShadowEffect BlurRadius="12" ShadowDepth="2" Direction="270" Color="#5B6AFF" Opacity="0.2"/>
-                                            </Border.Effect>
-                                            <TextBlock FontSize="14" FontWeight="SemiBold" Foreground="White">
-                                                <TextBlock.Style>
-                                                    <Style TargetType="TextBlock">
-                                                        <Setter Property="Text" Value="Lưu thông tin"/>
-                                                        <Style.Triggers>
-                                                            <DataTrigger Binding="{Binding IsCreateMode}" Value="False">
-                                                                <Setter Property="Text" Value="Cập nhật"/>
-                                                            </DataTrigger>
-                                                        </Style.Triggers>
-                                                    </Style>
-                                                </TextBlock.Style>
-                                            </TextBlock>
-                                        </Border>
-                                        <ControlTemplate.Triggers>
-                                            <Trigger Property="IsMouseOver" Value="True">
-                                                <Setter TargetName="border" Property="Opacity" Value="0.9"/>
-                                            </Trigger>
-                                        </ControlTemplate.Triggers>
-                                    </ControlTemplate>
-                                </Button.Template>
-                            </Button>
-                        </StackPanel>
-                    </Grid>
-                </ScrollViewer>
+                    <!-- Actions -->
+                    <StackPanel Grid.Row="2" Orientation="Horizontal" HorizontalAlignment="Right" Margin="0,0,16,0">
+                        <Button Command="{Binding CancelDialogCommand}" Cursor="Hand" Margin="0,0,12,0">
+                            <Button.Template>
+                                <ControlTemplate TargetType="Button">
+                                    <Border x:Name="border" Background="{StaticResource Gray100}" CornerRadius="10" Padding="32,14">
+                                        <TextBlock Text="Hủy" FontSize="14" FontWeight="SemiBold" Foreground="{StaticResource Gray600}"/>
+                                    </Border>
+                                    <ControlTemplate.Triggers>
+                                        <Trigger Property="IsMouseOver" Value="True">
+                                            <Setter TargetName="border" Property="Background" Value="{StaticResource Gray200}"/>
+                                        </Trigger>
+                                    </ControlTemplate.Triggers>
+                                </ControlTemplate>
+                            </Button.Template>
+                        </Button>
+                        <Button Command="{Binding SaveNhanVienCommand}" Cursor="Hand">
+                            <Button.Template>
+                                <ControlTemplate TargetType="Button">
+                                    <Border x:Name="border" CornerRadius="10" Padding="32,14">
+                                        <Border.Background>
+                                            <LinearGradientBrush StartPoint="0,0" EndPoint="1,0">
+                                                <GradientStop Color="#5B6AFF" Offset="0"/>
+                                                <GradientStop Color="#818CF8" Offset="1"/>
+                                            </LinearGradientBrush>
+                                        </Border.Background>
+                                        <Border.Effect>
+                                            <DropShadowEffect BlurRadius="12" ShadowDepth="2" Direction="270" Color="#5B6AFF" Opacity="0.2"/>
+                                        </Border.Effect>
+                                        <TextBlock FontSize="14" FontWeight="SemiBold" Foreground="White">
+                                            <TextBlock.Style>
+                                                <Style TargetType="TextBlock">
+                                                    <Setter Property="Text" Value="Lưu thông tin"/>
+                                                    <Style.Triggers>
+                                                        <DataTrigger Binding="{Binding IsCreateMode}" Value="False">
+                                                            <Setter Property="Text" Value="Cập nhật"/>
+                                                        </DataTrigger>
+                                                    </Style.Triggers>
+                                                </Style>
+                                            </TextBlock.Style>
+                                        </TextBlock>
+                                    </Border>
+                                    <ControlTemplate.Triggers>
+                                        <Trigger Property="IsMouseOver" Value="True">
+                                            <Setter TargetName="border" Property="Opacity" Value="0.9"/>
+                                        </Trigger>
+                                    </ControlTemplate.Triggers>
+                                </ControlTemplate>
+                            </Button.Template>
+                        </Button>
+                    </StackPanel>
+                </Grid>
             </Border>
         </Grid>
 

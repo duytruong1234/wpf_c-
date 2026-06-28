@@ -23,6 +23,8 @@ public class CT_PhieuNhap : INotifyPropertyChanged
                 _soLuongText = value.ToString("0.####", CultureInfo.InvariantCulture);
                 OnPropertyChanged();
                 OnPropertyChanged(nameof(SoLuongText));
+                OnPropertyChanged(nameof(SoLuongLuuKho));
+                OnPropertyChanged(nameof(SoLuongLuuKhoFormatted));
                 RecalculateThanhTien();
             }
         }
@@ -66,6 +68,8 @@ public class CT_PhieuNhap : INotifyPropertyChanged
             {
                 _heSo = value;
                 OnPropertyChanged();
+                OnPropertyChanged(nameof(SoLuongLuuKho));
+                OnPropertyChanged(nameof(SoLuongLuuKhoFormatted));
                 RecalculateThanhTien();
             }
         }
@@ -101,6 +105,20 @@ public class CT_PhieuNhap : INotifyPropertyChanged
     }
 
     public DateTime? HSD { get; set; }
+
+    private decimal _soLuongCon;
+    public decimal SoLuongCon
+    {
+        get => _soLuongCon;
+        set
+        {
+            if (_soLuongCon != value)
+            {
+                _soLuongCon = value;
+                OnPropertyChanged();
+            }
+        }
+    }
 
     private ObservableCollection<QuyDoiDonVi> _donViNhapOptions = new();
     public ObservableCollection<QuyDoiDonVi> DonViNhapOptions
@@ -177,9 +195,15 @@ public class CT_PhieuNhap : INotifyPropertyChanged
             {
                 _heSoDonViChuan = value;
                 OnPropertyChanged();
+                OnPropertyChanged(nameof(SoLuongLuuKho));
+                OnPropertyChanged(nameof(SoLuongLuuKhoFormatted));
             }
         }
     }
+
+    // Số lượng lưu kho = SoLuong * HeSo / HeSoDonViChuan (quy đổi ra đơn vị lưu tồn kho)
+    public decimal SoLuongLuuKho => _heSoDonViChuan != 0 ? _soLuong * _heSo / _heSoDonViChuan : _soLuong * _heSo;
+    public string SoLuongLuuKhoFormatted => $"{SoLuongLuuKho:0.####} {TenDonViChuan}".Trim();
 
     // Thuộc tính điều hướng
     public virtual PhieuNhap? PhieuNhap { get; set; }

@@ -1,4 +1,4 @@
-﻿using System.Collections.ObjectModel;
+using System.Collections.ObjectModel;
 using System.Windows.Input;
 using QuanLyKhoNguyenLieuPizza.Models;
 using QuanLyKhoNguyenLieuPizza.Services;
@@ -512,10 +512,26 @@ public class NguyenLieuViewModel : BaseViewModel
             HanCanhBao = int.TryParse(FormHanCanhBao, out var hcb) ? hcb : 7
         };
 
+        var isDuplicate = await _databaseService.CheckMaNguyenLieuExistAsync(FormMaNguyenLieu, nguyenLieu.NguyenLieuID);
+        if (isDuplicate)
+        {
+            System.Windows.MessageBox.Show(
+                "Mã nguyên liệu này đã tồn tại, vui lòng nhập mã khác!",
+                "Lỗi",
+                System.Windows.MessageBoxButton.OK,
+                System.Windows.MessageBoxImage.Warning);
+            return;
+        }
+
         var success = await _databaseService.SaveNguyenLieuAsync(nguyenLieu);
 
         if (success)
         {
+            System.Windows.MessageBox.Show(
+                "Cập nhật nguyên liệu thành công!",
+                "Thành công",
+                System.Windows.MessageBoxButton.OK,
+                System.Windows.MessageBoxImage.Information);
 
             ClosePopup();
             await LoadDataAsync();

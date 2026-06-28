@@ -1,898 +1,532 @@
-using System.Drawing;
+using System;
+using System.Collections.Generic;
 using System.Drawing.Imaging;
 using System.IO;
-using System.Printing;
 using System.Windows;
-using System.Windows.Controls;
-using System.Windows.Documents;
-using System.Windows.Media;
-using System.Windows.Media.Imaging;
+using Microsoft.Win32;
 using QRCoder;
+using QuestPDF.Fluent;
+using QuestPDF.Helpers;
+using QuestPDF.Infrastructure;
 using QuanLyKhoNguyenLieuPizza.Models;
-using Brushes = System.Windows.Media.Brushes;
-using FontFamily = System.Windows.Media.FontFamily;
-using Image = System.Windows.Controls.Image;
 
 namespace QuanLyKhoNguyenLieuPizza.Services;
 
 public class PrintService
 {
-    #region In Phiếu Nhập
+    private static void ConfigureQuestPdf()
+    {
+        QuestPDF.Settings.License = LicenseType.Community;
+    }
+
+    #region Xuất Phiếu Nhập
     public static void PrintPhieuNhap(PhieuNhap phieuNhap, IEnumerable<CT_PhieuNhap> chiTiets)
     {
+        var dialog = new SaveFileDialog
+        {
+            Title = "Lưu Phiếu Nhập",
+            Filter = "PDF (*.pdf)|*.pdf",
+            FileName = $"PhieuNhap_{phieuNhap.MaPhieuNhap}.pdf",
+            DefaultExt = ".pdf"
+        };
+
+        if (dialog.ShowDialog() != true) return;
+
         try
         {
-            var printDialog = new PrintDialog();
-            if (printDialog.ShowDialog() == true)
+            ConfigureQuestPdf();
+            Document.Create(container =>
             {
-                var document = CreatePhieuNhapDocument(phieuNhap, chiTiets, printDialog.PrintableAreaWidth);
-                printDialog.PrintDocument(((IDocumentPaginatorSource)document).DocumentPaginator, $"Phiếu Nhập - {phieuNhap.MaPhieuNhap}");
-            }
+                container.Page(page =>
+                {
+                    page.Size(PageSizes.A4);
+                    page.Margin(1.5f, Unit.Centimetre);
+                    page.PageColor(Colors.White);
+                    page.DefaultTextStyle(x => x.FontSize(11).FontFamily(Fonts.Arial).FontColor(Colors.Black));
+
+                    page.Header().Column(col =>
+                    {
+                        col.Item().AlignCenter().Text("PHIẾU NHẬP KHO").FontSize(24).Bold();
+                        col.Item().PaddingBottom(20).AlignCenter().Text("PIZZINN - Quản Lý Kho Nguyên Liệu").FontSize(14);
+                        
+                        col.Item().Text(t => { t.Span("Mã phiếu: ").Bold(); t.Span(phieuNhap.MaPhieuNhap); });
+                        string trangThaiNhap = phieuNhap.TrangThai == 1 ? "Chờ duyệt" : (phieuNhap.TrangThai == 2 ? "Đã duyệt" : (phieuNhap.TrangThai == 3 ? "Đã hủy" : "Không xác định"));
+                        col.Item().Text(t => { t.Span("Trạng thái: ").Bold(); t.Span(trangThaiNhap); });
+                        col.Item().Text(t => { t.Span("Ngày nhập: ").Bold(); t.Span(phieuNhap.NgayNhap.ToString("dd/MM/yyyy HH:mm")); });
+                        col.Item().Text(t => { t.Span("Nhân viên nhập: ").Bold(); t.Span(phieuNhap.NhanVienNhap?.HoTen ?? "N/A"); });
+                        col.Item().Text(t => { t.Span("Nhà cung cấp: ").Bold(); t.Span(phieuNhap.NhaCungCap?.TenNCC ?? "N/A"); });
+                        if (phieuNhap.NgayDuyet.HasValue)
+                            col.Item().Text(t => { t.Span("Ngày duyệt: ").Bold(); t.Span(phieuNhap.NgayDuyet.Value.ToString("dd/MM/yyyy HH:mm")); });
+                        if (phieuNhap.NhanVienDuyet != null)
+                            col.Item().Text(t => { t.Span("Người duyệt: ").Bold(); t.Span(phieuNhap.NhanVienDuyet.HoTen); });
+                        
+                        col.Item().PaddingBottom(15);
+                    });
+
+                    page.Content().Column(col =>
+                    {
+                        col.Item().Table(table =>
+                        {
+                            table.ColumnsDefinition(columns =>
+                            {
+                                columns.RelativeColumn(0.5f);
+                                columns.RelativeColumn(2.5f);
+                                columns.RelativeColumn(1f);
+                                columns.RelativeColumn(1f);
+                                columns.RelativeColumn(1.2f);
+                                columns.RelativeColumn(1.3f);
+                            });
+
+                            table.Header(header =>
+                            {
+                                header.Cell().Border(1).BorderColor(Colors.Black).Background(Colors.Grey.Lighten3).Padding(4).AlignCenter().Text("STT").Bold();
+                                header.Cell().Border(1).BorderColor(Colors.Black).Background(Colors.Grey.Lighten3).Padding(4).AlignCenter().Text("Tên nguyên liệu").Bold();
+                                header.Cell().Border(1).BorderColor(Colors.Black).Background(Colors.Grey.Lighten3).Padding(4).AlignCenter().Text("Đơn vị").Bold();
+                                header.Cell().Border(1).BorderColor(Colors.Black).Background(Colors.Grey.Lighten3).Padding(4).AlignCenter().Text("Số lượng").Bold();
+                                header.Cell().Border(1).BorderColor(Colors.Black).Background(Colors.Grey.Lighten3).Padding(4).AlignCenter().Text("Đơn giá").Bold();
+                                header.Cell().Border(1).BorderColor(Colors.Black).Background(Colors.Grey.Lighten3).Padding(4).AlignCenter().Text("Thành tiền").Bold();
+                            });
+                            
+                            int stt = 1;
+                            foreach(var ct in chiTiets)
+                            {
+                                table.Cell().Border(1).BorderColor(Colors.Black).Padding(4).AlignCenter().Text(stt.ToString());
+                                table.Cell().Border(1).BorderColor(Colors.Black).Padding(4).Text(ct.NguyenLieu?.TenNguyenLieu ?? "N/A");
+                                table.Cell().Border(1).BorderColor(Colors.Black).Padding(4).AlignCenter().Text(ct.DonViTinh?.TenDonVi ?? ct.NguyenLieu?.DonViTinh?.TenDonVi ?? "N/A");
+                                table.Cell().Border(1).BorderColor(Colors.Black).Padding(4).AlignCenter().Text($"{ct.SoLuong:N2}");
+                                table.Cell().Border(1).BorderColor(Colors.Black).Padding(4).AlignRight().Text($"{ct.DonGia:N0}");
+                                table.Cell().Border(1).BorderColor(Colors.Black).Padding(4).AlignRight().Text($"{ct.ThanhTien:N0}");
+                                stt++;
+                            }
+                        });
+                        
+                        col.Item().PaddingTop(15).AlignRight().Text(t => 
+                        {
+                            t.Span("TỔNG TIỀN: ").Bold().FontSize(14);
+                            t.Span($"{phieuNhap.TongTien:N0} VNĐ").Bold().FontSize(14);
+                        });
+
+                        col.Item().PaddingTop(40).Table(table =>
+                        {
+                            table.ColumnsDefinition(columns =>
+                            {
+                                columns.RelativeColumn();
+                                columns.RelativeColumn();
+                                columns.RelativeColumn();
+                            });
+                            
+                            table.Cell().AlignCenter().Text("Người lập phiếu").Bold();
+                            table.Cell().AlignCenter().Text("Người duyệt").Bold();
+                            table.Cell().AlignCenter().Text("Người nhận hàng").Bold();
+                            
+                            table.Cell().Height(80).AlignCenter().AlignMiddle().Element(e => RenderSignature(e, phieuNhap.ChuKyNhap));
+                            table.Cell().Height(80).AlignCenter().AlignMiddle().Element(e => RenderSignature(e, phieuNhap.ChuKySoDuyet));
+                            table.Cell().Height(80);
+                            
+                            table.Cell().AlignCenter().Text(phieuNhap.NhanVienNhap?.HoTen ?? "(Ký và ghi rõ họ tên)");
+                            table.Cell().AlignCenter().Text(phieuNhap.NhanVienDuyet?.HoTen ?? "(Ký và ghi rõ họ tên)");
+                            table.Cell().AlignCenter().Text("(Ký và ghi rõ họ tên)");
+                        });
+                    });
+                    
+                    page.Footer().AlignRight().Text($"Ngày xuất: {DateTime.Now:dd/MM/yyyy HH:mm}").FontSize(10).Italic();
+                });
+            }).GeneratePdf(dialog.FileName);
         }
-        catch (Exception ex) {
-            MessageBox.Show($"Lỗi khi in phiếu: {ex.Message}", "Lỗi", MessageBoxButton.OK, MessageBoxImage.Error);
+        catch (Exception ex)
+        {
+            MessageBox.Show($"Lỗi khi xuất phiếu: {ex.Message}", "Lỗi", MessageBoxButton.OK, MessageBoxImage.Error);
         }
-    }
-
-    private static FlowDocument CreatePhieuNhapDocument(PhieuNhap phieuNhap, IEnumerable<CT_PhieuNhap> chiTiets, double pageWidth)
-    {
-        var document = new FlowDocument
-        {
-            PageWidth = pageWidth,
-            PagePadding = new Thickness(50),
-            ColumnWidth = double.MaxValue,
-            FontFamily = new FontFamily("Segoe UI"),
-            FontSize = 12
-        };
-
-        // Tiêu đề
-        var headerPara = new Paragraph(new Run("PHIẾU NHẬP KHO"))
-        {
-            FontSize = 24,
-            FontWeight = FontWeights.Bold,
-            TextAlignment = TextAlignment.Center,
-            Margin = new Thickness(0, 0, 0, 20)
-        };
-        document.Blocks.Add(headerPara);
-
-        // Tên công ty
-        var companyPara = new Paragraph(new Run("PIZZINN - Quản Lý Kho Nguyên Liệu"))
-        {
-            FontSize = 14,
-            TextAlignment = TextAlignment.Center,
-            Margin = new Thickness(0, 0, 0, 30)
-        };
-        document.Blocks.Add(companyPara);
-
-        // Trạng thái duyệt
-        string trangThaiNhap = phieuNhap.TrangThai switch
-        {
-            1 => "Chờ duyệt",
-            2 => "Đã duyệt",
-            3 => "Đã hủy",
-            _ => "Không xác định"
-        };
-
-        // Thông tin phiếu
-        var infoPara = new Paragraph
-        {
-            Margin = new Thickness(0, 0, 0, 20)
-        };
-        infoPara.Inlines.Add(new Run("Mã phiếu: ") { FontWeight = FontWeights.Bold });
-        infoPara.Inlines.Add(new Run($"{phieuNhap.MaPhieuNhap}\n"));
-        infoPara.Inlines.Add(new Run("Trạng thái: ") { FontWeight = FontWeights.Bold });
-        infoPara.Inlines.Add(new Run($"{trangThaiNhap}\n") { Foreground = phieuNhap.TrangThai == 2 ? Brushes.Green : (phieuNhap.TrangThai == 3 ? Brushes.Red : Brushes.Orange) });
-        infoPara.Inlines.Add(new Run("Ngày nhập: ") { FontWeight = FontWeights.Bold });
-        infoPara.Inlines.Add(new Run($"{phieuNhap.NgayNhap:dd/MM/yyyy HH:mm}\n"));
-        infoPara.Inlines.Add(new Run("Nhân viên nhập: ") { FontWeight = FontWeights.Bold });
-        infoPara.Inlines.Add(new Run($"{phieuNhap.NhanVienNhap?.HoTen ?? "N/A"}\n"));
-        infoPara.Inlines.Add(new Run("Nhà cung cấp: ") { FontWeight = FontWeights.Bold });
-        infoPara.Inlines.Add(new Run($"{phieuNhap.NhaCungCap?.TenNCC ?? "N/A"}\n"));
-        if (phieuNhap.NgayDuyet.HasValue)
-        {
-            infoPara.Inlines.Add(new Run("Ngày duyệt: ") { FontWeight = FontWeights.Bold });
-            infoPara.Inlines.Add(new Run($"{phieuNhap.NgayDuyet:dd/MM/yyyy HH:mm}\n"));
-        }
-        if (phieuNhap.NhanVienDuyet != null)
-        {
-            infoPara.Inlines.Add(new Run("Người duyệt: ") { FontWeight = FontWeights.Bold });
-            infoPara.Inlines.Add(new Run($"{phieuNhap.NhanVienDuyet.HoTen}\n"));
-        }
-        document.Blocks.Add(infoPara);
-
-        // Bảng chi tiết
-        var table = new Table
-        {
-            CellSpacing = 0,
-            BorderBrush = Brushes.Black,
-            BorderThickness = new Thickness(1)
-        };
-
-        table.Columns.Add(new TableColumn { Width = new GridLength(0.5, GridUnitType.Star) });  // STT
-        table.Columns.Add(new TableColumn { Width = new GridLength(2.5, GridUnitType.Star) }); // Tên nguyên liệu
-        table.Columns.Add(new TableColumn { Width = new GridLength(1.0, GridUnitType.Star) });  // Đơn vị
-        table.Columns.Add(new TableColumn { Width = new GridLength(1.0, GridUnitType.Star) });  // Số lượng
-        table.Columns.Add(new TableColumn { Width = new GridLength(1.2, GridUnitType.Star) }); // Đơn giá
-        table.Columns.Add(new TableColumn { Width = new GridLength(1.3, GridUnitType.Star) }); // Thành tiền
-
-        var rowGroup = new TableRowGroup();
-        table.RowGroups.Add(rowGroup);
-
-        // Dòng tiêu đề
-        var headerRow = new TableRow { Background = Brushes.LightGray };
-        headerRow.Cells.Add(CreateTableCell("STT", true));
-        headerRow.Cells.Add(CreateTableCell("Tên nguyên liệu", true));
-        headerRow.Cells.Add(CreateTableCell("Đơn vị", true));
-        headerRow.Cells.Add(CreateTableCell("Số lượng", true));
-        headerRow.Cells.Add(CreateTableCell("Đơn giá", true));
-        headerRow.Cells.Add(CreateTableCell("Thành tiền", true));
-        rowGroup.Rows.Add(headerRow);
-
-        // Dòng dữ liệu
-        int stt = 1;
-        foreach (var ct in chiTiets)
-        {
-            var row = new TableRow();
-            row.Cells.Add(CreateTableCell(stt.ToString()));
-            row.Cells.Add(CreateTableCell(ct.NguyenLieu?.TenNguyenLieu ?? "N/A"));
-            row.Cells.Add(CreateTableCell(ct.DonViTinh?.TenDonVi ?? ct.NguyenLieu?.DonViTinh?.TenDonVi ?? "N/A"));
-            row.Cells.Add(CreateTableCell($"{ct.SoLuong:N2}"));
-            row.Cells.Add(CreateTableCell($"{ct.DonGia:N0} VND"));
-            row.Cells.Add(CreateTableCell($"{ct.ThanhTien:N0} VND"));
-            rowGroup.Rows.Add(row);
-            stt++;
-        }
-
-        document.Blocks.Add(table);
-
-        // Tổng tiền
-        var totalPara = new Paragraph
-        {
-            TextAlignment = TextAlignment.Right,
-            Margin = new Thickness(0, 20, 0, 0)
-        };
-        totalPara.Inlines.Add(new Run("TỔNG TIỀN: ") { FontWeight = FontWeights.Bold, FontSize = 16 });
-        totalPara.Inlines.Add(new Run($"{phieuNhap.TongTien:N0} VNĐ") { FontWeight = FontWeights.Bold, FontSize = 16, Foreground = Brushes.Red });
-        document.Blocks.Add(totalPara);
-
-        // Chân trang - Chữ ký
-        var signatureTable = new Table { CellSpacing = 0, Margin = new Thickness(0, 50, 0, 0) };
-        signatureTable.Columns.Add(new TableColumn { Width = new GridLength(1, GridUnitType.Star) });
-        signatureTable.Columns.Add(new TableColumn { Width = new GridLength(1, GridUnitType.Star) });
-        signatureTable.Columns.Add(new TableColumn { Width = new GridLength(1, GridUnitType.Star) });
-
-        var signatureRowGroup = new TableRowGroup();
-        signatureTable.RowGroups.Add(signatureRowGroup);
-
-        var signatureRow = new TableRow();
-        signatureRow.Cells.Add(CreateSignatureCellWithImage("Người lập phiếu", phieuNhap.NhanVienNhap?.HoTen, phieuNhap.ChuKyNhap));
-        signatureRow.Cells.Add(CreateSignatureCellWithImage("Người duyệt", phieuNhap.NhanVienDuyet?.HoTen, phieuNhap.ChuKySoDuyet));
-        signatureRow.Cells.Add(CreateSignatureCell("Người nhận hàng"));
-        signatureRowGroup.Rows.Add(signatureRow);
-
-        document.Blocks.Add(signatureTable);
-
-        // Ngày in
-        var printDatePara = new Paragraph(new Run($"Ngày in: {DateTime.Now:dd/MM/yyyy HH:mm}"))
-        {
-            FontSize = 10,
-            FontStyle = FontStyles.Italic,
-            TextAlignment = TextAlignment.Right,
-            Margin = new Thickness(0, 30, 0, 0)
-        };
-        document.Blocks.Add(printDatePara);
-
-        return document;
     }
     #endregion
 
-    #region In Phiếu Xuất
+    #region Xuất Phiếu Xuất
     public static void PrintPhieuXuat(PhieuXuat phieuXuat, IEnumerable<CT_PhieuXuat> chiTiets)
     {
+        var dialog = new SaveFileDialog
+        {
+            Title = "Lưu Phiếu Xuất",
+            Filter = "PDF (*.pdf)|*.pdf",
+            FileName = $"PhieuXuat_{phieuXuat.MaPhieuXuat}.pdf",
+            DefaultExt = ".pdf"
+        };
+
+        if (dialog.ShowDialog() != true) return;
+
         try
         {
-            var printDialog = new PrintDialog();
-            if (printDialog.ShowDialog() == true)
+            ConfigureQuestPdf();
+            Document.Create(container =>
             {
-                var document = CreatePhieuXuatDocument(phieuXuat, chiTiets, printDialog.PrintableAreaWidth);
-                printDialog.PrintDocument(((IDocumentPaginatorSource)document).DocumentPaginator, $"Phiếu Xuất - {phieuXuat.MaPhieuXuat}");
-            }
+                container.Page(page =>
+                {
+                    page.Size(PageSizes.A4);
+                    page.Margin(1.5f, Unit.Centimetre);
+                    page.PageColor(Colors.White);
+                    page.DefaultTextStyle(x => x.FontSize(11).FontFamily(Fonts.Arial).FontColor(Colors.Black));
+
+                    page.Header().Column(col =>
+                    {
+                        col.Item().AlignCenter().Text("PHIẾU XUẤT KHO").FontSize(24).Bold();
+                        col.Item().PaddingBottom(20).AlignCenter().Text("PIZZINN - Quản Lý Kho Nguyên Liệu").FontSize(14);
+                        
+                        col.Item().Text(t => { t.Span("Mã phiếu: ").Bold(); t.Span(phieuXuat.MaPhieuXuat); });
+                        string trangThaiXuat = phieuXuat.TrangThai == 1 ? "Chờ duyệt" : (phieuXuat.TrangThai == 2 ? "Đã duyệt" : (phieuXuat.TrangThai == 3 ? "Đã hủy" : "Không xác định"));
+                        col.Item().Text(t => { t.Span("Trạng thái: ").Bold(); t.Span(trangThaiXuat); });
+                        col.Item().Text(t => { t.Span("Lý do xuất: ").Bold(); t.Span(phieuXuat.GhiChu ?? "N/A"); });
+                        col.Item().Text(t => { t.Span("Ngày yêu cầu: ").Bold(); t.Span(phieuXuat.NgayYeuCau.ToString("dd/MM/yyyy HH:mm")); });
+                        col.Item().Text(t => { t.Span("Nhân viên yêu cầu: ").Bold(); t.Span(phieuXuat.NhanVienYeuCau?.HoTen ?? "N/A"); });
+                        if (phieuXuat.NgayDuyet.HasValue)
+                            col.Item().Text(t => { t.Span("Ngày duyệt: ").Bold(); t.Span(phieuXuat.NgayDuyet.Value.ToString("dd/MM/yyyy HH:mm")); });
+                        if (phieuXuat.NhanVienDuyet != null)
+                            col.Item().Text(t => { t.Span("Người duyệt: ").Bold(); t.Span(phieuXuat.NhanVienDuyet.HoTen); });
+                        
+                        col.Item().PaddingBottom(15);
+                    });
+
+                    page.Content().Column(col =>
+                    {
+                        col.Item().Table(table =>
+                        {
+                            table.ColumnsDefinition(columns =>
+                            {
+                                columns.RelativeColumn(0.5f);
+                                columns.RelativeColumn(2.5f);
+                                columns.RelativeColumn(1f);
+                                columns.RelativeColumn(1f);
+                            });
+
+                            table.Header(header =>
+                            {
+                                header.Cell().Border(1).BorderColor(Colors.Black).Background(Colors.Grey.Lighten3).Padding(4).AlignCenter().Text("STT").Bold();
+                                header.Cell().Border(1).BorderColor(Colors.Black).Background(Colors.Grey.Lighten3).Padding(4).AlignCenter().Text("Tên nguyên liệu").Bold();
+                                header.Cell().Border(1).BorderColor(Colors.Black).Background(Colors.Grey.Lighten3).Padding(4).AlignCenter().Text("Đơn vị").Bold();
+                                header.Cell().Border(1).BorderColor(Colors.Black).Background(Colors.Grey.Lighten3).Padding(4).AlignCenter().Text("Số lượng").Bold();
+                            });
+                            
+                            int stt = 1;
+                            foreach(var ct in chiTiets)
+                            {
+                                table.Cell().Border(1).BorderColor(Colors.Black).Padding(4).AlignCenter().Text(stt.ToString());
+                                table.Cell().Border(1).BorderColor(Colors.Black).Padding(4).Text(ct.NguyenLieu?.TenNguyenLieu ?? "N/A");
+                                table.Cell().Border(1).BorderColor(Colors.Black).Padding(4).AlignCenter().Text(ct.DonViTinh?.TenDonVi ?? ct.NguyenLieu?.DonViTinh?.TenDonVi ?? "N/A");
+                                table.Cell().Border(1).BorderColor(Colors.Black).Padding(4).AlignCenter().Text($"{ct.SoLuong:N2}");
+                                stt++;
+                            }
+                        });
+
+                        col.Item().PaddingTop(40).Table(table =>
+                        {
+                            table.ColumnsDefinition(columns =>
+                            {
+                                columns.RelativeColumn();
+                                columns.RelativeColumn();
+                                columns.RelativeColumn();
+                            });
+                            
+                            table.Cell().AlignCenter().Text("Người yêu cầu").Bold();
+                            table.Cell().AlignCenter().Text("Người duyệt").Bold();
+                            table.Cell().AlignCenter().Text("Thủ kho").Bold();
+                            
+                            table.Cell().Height(80).AlignCenter().AlignMiddle().Element(e => RenderSignature(e, phieuXuat.ChuKyXuat));
+                            table.Cell().Height(80).AlignCenter().AlignMiddle().Element(e => RenderSignature(e, phieuXuat.ChuKySoDuyet));
+                            table.Cell().Height(80);
+                            
+                            table.Cell().AlignCenter().Text(phieuXuat.NhanVienYeuCau?.HoTen ?? "(Ký và ghi rõ họ tên)");
+                            table.Cell().AlignCenter().Text(phieuXuat.NhanVienDuyet?.HoTen ?? "(Ký và ghi rõ họ tên)");
+                            table.Cell().AlignCenter().Text("(Ký và ghi rõ họ tên)");
+                        });
+                    });
+                    
+                    page.Footer().AlignRight().Text($"Ngày xuất: {DateTime.Now:dd/MM/yyyy HH:mm}").FontSize(10).Italic();
+                });
+            }).GeneratePdf(dialog.FileName);
         }
-        catch (Exception ex) {
-            MessageBox.Show($"Lỗi khi in phiếu: {ex.Message}", "Lỗi", MessageBoxButton.OK, MessageBoxImage.Error);
+        catch (Exception ex)
+        {
+            MessageBox.Show($"Lỗi khi xuất phiếu: {ex.Message}", "Lỗi", MessageBoxButton.OK, MessageBoxImage.Error);
         }
-    }
-
-    private static FlowDocument CreatePhieuXuatDocument(PhieuXuat phieuXuat, IEnumerable<CT_PhieuXuat> chiTiets, double pageWidth)
-    {
-        var document = new FlowDocument
-        {
-            PageWidth = pageWidth,
-            PagePadding = new Thickness(50),
-            ColumnWidth = double.MaxValue,
-            FontFamily = new FontFamily("Segoe UI"),
-            FontSize = 12
-        };
-
-        // Tiêu đề
-        var headerPara = new Paragraph(new Run("PHIẾU XUẤT KHO"))
-        {
-            FontSize = 24,
-            FontWeight = FontWeights.Bold,
-            TextAlignment = TextAlignment.Center,
-            Margin = new Thickness(0, 0, 0, 20)
-        };
-        document.Blocks.Add(headerPara);
-
-        // Tên công ty
-        var companyPara = new Paragraph(new Run("PIZZINN - Quản Lý Kho Nguyên Liệu"))
-        {
-            FontSize = 14,
-            TextAlignment = TextAlignment.Center,
-            Margin = new Thickness(0, 0, 0, 30)
-        };
-        document.Blocks.Add(companyPara);
-
-        // Trạng thái
-        string trangThaiText = phieuXuat.TrangThai switch
-        {
-            1 => "Chờ duyệt",
-            2 => "Đã xuất kho",
-            3 => "Từ chối",
-            _ => "Không xác định"
-        };
-
-        // Thông tin phiếu
-        var infoPara = new Paragraph
-        {
-            Margin = new Thickness(0, 0, 0, 20)
-        };
-        infoPara.Inlines.Add(new Run("Mã phiếu: ") { FontWeight = FontWeights.Bold });
-        infoPara.Inlines.Add(new Run($"{phieuXuat.MaPhieuXuat}\n"));
-        infoPara.Inlines.Add(new Run("Trạng thái: ") { FontWeight = FontWeights.Bold });
-        infoPara.Inlines.Add(new Run($"{trangThaiText}\n") { Foreground = phieuXuat.TrangThai == 2 ? Brushes.Green : (phieuXuat.TrangThai == 3 ? Brushes.Red : Brushes.Orange) });
-        infoPara.Inlines.Add(new Run("Ngày yêu cầu: ") { FontWeight = FontWeights.Bold });
-        infoPara.Inlines.Add(new Run($"{phieuXuat.NgayYeuCau:dd/MM/yyyy HH:mm}\n"));
-        infoPara.Inlines.Add(new Run("Người yêu cầu: ") { FontWeight = FontWeights.Bold });
-        infoPara.Inlines.Add(new Run($"{phieuXuat.NhanVienYeuCau?.HoTen ?? "N/A"}\n"));
-
-        if (phieuXuat.NgayDuyet.HasValue)
-        {
-            infoPara.Inlines.Add(new Run("Ngày duyệt: ") { FontWeight = FontWeights.Bold });
-            infoPara.Inlines.Add(new Run($"{phieuXuat.NgayDuyet:dd/MM/yyyy HH:mm}\n"));
-        }
-        if (phieuXuat.NhanVienDuyet != null)
-        {
-            infoPara.Inlines.Add(new Run("Người duyệt: ") { FontWeight = FontWeights.Bold });
-            infoPara.Inlines.Add(new Run($"{phieuXuat.NhanVienDuyet.HoTen}\n"));
-        }
-        document.Blocks.Add(infoPara);
-
-        // Bảng chi tiết
-        var table = new Table
-        {
-            CellSpacing = 0,
-            BorderBrush = Brushes.Black,
-            BorderThickness = new Thickness(1)
-        };
-
-        table.Columns.Add(new TableColumn { Width = new GridLength(0.5, GridUnitType.Star) });  // STT
-        table.Columns.Add(new TableColumn { Width = new GridLength(3.0, GridUnitType.Star) }); // Tên nguyên liệu
-        table.Columns.Add(new TableColumn { Width = new GridLength(1.2, GridUnitType.Star) }); // Đơn vị
-        table.Columns.Add(new TableColumn { Width = new GridLength(1.0, GridUnitType.Star) }); // Số lượng
-
-        var rowGroup = new TableRowGroup();
-        table.RowGroups.Add(rowGroup);
-
-        // Dòng tiêu đề
-        var headerRow = new TableRow { Background = Brushes.LightGray };
-        headerRow.Cells.Add(CreateTableCell("STT", true));
-        headerRow.Cells.Add(CreateTableCell("Tên nguyên liệu", true));
-        headerRow.Cells.Add(CreateTableCell("Đơn vị", true));
-        headerRow.Cells.Add(CreateTableCell("Số lượng", true));
-        rowGroup.Rows.Add(headerRow);
-
-        // Dòng dữ liệu
-        int stt = 1;
-        foreach (var ct in chiTiets)
-        {
-            var row = new TableRow();
-            row.Cells.Add(CreateTableCell(stt.ToString()));
-            row.Cells.Add(CreateTableCell(ct.NguyenLieu?.TenNguyenLieu ?? "N/A"));
-            row.Cells.Add(CreateTableCell(ct.DonViTinh?.TenDonVi ?? ct.NguyenLieu?.DonViTinh?.TenDonVi ?? "N/A"));
-            row.Cells.Add(CreateTableCell($"{ct.SoLuong:N2}"));
-            rowGroup.Rows.Add(row);
-            stt++;
-        }
-
-        document.Blocks.Add(table);
-
-        // Chân trang - Chữ ký
-        var signatureTable = new Table { CellSpacing = 0, Margin = new Thickness(0, 50, 0, 0) };
-        signatureTable.Columns.Add(new TableColumn { Width = new GridLength(1, GridUnitType.Star) });
-        signatureTable.Columns.Add(new TableColumn { Width = new GridLength(1, GridUnitType.Star) });
-        signatureTable.Columns.Add(new TableColumn { Width = new GridLength(1, GridUnitType.Star) });
-
-        var signatureRowGroup = new TableRowGroup();
-        signatureTable.RowGroups.Add(signatureRowGroup);
-
-        var signatureRow = new TableRow();
-        signatureRow.Cells.Add(CreateSignatureCellWithImage("Người yêu cầu", phieuXuat.NhanVienYeuCau?.HoTen, phieuXuat.ChuKyXuat));
-        signatureRow.Cells.Add(CreateSignatureCellWithImage("Người duyệt", phieuXuat.NhanVienDuyet?.HoTen, phieuXuat.ChuKySoDuyet));
-        signatureRow.Cells.Add(CreateSignatureCell("Thủ kho"));
-        signatureRowGroup.Rows.Add(signatureRow);
-
-        document.Blocks.Add(signatureTable);
-
-        // Ngày in
-        var printDatePara = new Paragraph(new Run($"Ngày in: {DateTime.Now:dd/MM/yyyy HH:mm}"))
-        {
-            FontSize = 10,
-            FontStyle = FontStyles.Italic,
-            TextAlignment = TextAlignment.Right,
-            Margin = new Thickness(0, 30, 0, 0)
-        };
-        document.Blocks.Add(printDatePara);
-
-        return document;
     }
     #endregion
 
-    #region In Phiếu Kiểm Kê
+    #region Xuất Phiếu Kiểm Kê
     public static void PrintPhieuKiemKe(PhieuKiemKe phieuKiem, IEnumerable<CT_PhieuKiemKe> chiTiets)
     {
+        var dialog = new SaveFileDialog
+        {
+            Title = "Lưu Phiếu Kiểm Kê",
+            Filter = "PDF (*.pdf)|*.pdf",
+            FileName = $"PhieuKiemKe_{phieuKiem.MaPhieuKiem}.pdf",
+            DefaultExt = ".pdf"
+        };
+
+        if (dialog.ShowDialog() != true) return;
+
         try
         {
-            var printDialog = new PrintDialog();
-            if (printDialog.ShowDialog() == true)
+            ConfigureQuestPdf();
+            Document.Create(container =>
             {
-                var document = CreatePhieuKiemKeDocument(phieuKiem, chiTiets, printDialog.PrintableAreaWidth);
-                printDialog.PrintDocument(((IDocumentPaginatorSource)document).DocumentPaginator, $"Phiếu Kiểm Kê - {phieuKiem.MaPhieuKiem}");
-            }
+                container.Page(page =>
+                {
+                    page.Size(PageSizes.A4);
+                    page.Margin(1.5f, Unit.Centimetre);
+                    page.PageColor(Colors.White);
+                    page.DefaultTextStyle(x => x.FontSize(10).FontFamily(Fonts.Arial).FontColor(Colors.Black));
+
+                    page.Header().Column(col =>
+                    {
+                        col.Item().AlignCenter().Text("PHIẾU KIỂM KÊ KHO").FontSize(24).Bold();
+                        col.Item().PaddingBottom(20).AlignCenter().Text("PIZZINN - Quản Lý Kho Nguyên Liệu").FontSize(14);
+                        
+                        col.Item().Text(t => { t.Span("Mã phiếu: ").Bold(); t.Span(phieuKiem.MaPhieuKiem); });
+                        col.Item().Text(t => { t.Span("Trạng thái: ").Bold(); t.Span(phieuKiem.TrangThai); });
+                        col.Item().Text(t => { t.Span("Loại kiểm kê: ").Bold(); t.Span(phieuKiem.LoaiKiemKe ?? "N/A"); });
+                        col.Item().Text(t => { t.Span("Ngày kiểm kê: ").Bold(); t.Span(phieuKiem.NgayKiem?.ToString("dd/MM/yyyy HH:mm") ?? "N/A"); });
+                        col.Item().Text(t => { t.Span("Nhân viên kiểm: ").Bold(); t.Span(phieuKiem.NhanVienKiem?.HoTen ?? "N/A"); });
+                        col.Item().Text(t => { t.Span("Ghi chú: ").Bold(); t.Span(phieuKiem.LyDoKiemKe ?? "N/A"); });
+                        if (phieuKiem.NgayDuyet.HasValue)
+                            col.Item().Text(t => { t.Span("Ngày duyệt: ").Bold(); t.Span(phieuKiem.NgayDuyet.Value.ToString("dd/MM/yyyy HH:mm")); });
+                        if (phieuKiem.NhanVienDuyet != null)
+                            col.Item().Text(t => { t.Span("Người duyệt: ").Bold(); t.Span(phieuKiem.NhanVienDuyet.HoTen); });
+                        
+                        col.Item().PaddingBottom(15);
+                    });
+
+                    page.Content().Column(col =>
+                    {
+                        col.Item().Table(table =>
+                        {
+                            table.ColumnsDefinition(columns =>
+                            {
+                                columns.RelativeColumn(0.5f);
+                                columns.RelativeColumn(2.5f);
+                                columns.RelativeColumn(1f);
+                                columns.RelativeColumn(1.2f);
+                                columns.RelativeColumn(1.2f);
+                                columns.RelativeColumn(1.2f);
+                                columns.RelativeColumn(1.5f);
+                            });
+
+                            table.Header(header =>
+                            {
+                                header.Cell().Border(1).BorderColor(Colors.Black).Background(Colors.Grey.Lighten3).Padding(4).AlignCenter().Text("STT").Bold();
+                                header.Cell().Border(1).BorderColor(Colors.Black).Background(Colors.Grey.Lighten3).Padding(4).AlignCenter().Text("Nguyên liệu").Bold();
+                                header.Cell().Border(1).BorderColor(Colors.Black).Background(Colors.Grey.Lighten3).Padding(4).AlignCenter().Text("ĐVT").Bold();
+                                header.Cell().Border(1).BorderColor(Colors.Black).Background(Colors.Grey.Lighten3).Padding(4).AlignCenter().Text("Tồn HT").Bold();
+                                header.Cell().Border(1).BorderColor(Colors.Black).Background(Colors.Grey.Lighten3).Padding(4).AlignCenter().Text("Tồn TT").Bold();
+                                header.Cell().Border(1).BorderColor(Colors.Black).Background(Colors.Grey.Lighten3).Padding(4).AlignCenter().Text("Chênh lệch").Bold();
+                                header.Cell().Border(1).BorderColor(Colors.Black).Background(Colors.Grey.Lighten3).Padding(4).AlignCenter().Text("Ghi chú").Bold();
+                            });
+                            
+                            int stt = 1;
+                            foreach(var ct in chiTiets)
+                            {
+                                table.Cell().Border(1).BorderColor(Colors.Black).Padding(4).AlignCenter().Text(stt.ToString());
+                                table.Cell().Border(1).BorderColor(Colors.Black).Padding(4).Text(ct.NguyenLieu?.TenNguyenLieu ?? "N/A");
+                                table.Cell().Border(1).BorderColor(Colors.Black).Padding(4).AlignCenter().Text(ct.DonViKiem?.TenDonVi ?? ct.NguyenLieu?.DonViTinh?.TenDonVi ?? "N/A");
+                                table.Cell().Border(1).BorderColor(Colors.Black).Padding(4).AlignCenter().Text($"{ct.TonHeThong:N2}");
+                                table.Cell().Border(1).BorderColor(Colors.Black).Padding(4).AlignCenter().Text($"{ct.TonThucTe:N2}");
+                                
+                                decimal chenhLech = ct.TonThucTe - ct.TonHeThong;
+                                string chenhLechStr = chenhLech > 0 ? $"+{chenhLech:N2}" : $"{chenhLech:N2}";
+                                table.Cell().Border(1).BorderColor(Colors.Black).Padding(4).AlignCenter().Text(chenhLechStr);
+                                
+                                table.Cell().Border(1).BorderColor(Colors.Black).Padding(4).Text(ct.GhiChuNhanVien ?? "");
+                                stt++;
+                            }
+                        });
+
+                        col.Item().PaddingTop(40).Table(table =>
+                        {
+                            table.ColumnsDefinition(columns =>
+                            {
+                                columns.RelativeColumn();
+                                columns.RelativeColumn();
+                                columns.RelativeColumn();
+                            });
+                            
+                            table.Cell().AlignCenter().Text("Nhân viên kiểm kê").Bold();
+                            table.Cell().AlignCenter().Text("Người duyệt").Bold();
+                            table.Cell().AlignCenter().Text("Đại diện kho").Bold();
+                            
+                            table.Cell().Height(80).AlignCenter().AlignMiddle().Element(e => RenderSignature(e, phieuKiem.ChuKyKiem));
+                            table.Cell().Height(80).AlignCenter().AlignMiddle().Element(e => RenderSignature(e, phieuKiem.ChuKyDuyet));
+                            table.Cell().Height(80);
+                            
+                            table.Cell().AlignCenter().Text(phieuKiem.NhanVienKiem?.HoTen ?? "(Ký và ghi rõ họ tên)");
+                            table.Cell().AlignCenter().Text(phieuKiem.NhanVienDuyet?.HoTen ?? "(Ký và ghi rõ họ tên)");
+                            table.Cell().AlignCenter().Text("(Ký và ghi rõ họ tên)");
+                        });
+                    });
+                    
+                    page.Footer().AlignRight().Text($"Ngày xuất: {DateTime.Now:dd/MM/yyyy HH:mm}").FontSize(10).Italic();
+                });
+            }).GeneratePdf(dialog.FileName);
         }
-        catch (Exception ex) {
-            MessageBox.Show($"Lỗi khi in phiếu: {ex.Message}", "Lỗi", MessageBoxButton.OK, MessageBoxImage.Error);
+        catch (Exception ex)
+        {
+            MessageBox.Show($"Lỗi khi xuất phiếu: {ex.Message}", "Lỗi", MessageBoxButton.OK, MessageBoxImage.Error);
         }
-    }
-
-    private static FlowDocument CreatePhieuKiemKeDocument(PhieuKiemKe phieuKiem, IEnumerable<CT_PhieuKiemKe> chiTiets, double pageWidth)
-    {
-        var document = new FlowDocument
-        {
-            PageWidth = pageWidth,
-            PagePadding = new Thickness(50),
-            ColumnWidth = double.MaxValue,
-            FontFamily = new FontFamily("Segoe UI"),
-            FontSize = 12
-        };
-
-        // Tiêu đề
-        var headerPara = new Paragraph(new Run("PHIẾU KIỂM KÊ KHO"))
-        {
-            FontSize = 24,
-            FontWeight = FontWeights.Bold,
-            TextAlignment = TextAlignment.Center,
-            Margin = new Thickness(0, 0, 0, 20)
-        };
-        document.Blocks.Add(headerPara);
-
-        // Tên công ty
-        var companyPara = new Paragraph(new Run("PIZZINN - Quản Lý Kho Nguyên Liệu"))
-        {
-            FontSize = 14,
-            TextAlignment = TextAlignment.Center,
-            Margin = new Thickness(0, 0, 0, 30)
-        };
-        document.Blocks.Add(companyPara);
-
-        // Thông tin phiếu
-        var infoPara = new Paragraph
-        {
-            Margin = new Thickness(0, 0, 0, 20)
-        };
-        infoPara.Inlines.Add(new Run("Mã phiếu: ") { FontWeight = FontWeights.Bold });
-        infoPara.Inlines.Add(new Run($"{phieuKiem.MaPhieuKiem}\n"));
-        infoPara.Inlines.Add(new Run("Trạng thái: ") { FontWeight = FontWeights.Bold });
-        infoPara.Inlines.Add(new Run($"{phieuKiem.TrangThai}\n") { Foreground = phieuKiem.TrangThai == "Đã Duyệt" ? Brushes.Green : (phieuKiem.TrangThai == "Đã Hủy" ? Brushes.Red : Brushes.Orange) });
-        infoPara.Inlines.Add(new Run("Ngày kiểm: ") { FontWeight = FontWeights.Bold });
-        infoPara.Inlines.Add(new Run($"{phieuKiem.NgayKiem:dd/MM/yyyy HH:mm}\n"));
-        infoPara.Inlines.Add(new Run("Nhân viên kiểm: ") { FontWeight = FontWeights.Bold });
-        infoPara.Inlines.Add(new Run($"{phieuKiem.NhanVienKiem?.HoTen ?? "N/A"}\n"));
-        infoPara.Inlines.Add(new Run("Loại kiểm kê: ") { FontWeight = FontWeights.Bold });
-        infoPara.Inlines.Add(new Run($"{phieuKiem.LoaiKiemKe ?? "Kiểm kê định kỳ"}\n"));
-        if (!string.IsNullOrEmpty(phieuKiem.LyDoKiemKe))
-        {
-            infoPara.Inlines.Add(new Run("Lý do kiểm kê: ") { FontWeight = FontWeights.Bold });
-            infoPara.Inlines.Add(new Run($"{phieuKiem.LyDoKiemKe}\n"));
-        }
-        if (phieuKiem.NgayDuyet.HasValue)
-        {
-            infoPara.Inlines.Add(new Run("Ngày duyệt: ") { FontWeight = FontWeights.Bold });
-            infoPara.Inlines.Add(new Run($"{phieuKiem.NgayDuyet:dd/MM/yyyy HH:mm}\n"));
-        }
-        if (phieuKiem.NhanVienDuyet != null)
-        {
-            infoPara.Inlines.Add(new Run("Người duyệt: ") { FontWeight = FontWeights.Bold });
-            infoPara.Inlines.Add(new Run($"{phieuKiem.NhanVienDuyet.HoTen}\n"));
-        }
-        if (!string.IsNullOrEmpty(phieuKiem.GhiChuDuyet))
-        {
-            infoPara.Inlines.Add(new Run("Ghi chú duyệt: ") { FontWeight = FontWeights.Bold });
-            infoPara.Inlines.Add(new Run($"{phieuKiem.GhiChuDuyet}\n"));
-        }
-        document.Blocks.Add(infoPara);
-
-        // Bảng chi tiết
-        var table = new Table
-        {
-            CellSpacing = 0,
-            BorderBrush = Brushes.Black,
-            BorderThickness = new Thickness(1)
-        };
-
-        table.Columns.Add(new TableColumn { Width = new GridLength(0.5, GridUnitType.Star) });  // STT
-        table.Columns.Add(new TableColumn { Width = new GridLength(2.5, GridUnitType.Star) }); // Tên nguyên liệu
-        table.Columns.Add(new TableColumn { Width = new GridLength(1.0, GridUnitType.Star) });  // Đơn vị kho
-        table.Columns.Add(new TableColumn { Width = new GridLength(1.2, GridUnitType.Star) });  // Tồn hệ thống
-        table.Columns.Add(new TableColumn { Width = new GridLength(1.2, GridUnitType.Star) });  // Tồn thực tế
-        table.Columns.Add(new TableColumn { Width = new GridLength(1.0, GridUnitType.Star) });  // Đơn vị kiểm
-        table.Columns.Add(new TableColumn { Width = new GridLength(1.2, GridUnitType.Star) });  // Chênh lệch
-
-        var rowGroup = new TableRowGroup();
-        table.RowGroups.Add(rowGroup);
-
-        // Dòng tiêu đề
-        var headerRow = new TableRow { Background = Brushes.LightGray };
-        headerRow.Cells.Add(CreateTableCell("STT", true));
-        headerRow.Cells.Add(CreateTableCell("Tên nguyên liệu", true));
-        headerRow.Cells.Add(CreateTableCell("Đơn vị kho", true));
-        headerRow.Cells.Add(CreateTableCell("Tồn hệ thống", true));
-        headerRow.Cells.Add(CreateTableCell("Tồn thực tế", true));
-        headerRow.Cells.Add(CreateTableCell("Đơn vị kiểm", true));
-        headerRow.Cells.Add(CreateTableCell("Chênh lệch", true));
-        rowGroup.Rows.Add(headerRow);
-
-        // Dòng dữ liệu
-        int stt = 1;
-        foreach (var ct in chiTiets)
-        {
-            var row = new TableRow();
-            row.Cells.Add(CreateTableCell(stt.ToString()));
-            row.Cells.Add(CreateTableCell(ct.NguyenLieu?.TenNguyenLieu ?? "N/A"));
-            row.Cells.Add(CreateTableCell(ct.DonViKho?.TenDonVi ?? "N/A"));
-            row.Cells.Add(CreateTableCell($"{ct.TonHeThong:0.##}"));
-            row.Cells.Add(CreateTableCell($"{ct.TonThucTe:0.##}"));
-            row.Cells.Add(CreateTableCell(ct.DonViKiem?.TenDonVi ?? "N/A"));
-            row.Cells.Add(CreateTableCell(ct.ChenhLechDisplay));
-            rowGroup.Rows.Add(row);
-            stt++;
-        }
-
-        document.Blocks.Add(table);
-
-        // Chân trang - Chữ ký
-        var signatureTable = new Table { CellSpacing = 0, Margin = new Thickness(0, 50, 0, 0) };
-        signatureTable.Columns.Add(new TableColumn { Width = new GridLength(1, GridUnitType.Star) });
-        signatureTable.Columns.Add(new TableColumn { Width = new GridLength(1, GridUnitType.Star) });
-
-        var signatureRowGroup = new TableRowGroup();
-        signatureTable.RowGroups.Add(signatureRowGroup);
-
-        var signatureRow = new TableRow();
-        signatureRow.Cells.Add(CreateSignatureCellWithImage("Nhân viên kiểm kê", phieuKiem.NhanVienKiem?.HoTen, phieuKiem.ChuKyKiem));
-        signatureRow.Cells.Add(CreateSignatureCellWithImage("Người duyệt", phieuKiem.NhanVienDuyet?.HoTen, phieuKiem.ChuKyDuyet));
-        signatureRowGroup.Rows.Add(signatureRow);
-
-        document.Blocks.Add(signatureTable);
-
-        // Ngày in
-        var printDatePara = new Paragraph(new Run($"Ngày in: {DateTime.Now:dd/MM/yyyy HH:mm}"))
-        {
-            FontSize = 10,
-            FontStyle = FontStyles.Italic,
-            TextAlignment = TextAlignment.Right,
-            Margin = new Thickness(0, 30, 0, 0)
-        };
-        document.Blocks.Add(printDatePara);
-
-        return document;
     }
     #endregion
 
-    #region In Hóa Đơn Bán Hàng
+    #region Xuất Hóa Đơn Bán Hàng
     public static void PrintHoaDonBanHang(DonHang donHang, IEnumerable<CT_DonHang> chiTiets)
     {
+        var dialog = new SaveFileDialog
+        {
+            Title = "Lưu Hóa Đơn",
+            Filter = "PDF (*.pdf)|*.pdf",
+            FileName = $"HoaDon_{donHang.MaDonHang}.pdf",
+            DefaultExt = ".pdf"
+        };
+
+        if (dialog.ShowDialog() != true) return;
+
         try
         {
-            var printDialog = new PrintDialog();
-            if (printDialog.ShowDialog() == true)
+            ConfigureQuestPdf();
+            Document.Create(container =>
             {
-                var document = CreateHoaDonBanHangDocument(donHang, chiTiets, printDialog.PrintableAreaWidth);
-                var docTitle = donHang.MaDonHang == "TẠM TÍNH" ? "HoaDon - Tam Tinh" : $"HoaDon - {donHang.MaDonHang}";
-                printDialog.PrintDocument(((IDocumentPaginatorSource)document).DocumentPaginator, docTitle);
-            }
-        }
-        catch (Exception ex) {
-            MessageBox.Show($"Lỗi khi in hóa đơn: {ex.Message}", "Lỗi", MessageBoxButton.OK, MessageBoxImage.Error);
-        }
-    }
-
-    private static FlowDocument CreateHoaDonBanHangDocument(DonHang donHang, IEnumerable<CT_DonHang> chiTiets, double pageWidth)
-    {
-        var document = new FlowDocument
-        {
-            PageWidth = pageWidth,
-            PagePadding = new Thickness(50),
-            ColumnWidth = double.MaxValue,
-            FontFamily = new FontFamily("Arial"),
-            FontSize = 12
-        };
-
-        // Tiêu đề
-        var headerPara = new Paragraph(new Run("HÓA ĐƠN BÁN HÀNG"))
-        {
-            FontSize = 24,
-            FontWeight = FontWeights.Bold,
-            TextAlignment = TextAlignment.Center,
-            Margin = new Thickness(0, 0, 0, 10)
-        };
-        document.Blocks.Add(headerPara);
-
-        // Tên công ty
-        var companyPara = new Paragraph(new Run("PIZZINN - Pizza & Đồ Ăn Nhanh"))
-        {
-            FontSize = 14,
-            TextAlignment = TextAlignment.Center,
-            Margin = new Thickness(0, 0, 0, 5)
-        };
-        document.Blocks.Add(companyPara);
-
-        // Địa chỉ (placeholder)
-        var addressPara = new Paragraph(new Run("Địa chỉ: TP. Hồ Chí Minh"))
-        {
-            FontSize = 10,
-            TextAlignment = TextAlignment.Center,
-            Foreground = Brushes.Gray,
-            Margin = new Thickness(0, 0, 0, 25)
-        };
-        document.Blocks.Add(addressPara);
-
-        // Đường kẻ ngang
-        var linePara = new Paragraph(new Run("━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"))
-        {
-            TextAlignment = TextAlignment.Center,
-            Foreground = Brushes.Gray,
-            Margin = new Thickness(0, 0, 0, 15)
-        };
-        document.Blocks.Add(linePara);
-
-        // Thông tin hóa đơn
-        var infoPara = new Paragraph
-        {
-            Margin = new Thickness(0, 0, 0, 20)
-        };
-        infoPara.Inlines.Add(new Run("Mã hóa đơn: ") { FontWeight = FontWeights.Bold });
-        infoPara.Inlines.Add(new Run($"{donHang.MaDonHang}\n"));
-        infoPara.Inlines.Add(new Run("Ngày bán: ") { FontWeight = FontWeights.Bold });
-        infoPara.Inlines.Add(new Run($"{donHang.NgayTao:dd/MM/yyyy HH:mm}\n"));
-        infoPara.Inlines.Add(new Run("Nhân viên: ") { FontWeight = FontWeights.Bold });
-        infoPara.Inlines.Add(new Run($"{donHang.NhanVien?.HoTen ?? "N/A"}\n"));
-        infoPara.Inlines.Add(new Run("Phương thức TT: ") { FontWeight = FontWeights.Bold });
-        infoPara.Inlines.Add(new Run($"{donHang.PhuongThucTT}\n"));
-        document.Blocks.Add(infoPara);
-
-        // Bảng chi tiết sản phẩm
-        var table = new Table
-        {
-            CellSpacing = 0,
-            BorderBrush = Brushes.Black,
-            BorderThickness = new Thickness(1)
-        };
-
-        table.Columns.Add(new TableColumn { Width = new GridLength(0.5, GridUnitType.Star) });  // STT
-        table.Columns.Add(new TableColumn { Width = new GridLength(2.5, GridUnitType.Star) }); // Tên SP
-        table.Columns.Add(new TableColumn { Width = new GridLength(0.8, GridUnitType.Star) }); // Size
-        table.Columns.Add(new TableColumn { Width = new GridLength(0.6, GridUnitType.Star) }); // SL
-        table.Columns.Add(new TableColumn { Width = new GridLength(1.2, GridUnitType.Star) }); // Đơn giá
-        table.Columns.Add(new TableColumn { Width = new GridLength(1.3, GridUnitType.Star) }); // Thành tiền
-
-        var rowGroup = new TableRowGroup();
-        table.RowGroups.Add(rowGroup);
-
-        // Dòng tiêu đề
-        var headerRow = new TableRow { Background = Brushes.LightGray };
-        headerRow.Cells.Add(CreateTableCell("STT", true));
-        headerRow.Cells.Add(CreateTableCell("Sản phẩm", true));
-        headerRow.Cells.Add(CreateTableCell("Size", true));
-        headerRow.Cells.Add(CreateTableCell("SL", true));
-        headerRow.Cells.Add(CreateTableCell("Đơn giá", true));
-        headerRow.Cells.Add(CreateTableCell("Thành tiền", true));
-        rowGroup.Rows.Add(headerRow);
-
-        // Dòng dữ liệu
-        int stt = 1;
-        foreach (var ct in chiTiets)
-        {
-            var row = new TableRow();
-            row.Cells.Add(CreateTableCell(stt.ToString()));
-            row.Cells.Add(CreateTableCell(ct.Pizza?.TenPizza ?? "N/A"));
-            row.Cells.Add(CreateTableCell(ct.Pizza?.KichThuoc ?? ""));
-            row.Cells.Add(CreateTableCell($"{ct.SoLuong}"));
-            row.Cells.Add(CreateTableCell($"{ct.DonGia:N0}đ"));
-            row.Cells.Add(CreateTableCell($"{ct.ThanhTien:N0}đ"));
-            rowGroup.Rows.Add(row);
-            stt++;
-        }
-
-        document.Blocks.Add(table);
-
-        // Tổng kết thanh toán
-        var summaryPara = new Paragraph
-        {
-            TextAlignment = TextAlignment.Right,
-            Margin = new Thickness(0, 15, 0, 0)
-        };
-        summaryPara.Inlines.Add(new Run($"Tổng tiền hàng: {donHang.TongTien:N0}đ\n") { FontSize = 13 });
-        if (donHang.GiamGia > 0)
-        {
-            summaryPara.Inlines.Add(new Run($"Giảm giá: -{donHang.GiamGia:N0}đ\n") { FontSize = 13, Foreground = Brushes.Red });
-        }
-        document.Blocks.Add(summaryPara);
-
-        // Thanh toán
-        var totalPara = new Paragraph
-        {
-            TextAlignment = TextAlignment.Right,
-            Margin = new Thickness(0, 5, 0, 0)
-        };
-        totalPara.Inlines.Add(new Run("THANH TOÁN: ") { FontWeight = FontWeights.Bold, FontSize = 16 });
-        totalPara.Inlines.Add(new Run($"{donHang.ThanhToan:N0} VNĐ") { FontWeight = FontWeights.Bold, FontSize = 16, Foreground = Brushes.Red });
-        document.Blocks.Add(totalPara);
-
-        // Tiền khách đưa & Tiền thừa
-        if (donHang.TienKhachDua.HasValue && donHang.TienKhachDua.Value > 0)
-        {
-            var paymentDetailPara = new Paragraph
-            {
-                TextAlignment = TextAlignment.Right,
-                Margin = new Thickness(0, 5, 0, 0)
-            };
-            paymentDetailPara.Inlines.Add(new Run($"Tiền khách đưa: {donHang.TienKhachDua.Value:N0}đ\n") { FontSize = 13 });
-            var tienThua = donHang.TienKhachDua.Value - donHang.ThanhToan;
-            if (tienThua > 0)
-            {
-                paymentDetailPara.Inlines.Add(new Run($"Tiền thừa: {tienThua:N0}đ") { FontSize = 13, Foreground = Brushes.Green });
-            }
-            document.Blocks.Add(paymentDetailPara);
-        }
-
-        // Lời cảm ơn
-        var thanksPara = new Paragraph(new Run("Cảm ơn quý khách! Hẹn gặp lại!"))
-        {
-            FontSize = 12,
-            FontStyle = FontStyles.Italic,
-            TextAlignment = TextAlignment.Center,
-            Margin = new Thickness(0, 30, 0, 10)
-        };
-        document.Blocks.Add(thanksPara);
-
-        // Mã QR cho chuyển khoản
-        if (donHang.PhuongThucTT != null && donHang.PhuongThucTT.Contains("Chuyển khoản", StringComparison.OrdinalIgnoreCase))
-        {
-            try
-            {
-                // Tạo VietQR data string
-                // Thông tin ngân hàng PizzaInn (Vietcombank mẫu)
-                string bankId = "970436"; // Vietcombank BIN
-                string accountNo = "1234567890"; // Số tài khoản
-                string accountName = "PIZZAINN";
-                string amount = ((int)donHang.ThanhToan).ToString();
-                string addInfo = $"TT {donHang.MaDonHang}";
-
-                // VietQR URL format (sử dụng VietQR API)
-                string qrContent = $"https://img.vietqr.io/image/{bankId}-{accountNo}-compact.png?amount={amount}&addInfo={Uri.EscapeDataString(addInfo)}&accountName={Uri.EscapeDataString(accountName)}";
-
-                // Tạo QR code chứa nội dung thanh toán
-                string qrData = $"Ngân hàng: Vietcombank\nSTK: {accountNo}\nTên: {accountName}\nSố tiền: {donHang.ThanhToan:N0} VNĐ\nNội dung: {addInfo}";
-
-                using var qrGenerator = new QRCodeGenerator();
-                using var qrCodeData = qrGenerator.CreateQrCode(qrData, QRCodeGenerator.ECCLevel.Q);
-                using var qrCode = new QRCode(qrCodeData);
-                using var qrBitmap = qrCode.GetGraphic(6);
-
-                // Convert Bitmap to BitmapSource
-                using var memory = new MemoryStream();
-                qrBitmap.Save(memory, ImageFormat.Png);
-                memory.Position = 0;
-
-                var bitmapImage = new BitmapImage();
-                bitmapImage.BeginInit();
-                bitmapImage.CacheOption = BitmapCacheOption.OnLoad;
-                bitmapImage.StreamSource = memory;
-                bitmapImage.EndInit();
-                bitmapImage.Freeze();
-
-                // Thêm section QR vào document
-                var qrSection = new Paragraph
+                container.Page(page =>
                 {
-                    TextAlignment = TextAlignment.Center,
-                    Margin = new Thickness(0, 10, 0, 5)
-                };
+                    page.Size(PageSizes.A4);
+                    page.Margin(1.5f, Unit.Centimetre);
+                    page.PageColor(Colors.White);
+                    page.DefaultTextStyle(x => x.FontSize(12).FontFamily(Fonts.Arial).FontColor(Colors.Black));
 
-                var qrTitleRun = new Run("━━━ QUÉT MÃ ĐỂ CHUYỂN KHOẢN ━━━\n")
-                {
-                    FontSize = 11,
-                    Foreground = System.Windows.Media.Brushes.Gray
-                };
-                qrSection.Inlines.Add(qrTitleRun);
+                    page.Header().Column(col =>
+                    {
+                        col.Item().AlignCenter().Text("HÓA ĐƠN BÁN HÀNG").FontSize(24).Bold();
+                        col.Item().PaddingBottom(5).AlignCenter().Text("PIZZINN - Pizza & Đồ Ăn Nhanh").FontSize(14);
+                        col.Item().PaddingBottom(15).AlignCenter().Text("Địa chỉ: TP. Hồ Chí Minh").FontSize(10).FontColor(Colors.Grey.Darken2);
+                        
+                        col.Item().PaddingBottom(15).AlignCenter().Text("━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━").FontColor(Colors.Grey.Darken1);
+                        
+                        col.Item().Text(t => { t.Span("Mã hóa đơn: ").Bold(); t.Span(donHang.MaDonHang); });
+                        col.Item().Text(t => { t.Span("Ngày bán: ").Bold(); t.Span(donHang.NgayTao.ToString("dd/MM/yyyy HH:mm")); });
+                        col.Item().Text(t => { t.Span("Nhân viên: ").Bold(); t.Span(donHang.NhanVien?.HoTen ?? "N/A"); });
+                        col.Item().Text(t => { t.Span("Phương thức TT: ").Bold(); t.Span(donHang.PhuongThucTT ?? "N/A"); });
+                        
+                        col.Item().PaddingBottom(15);
+                    });
 
-                var qrImage = new Image
-                {
-                    Source = bitmapImage,
-                    Width = 180,
-                    Height = 180,
-                    Stretch = Stretch.Uniform
-                };
+                    page.Content().Column(col =>
+                    {
+                        col.Item().Table(table =>
+                        {
+                            table.ColumnsDefinition(columns =>
+                            {
+                                columns.RelativeColumn(0.5f);
+                                columns.RelativeColumn(2.5f);
+                                columns.RelativeColumn(0.8f);
+                                columns.RelativeColumn(0.6f);
+                                columns.RelativeColumn(1.2f);
+                                columns.RelativeColumn(1.3f);
+                            });
 
-                var qrContainer = new InlineUIContainer(qrImage);
-                qrSection.Inlines.Add(qrContainer);
-                document.Blocks.Add(qrSection);
+                            table.Header(header =>
+                            {
+                                header.Cell().Border(1).BorderColor(Colors.Black).Background(Colors.Grey.Lighten3).Padding(4).AlignCenter().Text("STT").Bold();
+                                header.Cell().Border(1).BorderColor(Colors.Black).Background(Colors.Grey.Lighten3).Padding(4).AlignCenter().Text("Sản phẩm").Bold();
+                                header.Cell().Border(1).BorderColor(Colors.Black).Background(Colors.Grey.Lighten3).Padding(4).AlignCenter().Text("Size").Bold();
+                                header.Cell().Border(1).BorderColor(Colors.Black).Background(Colors.Grey.Lighten3).Padding(4).AlignCenter().Text("SL").Bold();
+                                header.Cell().Border(1).BorderColor(Colors.Black).Background(Colors.Grey.Lighten3).Padding(4).AlignCenter().Text("Đơn giá").Bold();
+                                header.Cell().Border(1).BorderColor(Colors.Black).Background(Colors.Grey.Lighten3).Padding(4).AlignCenter().Text("Thành tiền").Bold();
+                            });
+                            
+                            int stt = 1;
+                            foreach(var ct in chiTiets)
+                            {
+                                table.Cell().Border(1).BorderColor(Colors.Black).Padding(4).AlignCenter().Text(stt.ToString());
+                                table.Cell().Border(1).BorderColor(Colors.Black).Padding(4).Text(ct.Pizza?.TenPizza ?? "N/A");
+                                table.Cell().Border(1).BorderColor(Colors.Black).Padding(4).AlignCenter().Text(ct.Pizza?.KichThuoc ?? "");
+                                table.Cell().Border(1).BorderColor(Colors.Black).Padding(4).AlignCenter().Text($"{ct.SoLuong}");
+                                table.Cell().Border(1).BorderColor(Colors.Black).Padding(4).AlignRight().Text($"{ct.DonGia:N0}đ");
+                                table.Cell().Border(1).BorderColor(Colors.Black).Padding(4).AlignRight().Text($"{ct.ThanhTien:N0}đ");
+                                stt++;
+                            }
+                        });
+                        
+                        col.Item().PaddingTop(15).AlignRight().Text($"Tổng tiền hàng: {donHang.TongTien:N0}đ").FontSize(13);
+                        if (donHang.GiamGia > 0)
+                        {
+                            col.Item().AlignRight().Text($"Giảm giá: -{donHang.GiamGia:N0}đ").FontSize(13);
+                        }
+                        
+                        col.Item().PaddingTop(5).AlignRight().Text(t => 
+                        {
+                            t.Span("THANH TOÁN: ").Bold().FontSize(16);
+                            t.Span($"{donHang.ThanhToan:N0} VNĐ").Bold().FontSize(16);
+                        });
 
-                // Thông tin tài khoản
-                var bankInfoPara = new Paragraph
-                {
-                    TextAlignment = TextAlignment.Center,
-                    Margin = new Thickness(0, 5, 0, 0)
-                };
-                bankInfoPara.Inlines.Add(new Run("Vietcombank - ") { FontSize = 11, FontWeight = FontWeights.Bold });
-                bankInfoPara.Inlines.Add(new Run(accountNo + "\n") { FontSize = 11 });
-                bankInfoPara.Inlines.Add(new Run(accountName + "\n") { FontSize = 11, FontWeight = FontWeights.Bold });
-                bankInfoPara.Inlines.Add(new Run($"Số tiền: {donHang.ThanhToan:N0} VNĐ") { FontSize = 11 });
-                document.Blocks.Add(bankInfoPara);
-            }
-            catch { }
+                        if (donHang.TienKhachDua.HasValue && donHang.TienKhachDua.Value > 0)
+                        {
+                            col.Item().PaddingTop(5).AlignRight().Text($"Tiền khách đưa: {donHang.TienKhachDua.Value:N0}đ").FontSize(13);
+                            decimal tienThua = donHang.TienKhachDua.Value - donHang.ThanhToan;
+                            if (tienThua > 0)
+                            {
+                                col.Item().AlignRight().Text($"Tiền thừa: {tienThua:N0}đ").FontSize(13);
+                            }
+                        }
+
+                        col.Item().PaddingTop(30).AlignCenter().Text("Cảm ơn quý khách! Hẹn gặp lại!").FontSize(12).Italic();
+
+                        // Mã QR cho chuyển khoản
+                        if (donHang.PhuongThucTT != null && donHang.PhuongThucTT.Contains("Chuyển khoản", StringComparison.OrdinalIgnoreCase))
+                        {
+                            try
+                            {
+                                string accountNo = "1234567890";
+                                string accountName = "PIZZAINN";
+                                string addInfo = $"TT {donHang.MaDonHang}";
+                                string qrData = $"Ngân hàng: Vietcombank\nSTK: {accountNo}\nTên: {accountName}\nSố tiền: {donHang.ThanhToan:N0} VNĐ\nNội dung: {addInfo}";
+
+                                using var qrGenerator = new QRCodeGenerator();
+                                using var qrCodeData = qrGenerator.CreateQrCode(qrData, QRCodeGenerator.ECCLevel.Q);
+                                using var qrCode = new QRCode(qrCodeData);
+                                using var qrBitmap = qrCode.GetGraphic(6);
+                                using var memory = new MemoryStream();
+                                qrBitmap.Save(memory, System.Drawing.Imaging.ImageFormat.Png);
+                                byte[] qrBytes = memory.ToArray();
+
+                                col.Item().PaddingTop(20).AlignCenter().Column(qrCol =>
+                                {
+                                    qrCol.Item().AlignCenter().Text("━━━ QUÉT MÃ ĐỂ CHUYỂN KHOẢN ━━━").FontSize(11).FontColor(Colors.Grey.Darken1);
+                                    qrCol.Item().PaddingTop(5).Height(150).Width(150).Image(qrBytes).FitArea();
+                                    qrCol.Item().PaddingTop(5).AlignCenter().Text("Vietcombank - " + accountNo).FontSize(11).Bold();
+                                    qrCol.Item().AlignCenter().Text(accountName).FontSize(11).Bold();
+                                    qrCol.Item().AlignCenter().Text($"Số tiền: {donHang.ThanhToan:N0} VNĐ").FontSize(11);
+                                });
+                            }
+                            catch { }
+                        }
+                    });
+                    
+                    page.Footer().AlignRight().Text($"Ngày xuất: {DateTime.Now:dd/MM/yyyy HH:mm}").FontSize(10).Italic();
+                });
+            }).GeneratePdf(dialog.FileName);
         }
-
-        // Ngày in
-        var printDatePara = new Paragraph(new Run($"Ngày in: {DateTime.Now:dd/MM/yyyy HH:mm}"))
+        catch (Exception ex)
         {
-            FontSize = 10,
-            FontStyle = FontStyles.Italic,
-            TextAlignment = TextAlignment.Right,
-            Margin = new Thickness(0, 10, 0, 0)
-        };
-        document.Blocks.Add(printDatePara);
-
-        return document;
+            MessageBox.Show($"Lỗi khi xuất hóa đơn: {ex.Message}", "Lỗi", MessageBoxButton.OK, MessageBoxImage.Error);
+        }
     }
     #endregion
 
     #region Phương thức hỗ trợ
-    private static TableCell CreateTableCell(string text, bool isHeader = false)
+    private static void RenderSignature(IContainer container, string? chuKySoBase64)
     {
-        var cell = new TableCell(new Paragraph(new Run(text))
-        {
-            TextAlignment = TextAlignment.Center,
-            Margin = new Thickness(5)
-        })
-        {
-            BorderBrush = Brushes.Black,
-            BorderThickness = new Thickness(0.5),
-            Padding = new Thickness(5)
-        };
-
-        if (isHeader)
-        {
-            cell.Background = Brushes.LightGray;
-        }
-
-        return cell;
-    }
-
-    private static TableCell CreateSignatureCell(string title, string? name = null)
-    {
-        var cell = new TableCell
-        {
-            BorderThickness = new Thickness(0),
-            BorderBrush = Brushes.Transparent
-        };
-        var para = new Paragraph
-        {
-            TextAlignment = TextAlignment.Center
-        };
-        para.Inlines.Add(new Run(title) { FontWeight = FontWeights.Bold });
-        para.Inlines.Add(new Run("\n\n\n\n"));
-        if (!string.IsNullOrEmpty(name))
-        {
-            para.Inlines.Add(new Run(name) { FontWeight = FontWeights.SemiBold, FontSize = 11 });
-        }
-        else
-        {
-            para.Inlines.Add(new Run("(Ký và ghi rõ họ tên)") { FontStyle = FontStyles.Italic, FontSize = 10 });
-        }
-        cell.Blocks.Add(para);
-        return cell;
-    }
-
-    /// <summary>
-    /// Tạo cell chữ ký có render ảnh chữ ký số từ Base64
-    /// </summary>
-    private static TableCell CreateSignatureCellWithImage(string title, string? name, string? chuKySoBase64)
-    {
-        var cell = new TableCell
-        {
-            BorderThickness = new Thickness(0),
-            BorderBrush = Brushes.Transparent
-        };
-        var para = new Paragraph
-        {
-            TextAlignment = TextAlignment.Center
-        };
-        para.Inlines.Add(new Run(title) { FontWeight = FontWeights.Bold });
-        para.Inlines.Add(new Run("\n"));
-
-        // Render ảnh chữ ký số nếu có
-        if (!string.IsNullOrEmpty(chuKySoBase64))
-        {
-            try
-            {
-                var imageSource = Base64ToImageSource(chuKySoBase64);
-                if (imageSource != null)
-                {
-                    var sigImage = new Image
-                    {
-                        Source = imageSource,
-                        Width = 120,
-                        Height = 60,
-                        Stretch = Stretch.Uniform
-                    };
-                    para.Inlines.Add(new InlineUIContainer(sigImage));
-                    para.Inlines.Add(new Run("\n"));
-                }
-            }
-            catch
-            {
-                para.Inlines.Add(new Run("[Chữ ký số đã xác nhận]\n") { FontStyle = FontStyles.Italic, FontSize = 9, Foreground = Brushes.Green });
-            }
-        }
-        else
-        {
-            para.Inlines.Add(new Run("\n\n\n"));
-        }
-
-        if (!string.IsNullOrEmpty(name))
-        {
-            para.Inlines.Add(new Run(name) { FontWeight = FontWeights.SemiBold, FontSize = 11 });
-        }
-        else
-        {
-            para.Inlines.Add(new Run("(Ký và ghi rõ họ tên)") { FontStyle = FontStyles.Italic, FontSize = 10 });
-        }
-
-        cell.Blocks.Add(para);
-        return cell;
-    }
-
-    /// <summary>
-    /// Chuyển đổi chuỗi Base64 PNG thành WPF BitmapImage
-    /// </summary>
-    private static BitmapImage? Base64ToImageSource(string base64String)
-    {
+        if (string.IsNullOrEmpty(chuKySoBase64)) return;
         try
         {
-            var bytes = Convert.FromBase64String(base64String);
-            using var ms = new MemoryStream(bytes);
-            var bitmapImage = new BitmapImage();
-            bitmapImage.BeginInit();
-            bitmapImage.CacheOption = BitmapCacheOption.OnLoad;
-            bitmapImage.StreamSource = ms;
-            bitmapImage.EndInit();
-            bitmapImage.Freeze();
-            return bitmapImage;
+            byte[] imageBytes = Convert.FromBase64String(chuKySoBase64);
+            container.Image(imageBytes).FitArea();
         }
         catch
         {
-            return null;
+            container.Text("[Chữ ký số đã xác nhận]").Italic().FontSize(9);
         }
     }
     #endregion

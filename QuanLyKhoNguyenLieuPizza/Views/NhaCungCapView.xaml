@@ -1,7 +1,8 @@
-﻿<?xml version="1.0" encoding="utf-8"?>
+<?xml version="1.0" encoding="utf-8"?>
 <UserControl x:Class="QuanLyKhoNguyenLieuPizza.Views.NhaCungCapView"
              xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
              xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:components="clr-namespace:QuanLyKhoNguyenLieuPizza.Views.Components"
              xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
              xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
              xmlns:vm="clr-namespace:QuanLyKhoNguyenLieuPizza.ViewModels"
@@ -1080,12 +1081,11 @@
         </Grid>
 
         <!-- Màn hình Chờ -->
-        <Border Background="#80FFFFFF"
-                Visibility="{Binding IsLoading, Converter={StaticResource BoolToVisibilityConverter}}">
-            <StackPanel HorizontalAlignment="Center" VerticalAlignment="Center">
-                <TextBlock Text="&#xE895;" FontFamily="Segoe MDL2 Assets" FontSize="36" HorizontalAlignment="Center" Foreground="{StaticResource PrimaryBlue}"/>
-                <TextBlock Text="Đang tải dữ liệu..." FontSize="14" Foreground="{StaticResource Gray500}" Margin="0,8,0,0"/>
-            </StackPanel>
-        </Border>
+        <!-- Loading Overlay -->
+        <!-- Loading Overlay -->
+        <Grid Visibility="{Binding IsLoading, Converter={StaticResource BoolToVisibilityConverter}}" Panel.ZIndex="999">
+            <Border Background="Transparent" />
+            <components:LoadingSpinner HorizontalAlignment="Center" VerticalAlignment="Center"/>
+        </Grid>
     </Grid>
 </UserControl>

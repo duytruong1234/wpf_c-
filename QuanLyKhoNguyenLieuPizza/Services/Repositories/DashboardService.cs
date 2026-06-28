@@ -1,4 +1,4 @@
-﻿using System.Text;
+using System.Text;
 using System.Globalization;
 using Microsoft.Data.SqlClient;
 using System.Data;
@@ -10,44 +10,29 @@ public class DashboardService : DatabaseContext
 {
     public DashboardService(string connectionString) : base(connectionString) { }
 
-    private const string LoHangTonKhoFifoCte = @"
+    private const string LoHangTonKhoFefoCte = @"
         ;WITH ApprovedBatches AS (
             SELECT pn.PhieuNhapID, pn.MaPhieuNhap, pn.NgayNhap, ct.ChiTietID,
                    nl.NguyenLieuID, nl.TenNguyenLieu,
-                   COALESCE(dv.TenDonVi, N'') AS DonVi,
-                   CAST(ct.SoLuong AS decimal(18,4)) AS SoLuongNhap,
+                   COALESCE(dvLo.TenDonVi, dv.TenDonVi, N'') AS DonVi,
+                   CAST(ct.SoLuongCon AS decimal(18,4)) AS SoLuongNhap,
                    CAST(ISNULL(NULLIF(ct.HeSo, 0), 1) AS decimal(18,4)) AS HeSo,
                    ct.HSD,
                    nl.HanCanhBao,
-                   CAST(ct.SoLuong * ISNULL(NULLIF(ct.HeSo, 0), 1) AS decimal(18,4)) AS SoLuongChuan,
-                   CAST(ISNULL(tk.SoLuongTon, 0) AS decimal(18,4)) AS TonHienTai
+                   CAST(ct.SoLuongCon * ISNULL(NULLIF(ct.HeSo, 0), 1) AS decimal(18,4)) AS SoLuongChuan
             FROM CT_PhieuNhap ct
             INNER JOIN PhieuNhap pn ON ct.PhieuNhapID = pn.PhieuNhapID
             INNER JOIN NguyenLieu nl ON ct.NguyenLieuID = nl.NguyenLieuID
-            LEFT JOIN DonViTinh dv ON ct.DonViID = dv.DonViID
-            LEFT JOIN TonKho tk ON nl.NguyenLieuID = tk.NguyenLieuID
-            WHERE pn.TrangThai = 2 AND nl.TrangThai = 1
-        ),
-        RunningBatches AS (
-            SELECT *,
-                   SUM(SoLuongChuan) OVER (
-                       PARTITION BY NguyenLieuID
-                       ORDER BY NgayNhap, PhieuNhapID, ChiTietID
-                       ROWS BETWEEN UNBOUNDED PRECEDING AND 1 PRECEDING
-                   ) AS TongNhapTruocLo,
-                   SUM(SoLuongChuan) OVER (PARTITION BY NguyenLieuID) AS TongNhapTatCa
-            FROM ApprovedBatches
+            LEFT JOIN DonViTinh dv ON nl.DonViID = dv.DonViID
+            LEFT JOIN DonViTinh dvLo ON ct.DonViID = dvLo.DonViID
+            WHERE pn.TrangThai = 2
+              AND nl.TrangThai = 1
+              AND ct.SoLuongCon > 0
         ),
         RemainingBatches AS (
             SELECT *,
-                   CASE
-                       WHEN TonHienTai <= 0 THEN 0
-                       WHEN TongNhapTatCa - TonHienTai <= 0 THEN SoLuongChuan
-                       WHEN ISNULL(TongNhapTruocLo, 0) + SoLuongChuan <= TongNhapTatCa - TonHienTai THEN 0
-                       WHEN ISNULL(TongNhapTruocLo, 0) >= TongNhapTatCa - TonHienTai THEN SoLuongChuan
-                       ELSE ISNULL(TongNhapTruocLo, 0) + SoLuongChuan - (TongNhapTatCa - TonHienTai)
-                   END AS SoLuongConChuan
-            FROM RunningBatches
+                   SoLuongChuan AS SoLuongConChuan
+            FROM ApprovedBatches
         )";
 
     public async Task<int> GetTotalNguyenLieuCountAsync() =>
@@ -63,7 +48,7 @@ public class DashboardService : DatabaseContext
 
     public async Task<int> GetNearExpiryCountAsync(int days = 7) =>
         await ExecuteScalarValueAsync(
-            LoHangTonKhoFifoCte + @"
+            LoHangTonKhoFefoCte + @"
               SELECT COUNT(*)
               FROM RemainingBatches
               WHERE SoLuongConChuan > 0
@@ -74,7 +59,7 @@ public class DashboardService : DatabaseContext
 
     public async Task<int> GetExpiredCountAsync() =>
         await ExecuteScalarValueAsync(
-            LoHangTonKhoFifoCte + @"
+            LoHangTonKhoFefoCte + @"
               SELECT COUNT(*)
               FROM RemainingBatches
               WHERE SoLuongConChuan > 0
@@ -119,7 +104,7 @@ public class DashboardService : DatabaseContext
         {
             using var conn = GetConnection();
             await conn.OpenAsync();
-            var sql = LoHangTonKhoFifoCte + @"
+            var sql = LoHangTonKhoFefoCte + @"
                         SELECT ISNULL(TenNguyenLieu, N'Không tên'),
                                CASE WHEN HeSo <= 0 THEN SoLuongConChuan ELSE SoLuongConChuan / HeSo END AS SoLuongCon,
                                ISNULL(DonVi, N''),
@@ -147,7 +132,7 @@ public class DashboardService : DatabaseContext
         {
             using var conn = GetConnection();
             await conn.OpenAsync();
-            var sql = LoHangTonKhoFifoCte + @"
+            var sql = LoHangTonKhoFefoCte + @"
                         SELECT ISNULL(TenNguyenLieu, N'Không tên'),
                                CASE WHEN HeSo <= 0 THEN SoLuongConChuan ELSE SoLuongConChuan / HeSo END AS SoLuongCon,
                                ISNULL(DonVi, N''),
@@ -642,7 +627,7 @@ public class DashboardService : DatabaseContext
     }
 
     /// <summary>
-    /// Lấy các lô hàng còn tồn theo FIFO, kèm HSD. Trường SoLuongNhap trả về số lượng còn lại theo đơn vị của lô.
+    /// Lấy các lô hàng còn tồn theo FEFO, kèm HSD. Trường SoLuongNhap trả về số lượng còn lại theo đơn vị của lô.
     /// </summary>
     public async Task<List<(int PhieuNhapID, string MaPhieuNhap, DateTime NgayNhap, int NguyenLieuID, string TenNguyenLieu, string DonVi, decimal SoLuongNhap, DateTime? HSD, int? HanCanhBao)>> GetTonKhoTheoLoHangAsync()
     {
@@ -651,7 +636,7 @@ public class DashboardService : DatabaseContext
         {
             using var conn = GetConnection();
             await conn.OpenAsync();
-            var sql = LoHangTonKhoFifoCte + @"
+            var sql = LoHangTonKhoFefoCte + @"
                         SELECT PhieuNhapID, MaPhieuNhap, NgayNhap,
                                NguyenLieuID, TenNguyenLieu, DonVi,
                                CASE WHEN HeSo <= 0 THEN SoLuongConChuan ELSE SoLuongConChuan / HeSo END AS SoLuongCon,
@@ -681,7 +666,7 @@ public class DashboardService : DatabaseContext
     }
 
     /// <summary>
-    /// Lấy các lô hàng còn tồn theo FIFO đang sắp hết hạn hoặc đã hết hạn.
+    /// Lấy các lô hàng còn tồn theo FEFO đang sắp hết hạn hoặc đã hết hạn.
     /// </summary>
     public async Task<List<(int PhieuNhapID, string MaPhieuNhap, DateTime NgayNhap, int NguyenLieuID, string TenNguyenLieu, string DonVi, decimal SoLuongNhap, DateTime HSD, int SoNgayConLai)>> GetLoHangCanhBaoHSDAsync()
     {
@@ -690,7 +675,7 @@ public class DashboardService : DatabaseContext
         {
             using var conn = GetConnection();
             await conn.OpenAsync();
-            var sql = LoHangTonKhoFifoCte + @"
+            var sql = LoHangTonKhoFefoCte + @"
                         SELECT PhieuNhapID, MaPhieuNhap, NgayNhap,
                                NguyenLieuID, TenNguyenLieu, DonVi,
                                CASE WHEN HeSo <= 0 THEN SoLuongConChuan ELSE SoLuongConChuan / HeSo END AS SoLuongCon,
@@ -721,4 +706,205 @@ public class DashboardService : DatabaseContext
         catch { }
         return result;
     }
+
+    /// <summary>
+    /// Đối soát nhập/xuất nguyên liệu theo khoảng thời gian (date range).
+    /// </summary>
+    public async Task<List<(string MaNL, string TenNL, string DonVi, decimal TongNhap, decimal TongTieuHao)>> GetDoiSoatTieuHaoByRangeAsync(DateTime fromDate, DateTime toDate)
+    {
+        var result = new List<(string, string, string, decimal, decimal)>();
+        try
+        {
+            using var conn = GetConnection();
+            await conn.OpenAsync();
+
+            var nhapDict = new Dictionary<int, decimal>();
+            var sqlNhap = @"SELECT ct.NguyenLieuID,
+                                   SUM(ct.SoLuong * ISNULL(NULLIF(ct.HeSo, 0), 1)) AS TongNhap
+                            FROM CT_PhieuNhap ct
+                            INNER JOIN PhieuNhap pn ON ct.PhieuNhapID = pn.PhieuNhapID
+                            WHERE pn.TrangThai = 2
+                            AND ISNULL(pn.NgayDuyet, pn.NgayNhap) >= @FromDate
+                            AND ISNULL(pn.NgayDuyet, pn.NgayNhap) < @ToDate
+                            GROUP BY ct.NguyenLieuID";
+            using (var cmd = new SqlCommand(sqlNhap, conn))
+            {
+                cmd.Parameters.AddWithValue("@FromDate", fromDate.Date);
+                cmd.Parameters.AddWithValue("@ToDate", toDate.Date.AddDays(1));
+                using var reader = await cmd.ExecuteReaderAsync();
+                while (await reader.ReadAsync())
+                {
+                    nhapDict[reader.GetInt32(0)] = reader.GetDecimal(1);
+                }
+            }
+
+            var xuatDict = new Dictionary<int, decimal>();
+            var sqlXuat = @"SELECT ct.NguyenLieuID,
+                                   SUM(ct.SoLuong * ISNULL(NULLIF(ct.HeSo, 0), 1)) AS TongXuat
+                            FROM CT_PhieuXuat ct
+                            INNER JOIN PhieuXuat px ON ct.PhieuXuatID = px.PhieuXuatID
+                            WHERE px.TrangThai = 2
+                            AND ISNULL(px.NgayDuyet, px.NgayYeuCau) >= @FromDate
+                            AND ISNULL(px.NgayDuyet, px.NgayYeuCau) < @ToDate
+                            GROUP BY ct.NguyenLieuID";
+            using (var cmd = new SqlCommand(sqlXuat, conn))
+            {
+                cmd.Parameters.AddWithValue("@FromDate", fromDate.Date);
+                cmd.Parameters.AddWithValue("@ToDate", toDate.Date.AddDays(1));
+                using var reader = await cmd.ExecuteReaderAsync();
+                while (await reader.ReadAsync())
+                {
+                    xuatDict[reader.GetInt32(0)] = reader.GetDecimal(1);
+                }
+            }
+
+            var allIds = new HashSet<int>(nhapDict.Keys);
+            foreach (var id in xuatDict.Keys) allIds.Add(id);
+
+            if (allIds.Count > 0)
+            {
+                var idList = string.Join(",", allIds);
+                var sqlInfo = $@"SELECT nl.NguyenLieuID, nl.MaNguyenLieu, nl.TenNguyenLieu,
+                                        COALESCE(dvTk.TenDonVi, dv.TenDonVi, N'') AS DonVi
+                                 FROM NguyenLieu nl
+                                 LEFT JOIN DonViTinh dv ON nl.DonViID = dv.DonViID
+                                 LEFT JOIN TonKho tk ON nl.NguyenLieuID = tk.NguyenLieuID
+                                 LEFT JOIN DonViTinh dvTk ON tk.DonViID = dvTk.DonViID
+                                 WHERE nl.NguyenLieuID IN ({idList})
+                                 ORDER BY nl.TenNguyenLieu";
+                using var cmd3 = new SqlCommand(sqlInfo, conn);
+                using var reader3 = await cmd3.ExecuteReaderAsync();
+                while (await reader3.ReadAsync())
+                {
+                    var nlId = reader3.GetInt32(0);
+                    var maNL = reader3.IsDBNull(1) ? "" : reader3.GetString(1);
+                    var tenNL = reader3.GetString(2);
+                    var donVi = reader3.GetString(3);
+                    nhapDict.TryGetValue(nlId, out decimal tongNhap);
+                    xuatDict.TryGetValue(nlId, out decimal tongXuat);
+                    result.Add((maNL, tenNL, donVi, tongNhap, tongXuat));
+                }
+            }
+        }
+        catch { }
+        return result;
+    }
+
+    /// <summary>
+    /// Biến động hao hụt: lấy chi tiết kiểm kê đã duyệt có chênh lệch trong khoảng thời gian.
+    /// </summary>
+    public async Task<List<(DateTime NgayKiem, string MaNL, string TenNL, string HSD, decimal TonHeThong, decimal TonThucTe, decimal ChenhLech, string LoaiDieuChinh, string MaPhieuDieuChinh)>> GetBienDongHaoHutAsync(DateTime fromDate, DateTime toDate)
+    {
+        var result = new List<(DateTime, string, string, string, decimal, decimal, decimal, string, string)>();
+        try
+        {
+            using var conn = GetConnection();
+            await conn.OpenAsync();
+                        var sql = @"SELECT pk.NgayKiem,
+                               ISNULL(nl.MaNguyenLieu, '') AS MaNL,
+                               nl.TenNguyenLieu,
+                               ctpn.HSD,
+                               ct.TonHeThong, ct.TonThucTe, ct.ChenhLech,
+                               ISNULL(ct.LoaiDieuChinh, ''),
+                               ISNULL(
+                                   CASE WHEN ct.LoaiDieuChinh = N'Xuất'
+                                        THEN (SELECT TOP 1 px.MaPhieuXuat FROM PhieuXuat px WHERE px.KiemKeID = pk.KiemKeID)
+                                        WHEN ct.LoaiDieuChinh = N'Nhập'
+                                        THEN (SELECT TOP 1 pn.MaPhieuNhap FROM PhieuNhap pn WHERE pn.KiemKeID = pk.KiemKeID)
+                                        ELSE '' END, '') AS MaPhieuDieuChinh
+                        FROM CT_PhieuKiemKe ct
+                        INNER JOIN PhieuKiemKe pk ON ct.KiemKeID = pk.KiemKeID
+                        INNER JOIN NguyenLieu nl ON ct.NguyenLieuID = nl.NguyenLieuID
+                        LEFT JOIN CT_PhieuNhap ctpn ON ct.ChiTietPhieuNhapID = ctpn.ChiTietID
+                        WHERE pk.TrangThai = N'Đã Duyệt'
+                        AND pk.NgayDuyet >= @FromDate AND pk.NgayDuyet < @ToDate
+                        AND ct.ChenhLech <> 0
+                        ORDER BY pk.NgayKiem DESC, nl.TenNguyenLieu";
+            using var cmd = new SqlCommand(sql, conn);
+            cmd.Parameters.AddWithValue("@FromDate", fromDate.Date);
+            cmd.Parameters.AddWithValue("@ToDate", toDate.Date.AddDays(1));
+            using var reader = await cmd.ExecuteReaderAsync();
+            while (await reader.ReadAsync())
+            {
+                result.Add((
+                    reader.GetDateTime(0),
+                    reader.GetString(1),
+                    reader.GetString(2),
+                    reader.IsDBNull(3) ? "" : reader.GetDateTime(3).ToString("dd/MM/yyyy"),
+                    reader.GetDecimal(4),
+                    reader.GetDecimal(5),
+                    reader.GetDecimal(6),
+                    reader.GetString(7),
+                    reader.GetString(8)
+                ));
+            }
+        }
+        catch { }
+        return result;
+    }
+
+    /// <summary>
+    /// Lấy top món ăn bán chạy nhất theo doanh thu, kèm tỷ trọng doanh thu.
+    /// </summary>
+    public async Task<List<(string MaMon, string TenMon, int SoLuongBan, decimal DoanhThu, double TyTrong)>> GetTopMonAnBanChayAsync(DateTime fromDate, DateTime toDate, int top = 10)
+    {
+        var result = new List<(string, string, int, decimal, double)>();
+        try
+        {
+            using var conn = GetConnection();
+            await conn.OpenAsync();
+
+            // Lấy tổng doanh thu trong khoảng thời gian
+            decimal tongDoanhThu = 0;
+            var sqlTotal = @"SELECT ISNULL(SUM(ISNULL(ct.ThanhTien, 0)), 0)
+                             FROM CT_PhieuBan ct
+                             INNER JOIN PhieuBanHang pb ON ct.MaPhieuBan = pb.MaPhieuBan
+                             WHERE pb.NgayBan >= @FromDate AND pb.NgayBan < @ToDate";
+            using (var cmdTotal = new SqlCommand(sqlTotal, conn))
+            {
+                cmdTotal.Parameters.AddWithValue("@FromDate", fromDate.Date);
+                cmdTotal.Parameters.AddWithValue("@ToDate", toDate.Date.AddDays(1));
+                var totalObj = await cmdTotal.ExecuteScalarAsync();
+                if (totalObj != null && totalObj != DBNull.Value)
+                    tongDoanhThu = Convert.ToDecimal(totalObj);
+            }
+
+            // Lấy top món ăn
+            var sql = @"SELECT TOP (@Top)
+                           ISNULL(hh.MaHangHoa, ct.MaHangHoa) AS MaMon,
+                           ISNULL(hh.TenHangHoa, ct.MaHangHoa)
+                               + CASE WHEN ISNULL(ds.TenSize, ct.SizeID) <> '' THEN N' Cỡ ' + ISNULL(ds.TenSize, ct.SizeID) ELSE '' END AS TenMon,
+                           SUM(ISNULL(ct.SoLuong, 0)) AS SoLuongBan,
+                           SUM(ISNULL(ct.ThanhTien, 0)) AS DoanhThu
+                       FROM CT_PhieuBan ct
+                       INNER JOIN PhieuBanHang pb ON ct.MaPhieuBan = pb.MaPhieuBan
+                       LEFT JOIN HangHoa hh ON ct.MaHangHoa = hh.MaHangHoa
+                       LEFT JOIN DoanhMuc_Size ds ON ct.SizeID = ds.SizeID
+                       WHERE pb.NgayBan >= @FromDate AND pb.NgayBan < @ToDate
+                       GROUP BY ISNULL(hh.MaHangHoa, ct.MaHangHoa),
+                                ISNULL(hh.TenHangHoa, ct.MaHangHoa)
+                                    + CASE WHEN ISNULL(ds.TenSize, ct.SizeID) <> '' THEN N' Cỡ ' + ISNULL(ds.TenSize, ct.SizeID) ELSE '' END
+                       ORDER BY DoanhThu DESC";
+            using var cmd = new SqlCommand(sql, conn);
+            cmd.Parameters.AddWithValue("@Top", top);
+            cmd.Parameters.AddWithValue("@FromDate", fromDate.Date);
+            cmd.Parameters.AddWithValue("@ToDate", toDate.Date.AddDays(1));
+            using var reader = await cmd.ExecuteReaderAsync();
+            while (await reader.ReadAsync())
+            {
+                var doanhThu = reader.GetDecimal(3);
+                var tyTrong = tongDoanhThu > 0 ? (double)(doanhThu / tongDoanhThu * 100) : 0;
+                result.Add((
+                    reader.GetString(0),
+                    reader.GetString(1),
+                    reader.GetInt32(2),
+                    doanhThu,
+                    Math.Round(tyTrong, 2)
+                ));
+            }
+        }
+        catch { }
+        return result;
+    }
 }
+

@@ -102,6 +102,20 @@ public abstract class DatabaseContext
             }
 
             // Phase 4: Tạo bảng PhieuKiemKe
+            var soLuongConMigrationSql = @"
+                IF OBJECT_ID('CT_PhieuNhap') IS NOT NULL
+                   AND NOT EXISTS (SELECT 1 FROM sys.columns WHERE object_id = OBJECT_ID('CT_PhieuNhap') AND name = 'SoLuongCon')
+                BEGIN
+                    ALTER TABLE CT_PhieuNhap
+                    ADD SoLuongCon DECIMAL(18,4) NOT NULL
+                        CONSTRAINT DF_CT_PhieuNhap_SoLuongCon DEFAULT (0)
+
+                    UPDATE CT_PhieuNhap
+                    SET SoLuongCon = SoLuong
+                END";
+            using (var cmd = new SqlCommand(soLuongConMigrationSql, conn))
+                await cmd.ExecuteNonQueryAsync();
+
             var createPhieuKiemKeSql = @"IF NOT EXISTS (SELECT 1 FROM sys.tables WHERE name = 'PhieuKiemKe')
                 CREATE TABLE PhieuKiemKe
                 (
@@ -138,12 +152,37 @@ public abstract class DatabaseContext
                     ChenhLech DECIMAL(18,4) DEFAULT 0,
                     GhiChuNhanVien NVARCHAR(500),
                     PhanHoiDuyet NVARCHAR(500),
+                    ChiTietPhieuNhapID INT,
+                    LoaiDieuChinh NVARCHAR(10),
+                    PhieuDieuChinhID UNIQUEIDENTIFIER,
                     CONSTRAINT FK_CT_PhieuKiemKe_PhieuKiemKe FOREIGN KEY (KiemKeID) REFERENCES PhieuKiemKe(KiemKeID),
                     CONSTRAINT FK_CT_PhieuKiemKe_NguyenLieu FOREIGN KEY (NguyenLieuID) REFERENCES NguyenLieu(NguyenLieuID),
                     CONSTRAINT FK_CT_PhieuKiemKe_DonViKho FOREIGN KEY (DonViKhoID) REFERENCES DonViTinh(DonViID),
-                    CONSTRAINT FK_CT_PhieuKiemKe_DonViKiem FOREIGN KEY (DonViKiemID) REFERENCES DonViTinh(DonViID)
+                    CONSTRAINT FK_CT_PhieuKiemKe_DonViKiem FOREIGN KEY (DonViKiemID) REFERENCES DonViTinh(DonViID),
+                    CONSTRAINT FK_CT_PhieuKiemKe_CT_PhieuNhap FOREIGN KEY (ChiTietPhieuNhapID) REFERENCES CT_PhieuNhap(ChiTietID),
+                    CONSTRAINT CK_CT_PhieuKiemKe_LoaiDieuChinh CHECK (LoaiDieuChinh IN (N'Nhập', N'Xuất') OR LoaiDieuChinh IS NULL)
                 )";
             using (var cmd = new SqlCommand(createCTPhieuKiemKeSql, conn))
+                await cmd.ExecuteNonQueryAsync();
+
+            var ctKiemKeExtraColumnsSql = @"
+                IF OBJECT_ID('CT_PhieuKiemKe') IS NOT NULL
+                BEGIN
+                    IF NOT EXISTS (SELECT 1 FROM sys.columns WHERE object_id = OBJECT_ID('CT_PhieuKiemKe') AND name = 'ChiTietPhieuNhapID')
+                        ALTER TABLE CT_PhieuKiemKe ADD ChiTietPhieuNhapID INT NULL
+
+                    IF NOT EXISTS (SELECT 1 FROM sys.columns WHERE object_id = OBJECT_ID('CT_PhieuKiemKe') AND name = 'LoaiDieuChinh')
+                        ALTER TABLE CT_PhieuKiemKe ADD LoaiDieuChinh NVARCHAR(10) NULL
+
+                    IF NOT EXISTS (SELECT 1 FROM sys.columns WHERE object_id = OBJECT_ID('CT_PhieuKiemKe') AND name = 'PhieuDieuChinhID')
+                        ALTER TABLE CT_PhieuKiemKe ADD PhieuDieuChinhID UNIQUEIDENTIFIER NULL
+
+                    IF NOT EXISTS (SELECT 1 FROM sys.check_constraints WHERE name = 'CK_CT_PhieuKiemKe_LoaiDieuChinh')
+                        ALTER TABLE CT_PhieuKiemKe
+                        ADD CONSTRAINT CK_CT_PhieuKiemKe_LoaiDieuChinh
+                        CHECK (LoaiDieuChinh IN (N'Nhập', N'Xuất') OR LoaiDieuChinh IS NULL)
+                END";
+            using (var cmd = new SqlCommand(ctKiemKeExtraColumnsSql, conn))
                 await cmd.ExecuteNonQueryAsync();
 
         }
@@ -412,6 +451,42 @@ public abstract class DatabaseContext
 
         // Cùng đơn vị → trừ trực tiếp
         return amount;
+    }
+
+    protected async Task<decimal> ConvertStockAmountToUnitAsync(
+        SqlConnection conn,
+        SqlTransaction? transaction,
+        int ingredientId,
+        decimal stockAmount,
+        int? targetUnitId,
+        Dictionary<int, IngredientUnitContext> contextCache,
+        Dictionary<int, string> unitNameCache)
+    {
+        if (stockAmount <= 0)
+            return 0m;
+
+        var context = await GetIngredientUnitContextAsync(conn, transaction, ingredientId, contextCache);
+
+        if (context.StockUnitId == null)
+            throw new InvalidOperationException($"Nguyen lieu '{context.Name}' chua cau hinh don vi luu ton kho.");
+
+        if (targetUnitId == null)
+            throw new InvalidOperationException($"Nguyen lieu '{context.Name}' chua co don vi lo hang.");
+
+        if (targetUnitId == context.StockUnitId)
+            return stockAmount;
+
+        var targetUnitName = await GetUnitNameAsync(conn, transaction, targetUnitId, unitNameCache);
+        var stockFactor = GetReliableFactor(context.StockUnitId.Value, context.StockUnitName, context.UnitFactors);
+        var targetFactor = GetReliableFactor(targetUnitId.Value, targetUnitName, context.UnitFactors);
+
+        if (stockFactor <= 0 || targetFactor <= 0)
+        {
+            throw new InvalidOperationException(
+                $"Nguyen lieu '{context.Name}': khong tim thay ty le quy doi tu '{context.StockUnitName}' sang '{targetUnitName ?? $"ID {targetUnitId.Value}"}'.");
+        }
+
+        return stockAmount * stockFactor / targetFactor;
     }
 
     /// <summary>

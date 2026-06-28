@@ -77,6 +77,9 @@ public class DatabaseService : IDatabaseService
     // NGUYÊN LIỆU ═══════════════
     public Task<List<LoaiNguyenLieu>> GetLoaiNguyenLieusAsync()
         => _nguyenLieu.GetLoaiNguyenLieusAsync();
+
+    public Task<bool> CheckMaNguyenLieuExistAsync(string maNguyenLieu, int? excludeId = null)
+        => _nguyenLieu.CheckMaNguyenLieuExistAsync(maNguyenLieu, excludeId);
     public Task<bool> SaveLoaiNguyenLieuAsync(LoaiNguyenLieu loaiNguyenLieu)
         => _nguyenLieu.SaveLoaiNguyenLieuAsync(loaiNguyenLieu);
     public Task<bool> DeleteLoaiNguyenLieuAsync(int loaiNLID)
@@ -93,6 +96,10 @@ public class DatabaseService : IDatabaseService
         => _nguyenLieu.DeleteNguyenLieuAsync(nguyenLieuId);
     public Task<List<DonViTinh>> GetDonViTinhsAsync()
         => _nguyenLieu.GetDonViTinhsAsync();
+    public Task<bool> SaveDonViTinhAsync(DonViTinh donVi)
+        => _nguyenLieu.SaveDonViTinhAsync(donVi);
+    public Task<bool> DeleteDonViTinhAsync(int donViId)
+        => _nguyenLieu.DeleteDonViTinhAsync(donViId);
     public Task<List<QuyDoiDonVi>> GetQuyDoiDonVisAsync(int nguyenLieuID)
         => _nguyenLieu.GetQuyDoiDonVisAsync(nguyenLieuID);
     public Task<bool> SaveQuyDoiDonViAsync(QuyDoiDonVi quyDoi)
@@ -151,6 +158,8 @@ public class DatabaseService : IDatabaseService
         => _pizza.GetPizzasAsync();
     public Task<Pizza?> GetPizzaByIdAsync(int pizzaId)
         => _pizza.GetPizzaByIdAsync(pizzaId);
+    public Task<bool> CheckMaPizzaExistAsync(string maPizza)
+        => _pizza.CheckMaPizzaExistAsync(maPizza);
     public Task<bool> SavePizzaAsync(Pizza pizza)
         => _pizza.SavePizzaAsync(pizza);
     public Task<bool> DeletePizzaAsync(int pizzaId)
@@ -247,6 +256,12 @@ public class DatabaseService : IDatabaseService
         => _dashboard.GetTonKhoTheoLoHangAsync();
     public Task<List<(int PhieuNhapID, string MaPhieuNhap, DateTime NgayNhap, int NguyenLieuID, string TenNguyenLieu, string DonVi, decimal SoLuongNhap, DateTime HSD, int SoNgayConLai)>> GetLoHangCanhBaoHSDAsync()
         => _dashboard.GetLoHangCanhBaoHSDAsync();
+    public Task<List<(string MaNL, string TenNL, string DonVi, decimal TongNhap, decimal TongTieuHao)>> GetDoiSoatTieuHaoByRangeAsync(DateTime fromDate, DateTime toDate)
+        => _dashboard.GetDoiSoatTieuHaoByRangeAsync(fromDate, toDate);
+    public Task<List<(DateTime NgayKiem, string MaNL, string TenNL, string HSD, decimal TonHeThong, decimal TonThucTe, decimal ChenhLech, string LoaiDieuChinh, string MaPhieuDieuChinh)>> GetBienDongHaoHutAsync(DateTime fromDate, DateTime toDate)
+        => _dashboard.GetBienDongHaoHutAsync(fromDate, toDate);
+    public Task<List<(string MaMon, string TenMon, int SoLuongBan, decimal DoanhThu, double TyTrong)>> GetTopMonAnBanChayAsync(DateTime fromDate, DateTime toDate, int top = 10)
+        => _dashboard.GetTopMonAnBanChayAsync(fromDate, toDate, top);
 
     // PHIẾU NHẬP ═══════════════
     public Task<List<PhieuNhap>> GetPhieuNhapsAsync(string? searchText = null, int? nhanVienId = null, int? nhaCungCapId = null, DateTime? tuNgay = null, DateTime? denNgay = null, List<byte>? trangThaiFilter = null)
@@ -365,6 +380,8 @@ public class DatabaseService : IDatabaseService
         => _kiemKe.RequestRecountPhieuKiemKeAsync(kiemKeId, nhanVienDuyetId, ghiChuDuyet);
     public Task<List<NguyenLieu>> GetNguyenLieusForKiemKeAsync()
         => _kiemKe.GetNguyenLieusForKiemKeAsync();
+    public Task<List<LoKiemKeOption>> GetLoHangsForKiemKeAsync(int nguyenLieuId)
+        => _kiemKe.GetLoHangsForKiemKeAsync(nguyenLieuId);
     public Task<bool> DeletePhieuKiemKeAsync(int kiemKeId)
         => _kiemKe.DeletePhieuKiemKeAsync(kiemKeId);
 }

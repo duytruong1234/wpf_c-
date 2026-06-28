@@ -163,6 +163,12 @@ public class TonKhoViewModel : BaseViewModel
     private DonViTinh? _selectedDonViXuat;
     private string _heSoNhap = string.Empty;
 
+    // Cho popup quản lý đơn vị tính
+    private bool _isDonViTinhPopupOpen;
+    private string _newDonViTinhName = string.Empty;
+    private DonViTinh? _editingDonViTinh;
+    private bool _isEditingDonViTinh;
+
     // Cho popup chỉnh sửa
     private string _editTenNguyenLieu = string.Empty;
     private decimal _editSoLuongTon;
@@ -359,6 +365,38 @@ public class TonKhoViewModel : BaseViewModel
     public ICommand ViewPhieuNhapCommand { get; private set; } = null!;
     public ICommand ViewExpiryDetailForItemCommand { get; private set; } = null!;
     public ICommand CloseNguyenLieuLoHangPopupCommand { get; private set; } = null!;
+
+    // Popup quản lý đơn vị tính
+    public ICommand OpenDonViTinhPopupCommand { get; private set; } = null!;
+    public ICommand CloseDonViTinhPopupCommand { get; private set; } = null!;
+    public ICommand SaveDonViTinhCommand { get; private set; } = null!;
+    public ICommand EditDonViTinhCommand { get; private set; } = null!;
+    public ICommand DeleteDonViTinhCommand { get; private set; } = null!;
+    public ICommand CancelEditDonViTinhCommand { get; private set; } = null!;
+
+    public bool IsDonViTinhPopupOpen
+    {
+        get => _isDonViTinhPopupOpen;
+        set => SetProperty(ref _isDonViTinhPopupOpen, value);
+    }
+
+    public string NewDonViTinhName
+    {
+        get => _newDonViTinhName;
+        set => SetProperty(ref _newDonViTinhName, value);
+    }
+
+    public DonViTinh? EditingDonViTinh
+    {
+        get => _editingDonViTinh;
+        set => SetProperty(ref _editingDonViTinh, value);
+    }
+
+    public bool IsEditingDonViTinh
+    {
+        get => _isEditingDonViTinh;
+        set => SetProperty(ref _isEditingDonViTinh, value);
+    }
 
     // Popup lô hàng theo nguyên liệu
     private bool _isNguyenLieuLoHangPopupOpen;
@@ -561,6 +599,43 @@ public class TonKhoViewModel : BaseViewModel
             }
         });
         CloseNguyenLieuLoHangPopupCommand = new RelayCommand(_ => IsNguyenLieuLoHangPopupOpen = false);
+
+        // Popup quản lý đơn vị tính
+        OpenDonViTinhPopupCommand = new RelayCommand(_ =>
+        {
+            NewDonViTinhName = string.Empty;
+            EditingDonViTinh = null;
+            IsEditingDonViTinh = false;
+            IsDonViTinhPopupOpen = true;
+        });
+        CloseDonViTinhPopupCommand = new RelayCommand(_ =>
+        {
+            IsDonViTinhPopupOpen = false;
+            IsEditingDonViTinh = false;
+            EditingDonViTinh = null;
+            NewDonViTinhName = string.Empty;
+        });
+        SaveDonViTinhCommand = new AsyncRelayCommand(async _ => await ExecuteSaveDonViTinhAsync());
+        EditDonViTinhCommand = new RelayCommand(p =>
+        {
+            if (p is DonViTinh dv)
+            {
+                EditingDonViTinh = dv;
+                NewDonViTinhName = dv.TenDonVi;
+                IsEditingDonViTinh = true;
+            }
+        });
+        DeleteDonViTinhCommand = new AsyncRelayCommand(async p =>
+        {
+            if (p is DonViTinh dv)
+                await ExecuteDeleteDonViTinhAsync(dv);
+        });
+        CancelEditDonViTinhCommand = new RelayCommand(_ =>
+        {
+            IsEditingDonViTinh = false;
+            EditingDonViTinh = null;
+            NewDonViTinhName = string.Empty;
+        });
     }
 
     private void ApplyFilters()
@@ -1261,5 +1336,95 @@ public class TonKhoViewModel : BaseViewModel
             });
         }
         catch { }
+    }
+
+    private async Task ExecuteSaveDonViTinhAsync()
+    {
+        if (string.IsNullOrWhiteSpace(NewDonViTinhName))
+        {
+            System.Windows.MessageBox.Show("Vui lòng nhập tên đơn vị tính!", "Thiếu thông tin",
+                System.Windows.MessageBoxButton.OK, System.Windows.MessageBoxImage.Warning);
+            return;
+        }
+
+        // Kiểm tra trùng tên
+        var existing = DonViTinhs.FirstOrDefault(d =>
+            d.TenDonVi.Equals(NewDonViTinhName.Trim(), StringComparison.OrdinalIgnoreCase)
+            && d.DonViID != (EditingDonViTinh?.DonViID ?? 0));
+        if (existing != null)
+        {
+            System.Windows.MessageBox.Show($"Đơn vị tính '{NewDonViTinhName.Trim()}' đã tồn tại!", "Trùng lặp",
+                System.Windows.MessageBoxButton.OK, System.Windows.MessageBoxImage.Warning);
+            return;
+        }
+
+        try
+        {
+            var donVi = new DonViTinh
+            {
+                DonViID = EditingDonViTinh?.DonViID ?? 0,
+                TenDonVi = NewDonViTinhName.Trim()
+            };
+
+            var success = await _databaseService.SaveDonViTinhAsync(donVi);
+            if (success)
+            {
+                // Reload danh sách đơn vị tính
+                var donVis = await _databaseService.GetDonViTinhsAsync();
+                await System.Windows.Application.Current.Dispatcher.InvokeAsync(() =>
+                {
+                    DonViTinhs.Clear();
+                    foreach (var dv in donVis)
+                        DonViTinhs.Add(dv);
+                });
+
+                NewDonViTinhName = string.Empty;
+                EditingDonViTinh = null;
+                IsEditingDonViTinh = false;
+
+                System.Windows.MessageBox.Show(
+                    IsEditingDonViTinh ? "Đã cập nhật đơn vị tính!" : "Đã thêm đơn vị tính mới!",
+                    "Thành công", System.Windows.MessageBoxButton.OK, System.Windows.MessageBoxImage.Information);
+            }
+        }
+        catch (Exception ex)
+        {
+            System.Windows.MessageBox.Show($"Lỗi: {ex.Message}", "Lỗi",
+                System.Windows.MessageBoxButton.OK, System.Windows.MessageBoxImage.Error);
+        }
+    }
+
+    private async Task ExecuteDeleteDonViTinhAsync(DonViTinh dv)
+    {
+        var result = System.Windows.MessageBox.Show(
+            $"Bạn có chắc chắn muốn xóa đơn vị tính \"{dv.TenDonVi}\"?\nHành động này không thể hoàn tác.",
+            "Xóa đơn vị tính",
+            System.Windows.MessageBoxButton.YesNo,
+            System.Windows.MessageBoxImage.Warning);
+
+        if (result != System.Windows.MessageBoxResult.Yes) return;
+
+        try
+        {
+            var success = await _databaseService.DeleteDonViTinhAsync(dv.DonViID);
+            if (success)
+            {
+                var donVis = await _databaseService.GetDonViTinhsAsync();
+                await System.Windows.Application.Current.Dispatcher.InvokeAsync(() =>
+                {
+                    DonViTinhs.Clear();
+                    foreach (var d in donVis)
+                        DonViTinhs.Add(d);
+                });
+
+                System.Windows.MessageBox.Show("Đã xóa đơn vị tính!", "Thành công",
+                    System.Windows.MessageBoxButton.OK, System.Windows.MessageBoxImage.Information);
+            }
+        }
+        catch (Exception ex)
+        {
+            System.Windows.MessageBox.Show($"Không thể xóa: {ex.Message}\nĐơn vị tính này có thể đang được sử dụng.",
+                "Lỗi", System.Windows.MessageBoxButton.OK, System.Windows.MessageBoxImage.Error);
+        }
     }
 }
