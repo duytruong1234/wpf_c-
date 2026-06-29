@@ -1000,7 +1000,7 @@ public class PhieuXuatViewModel : BaseViewModel
         }
         catch (Exception ex) {
             System.Windows.MessageBox.Show(
-                $"Lỗi khi duyệt phiếu xuất: Tồn kho không đủ để xuất.\n\nChi tiết: {ex.Message}",
+                $"Lỗi khi duyệt phiếu xuất:\n\n{ex.Message}",
                 "Lỗi khi duyệt phiếu",
                 System.Windows.MessageBoxButton.OK,
                 System.Windows.MessageBoxImage.Error);

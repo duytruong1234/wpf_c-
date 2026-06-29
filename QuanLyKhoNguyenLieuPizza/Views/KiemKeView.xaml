@@ -114,9 +114,45 @@
                                FontFamily="Segoe UI Variable, Segoe UI, Arial"/>
                     <TextBlock Text="Quản lý kiểm kê kho nguyên liệu" FontSize="13" Foreground="#64748B" Margin="0,4,0,0"/>
                 </StackPanel>
-                <Button Grid.Column="1" Command="{Binding CreatePhieuCommand}" Style="{StaticResource SuccessButtonStyle}" Padding="20,12">
-                    <TextBlock Text="+ Lập Phiếu Mới" FontWeight="SemiBold" FontSize="14"/>
-                </Button>
+                <StackPanel Grid.Column="1" Orientation="Horizontal">
+                    <Button Command="{Binding RefreshCommand}" Padding="12,12" Margin="0,0,10,0" Cursor="Hand"
+                            ToolTip="Tải lại danh sách" BorderThickness="1.5" BorderBrush="#CBD5E1"
+                            Background="White" VerticalAlignment="Center">
+                        <Button.Style>
+                            <Style TargetType="Button">
+                                <Setter Property="Template">
+                                    <Setter.Value>
+                                        <ControlTemplate TargetType="Button">
+                                            <Border x:Name="border" Background="{TemplateBinding Background}" 
+                                                    BorderBrush="{TemplateBinding BorderBrush}" 
+                                                    BorderThickness="{TemplateBinding BorderThickness}" 
+                                                    CornerRadius="10" Padding="{TemplateBinding Padding}"
+                                                    SnapsToDevicePixels="True">
+                                                <ContentPresenter HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                                            </Border>
+                                            <ControlTemplate.Triggers>
+                                                <Trigger Property="IsMouseOver" Value="True">
+                                                    <Setter TargetName="border" Property="Background" Value="#F1F5F9"/>
+                                                    <Setter TargetName="border" Property="BorderBrush" Value="#94A3B8"/>
+                                                </Trigger>
+                                                <Trigger Property="IsPressed" Value="True">
+                                                    <Setter TargetName="border" Property="Background" Value="#E2E8F0"/>
+                                                </Trigger>
+                                            </ControlTemplate.Triggers>
+                                        </ControlTemplate>
+                                    </Setter.Value>
+                                </Setter>
+                            </Style>
+                        </Button.Style>
+                        <StackPanel Orientation="Horizontal">
+                            <TextBlock Text="🔄" FontSize="16" VerticalAlignment="Center" Margin="0,0,6,0"/>
+                            <TextBlock Text="Tải lại" FontWeight="SemiBold" FontSize="14" Foreground="#475569" VerticalAlignment="Center"/>
+                        </StackPanel>
+                    </Button>
+                    <Button Command="{Binding CreatePhieuCommand}" Style="{StaticResource SuccessButtonStyle}" Padding="20,12">
+                        <TextBlock Text="+ Lập Phiếu Mới" FontWeight="SemiBold" FontSize="14"/>
+                    </Button>
+                </StackPanel>
             </Grid>
         </Border>
 

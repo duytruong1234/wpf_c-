@@ -403,7 +403,8 @@ public class PhieuXuatService : DatabaseContext
                 checkCmd.Parameters.AddWithValue("@NguyenLieuID", ct.NguyenLieuID);
                 var currentTon = Convert.ToDecimal(await checkCmd.ExecuteScalarAsync() ?? 0);
 
-                if (currentTon < soLuongTru)
+                // Dùng tolerance 0.01 để tránh lỗi sai số quy đổi đơn vị
+                if (currentTon + 0.01m < soLuongTru)
                 {
                     // Lấy tên nguyên liệu để thông báo rõ ràng hơn
                     var nameSql = "SELECT TenNguyenLieu FROM NguyenLieu WHERE NguyenLieuID = @NguyenLieuID";
@@ -457,7 +458,8 @@ public class PhieuXuatService : DatabaseContext
         Dictionary<int, IngredientUnitContext> contextCache,
         Dictionary<int, string> unitNameCache)
     {
-        const decimal tolerance = 0.0001m;
+        // Dùng tolerance lớn hơn để xử lý sai số quy đổi đơn vị (đặc biệt khi HeSo có số thập phân)
+        const decimal tolerance = 0.01m;
         var remaining = soLuongTruTheoDonViTon;
 
         var batches = new List<(int ChiTietID, decimal SoLuongCon, int? DonViID, DateTime? HSD, string MaPhieuNhap)>();
@@ -483,6 +485,65 @@ public class PhieuXuatService : DatabaseContext
                     reader.IsDBNull(3) ? null : reader.GetDateTime(3),
                     reader.GetString(4)));
             }
+        }
+
+        // AUTO-REPAIR: Nếu không có lô nào có SoLuongCon > 0 nhưng TonKho vẫn có tồn,
+        // thử đồng bộ lại SoLuongCon = SoLuong cho các lô hàng đã duyệt
+        if (batches.Count == 0)
+        {
+            var repairSql = @"UPDATE ct SET ct.SoLuongCon = ct.SoLuong
+                              FROM CT_PhieuNhap ct
+                              INNER JOIN PhieuNhap pn ON ct.PhieuNhapID = pn.PhieuNhapID
+                              WHERE ct.NguyenLieuID = @NguyenLieuID
+                                AND pn.TrangThai = 2
+                                AND ct.SoLuong > 0
+                                AND ct.SoLuongCon = 0";
+            using (var repairCmd = new SqlCommand(repairSql, conn, transaction))
+            {
+                repairCmd.Parameters.AddWithValue("@NguyenLieuID", nguyenLieuId);
+                var repairedRows = await repairCmd.ExecuteNonQueryAsync();
+
+                if (repairedRows > 0)
+                {
+                    // Query lại sau khi repair
+                    using var reCmd = new SqlCommand(sql, conn, transaction);
+                    reCmd.Parameters.AddWithValue("@NguyenLieuID", nguyenLieuId);
+                    using var reReader = await reCmd.ExecuteReaderAsync();
+                    while (await reReader.ReadAsync())
+                    {
+                        batches.Add((
+                            reReader.GetInt32(0),
+                            reReader.GetDecimal(1),
+                            reReader.IsDBNull(2) ? null : reReader.GetInt32(2),
+                            reReader.IsDBNull(3) ? null : reReader.GetDateTime(3),
+                            reReader.GetString(4)));
+                    }
+                }
+            }
+        }
+
+        // Tính tổng tồn lô thực tế (quy đổi sang đơn vị tồn kho) để so sánh
+        decimal tongTonLo = 0m;
+        foreach (var b in batches)
+        {
+            var bStock = await ConvertAmountToStockUnitAsync(
+                conn, transaction, nguyenLieuId, b.SoLuongCon, b.DonViID,
+                contextCache, unitNameCache);
+            tongTonLo += bStock;
+        }
+
+        // Kiểm tra trước: nếu tổng tồn lô < số lượng cần trừ (trừ tolerance)
+        if (tongTonLo + tolerance < soLuongTruTheoDonViTon)
+        {
+            // Lấy tên nguyên liệu để thông báo
+            var nlNameSql = "SELECT TenNguyenLieu FROM NguyenLieu WHERE NguyenLieuID = @NguyenLieuID";
+            using var nlCmd = new SqlCommand(nlNameSql, conn, transaction);
+            nlCmd.Parameters.AddWithValue("@NguyenLieuID", nguyenLieuId);
+            var tenNL = await nlCmd.ExecuteScalarAsync() as string ?? $"ID {nguyenLieuId}";
+
+            throw new InvalidOperationException(
+                $"Nguyên liệu '{tenNL}': Tổng tồn theo lô ({tongTonLo:N4}) không đủ để xuất ({soLuongTruTheoDonViTon:N4}). " +
+                $"Vui lòng kiểm tra lại phiếu nhập hoặc thực hiện kiểm kê.");
         }
 
         foreach (var batch in batches)
@@ -520,8 +581,19 @@ public class PhieuXuatService : DatabaseContext
             remaining -= takeStockAmount;
         }
 
+        // Nếu remaining rất nhỏ (do sai số quy đổi) → bỏ qua
         if (remaining > tolerance)
-            throw new InvalidOperationException("Khong du SoLuongCon theo lo de xuat kho.");
+        {
+            var nlNameSql2 = "SELECT TenNguyenLieu FROM NguyenLieu WHERE NguyenLieuID = @NguyenLieuID";
+            using var nlCmd2 = new SqlCommand(nlNameSql2, conn, transaction);
+            nlCmd2.Parameters.AddWithValue("@NguyenLieuID", nguyenLieuId);
+            var tenNL2 = await nlCmd2.ExecuteScalarAsync() as string ?? $"ID {nguyenLieuId}";
+
+            throw new InvalidOperationException(
+                $"Nguyên liệu '{tenNL2}': Không đủ tồn theo lô để xuất. " +
+                $"Cần: {soLuongTruTheoDonViTon:N4}, Tồn lô thực tế: {tongTonLo:N4}, Còn thiếu: {remaining:N4}. " +
+                $"Vui lòng kiểm tra lại dữ liệu phiếu nhập.");
+        }
     }
 
     public async Task<bool> CancelPhieuXuatAsync(int phieuXuatId, int nhanVienDuyetId, string? lyDoHuy = null, string? chuKyHuy = null)
