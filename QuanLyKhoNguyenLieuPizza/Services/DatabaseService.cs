@@ -1,4 +1,4 @@
-using System.Text;
+﻿using System.Text;
 using System.Globalization;
 using Microsoft.Data.SqlClient;
 using System.Data;
@@ -28,6 +28,7 @@ public class DatabaseService : IDatabaseService
     private readonly BanHangService _banHang;
     private readonly DashboardService _dashboard;
     private readonly KiemKeService _kiemKe;
+    private readonly TieuHaoDuBaoService _tieuHaoDuBao;
 
     public DatabaseService()
     {
@@ -43,6 +44,7 @@ public class DatabaseService : IDatabaseService
         _banHang = new BanHangService(_connectionString);
         _dashboard = new DashboardService(_connectionString);
         _kiemKe = new KiemKeService(_connectionString);
+        _tieuHaoDuBao = new TieuHaoDuBaoService(_connectionString);
     }
 
     public DatabaseService(string connectionString)
@@ -59,6 +61,7 @@ public class DatabaseService : IDatabaseService
         _banHang = new BanHangService(_connectionString);
         _dashboard = new DashboardService(_connectionString);
         _kiemKe = new KiemKeService(_connectionString);
+        _tieuHaoDuBao = new TieuHaoDuBaoService(_connectionString);
     }
 
     // MIGRATION ═══════════════
@@ -384,4 +387,16 @@ public class DatabaseService : IDatabaseService
         => _kiemKe.GetLoHangsForKiemKeAsync(nguyenLieuId);
     public Task<bool> DeletePhieuKiemKeAsync(int kiemKeId)
         => _kiemKe.DeletePhieuKiemKeAsync(kiemKeId);
+
+    // TIÊU HAO VÀ DỰ BÁO (HOLT-WINTERS) ═══════════════
+    public Task<List<NguyenLieuFilterOption>> GetNguyenLieuFilterOptionsAsync()
+        => _tieuHaoDuBao.GetNguyenLieuFilterOptionsAsync();
+    public Task<List<KyThoiGianOption>> GetAvailablePeriodsAsync()
+        => _tieuHaoDuBao.GetAvailablePeriodsAsync();
+    public Task<List<TieuHaoNguyenLieuItem>> GetBaoCaoTieuHaoAsync(DateTime kyTieuHao, int? nguyenLieuId = null)
+        => _tieuHaoDuBao.GetBaoCaoTieuHaoAsync(kyTieuHao, nguyenLieuId);
+    public Task<List<MonAnTieuHaoItem>> GetMonAnDaBanTheoNguyenLieuAsync(int nguyenLieuId, string donViKho, DateTime kyTieuHao)
+        => _tieuHaoDuBao.GetMonAnDaBanTheoNguyenLieuAsync(nguyenLieuId, donViKho, kyTieuHao);
+    public Task<List<KetQuaDuBaoItem>> RunHoltWintersForecastAsync(DateTime currentKy, int? filterNguyenLieuId = null)
+        => _tieuHaoDuBao.RunHoltWintersForecastAsync(currentKy, filterNguyenLieuId);
 }

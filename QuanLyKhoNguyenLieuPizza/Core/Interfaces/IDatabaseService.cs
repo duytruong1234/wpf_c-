@@ -1,4 +1,4 @@
-using QuanLyKhoNguyenLieuPizza.Models;
+﻿using QuanLyKhoNguyenLieuPizza.Models;
 
 namespace QuanLyKhoNguyenLieuPizza.Core.Interfaces;
 
@@ -139,4 +139,11 @@ public interface IDatabaseService
     Task<decimal> GetTotalTongTienPhieuNhapAsync(int? nhanVienId = null, int? nhaCungCapId = null, DateTime? tuNgay = null, DateTime? denNgay = null);
     Task<List<NguyenLieu>> GetAllNguyenLieusWithPriceAsync();
     Task<List<NguyenLieu>> GetNguyenLieusByNhaCungCapAsync(int nhaCungCapId);
+
+    // Tiêu Hao & Dự Báo (Holt-Winters)
+    Task<List<NguyenLieuFilterOption>> GetNguyenLieuFilterOptionsAsync();
+    Task<List<KyThoiGianOption>> GetAvailablePeriodsAsync();
+    Task<List<TieuHaoNguyenLieuItem>> GetBaoCaoTieuHaoAsync(DateTime kyTieuHao, int? nguyenLieuId = null);
+    Task<List<MonAnTieuHaoItem>> GetMonAnDaBanTheoNguyenLieuAsync(int nguyenLieuId, string donViKho, DateTime kyTieuHao);
+    Task<List<KetQuaDuBaoItem>> RunHoltWintersForecastAsync(DateTime currentKy, int? filterNguyenLieuId = null);
 }

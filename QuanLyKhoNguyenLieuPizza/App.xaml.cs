@@ -1,4 +1,4 @@
-﻿using System.IO;
+using System.IO;
 using System.Globalization;
 using System.Windows;
 using System.Windows.Markup;
@@ -61,6 +61,7 @@ namespace QuanLyKhoNguyenLieuPizza
             services.AddTransient<PizzaViewModel>();
             services.AddTransient<QuyDinhViewModel>();
             services.AddTransient<ProfileViewModel>();
+            services.AddTransient<TieuHaoDuBaoViewModel>();
 
             return services.BuildServiceProvider();
         }

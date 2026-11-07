@@ -1,4 +1,4 @@
-using System.Windows.Input;
+﻿using System.Windows.Input;
 using Microsoft.Extensions.DependencyInjection;
 using QuanLyKhoNguyenLieuPizza.Services;
 
@@ -26,6 +26,7 @@ public class ShellViewModel : BaseViewModel
     private bool _canViewPizza;
     private bool _canViewSaoLuu;
     private bool _canViewKiemKe;
+    private bool _canViewTieuHaoDuBao;
     private bool _isSidebarVisible = true;
 
     // LAZY LOADING: ViewModel chỉ được tạo khi user chuyển đến trang đó
@@ -45,6 +46,7 @@ public class ShellViewModel : BaseViewModel
     private ProfileViewModel? _profileViewModel;
     private SaoLuuViewModel? _saoLuuViewModel;
     private KiemKeViewModel? _kiemKeViewModel;
+    private TieuHaoDuBaoViewModel? _tieuHaoDuBaoViewModel;
 
     public object? CurrentContent
     {
@@ -157,6 +159,12 @@ public class ShellViewModel : BaseViewModel
         set => SetProperty(ref _canViewKiemKe, value);
     }
 
+    public bool CanViewTieuHaoDuBao
+    {
+        get => _canViewTieuHaoDuBao;
+        set => SetProperty(ref _canViewTieuHaoDuBao, value);
+    }
+
     public bool IsSidebarVisible
     {
         get => _isSidebarVisible;
@@ -164,7 +172,7 @@ public class ShellViewModel : BaseViewModel
     }
 
     // Computed properties: ẩn tiêu đề nhóm khi không có mục nào trong nhóm
-    public bool CanViewTongQuanSection => CanViewBaoCaoThongKe;
+    public bool CanViewTongQuanSection => CanViewBaoCaoThongKe || CanViewTieuHaoDuBao;
     public bool CanViewQuanLyKhoSection => CanViewTonKho || CanViewKiemKe || CanViewPhieuNhap || CanViewPhieuXuat || CanViewNguyenLieu || CanViewPizza;
     public bool CanViewHeThongSection => CanViewNhaCungCap || CanViewNhanVien || CanViewSaoLuu;
     public bool CanViewBanHangSection => CanViewBanHang || CanViewDonHang;
@@ -289,6 +297,7 @@ public class ShellViewModel : BaseViewModel
             CanViewPizza = true;
             CanViewSaoLuu = true;
             CanViewKiemKe = true;
+            CanViewTieuHaoDuBao = true;
             IsSidebarVisible = true;
         }
         else if (isNhanVienKho)
@@ -306,6 +315,7 @@ public class ShellViewModel : BaseViewModel
             CanViewDonHang = false;
             CanViewPizza = false;
             CanViewKiemKe = true;
+            CanViewTieuHaoDuBao = true;
             IsSidebarVisible = true;
         }
         else if (isNhanVienBep)
@@ -437,6 +447,7 @@ public class ShellViewModel : BaseViewModel
             "QuyDinh" => _quyDinhViewModel ??= new QuyDinhViewModel(),
             "SaoLuu" => _saoLuuViewModel ??= new SaoLuuViewModel(),
             "KiemKe" => _kiemKeViewModel ??= new KiemKeViewModel(),
+            "TieuHaoDuBao" => _tieuHaoDuBaoViewModel ??= new TieuHaoDuBaoViewModel(),
             _ => _dashboardViewModel ??= new DashboardViewModel()
         };
     }

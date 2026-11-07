@@ -61,6 +61,9 @@
 <DataTemplate DataType="{x:Type vm:KiemKeViewModel}">
     <views:KiemKeView/>
 </DataTemplate>
+<DataTemplate DataType="{x:Type vm:TieuHaoDuBaoViewModel}">
+    <views:TieuHaoDuBaoView/>
+</DataTemplate>
 
     <!-- Modern Sidebar Nút with Indicator -->
     <Style x:Key="ModernSidebarButton" TargetType="Button">
@@ -243,6 +246,48 @@
                                 <ui:SymbolIcon Symbol="DataBarVertical24" FontSize="14" Foreground="#9CA3AF" HorizontalAlignment="Center" VerticalAlignment="Center"/>
                             </Border>
                             <TextBlock Text="Báo cáo thống kê" VerticalAlignment="Center"/>
+                        </StackPanel>
+                    </Button>
+
+                    <!-- Tieu hao va Du bao -->
+                    <Button Command="{Binding NavigateCommand}"
+                            CommandParameter="TieuHaoDuBao"
+                            Visibility="{Binding CanViewTieuHaoDuBao, Converter={StaticResource BoolToVisibilityConverter}}">
+                        <Button.Style>
+                            <Style TargetType="Button" BasedOn="{StaticResource ModernSidebarButton}">
+                                <Style.Triggers>
+                                    <DataTrigger Binding="{Binding SelectedMenuItem}" Value="TieuHaoDuBao">
+                                        <Setter Property="Background" Value="#374151"/>
+                                        <Setter Property="Foreground" Value="White"/>
+                                        <Setter Property="FontWeight" Value="SemiBold"/>
+                                        <Setter Property="Template">
+                                            <Setter.Value>
+                                                <ControlTemplate TargetType="Button">
+                                                    <Grid>
+                                                        <Border Width="4" HorizontalAlignment="Left" CornerRadius="0,2,2,0">
+                                                            <Border.Background>
+                                                                <LinearGradientBrush StartPoint="0,0" EndPoint="0,1">
+                                                                    <GradientStop Color="#C0392B" Offset="0"/>
+                                                                    <GradientStop Color="#F1C40F" Offset="1"/>
+                                                                </LinearGradientBrush>
+                                                            </Border.Background>
+                                                        </Border>
+                                                        <Border Background="#374151" CornerRadius="0,12,12,0" Margin="4,0,12,0" Padding="16,14">
+                                                            <ContentPresenter HorizontalAlignment="Left" VerticalAlignment="Center"/>
+                                                        </Border>
+                                                    </Grid>
+                                                </ControlTemplate>
+                                            </Setter.Value>
+                                        </Setter>
+                                    </DataTrigger>
+                                </Style.Triggers>
+                            </Style>
+                        </Button.Style>
+                        <StackPanel Orientation="Horizontal">
+                            <Border Width="30" Height="30" CornerRadius="8" Background="#374151" Margin="0,0,10,0">
+                                <ui:SymbolIcon Symbol="DataTrending24" FontSize="14" Foreground="#9CA3AF" HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                            </Border>
+                            <TextBlock Text="Tiêu hao và Dự báo" VerticalAlignment="Center"/>
                         </StackPanel>
                     </Button>
 

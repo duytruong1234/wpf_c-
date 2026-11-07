@@ -261,6 +261,7 @@ public class BanHangService : DatabaseContext
                         await DeductSoLuongConTheoLoAsync(
                             conn, transaction, recipe.NguyenLieuID, convertedAmount,
                             unitContextCache, unitNameCache);
+                        await UpsertDuLieuTieuHaoAsync(conn, transaction, recipe.NguyenLieuID, donHang.NgayTao, convertedAmount);
                     }
                 }
 
@@ -590,6 +591,14 @@ public class BanHangService : DatabaseContext
             try
             {
                 // 1) Đọc chi tiết phiếu bán để tính nguyên liệu cần hoàn
+                DateTime ngayBanRestore = DateTime.Now;
+                using (var ngayCmd = new SqlCommand("SELECT NgayBan FROM PhieuBanHang WHERE MaPhieuBan = @MaPhieu", conn, transaction))
+                {
+                    ngayCmd.Parameters.AddWithValue("@MaPhieu", maPhieuBan);
+                    var nbObj = await ngayCmd.ExecuteScalarAsync();
+                    if (nbObj != null && nbObj != DBNull.Value)
+                        ngayBanRestore = Convert.ToDateTime(nbObj);
+                }
                 var chiTietsRestore = new List<CT_PhieuBan>();
                 var ctReadSql = @"SELECT MaHangHoa, SizeID, MaDeBanh, SoLuong FROM CT_PhieuBan WHERE MaPhieuBan = @MaPhieu";
                 using (var ctCmd = new SqlCommand(ctReadSql, conn, transaction))
@@ -728,6 +737,7 @@ public class BanHangService : DatabaseContext
                     restoreCmd.Parameters.AddWithValue("@SoLuong", kvp.Value);
                     restoreCmd.Parameters.AddWithValue("@NguyenLieuID", kvp.Key);
                     await restoreCmd.ExecuteNonQueryAsync();
+                    await UpsertDuLieuTieuHaoAsync(conn, transaction, kvp.Key, ngayBanRestore, -kvp.Value);
                 }
 
                 // 4) Xóa chi tiết và phiếu bán hàng
@@ -982,6 +992,7 @@ public class BanHangService : DatabaseContext
                 await DeductSoLuongConTheoLoAsync(
                     conn, transaction, kvp.Key, kvp.Value,
                     unitContextCache, unitNameCache);
+                await UpsertDuLieuTieuHaoAsync(conn, transaction, kvp.Key, phieuBan.NgayBan ?? DateTime.Now, kvp.Value);
             }
 
             transaction.Commit();
@@ -1134,5 +1145,43 @@ public class BanHangService : DatabaseContext
             });
         }
         return result;
+    }
+
+    private async Task UpsertDuLieuTieuHaoAsync(SqlConnection conn, SqlTransaction transaction, int nguyenLieuId, DateTime ngayGiaoDich, decimal deltaSoLuong)
+    {
+        try
+        {
+            var kyTieuHao = new DateTime(ngayGiaoDich.Year, ngayGiaoDich.Month, 1);
+            var checkSql = @"SELECT TieuHaoID FROM DuLieuTieuHao WHERE NguyenLieuID = @NguyenLieuID AND KyTieuHao = @KyTieuHao";
+            using var checkCmd = new SqlCommand(checkSql, conn, transaction);
+            checkCmd.Parameters.AddWithValue("@NguyenLieuID", nguyenLieuId);
+            checkCmd.Parameters.AddWithValue("@KyTieuHao", kyTieuHao);
+            var existingId = await checkCmd.ExecuteScalarAsync();
+
+            if (existingId != null && existingId != DBNull.Value)
+            {
+                var updateSql = @"UPDATE DuLieuTieuHao
+                                  SET SoLuongTieuHao = CASE WHEN SoLuongTieuHao + @Delta < 0 THEN 0 ELSE SoLuongTieuHao + @Delta END
+                                  WHERE TieuHaoID = @TieuHaoID";
+                using var updateCmd = new SqlCommand(updateSql, conn, transaction);
+                updateCmd.Parameters.AddWithValue("@Delta", (double)deltaSoLuong);
+                updateCmd.Parameters.AddWithValue("@TieuHaoID", Convert.ToInt32(existingId));
+                await updateCmd.ExecuteNonQueryAsync();
+            }
+            else if (deltaSoLuong > 0)
+            {
+                var insertSql = @"INSERT INTO DuLieuTieuHao (NguyenLieuID, DonViID, KyTieuHao, SoLuongTieuHao)
+                                  SELECT @NguyenLieuID, ISNULL(DonViID, 1), @KyTieuHao, @SoLuong
+                                  FROM NguyenLieu WHERE NguyenLieuID = @NguyenLieuID";
+                using var insertCmd = new SqlCommand(insertSql, conn, transaction);
+                insertCmd.Parameters.AddWithValue("@NguyenLieuID", nguyenLieuId);
+                insertCmd.Parameters.AddWithValue("@KyTieuHao", kyTieuHao);
+                insertCmd.Parameters.AddWithValue("@SoLuong", (double)deltaSoLuong);
+                await insertCmd.ExecuteNonQueryAsync();
+            }
+        }
+        catch
+        {
+        }
     }
 }
