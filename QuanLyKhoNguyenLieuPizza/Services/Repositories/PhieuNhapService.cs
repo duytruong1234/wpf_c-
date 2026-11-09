@@ -508,7 +508,7 @@ public class PhieuNhapService : DatabaseContext
                 await deleteCmd.ExecuteNonQueryAsync();
             }
 
-            // ThÃªm chi tiáº¿t
+            // Thêm chi tiết
             foreach (var ct in chiTiets)
             {
                 var ctSql = @"INSERT INTO CT_PhieuNhap (PhieuNhapID, NguyenLieuID, SoLuong, DonViID, HeSo, DonGia, ThanhTien, HSD, SoLuongCon)
@@ -527,7 +527,7 @@ public class PhieuNhapService : DatabaseContext
 
                 await ctCmd.ExecuteNonQueryAsync();
 
-                // KHÃ”NG cáº­p nháº­t Tá»“nKho á»Ÿ Ä‘Ã¢y - chá»‰ cáº­p nháº­t khi duyá»‡t phiáº¿u
+                // KHÔNG cập nhật TồnKho ở đây - chỉ cập nhật khi duyệt phiếu
             }
 
             transaction.Commit();
@@ -572,7 +572,7 @@ public class PhieuNhapService : DatabaseContext
                 return false;
             }
 
-            // Láº¥y chi tiáº¿t phiáº¿u nháº­p Ä‘á»ƒ cáº­p nháº­t Tá»“nKho
+            // Lấy chi tiết phiếu nhập để cập nhật TồnKho
             var initSoLuongConSql = @"UPDATE CT_PhieuNhap
                                       SET SoLuongCon = SoLuong
                                       WHERE PhieuNhapID = @PhieuNhapID AND SoLuongCon = 0";
@@ -594,7 +594,7 @@ public class PhieuNhapService : DatabaseContext
             }
             reader.Close();
 
-            // Cáº­p nháº­t Tá»“nKho
+            // Cập nhật TồnKho
             var contextCache = new Dictionary<int, IngredientUnitContext>();
             var unitNameCache = new Dictionary<int, string>();
 

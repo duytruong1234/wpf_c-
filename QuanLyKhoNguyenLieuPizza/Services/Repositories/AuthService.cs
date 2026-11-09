@@ -36,7 +36,7 @@ public class AuthService : DatabaseContext
                 var tkTrangThai = reader.GetBoolean(4);
                 if (!tkTrangThai)
                 {
-                    throw new Exception("TÃ i khoáº£n nÃ y Ä‘Ã£ bá»‹ khÃ³a!");
+                    throw new Exception("Tài khoản này đã bị khóa!");
                 }
 
                 if (!reader.IsDBNull(13))
@@ -44,7 +44,7 @@ public class AuthService : DatabaseContext
                     var nvTrangThai = reader.GetBoolean(13);
                     if (!nvTrangThai)
                     {
-                        throw new Exception("TÃ i khoáº£n cá»§a nhÃ¢n viÃªn Ä‘Ã£ nghá»‰ viá»‡c khÃ´ng Ä‘Æ°á»£c phÃ©p truy cáº­p vÃ o há»‡ thá»‘ng!");
+                        throw new Exception("Tài khoản của nhân viên đã nghỉ việc không được phép truy cập vào hệ thống!");
                     }
                 }
 
@@ -86,11 +86,11 @@ public class AuthService : DatabaseContext
         }
         catch (SqlException sqlEx)
         {
-            throw new Exception($"Lá»—i káº¿t ná»‘i database: {sqlEx.Message}", sqlEx);
+            throw new Exception($"Lỗi kết nối database: {sqlEx.Message}", sqlEx);
         }
         catch (Exception ex) {
-            if (ex.Message.Contains("TÃ i khoáº£n")) throw;
-            throw new Exception($"Lá»—i xÃ¡c thá»±c: {ex.Message}", ex);
+            if (ex.Message.Contains("Tài khoản")) throw;
+            throw new Exception($"Lỗi xác thực: {ex.Message}", ex);
         }
 
         return null;
@@ -107,8 +107,8 @@ public class AuthService : DatabaseContext
             using var conn = GetConnection();
             await conn.OpenAsync();
 
-            // XÃ¡c thá»±c ná»›i lá»ng: TÃ¬m ngÆ°á»i dÃ¹ng theo Email trÆ°á»›c (Ä‘á»™c nháº¥t), sau Ä‘Ã³ xÃ¡c minh thÃ´ng tin khÃ¡c trong bá»™ nhá»›
-            // Äiá»u nÃ y xá»­ lÃ½ cÃ¡c váº¥n Ä‘á» vá» phÃ¢n biá»‡t chá»¯ hoa/thÆ°á»ng, khoáº£ng tráº¯ng, Ä‘á»‹nh dáº¡ng ngÃ y, v.v.
+            // Xác thực nới lỏng: Tìm người dùng theo Email trước (độc nhất), sau đó xác minh thông tin khác trong bộ nhớ
+            // Điều này xử lý các vấn đề về phân biệt chữ hoa/thường, khoảng trắng, định dạng ngày, v.v.
             var sql = @"SELECT NhanVienID, HoTen, Email, ChucVuID, NgaySinh
                         FROM NhanVien
                         WHERE Email = @Email AND TrangThai = 1";
@@ -125,12 +125,12 @@ public class AuthService : DatabaseContext
                 var dbChucVuID = reader.IsDBNull(3) ? 0 : reader.GetInt32(3);
                 var dbNgaySinh = reader.IsDBNull(4) ? (DateTime?)null : reader.GetDateTime(4);
 
-                // XÃ¡c thá»±c tÃªn (KhÃ´ng phÃ¢n biá»‡t hoa/thÆ°á»ng, bá» Táº¤T Cáº¢ khoáº£ng tráº¯ng, bá» dáº¥u)
+                // Xác thực tên (Không phân biệt hoa/thường, bỏ TẤT CẢ khoảng trắng, bỏ dấu)
                 string Normalize(string s)
                 {
                     if (string.IsNullOrEmpty(s)) return string.Empty;
 
-                    // Bá» dáº¥u
+                    // Bỏ dấu
                     var normalized = s.Normalize(NormalizationForm.FormD);
                     var builder = new StringBuilder();
                     foreach (var c in normalized)
@@ -142,7 +142,7 @@ public class AuthService : DatabaseContext
                     }
                     var withoutAccents = builder.ToString().Normalize(NormalizationForm.FormC);
 
-                    // Bá» khoáº£ng tráº¯ng vÃ  chuyá»ƒn chá»¯ thÆ°á»ng
+                    // Bỏ khoảng trắng và chuyển chữ thường
                     return withoutAccents.Replace(" ", "").ToLower();
                 }
 
@@ -151,13 +151,13 @@ public class AuthService : DatabaseContext
                     return null;
                 }
 
-                // XÃ¡c thá»±c ngÃ y sinh (Chá»‰ pháº§n ngÃ y)
+                // Xác thực ngày sinh (Chỉ phần ngày)
                 if (dbNgaySinh?.Date != ngaySinh.Date)
                 {
                     return null;
                 }
 
-                // XÃ¡c thá»±c chá»©c vá»¥
+                // Xác thực chức vụ
                 if (dbChucVuID != chucVuId)
                 {
                     return null;
@@ -176,7 +176,7 @@ public class AuthService : DatabaseContext
         catch {
             throw;
         }
-        return null; // KhÃ´ng tÃ¬m tháº¥y
+        return null; // Không tìm thấy
     }
 
     public async Task<bool> ChangePasswordAsync(string email, string newPassword)
@@ -186,7 +186,7 @@ public class AuthService : DatabaseContext
             using var conn = GetConnection();
             await conn.OpenAsync();
 
-            // Cáº­p nháº­t máº­t kháº©u cho ngÆ°á»i dÃ¹ng liÃªn káº¿t vá»›i email nÃ y
+            // Cập nhật mật khẩu cho người dùng liên kết với email này
             var sql = @"UPDATE TaiKhoan
                         SET Password = @Password
                         FROM TaiKhoan tk

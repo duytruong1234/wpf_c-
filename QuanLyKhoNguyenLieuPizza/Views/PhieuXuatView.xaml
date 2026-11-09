@@ -1,4 +1,4 @@
-<UserControl x:Class="QuanLyKhoNguyenLieuPizza.Views.PhieuXuatView"
+﻿<UserControl x:Class="QuanLyKhoNguyenLieuPizza.Views.PhieuXuatView"
              xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
              xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
              xmlns:components="clr-namespace:QuanLyKhoNguyenLieuPizza.Views.Components"
@@ -381,8 +381,19 @@
                         </Grid>
                     </Border>
 
-                    <ScrollViewer Grid.Row="1" VerticalScrollBarVisibility="Auto">
-                        <ItemsControl ItemsSource="{Binding PhieuXuats}">
+                    <ItemsControl Grid.Row="1" ItemsSource="{Binding PhieuXuats}" VirtualizingStackPanel.IsVirtualizing="True" VirtualizingStackPanel.VirtualizationMode="Recycling" ScrollViewer.CanContentScroll="True">
+                        <ItemsControl.ItemsPanel>
+                            <ItemsPanelTemplate>
+                                <VirtualizingStackPanel IsVirtualizing="True" VirtualizationMode="Recycling"/>
+                            </ItemsPanelTemplate>
+                        </ItemsControl.ItemsPanel>
+                        <ItemsControl.Template>
+                            <ControlTemplate TargetType="ItemsControl">
+                                <ScrollViewer VerticalScrollBarVisibility="Auto" HorizontalScrollBarVisibility="Disabled" CanContentScroll="True" Focusable="False">
+                                    <ItemsPresenter/>
+                                </ScrollViewer>
+                            </ControlTemplate>
+                        </ItemsControl.Template>
                             <ItemsControl.ItemTemplate>
                                 <DataTemplate>
                                     <Border BorderBrush="{StaticResource Gray100}" BorderThickness="0,0,0,1">
@@ -468,8 +479,7 @@
                                     </Border>
                                 </DataTemplate>
                             </ItemsControl.ItemTemplate>
-                        </ItemsControl>
-                    </ScrollViewer>
+                    </ItemsControl>
 
                     <StackPanel Grid.Row="1" HorizontalAlignment="Center" VerticalAlignment="Center"
                                 Visibility="{Binding PhieuXuats.Count, Converter={StaticResource IntToVisibilityConverter}}">
@@ -650,8 +660,19 @@
                         </Grid>
                     </Border>
 
-                    <ScrollViewer Grid.Row="1" VerticalScrollBarVisibility="Auto">
-                        <ItemsControl ItemsSource="{Binding PhieuXuats}">
+                    <ItemsControl Grid.Row="1" ItemsSource="{Binding PhieuXuats}" VirtualizingStackPanel.IsVirtualizing="True" VirtualizingStackPanel.VirtualizationMode="Recycling" ScrollViewer.CanContentScroll="True">
+                        <ItemsControl.ItemsPanel>
+                            <ItemsPanelTemplate>
+                                <VirtualizingStackPanel IsVirtualizing="True" VirtualizationMode="Recycling"/>
+                            </ItemsPanelTemplate>
+                        </ItemsControl.ItemsPanel>
+                        <ItemsControl.Template>
+                            <ControlTemplate TargetType="ItemsControl">
+                                <ScrollViewer VerticalScrollBarVisibility="Auto" HorizontalScrollBarVisibility="Disabled" CanContentScroll="True" Focusable="False">
+                                    <ItemsPresenter/>
+                                </ScrollViewer>
+                            </ControlTemplate>
+                        </ItemsControl.Template>
                             <ItemsControl.ItemTemplate>
                                 <DataTemplate>
                                     <Border BorderBrush="{StaticResource Gray100}" BorderThickness="0,0,0,1">
@@ -737,8 +758,7 @@
                                     </Border>
                                 </DataTemplate>
                             </ItemsControl.ItemTemplate>
-                        </ItemsControl>
-                    </ScrollViewer>
+                    </ItemsControl>
 
                     <StackPanel Grid.Row="1" HorizontalAlignment="Center" VerticalAlignment="Center"
                                 Visibility="{Binding PhieuXuats.Count, Converter={StaticResource IntToVisibilityConverter}}">

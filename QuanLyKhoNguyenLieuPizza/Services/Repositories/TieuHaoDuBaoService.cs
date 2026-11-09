@@ -9,8 +9,49 @@ public class TieuHaoDuBaoService : DatabaseContext
 {
     public TieuHaoDuBaoService(string connectionString) : base(connectionString) { }
 
+    private static bool _seedChecked;
+
+    private async Task EnsureSeedDataAsync()
+    {
+        if (_seedChecked) return;
+        try
+        {
+            using var conn = GetConnection();
+            await conn.OpenAsync();
+            using var chkCmd = new SqlCommand(@"
+                IF OBJECT_ID('dbo.DuLieuTieuHao', 'U') IS NULL
+                    SELECT 0
+                ELSE
+                    SELECT COUNT(1) FROM dbo.DuLieuTieuHao", conn);
+            var count = Convert.ToInt32(await chkCmd.ExecuteScalarAsync() ?? 0);
+            if (count > 0)
+            {
+                _seedChecked = true;
+                return;
+            }
+
+            var seedFile = System.IO.Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "Resources", "Database", "Seed_TieuHaoDuBao.sql");
+            if (System.IO.File.Exists(seedFile))
+            {
+                var script = await System.IO.File.ReadAllTextAsync(seedFile, System.Text.Encoding.UTF8);
+                var batches = System.Text.RegularExpressions.Regex.Split(script, @"^\s*GO\s*$", System.Text.RegularExpressions.RegexOptions.Multiline | System.Text.RegularExpressions.RegexOptions.IgnoreCase);
+                foreach (var batch in batches)
+                {
+                    var trimmed = batch.Trim();
+                    if (string.IsNullOrWhiteSpace(trimmed) || trimmed.StartsWith("USE ", StringComparison.OrdinalIgnoreCase))
+                        continue;
+                    using var batchCmd = new SqlCommand(trimmed, conn) { CommandTimeout = 120 };
+                    await batchCmd.ExecuteNonQueryAsync();
+                }
+            }
+            _seedChecked = true;
+        }
+        catch { }
+    }
+
     public async Task<List<NguyenLieuFilterOption>> GetNguyenLieuFilterOptionsAsync()
     {
+        await EnsureSeedDataAsync();
         var list = new List<NguyenLieuFilterOption>
         {
             new NguyenLieuFilterOption { NguyenLieuID = null, TenHienThi = "Tất cả nguyên liệu" }
@@ -20,10 +61,11 @@ public class TieuHaoDuBaoService : DatabaseContext
         {
             using var conn = GetConnection();
             await conn.OpenAsync();
-            var sql = @"SELECT NguyenLieuID, MaNguyenLieu, TenNguyenLieu
+            var sql = @"SELECT nl.NguyenLieuID, nl.MaNguyenLieu, nl.TenNguyenLieu, ISNULL(dvt.TenDonVi, 'kg') FROM NguyenLieu nl LEFT JOIN DonViTinh dvt ON nl.DonViID = dvt.DonViID WHERE ISNULL(nl.TrangThai, 1) = 1 ORDER BY nl.NguyenLieuID"; //
+            /*
                         FROM NguyenLieu
                         WHERE ISNULL(TrangThai, 1) = 1
-                        ORDER BY NguyenLieuID";
+                        ORDER BY NguyenLieuID"; */
             using var cmd = new SqlCommand(sql, conn);
             using var reader = await cmd.ExecuteReaderAsync();
             while (await reader.ReadAsync())
@@ -31,10 +73,11 @@ public class TieuHaoDuBaoService : DatabaseContext
                 var id = reader.GetInt32(0);
                 var ma = $"NL{id:D3}";
                 var ten = reader.GetString(2);
+                var dvt = reader.IsDBNull(3) ? "kg" : reader.GetString(3);
                 list.Add(new NguyenLieuFilterOption
                 {
                     NguyenLieuID = id,
-                    TenHienThi = $"{ma} - {ten}"
+                    TenHienThi = $"{ma} - {ten} ({dvt})"
                 });
             }
         }
@@ -45,6 +88,7 @@ public class TieuHaoDuBaoService : DatabaseContext
 
     public async Task<List<KyThoiGianOption>> GetAvailablePeriodsAsync()
     {
+        await EnsureSeedDataAsync();
         var list = new List<KyThoiGianOption>();
         try
         {
@@ -713,5 +757,94 @@ public class TieuHaoDuBaoService : DatabaseContext
         double mape = sumPctErr / testSamples;
 
         return (nextForecast, mae, rmse, mape);
+    }
+
+    public async Task<ThongKeMuaVu12ThangResult> GetThongKeMuaVu12ThangAsync(int nguyenLieuId, int nam)
+    {
+        var res = new ThongKeMuaVu12ThangResult
+        {
+            NguyenLieuID = nguyenLieuId,
+            MaNguyenLieu = $"NL{nguyenLieuId:D3}",
+            TenNguyenLieu = $"Nguyên liệu #{nguyenLieuId}",
+            DonViKho = "kg",
+            Nam = nam
+        };
+
+        var monthMap = new Dictionary<int, decimal>();
+
+        try
+        {
+            using var conn = GetConnection();
+            await conn.OpenAsync();
+
+            await EnsureSeedDataAsync();
+
+            if (nguyenLieuId > 0)
+            {
+                var nlSql = @"SELECT nl.TenNguyenLieu, ISNULL(dvt.TenDonVi, 'kg')
+                              FROM NguyenLieu nl
+                              LEFT JOIN DonViTinh dvt ON nl.DonViID = dvt.DonViID
+                              WHERE nl.NguyenLieuID = @NguyenLieuID";
+                using (var nlCmd = new SqlCommand(nlSql, conn))
+                {
+                    nlCmd.Parameters.AddWithValue("@NguyenLieuID", nguyenLieuId);
+                    using var r = await nlCmd.ExecuteReaderAsync();
+                    if (await r.ReadAsync())
+                    {
+                        res.TenNguyenLieu = r.GetString(0);
+                        res.DonViKho = r.GetString(1);
+                    }
+                }
+
+                var thSql = @"SELECT MONTH(KyTieuHao) AS Thang, SUM(SoLuongTieuHao) AS TongTieuHao
+                              FROM DuLieuTieuHao
+                              WHERE NguyenLieuID = @NguyenLieuID AND YEAR(KyTieuHao) = @Nam
+                              GROUP BY MONTH(KyTieuHao)";
+                using (var thCmd = new SqlCommand(thSql, conn))
+                {
+                    thCmd.Parameters.AddWithValue("@NguyenLieuID", nguyenLieuId);
+                    thCmd.Parameters.AddWithValue("@Nam", nam);
+                    using var r = await thCmd.ExecuteReaderAsync();
+                    while (await r.ReadAsync())
+                    {
+                        monthMap[r.GetInt32(0)] = r.GetDecimal(1);
+                    }
+                }
+            }
+            else
+            {
+                res.MaNguyenLieu = "TẤT CẢ";
+                res.TenNguyenLieu = "Tổng hợp 25 nguyên liệu";
+                res.DonViKho = "đơn vị";
+
+                var thSql = @"SELECT MONTH(KyTieuHao) AS Thang, SUM(SoLuongTieuHao) AS TongTieuHao
+                              FROM DuLieuTieuHao
+                              WHERE YEAR(KyTieuHao) = @Nam
+                              GROUP BY MONTH(KyTieuHao)";
+                using (var thCmd = new SqlCommand(thSql, conn))
+                {
+                    thCmd.Parameters.AddWithValue("@Nam", nam);
+                    using var r = await thCmd.ExecuteReaderAsync();
+                    while (await r.ReadAsync())
+                    {
+                        monthMap[r.GetInt32(0)] = r.GetDecimal(1);
+                    }
+                }
+            }
+        }
+        catch { }
+
+        for (int m = 1; m <= 12; m++)
+        {
+            monthMap.TryGetValue(m, out var val);
+            res.ThangItems.Add(new ThangTieuHaoChartItem
+            {
+                Thang = m,
+                SoLuongTieuHao = Math.Round(val, 1),
+                DonViKho = res.DonViKho
+            });
+        }
+
+        return res;
     }
 }

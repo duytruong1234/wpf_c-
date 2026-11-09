@@ -80,7 +80,7 @@ public class NhanVienService : DatabaseContext
             using var conn = GetConnection();
             await conn.OpenAsync();
 
-            // Kiá»ƒm tra náº¿u cÃ³ NhÃ¢nViÃªn nÃ o Ä‘ang sá»­ dá»¥ng Chá»©cVá»¥ nÃ y
+            // Kiểm tra nếu có NhânViên nào đang sử dụng ChứcVụ này
             var checkSql = "SELECT COUNT(*) FROM NhanVien WHERE ChucVuID = @ChucVuID";
             using var checkCmd = new SqlCommand(checkSql, conn);
             checkCmd.Parameters.AddWithValue("@ChucVuID", chucVuId);
@@ -305,13 +305,13 @@ public class NhanVienService : DatabaseContext
 
         try
         {
-            // XÃ³a TÃ iKhoáº£n trÆ°á»›c
+            // Xóa TàiKhoản trước
             var deleteAccountSql = "DELETE FROM TaiKhoan WHERE NhanVienID = @NhanVienID";
             using var deleteAccountCmd = new SqlCommand(deleteAccountSql, conn, transaction);
             deleteAccountCmd.Parameters.AddWithValue("@NhanVienID", nhanVienId);
             await deleteAccountCmd.ExecuteNonQueryAsync();
 
-            // Sau Ä‘Ã³ xÃ³a NhÃ¢nViÃªn
+            // Sau đó xóa NhânViên
             var sql = "DELETE FROM NhanVien WHERE NhanVienID = @NhanVienID";
             using var cmd = new SqlCommand(sql, conn, transaction);
             cmd.Parameters.AddWithValue("@NhanVienID", nhanVienId);

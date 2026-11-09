@@ -146,4 +146,5 @@ public interface IDatabaseService
     Task<List<TieuHaoNguyenLieuItem>> GetBaoCaoTieuHaoAsync(DateTime kyTieuHao, int? nguyenLieuId = null);
     Task<List<MonAnTieuHaoItem>> GetMonAnDaBanTheoNguyenLieuAsync(int nguyenLieuId, string donViKho, DateTime kyTieuHao);
     Task<List<KetQuaDuBaoItem>> RunHoltWintersForecastAsync(DateTime currentKy, int? filterNguyenLieuId = null);
+    Task<ThongKeMuaVu12ThangResult> GetThongKeMuaVu12ThangAsync(int nguyenLieuId, int nam);
 }

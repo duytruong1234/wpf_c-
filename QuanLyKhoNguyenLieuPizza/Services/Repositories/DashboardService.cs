@@ -469,7 +469,7 @@ public class DashboardService : DatabaseContext
         }
         catch { }
 
-        // Sáº¯p xáº¿p theo ngÃ y má»›i nháº¥t vÃ  láº¥y top
+        // Sắp xếp theo ngày mới nhất và lấy top
         donHangs.Sort((a, b) => b.NgayTao.CompareTo(a.NgayTao));
         return donHangs.Take(top).ToList();
     }
@@ -481,7 +481,7 @@ public class DashboardService : DatabaseContext
             using var conn = GetConnection();
             await conn.OpenAsync();
 
-            // Doanh thu tá»« PhieuBanHang (POS)
+            // Doanh thu từ PhieuBanHang (POS)
             try
             {
                 var sql1 = @"SELECT ISNULL(SUM(TongTien), 0) FROM PhieuBanHang
@@ -494,7 +494,7 @@ public class DashboardService : DatabaseContext
             }
             catch { }
 
-            // Doanh thu tá»« DonHang (náº¿u báº£ng tá»“n táº¡i)
+            // Doanh thu từ DonHang (nếu bảng tồn tại)
             try
             {
                 var sql2 = @"SELECT ISNULL(SUM(ThanhToan), 0) FROM DonHang
@@ -505,7 +505,7 @@ public class DashboardService : DatabaseContext
                 var r2 = await cmd2.ExecuteScalarAsync();
                 if (r2 != null && r2 != DBNull.Value) total += Convert.ToDecimal(r2);
             }
-            catch { /* Báº£ng DonHang cÃ³ thá»ƒ khÃ´ng tá»“n táº¡i */ }
+            catch { /* Bảng DonHang có thể không tồn tại */ }
         }
         catch { }
         return total;
@@ -519,7 +519,7 @@ public class DashboardService : DatabaseContext
             using var conn = GetConnection();
             await conn.OpenAsync();
 
-            // Äáº¿m tá»« PhieuBanHang (POS)
+            // Đếm từ PhieuBanHang (POS)
             try
             {
                 var sql1 = @"SELECT COUNT(*) FROM PhieuBanHang
@@ -531,7 +531,7 @@ public class DashboardService : DatabaseContext
             }
             catch { }
 
-            // Äáº¿m tá»« DonHang (náº¿u báº£ng tá»“n táº¡i)
+            // Đếm từ DonHang (nếu bảng tồn tại)
             try
             {
                 var sql2 = @"SELECT COUNT(*) FROM DonHang
@@ -541,7 +541,7 @@ public class DashboardService : DatabaseContext
                 cmd2.Parameters.AddWithValue("@ToDate", toDate.Date.AddDays(1));
                 total += Convert.ToInt32(await cmd2.ExecuteScalarAsync());
             }
-            catch { /* Báº£ng DonHang cÃ³ thá»ƒ khÃ´ng tá»“n táº¡i */ }
+            catch { /* Bảng DonHang có thể không tồn tại */ }
         }
         catch { }
         return total;

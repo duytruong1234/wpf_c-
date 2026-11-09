@@ -399,4 +399,6 @@ public class DatabaseService : IDatabaseService
         => _tieuHaoDuBao.GetMonAnDaBanTheoNguyenLieuAsync(nguyenLieuId, donViKho, kyTieuHao);
     public Task<List<KetQuaDuBaoItem>> RunHoltWintersForecastAsync(DateTime currentKy, int? filterNguyenLieuId = null)
         => _tieuHaoDuBao.RunHoltWintersForecastAsync(currentKy, filterNguyenLieuId);
+    public Task<ThongKeMuaVu12ThangResult> GetThongKeMuaVu12ThangAsync(int nguyenLieuId, int nam)
+        => _tieuHaoDuBao.GetThongKeMuaVu12ThangAsync(nguyenLieuId, nam);
 }

@@ -1,4 +1,4 @@
-<?xml version="1.0" encoding="utf-8"?>
+﻿<?xml version="1.0" encoding="utf-8"?>
 <UserControl x:Class="QuanLyKhoNguyenLieuPizza.Views.DonHangView"
              xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
              xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
@@ -318,8 +318,19 @@
                     </Border>
 
                     <!-- Nội dung bảng -->
-                    <ScrollViewer Grid.Row="1" VerticalScrollBarVisibility="Auto">
-                        <ItemsControl ItemsSource="{Binding DonHangs}">
+                    <ItemsControl Grid.Row="1" ItemsSource="{Binding DonHangs}" VirtualizingStackPanel.IsVirtualizing="True" VirtualizingStackPanel.VirtualizationMode="Recycling" ScrollViewer.CanContentScroll="True">
+                        <ItemsControl.ItemsPanel>
+                            <ItemsPanelTemplate>
+                                <VirtualizingStackPanel IsVirtualizing="True" VirtualizationMode="Recycling"/>
+                            </ItemsPanelTemplate>
+                        </ItemsControl.ItemsPanel>
+                        <ItemsControl.Template>
+                            <ControlTemplate TargetType="ItemsControl">
+                                <ScrollViewer VerticalScrollBarVisibility="Auto" HorizontalScrollBarVisibility="Disabled" CanContentScroll="True" Focusable="False">
+                                    <ItemsPresenter/>
+                                </ScrollViewer>
+                            </ControlTemplate>
+                        </ItemsControl.Template>
                             <ItemsControl.ItemTemplate>
                                 <DataTemplate>
                                     <Border Padding="24,14" BorderBrush="{StaticResource Gray100}" BorderThickness="0,0,0,1">
@@ -418,8 +429,7 @@
                                     </Border>
                                 </DataTemplate>
                             </ItemsControl.ItemTemplate>
-                        </ItemsControl>
-                    </ScrollViewer>
+                    </ItemsControl>
 
                     <!-- Loading State -->
                     <!-- Loading Overlay -->

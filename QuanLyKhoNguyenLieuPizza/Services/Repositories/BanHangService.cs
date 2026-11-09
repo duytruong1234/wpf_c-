@@ -20,6 +20,13 @@ public class BanHangService : DatabaseContext
         {
             using var conn = GetConnection();
             await conn.OpenAsync();
+            bool hasDonHang = false;
+            using (var chkCmd = new SqlCommand("SELECT OBJECT_ID('dbo.DonHang', 'U')", conn))
+            {
+                hasDonHang = await chkCmd.ExecuteScalarAsync() is not (null or DBNull);
+            }
+            if (hasDonHang)
+            {
             var sql = @"SELECT dh.DonHangID, dh.MaDonHang, dh.NhanVienID, dh.NgayTao, dh.TongTien,
                               dh.GiamGia, dh.ThanhToan, dh.PhuongThucTT, dh.TrangThai, dh.GhiChu,
                               nv.HoTen
@@ -50,7 +57,7 @@ public class BanHangService : DatabaseContext
                     TongTien = reader.GetDecimal(4),
                     GiamGia = reader.GetDecimal(5),
                     ThanhToan = reader.GetDecimal(6),
-                    PhuongThucTT = reader.IsDBNull(7) ? "Tiá»n máº·t" : reader.GetString(7),
+                    PhuongThucTT = reader.IsDBNull(7) ? "Tiền mặt" : reader.GetString(7),
                     TrangThai = reader.GetByte(8),
                     GhiChu = reader.IsDBNull(9) ? null : reader.GetString(9)
                 };
@@ -66,9 +73,9 @@ public class BanHangService : DatabaseContext
                 if (dh.MaDonHang != null)
                     existingMaDonHangs.Add(dh.MaDonHang);
             }
+            }
         }
         catch { }
-
         // 2) Always load from PhieuBanHang (the active data source)
         try
         {
@@ -770,7 +777,7 @@ public class BanHangService : DatabaseContext
         using var transaction = conn.BeginTransaction();
         try
         {
-            // 1) TÃ­nh tá»•ng nguyÃªn liá»‡u cáº§n trá»« cho toÃ n bá»™ Ä‘Æ¡n
+            // 1) Tính tổng nguyên liệu cần trừ cho toàn bộ đơn
             var requiredMap = new Dictionary<int, decimal>();
             var unitContextCache = new Dictionary<int, IngredientUnitContext>();
             var unitNameCache = new Dictionary<int, string>();
@@ -792,7 +799,7 @@ public class BanHangService : DatabaseContext
 
                 var ingredientMap = new Dictionary<int, decimal>();
 
-                // BÆ°á»›c 1: CongThuc_Pizza (nhÃ¢n bÃ¡nh)
+                // Bước 1: CongThuc_Pizza (nhân bánh)
                 var congThucs = await GetCongThucPizzaInternalAsync(conn, transaction, ct.MaHangHoa, ct.SizeID);
                 foreach (var recipe in congThucs)
                 {
@@ -811,7 +818,7 @@ public class BanHangService : DatabaseContext
                         ingredientMap[recipe.NguyenLieuID] = amount;
                 }
 
-                // BÆ°á»›c 2: QuyDinh_Bot (bá»™t mÃ¬) - lookup báº±ng SizeID + LoaiCotBanh tá»« DoanhMuc_De
+                // Bước 2: QuyDinh_Bot (bột mì) - lookup bằng SizeID + LoaiCotBanh từ DoanhMuc_De
                 if (!string.IsNullOrEmpty(ct.MaDeBanh))
                 {
                     var botSql = @"SELECT qb.TrongLuongBot, qb.DonViID
@@ -829,7 +836,7 @@ public class BanHangService : DatabaseContext
                         botReader.Close();
                         if (trongLuongBot > 0)
                         {
-                            // TÃ¬m NguyenLieuID cá»§a bá»™t mÃ¬ (tÃªn chá»©a "Bá»™t" hoáº·c "bá»™t mÃ¬")
+                            // Tìm NguyenLieuID của bột mì (tên chứa "Bột" hoặc "bột mì")
                             var findBotSql = "SELECT TOP 1 NguyenLieuID FROM NguyenLieu WHERE TenNguyenLieu LIKE N'%Bột mì%' OR TenNguyenLieu LIKE N'%Bot mi%'";
                             using var findBotCmd = CreateCommand(findBotSql, conn, transaction);
                             var botNlId = await findBotCmd.ExecuteScalarAsync();
@@ -857,7 +864,7 @@ public class BanHangService : DatabaseContext
                     }
                 }
 
-                // BÆ°á»›c 3: QuyDinh_Vien (viá»n) - lookup báº±ng MaDeBanh + SizeID
+                // Bước 3: QuyDinh_Vien (viền) - lookup bằng MaDeBanh + SizeID
                 if (!string.IsNullOrEmpty(ct.MaDeBanh))
                 {
                     var vienSql = @"SELECT NguyenLieuID, SoLuongVien, DonViID FROM QuyDinh_Vien
@@ -895,7 +902,7 @@ public class BanHangService : DatabaseContext
                     }
                 }
 
-                // Gom tá»•ng nguyÃªn liá»‡u theo sá»‘ lÆ°á»£ng mua
+                // Gom tổng nguyên liệu theo số lượng mua
                 foreach (var (nguyenLieuId, amountPerPizza) in ingredientMap)
                 {
                     var totalAmount = amountPerPizza * soLuongMua;
@@ -903,7 +910,7 @@ public class BanHangService : DatabaseContext
                 }
             }
 
-            // 2) Kiá»ƒm tra tá»“n kho trÆ°á»›c khi lÆ°u phiáº¿u
+            // 2) Kiểm tra tồn kho trước khi lưu phiếu
             if (requiredMap.Count > 0)
             {
                 var insufficient = await GetInsufficientIngredientsAsync(conn, transaction, requiredMap);
@@ -938,7 +945,7 @@ public class BanHangService : DatabaseContext
                 }
             }
 
-            // 3) LÆ°u Phiáº¿uBÃ¡nHÃ ng
+            // 3) Lưu PhiếuBánHàng
             var sql = @"INSERT INTO PhieuBanHang (MaPhieuBan, NhanVienBanID, NgayBan, TongTien, PhuongThucTT, GhiChu, GiamGia, ThanhToan)
                        VALUES (@MaPhieuBan, @NhanVienBanID, @NgayBan, @TongTien, @PhuongThucTT, @GhiChu, @GiamGia, @ThanhToan)";
             using (var cmd = new SqlCommand(sql, conn, transaction))
@@ -947,14 +954,14 @@ public class BanHangService : DatabaseContext
                 cmd.Parameters.AddWithValue("@NhanVienBanID", phieuBan.NhanVienBanID ?? (object)DBNull.Value);
                 cmd.Parameters.AddWithValue("@NgayBan", phieuBan.NgayBan ?? (object)DateTime.Now);
                 cmd.Parameters.AddWithValue("@TongTien", phieuBan.TongTien ?? (object)DBNull.Value);
-                cmd.Parameters.AddWithValue("@PhuongThucTT", phieuBan.PhuongThucTT ?? "Tiá»n máº·t");
+                cmd.Parameters.AddWithValue("@PhuongThucTT", phieuBan.PhuongThucTT ?? "Tiền mặt");
                 cmd.Parameters.AddWithValue("@GhiChu", phieuBan.GhiChu ?? (object)DBNull.Value);
                 cmd.Parameters.AddWithValue("@GiamGia", phieuBan.GiamGia ?? (object)DBNull.Value);
                 cmd.Parameters.AddWithValue("@ThanhToan", phieuBan.ThanhToan ?? (object)DBNull.Value);
                 await cmd.ExecuteNonQueryAsync();
             }
 
-            // 4) LÆ°u CT_Phiáº¿uBÃ¡n
+            // 4) Lưu CT_PhiếuBán
             foreach (var ct in chiTiets)
             {
                 var ctSql = @"INSERT INTO CT_PhieuBan (MaPhieuBan, MaHangHoa, SizeID, MaDeBanh, SoLuong, ThanhTien)
@@ -969,7 +976,7 @@ public class BanHangService : DatabaseContext
                 await ctCmd.ExecuteNonQueryAsync();
             }
 
-            // 5) Trá»« tá»“n kho theo tá»•ng nguyÃªn liá»‡u
+            // 5) Trừ tồn kho theo tổng nguyên liệu
             foreach (var kvp in requiredMap)
             {
                 var deductSql = @"UPDATE TonKho

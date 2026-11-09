@@ -1,4 +1,4 @@
-using System.Collections.ObjectModel;
+﻿using System.Collections.ObjectModel;
 using System.Windows.Input;
 using QuanLyKhoNguyenLieuPizza.Models;
 using QuanLyKhoNguyenLieuPizza.Services;
@@ -101,6 +101,10 @@ public class PizzaViewModel : BaseViewModel
     // Hộp thoại trạng thái
     private bool _isStatusDialogOpen;
     private PizzaItemViewModel? _statusPizza;
+
+    // Popup Cấu hình bột bánh Pizza
+    private bool _isQuyDinhPopupOpen;
+    private QuyDinhViewModel? _quyDinhViewModel;
 
     #region Thuộc tính
     public ObservableCollection<PizzaItemViewModel> FilteredPizzas
@@ -335,6 +339,18 @@ public class PizzaViewModel : BaseViewModel
         get => _statusPizza;
         set => SetProperty(ref _statusPizza, value);
     }
+
+    public bool IsQuyDinhPopupOpen
+    {
+        get => _isQuyDinhPopupOpen;
+        set => SetProperty(ref _isQuyDinhPopupOpen, value);
+    }
+
+    public QuyDinhViewModel? QuyDinhViewModel
+    {
+        get => _quyDinhViewModel;
+        private set => SetProperty(ref _quyDinhViewModel, value);
+    }
     #endregion
 
     #region Lệnh
@@ -353,6 +369,8 @@ public class PizzaViewModel : BaseViewModel
     // Lệnh hộp thoại trạng thái
     public ICommand CloseStatusDialogCommand { get; private set; } = null!;
     public ICommand ConfirmToggleStatusCommand { get; private set; } = null!;
+    public ICommand OpenQuyDinhPopupCommand { get; private set; } = null!;
+    public ICommand CloseQuyDinhPopupCommand { get; private set; } = null!;
     #endregion
 
     public PizzaViewModel()
@@ -383,6 +401,8 @@ public class PizzaViewModel : BaseViewModel
         ConfirmToggleStatusCommand = new AsyncRelayCommand(async _ => await ConfirmTogglePizzaStatusAsync());
         SaveRecipeItemCommand = new AsyncRelayCommand(async _ => await SaveRecipeItemAsync());
         CancelRecipeEditCommand = new RelayCommand(_ => CancelRecipeEdit());
+        OpenQuyDinhPopupCommand = new RelayCommand(_ => OpenQuyDinhPopup());
+        CloseQuyDinhPopupCommand = new RelayCommand(_ => CloseQuyDinhPopup());
     }
 
     private async Task LoadDataAsync()
@@ -487,6 +507,25 @@ public class PizzaViewModel : BaseViewModel
         FilterDangBan = false;
         FilterNgungBan = false;
         SelectedKichThuocFilter = null;
+    }
+
+    private void OpenQuyDinhPopup()
+    {
+        if (QuyDinhViewModel == null)
+        {
+            QuyDinhViewModel = new QuyDinhViewModel();
+        }
+        else
+        {
+            QuyDinhViewModel.LoadDataCommand.Execute(null);
+        }
+        IsQuyDinhPopupOpen = true;
+    }
+
+    private void CloseQuyDinhPopup()
+    {
+        IsQuyDinhPopupOpen = false;
+        _ = LoadDataAsync();
     }
 
     private void OpenAddPopup()

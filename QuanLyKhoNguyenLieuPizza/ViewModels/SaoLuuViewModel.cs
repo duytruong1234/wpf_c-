@@ -189,12 +189,14 @@ public class SaoLuuViewModel : BaseViewModel
             await Task.Run(() =>
             {
                 var connectionString = GetConnectionString();
+                var builder = new SqlConnectionStringBuilder(connectionString);
+                var dbName = string.IsNullOrWhiteSpace(builder.InitialCatalog) ? "QLKNL_PIZZA" : builder.InitialCatalog;
                 using var connection = new SqlConnection(connectionString);
                 connection.Open();
 
                 // Thực hiện backup
                 var sql = $@"
-                    BACKUP DATABASE [QuanLyKhoNguyenLieuPizza]
+                    BACKUP DATABASE [{dbName}]
                     TO DISK = N'{backupPath}'
                     WITH FORMAT, INIT,
                     NAME = N'PizzaInn Backup - {DateTime.Now:dd/MM/yyyy HH:mm}',
@@ -281,6 +283,7 @@ public class SaoLuuViewModel : BaseViewModel
                 // Kết nối vào master database để thực hiện restore
                 var connectionString = GetConnectionString();
                 var builder = new SqlConnectionStringBuilder(connectionString);
+                var dbName = string.IsNullOrWhiteSpace(builder.InitialCatalog) ? "QLKNL_PIZZA" : builder.InitialCatalog;
                 builder.InitialCatalog = "master";
 
                 using var connection = new SqlConnection(builder.ConnectionString);
@@ -290,7 +293,7 @@ public class SaoLuuViewModel : BaseViewModel
                 try
                 {
                     using var cmdSingle = new SqlCommand(
-                        "ALTER DATABASE [QuanLyKhoNguyenLieuPizza] SET SINGLE_USER WITH ROLLBACK IMMEDIATE;",
+                        "ALTER DATABASE [{dbName}] SET SINGLE_USER WITH ROLLBACK IMMEDIATE;",
                         connection);
                     cmdSingle.CommandTimeout = 60;
                     cmdSingle.ExecuteNonQuery();
@@ -302,7 +305,7 @@ public class SaoLuuViewModel : BaseViewModel
 
                 // Thực hiện restore
                 var sql = $@"
-                    RESTORE DATABASE [QuanLyKhoNguyenLieuPizza]
+                    RESTORE DATABASE [{dbName}]
                     FROM DISK = N'{backupPath}'
                     WITH REPLACE, STATS = 10";
 
@@ -312,7 +315,7 @@ public class SaoLuuViewModel : BaseViewModel
 
                 // Đặt lại multi user mode
                 using var cmdMulti = new SqlCommand(
-                    "ALTER DATABASE [QuanLyKhoNguyenLieuPizza] SET MULTI_USER;",
+                    "ALTER DATABASE [{dbName}] SET MULTI_USER;",
                     connection);
                 cmdMulti.CommandTimeout = 60;
                 cmdMulti.ExecuteNonQuery();

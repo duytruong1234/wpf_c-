@@ -331,7 +331,7 @@ public class NhaCungCapService : DatabaseContext
             using var conn = GetConnection();
             await conn.OpenAsync();
 
-            // Kiá»ƒm tra náº¿u NhÃ CungCáº¥p Ä‘ang Ä‘Æ°á»£c sá»­ dá»¥ng
+            // Kiểm tra nếu NhàCungCấp đang được sử dụng
             var checkSql = @"SELECT COUNT(*) FROM NguyenLieuNhaCungCap WHERE NhaCungCapID = @NhaCungCapID";
             using var checkCmd = new SqlCommand(checkSql, conn);
             checkCmd.Parameters.AddWithValue("@NhaCungCapID", nhaCungCapId);
@@ -339,11 +339,11 @@ public class NhaCungCapService : DatabaseContext
 
             if (count > 0)
             {
-                // XÃ³a má»m - Ä‘áº·t Tráº¡ngThÃ¡i = false
+                // Xóa mềm - đặt TrạngThái = false
                 return await UpdateNhaCungCapTrangThaiAsync(nhaCungCapId, false);
             }
 
-            // XÃ³a cá»©ng náº¿u khÃ´ng Ä‘Æ°á»£c sá»­ dá»¥ng
+            // Xóa cứng nếu không được sử dụng
             var sql = "DELETE FROM NhaCungCap WHERE NhaCungCapID = @NhaCungCapID";
             using var cmd = new SqlCommand(sql, conn);
             cmd.Parameters.AddWithValue("@NhaCungCapID", nhaCungCapId);

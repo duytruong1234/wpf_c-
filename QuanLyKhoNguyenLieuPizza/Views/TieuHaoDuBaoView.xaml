@@ -7,7 +7,7 @@
              xmlns:converters="clr-namespace:QuanLyKhoNguyenLieuPizza.Converters"
              xmlns:ui="http://schemas.lepo.co/wpfui/2022/xaml"
              mc:Ignorable="d"
-             d:DesignHeight="760" d:DesignWidth="1200"
+             d:DesignHeight="780" d:DesignWidth="1240"
              Background="#F1F5F9"
              FontFamily="Segoe UI Variable, Segoe UI, Arial">
 
@@ -18,10 +18,10 @@
         <!-- Borderless ComboBox inside Pill Filter -->
         <Style x:Key="InnerPillComboBoxStyle" TargetType="ComboBox">
             <Setter Property="Background" Value="Transparent"/>
-            <Setter Property="Foreground" Value="#1E293B"/>
+            <Setter Property="Foreground" Value="#0F172A"/>
             <Setter Property="BorderThickness" Value="0"/>
             <Setter Property="FontSize" Value="13"/>
-            <Setter Property="FontWeight" Value="SemiBold"/>
+            <Setter Property="FontWeight" Value="Bold"/>
             <Setter Property="Padding" Value="0"/>
             <Setter Property="Cursor" Value="Hand"/>
             <Setter Property="VerticalContentAlignment" Value="Center"/>
@@ -45,7 +45,7 @@
                                         <Border Background="Transparent" Padding="2,1">
                                             <ui:SymbolIcon Symbol="ChevronDown24"
                                                            FontSize="12"
-                                                           Foreground="#64748B"
+                                                           Foreground="#334155"
                                                            HorizontalAlignment="Right"
                                                            VerticalAlignment="Center"
                                                            Margin="8,1,0,0"/>
@@ -59,10 +59,11 @@
                                               IsHitTestVisible="False"
                                               Content="{TemplateBinding SelectionBoxItem}"
                                               ContentTemplate="{TemplateBinding SelectionBoxItemTemplate}"
+                                              ContentTemplateSelector="{TemplateBinding ItemTemplateSelector}"
                                               ContentStringFormat="{TemplateBinding SelectionBoxItemStringFormat}"
                                               HorizontalAlignment="Left"
                                               VerticalAlignment="Center"
-                                              Margin="0,0,20,0"/>
+                                              Margin="0,0,22,0"/>
 
                             <Popup x:Name="Popup"
                                    Placement="Bottom"
@@ -79,8 +80,8 @@
                                         CornerRadius="12"
                                         Margin="8"
                                         Padding="5"
-                                        MinWidth="240"
-                                        MaxHeight="320">
+                                        MinWidth="260"
+                                        MaxHeight="340">
                                     <Border.Effect>
                                         <DropShadowEffect BlurRadius="16" ShadowDepth="4" Direction="270" Color="#000000" Opacity="0.12"/>
                                     </Border.Effect>
@@ -207,13 +208,15 @@
                 <RowDefinition Height="*"/>
             </Grid.RowDefinitions>
 
-            <!-- 1. TOP FILTER & ACTION BAR CARD -->
+            <!-- ======================================================================= -->
+            <!-- 1. TOP FILTER & ACTION BAR CARD                                         -->
+            <!-- ======================================================================= -->
             <Border Grid.Row="0"
                     Background="White"
                     BorderBrush="#E2E8F0"
                     BorderThickness="1"
                     CornerRadius="12"
-                    Padding="16,10"
+                    Padding="18,11"
                     Margin="0,0,0,12">
                 <Border.Effect>
                     <DropShadowEffect BlurRadius="10" ShadowDepth="2" Direction="270" Color="#000000" Opacity="0.03"/>
@@ -226,73 +229,150 @@
                         <ColumnDefinition Width="Auto"/>
                     </Grid.ColumnDefinitions>
 
-                    <!-- Left Filters: Ingredient + Period -->
+                    <!-- Left Filters: Dynamic by Mode -->
                     <StackPanel Grid.Column="0" Orientation="Horizontal" VerticalAlignment="Center">
-                        <!-- Ingredient Filter Pill -->
-                        <Border Background="#F8FAFC"
+                        <!-- Period Filter Pill (Visible in All-Ingredients Monthly Report Mode) -->
+                        <Border Background="#F1F5F9"
                                 BorderBrush="#E2E8F0"
                                 BorderThickness="1"
-                                CornerRadius="18"
-                                Padding="13,5"
-                                Margin="0,0,10,0">
-                            <StackPanel Orientation="Horizontal" VerticalAlignment="Center">
-                                <ui:SymbolIcon Symbol="Box24"
-                                               FontSize="14"
-                                               Foreground="#B45309"
-                                               VerticalAlignment="Center"
-                                               Margin="0,0,8,0"/>
-                                <ComboBox ItemsSource="{Binding NguyenLieuOptions}"
-                                          SelectedItem="{Binding SelectedNguyenLieuOption}"
-                                          DisplayMemberPath="DisplayText"
-                                          Style="{StaticResource InnerPillComboBoxStyle}"
-                                          MinWidth="170"/>
-                            </StackPanel>
-                        </Border>
-
-                        <!-- Period Filter Pill -->
-                        <Border Background="#F8FAFC"
-                                BorderBrush="#E2E8F0"
-                                BorderThickness="1"
-                                CornerRadius="18"
-                                Padding="13,5">
+                                CornerRadius="20"
+                                Padding="15,6"
+                                Margin="0,0,12,0"
+                                Visibility="{Binding IsAllIngredientsMode, Converter={StaticResource BoolToVisibilityConverter}}">
                             <StackPanel Orientation="Horizontal" VerticalAlignment="Center">
                                 <ui:SymbolIcon Symbol="CalendarLtr24"
                                                FontSize="14"
-                                               Foreground="#2563EB"
+                                               Foreground="#3B82F6"
                                                VerticalAlignment="Center"
-                                               Margin="0,0,8,0"/>
+                                               Margin="0,0,7,0"/>
+                                <TextBlock Text="KỲ BÁO CÁO:"
+                                           FontSize="11.5"
+                                           FontWeight="Bold"
+                                           Foreground="#64748B"
+                                           VerticalAlignment="Center"
+                                           Margin="0,0,8,0"/>
                                 <ComboBox ItemsSource="{Binding KyOptions}"
                                           SelectedItem="{Binding SelectedKyOption}"
                                           DisplayMemberPath="DisplayText"
                                           Style="{StaticResource InnerPillComboBoxStyle}"
-                                          MinWidth="125"/>
+                                          MinWidth="115"/>
+                            </StackPanel>
+                        </Border>
+
+                        <!-- Year Filter Pill (Visible in Single-Ingredient 12-Month Seasonality Mode) -->
+                        <Border Background="#F1F5F9"
+                                BorderBrush="#E2E8F0"
+                                BorderThickness="1"
+                                CornerRadius="20"
+                                Padding="15,6"
+                                Margin="0,0,12,0"
+                                Visibility="{Binding IsSingleIngredientMode, Converter={StaticResource BoolToVisibilityConverter}}">
+                            <StackPanel Orientation="Horizontal" VerticalAlignment="Center">
+                                <ui:SymbolIcon Symbol="CalendarLtr24"
+                                               FontSize="14"
+                                               Foreground="#3B82F6"
+                                               VerticalAlignment="Center"
+                                               Margin="0,0,7,0"/>
+                                <TextBlock Text="NĂM KHẢO SÁT:"
+                                           FontSize="11.5"
+                                           FontWeight="Bold"
+                                           Foreground="#64748B"
+                                           VerticalAlignment="Center"
+                                           Margin="0,0,8,0"/>
+                                <ComboBox ItemsSource="{Binding NamOptions}"
+                                          SelectedItem="{Binding SelectedNamOption}"
+                                          DisplayMemberPath="DisplayText"
+                                          Style="{StaticResource InnerPillComboBoxStyle}"
+                                          MinWidth="115"/>
+                            </StackPanel>
+                        </Border>
+
+                        <!-- Ingredient Filter Pill (Always Visible) -->
+                        <Border Background="#F1F5F9"
+                                BorderBrush="#E2E8F0"
+                                BorderThickness="1"
+                                CornerRadius="20"
+                                Padding="15,6">
+                            <StackPanel Orientation="Horizontal" VerticalAlignment="Center">
+                                <ui:SymbolIcon Symbol="Box24"
+                                               FontSize="14"
+                                               Foreground="#F59E0B"
+                                               VerticalAlignment="Center"
+                                               Margin="0,0,7,0"/>
+                                <TextBlock Text="NGUYÊN LIỆU:"
+                                           FontSize="11.5"
+                                           FontWeight="Bold"
+                                           Foreground="#64748B"
+                                           VerticalAlignment="Center"
+                                           Margin="0,0,8,0"/>
+                                <ComboBox ItemsSource="{Binding NguyenLieuOptions}"
+                                          SelectedItem="{Binding SelectedNguyenLieuOption}"
+                                          DisplayMemberPath="DisplayText"
+                                          Style="{StaticResource InnerPillComboBoxStyle}"
+                                          MinWidth="240"/>
                             </StackPanel>
                         </Border>
                     </StackPanel>
 
-                    <!-- Right Action: Dự báo kỳ MM/yyyy -->
-                    <Button Grid.Column="2"
-                            Command="{Binding OpenForecastPopupCommand}"
-                            Style="{StaticResource ForecastActionPillButtonStyle}"
-                            VerticalAlignment="Center">
-                        <StackPanel Orientation="Horizontal">
-                            <ui:SymbolIcon Symbol="DataTrending24"
-                                           FontSize="15"
-                                           Foreground="#2563EB"
-                                           Margin="0,0,7,0"
-                                           VerticalAlignment="Center"/>
-                            <TextBlock Text="{Binding NextKyButtonText}" VerticalAlignment="Center"/>
-                        </StackPanel>
-                    </Button>
+                    <!-- Right Actions: Back to All Ingredients + Dự báo kỳ MM/yyyy -->
+                    <StackPanel Grid.Column="2" Orientation="Horizontal" VerticalAlignment="Center">
+                        <Button Command="{Binding BackToAllIngredientsCommand}"
+                                Visibility="{Binding IsAllIngredientsMode, Converter={StaticResource BoolToVisibilityConverter}}"
+                                Style="{StaticResource DishCountPillButtonStyle}"
+                                Padding="14,7"
+                                Margin="0,0,10,0"
+                                VerticalAlignment="Center">
+                            <StackPanel Orientation="Horizontal">
+                                <ui:SymbolIcon Symbol="DataBarVertical24"
+                                               FontSize="13.5"
+                                               Foreground="#0284C7"
+                                               Margin="0,0,6,0"
+                                               VerticalAlignment="Center"/>
+                                <TextBlock Text="Biểu đồ mùa vụ 12 tháng" FontSize="12.5" FontWeight="SemiBold" Foreground="#0284C7" VerticalAlignment="Center"/>
+                            </StackPanel>
+                        </Button>
+
+                        <Button Command="{Binding BackToAllIngredientsCommand}"
+                                Visibility="{Binding IsSingleIngredientMode, Converter={StaticResource BoolToVisibilityConverter}}"
+                                Style="{StaticResource DishCountPillButtonStyle}"
+                                Padding="14,7"
+                                Margin="0,0,10,0"
+                                VerticalAlignment="Center">
+                            <StackPanel Orientation="Horizontal">
+                                <ui:SymbolIcon Symbol="Table24"
+                                               FontSize="13.5"
+                                               Foreground="#475569"
+                                               Margin="0,0,6,0"
+                                               VerticalAlignment="Center"/>
+                                <TextBlock Text="Bảng báo cáo kỳ (25 NL)" FontSize="12.5" FontWeight="SemiBold" VerticalAlignment="Center"/>
+                            </StackPanel>
+                        </Button>
+
+                        <Button Command="{Binding OpenForecastPopupCommand}"
+                                Style="{StaticResource ForecastActionPillButtonStyle}"
+                                VerticalAlignment="Center">
+                            <StackPanel Orientation="Horizontal">
+                                <ui:SymbolIcon Symbol="DataTrending24"
+                                               FontSize="15"
+                                               Foreground="#2563EB"
+                                               Margin="0,0,7,0"
+                                               VerticalAlignment="Center"/>
+                                <TextBlock Text="{Binding NextKyButtonText}" VerticalAlignment="Center"/>
+                            </StackPanel>
+                        </Button>
+                    </StackPanel>
                 </Grid>
             </Border>
 
-            <!-- 2. MAIN REPORT TABLE CARD -->
+            <!-- ======================================================================= -->
+            <!-- 2A. ALL-INGREDIENTS MONTHLY REPORT TABLE CARD                           -->
+            <!-- ======================================================================= -->
             <Border Grid.Row="1"
                     Background="White"
                     BorderBrush="#E2E8F0"
                     BorderThickness="1"
-                    CornerRadius="12">
+                    CornerRadius="12"
+                    Visibility="{Binding IsAllIngredientsMode, Converter={StaticResource BoolToVisibilityConverter}}">
                 <Border.Effect>
                     <DropShadowEffect BlurRadius="10" ShadowDepth="2" Direction="270" Color="#000000" Opacity="0.03"/>
                 </Border.Effect>
@@ -322,12 +402,12 @@
                             </StackPanel>
 
                             <Border HorizontalAlignment="Right"
-                                    Background="#EFF6FF"
-                                    BorderBrush="#BFDBFE"
-                                    BorderThickness="1"
-                                    CornerRadius="12"
-                                    Padding="11,4"
-                                    VerticalAlignment="Center">
+                                     Background="#EFF6FF"
+                                     BorderBrush="#BFDBFE"
+                                     BorderThickness="1"
+                                     CornerRadius="12"
+                                     Padding="11,4"
+                                     VerticalAlignment="Center">
                                 <TextBlock Text="{Binding TotalIngredientsCountText}"
                                            FontSize="12"
                                            FontWeight="SemiBold"
@@ -411,16 +491,42 @@
                                                            Foreground="#475569"/>
                                             </Border>
 
-                                            <!-- Tên Nguyên Liệu -->
-                                            <TextBlock Grid.Column="2"
-                                                       Text="{Binding TenNguyenLieu}"
-                                                       FontSize="13.5"
-                                                       FontWeight="Bold"
-                                                       Foreground="#0F172A"
-                                                       TextTrimming="CharacterEllipsis"
-                                                       HorizontalAlignment="Left"
-                                                       VerticalAlignment="Center"
-                                                       Margin="8,0,10,0"/>
+                                            <!-- Tên Nguyên Liệu (Clickable to open 12-Month Seasonality View) -->
+                                            <Button Grid.Column="2"
+                                                    Command="{Binding DataContext.SelectSingleIngredientCommand, RelativeSource={RelativeSource AncestorType=UserControl}}"
+                                                    CommandParameter="{Binding}"
+                                                    ToolTip="Nhấn để xem biểu đồ phân tích mùa vụ 12 tháng của nguyên liệu này"
+                                                    Cursor="Hand"
+                                                    HorizontalAlignment="Left"
+                                                    VerticalAlignment="Center"
+                                                    Margin="8,0,10,0">
+                                                <Button.Template>
+                                                    <ControlTemplate TargetType="Button">
+                                                        <StackPanel Orientation="Horizontal" Background="Transparent">
+                                                            <TextBlock x:Name="NameText"
+                                                                       Text="{Binding TenNguyenLieu}"
+                                                                       FontSize="13.5"
+                                                                       FontWeight="Bold"
+                                                                       Foreground="#0F172A"
+                                                                       TextTrimming="CharacterEllipsis"
+                                                                       VerticalAlignment="Center"/>
+                                                            <ui:SymbolIcon x:Name="ChartHintIcon"
+                                                                           Symbol="DataBarVertical24"
+                                                                           FontSize="13"
+                                                                           Foreground="#0284C7"
+                                                                           Opacity="0"
+                                                                           Margin="6,0,0,0"
+                                                                           VerticalAlignment="Center"/>
+                                                        </StackPanel>
+                                                        <ControlTemplate.Triggers>
+                                                            <Trigger Property="IsMouseOver" Value="True">
+                                                                <Setter TargetName="NameText" Property="Foreground" Value="#0284C7"/>
+                                                                <Setter TargetName="ChartHintIcon" Property="Opacity" Value="1"/>
+                                                            </Trigger>
+                                                        </ControlTemplate.Triggers>
+                                                    </ControlTemplate>
+                                                </Button.Template>
+                                            </Button>
 
                                             <!-- ĐVT Kho -->
                                             <TextBlock Grid.Column="3"
@@ -534,6 +640,546 @@
                     </ScrollViewer>
                 </Grid>
             </Border>
+
+            <!-- ======================================================================= -->
+            <!-- 2B. SINGLE-INGREDIENT 12-MONTH SEASONALITY DASHBOARD                    -->
+            <!-- ======================================================================= -->
+            <ScrollViewer Grid.Row="1"
+                          VerticalScrollBarVisibility="Auto"
+                          HorizontalScrollBarVisibility="Disabled"
+                          Visibility="{Binding IsSingleIngredientMode, Converter={StaticResource BoolToVisibilityConverter}}">
+                <Grid>
+                    <Grid.RowDefinitions>
+                        <RowDefinition Height="Auto"/>
+                        <RowDefinition Height="Auto"/>
+                        <RowDefinition Height="Auto"/>
+                    </Grid.RowDefinitions>
+
+                    <!-- ROW 0: 4 KPI SUMMARY CARDS -->
+                    <Grid Grid.Row="0" Margin="0,0,0,12">
+                        <Grid.ColumnDefinitions>
+                            <ColumnDefinition Width="*"/>
+                            <ColumnDefinition Width="14"/>
+                            <ColumnDefinition Width="*"/>
+                            <ColumnDefinition Width="14"/>
+                            <ColumnDefinition Width="*"/>
+                            <ColumnDefinition Width="14"/>
+                            <ColumnDefinition Width="*"/>
+                        </Grid.ColumnDefinitions>
+
+                        <!-- KPI Card 1: Tháng Cao Nhất (Mùa Cao Điểm) -->
+                        <Border Grid.Column="0"
+                                Background="White"
+                                BorderBrush="#E2E8F0"
+                                BorderThickness="1"
+                                CornerRadius="10">
+                            <Border.Effect>
+                                <DropShadowEffect BlurRadius="8" ShadowDepth="1" Direction="270" Color="#000000" Opacity="0.03"/>
+                            </Border.Effect>
+                            <Grid>
+                                <Border Width="4.5"
+                                        HorizontalAlignment="Left"
+                                        Background="#8B5CF6"
+                                        CornerRadius="10,0,0,10"
+                                        Margin="-1,-1,0,-1"/>
+                                <StackPanel Margin="18,13,16,13">
+                                    <TextBlock Text="THÁNG CAO NHẤT (MÙA CAO ĐIỂM)"
+                                               FontSize="11"
+                                               FontWeight="Bold"
+                                               Foreground="#64748B"/>
+                                    <TextBlock Text="{Binding SeasonMaxValueText}"
+                                               FontSize="22"
+                                               FontWeight="Bold"
+                                               Foreground="#8B5CF6"
+                                               Margin="0,4,0,3"/>
+                                    <TextBlock Text="{Binding SeasonMaxSubText}"
+                                               FontSize="11.5"
+                                               Foreground="#64748B"/>
+                                </StackPanel>
+                            </Grid>
+                        </Border>
+
+                        <!-- KPI Card 2: Tháng Thấp Nhất (Thấp Điểm) -->
+                        <Border Grid.Column="2"
+                                Background="White"
+                                BorderBrush="#E2E8F0"
+                                BorderThickness="1"
+                                CornerRadius="10">
+                            <Border.Effect>
+                                <DropShadowEffect BlurRadius="8" ShadowDepth="1" Direction="270" Color="#000000" Opacity="0.03"/>
+                            </Border.Effect>
+                            <Grid>
+                                <Border Width="4.5"
+                                        HorizontalAlignment="Left"
+                                        Background="#F59E0B"
+                                        CornerRadius="10,0,0,10"
+                                        Margin="-1,-1,0,-1"/>
+                                <StackPanel Margin="18,13,16,13">
+                                    <TextBlock Text="THÁNG THẤP NHẤT (THẤP ĐIỂM)"
+                                               FontSize="11"
+                                               FontWeight="Bold"
+                                               Foreground="#64748B"/>
+                                    <TextBlock Text="{Binding SeasonMinValueText}"
+                                               FontSize="22"
+                                               FontWeight="Bold"
+                                               Foreground="#F59E0B"
+                                               Margin="0,4,0,3"/>
+                                    <TextBlock Text="{Binding SeasonMinSubText}"
+                                               FontSize="11.5"
+                                               Foreground="#64748B"/>
+                                </StackPanel>
+                            </Grid>
+                        </Border>
+
+                        <!-- KPI Card 3: Trung Bình 12 Tháng -->
+                        <Border Grid.Column="4"
+                                Background="White"
+                                BorderBrush="#E2E8F0"
+                                BorderThickness="1"
+                                CornerRadius="10">
+                            <Border.Effect>
+                                <DropShadowEffect BlurRadius="8" ShadowDepth="1" Direction="270" Color="#000000" Opacity="0.03"/>
+                            </Border.Effect>
+                            <Grid>
+                                <Border Width="4.5"
+                                        HorizontalAlignment="Left"
+                                        Background="#0284C7"
+                                        CornerRadius="10,0,0,10"
+                                        Margin="-1,-1,0,-1"/>
+                                <StackPanel Margin="18,13,16,13">
+                                    <TextBlock Text="TRUNG BÌNH 12 THÁNG"
+                                               FontSize="11"
+                                               FontWeight="Bold"
+                                               Foreground="#64748B"/>
+                                    <TextBlock Text="{Binding SeasonAvgValueText}"
+                                               FontSize="22"
+                                               FontWeight="Bold"
+                                               Foreground="#0284C7"
+                                               Margin="0,4,0,3"/>
+                                    <TextBlock Text="Mức tiêu thụ bình quân/tháng"
+                                               FontSize="11.5"
+                                               Foreground="#64748B"/>
+                                </StackPanel>
+                            </Grid>
+                        </Border>
+
+                        <!-- KPI Card 4: Tổng Tiêu Hao Cả Năm -->
+                        <Border Grid.Column="6"
+                                Background="White"
+                                BorderBrush="#E2E8F0"
+                                BorderThickness="1"
+                                CornerRadius="10">
+                            <Border.Effect>
+                                <DropShadowEffect BlurRadius="8" ShadowDepth="1" Direction="270" Color="#000000" Opacity="0.03"/>
+                            </Border.Effect>
+                            <Grid>
+                                <Border Width="4.5"
+                                        HorizontalAlignment="Left"
+                                        Background="#0EA5E9"
+                                        CornerRadius="10,0,0,10"
+                                        Margin="-1,-1,0,-1"/>
+                                <StackPanel Margin="18,13,16,13">
+                                    <TextBlock Text="TỔNG TIÊU HAO CẢ NĂM"
+                                               FontSize="11"
+                                               FontWeight="Bold"
+                                               Foreground="#64748B"/>
+                                    <TextBlock Text="{Binding SeasonTotalValueText}"
+                                               FontSize="22"
+                                               FontWeight="Bold"
+                                               Foreground="#0F172A"
+                                               Margin="0,4,0,3"/>
+                                    <TextBlock Text="{Binding SeasonUnitSubText}"
+                                               FontSize="11.5"
+                                               Foreground="#64748B"/>
+                                </StackPanel>
+                            </Grid>
+                        </Border>
+                    </Grid>
+
+                    <!-- ROW 1: 12-MONTH BAR CHART CARD -->
+                    <Border Grid.Row="1"
+                            Background="White"
+                            BorderBrush="#E2E8F0"
+                            BorderThickness="1"
+                            CornerRadius="12"
+                            Padding="22,16,22,16"
+                            Margin="0,0,0,12">
+                        <Border.Effect>
+                            <DropShadowEffect BlurRadius="10" ShadowDepth="2" Direction="270" Color="#000000" Opacity="0.03"/>
+                        </Border.Effect>
+
+                        <Grid>
+                            <Grid.RowDefinitions>
+                                <RowDefinition Height="Auto"/>
+                                <RowDefinition Height="Auto"/>
+                                <RowDefinition Height="Auto"/>
+                                <RowDefinition Height="Auto"/>
+                            </Grid.RowDefinitions>
+
+                            <!-- Chart Header + Top-Right Color Legend -->
+                            <Grid Grid.Row="0">
+                                <Grid.ColumnDefinitions>
+                                    <ColumnDefinition Width="*"/>
+                                    <ColumnDefinition Width="Auto"/>
+                                </Grid.ColumnDefinitions>
+
+                                <StackPanel Grid.Column="0">
+                                    <TextBlock FontSize="15.5">
+                                        <Run Text="Mức Độ Tiêu Hao 12 Tháng - " Foreground="#0F172A" FontWeight="Bold"/>
+                                        <Run Text="{Binding SeasonChartIngredientTitle, Mode=OneWay}" Foreground="#0284C7" FontWeight="Bold"/>
+                                    </TextBlock>
+                                    <TextBlock Text="Trực quan hóa sự biến động nhu cầu qua các tháng để nhận diện tính mùa vụ (Seasonality Factor)"
+                                               FontSize="12"
+                                               Foreground="#64748B"
+                                               Margin="0,3,0,0"/>
+                                </StackPanel>
+
+                                <!-- Top-Right Legend -->
+                                <StackPanel Grid.Column="1"
+                                            Orientation="Horizontal"
+                                            VerticalAlignment="Top"
+                                            Margin="0,4,0,0">
+                                    <Border Width="11" Height="11" Background="#8B5CF6" CornerRadius="3" VerticalAlignment="Center" Margin="0,0,6,0"/>
+                                    <TextBlock Text="Tháng Cao Nhất" FontSize="11.5" FontWeight="SemiBold" Foreground="#334155" VerticalAlignment="Center" Margin="0,0,14,0"/>
+
+                                    <Border Width="11" Height="11" Background="#F59E0B" CornerRadius="3" VerticalAlignment="Center" Margin="0,0,6,0"/>
+                                    <TextBlock Text="Tháng Thấp Nhất" FontSize="11.5" FontWeight="SemiBold" Foreground="#334155" VerticalAlignment="Center" Margin="0,0,14,0"/>
+
+                                    <Border Width="11" Height="11" Background="#38BDF8" CornerRadius="3" VerticalAlignment="Center" Margin="0,0,6,0"/>
+                                    <TextBlock Text="Các Tháng Bình Thường" FontSize="11.5" FontWeight="SemiBold" Foreground="#334155" VerticalAlignment="Center"/>
+                                </StackPanel>
+                            </Grid>
+
+                            <!-- Centered Sub-Legend (Bar vs Dashed Average Line) -->
+                            <StackPanel Grid.Row="1"
+                                        Orientation="Horizontal"
+                                        HorizontalAlignment="Center"
+                                        Margin="0,12,0,8">
+                                <Border Width="28"
+                                        Height="11"
+                                        Background="#38BDF8"
+                                        BorderBrush="#0284C7"
+                                        BorderThickness="1"
+                                        CornerRadius="2"
+                                        VerticalAlignment="Center"
+                                        Margin="0,0,6,0"/>
+                                <TextBlock Text="{Binding SeasonLegendBarText}"
+                                           FontSize="11.5"
+                                           Foreground="#475569"
+                                           VerticalAlignment="Center"
+                                           Margin="0,0,20,0"/>
+
+                                <Grid Width="28" Height="11" VerticalAlignment="Center" Margin="0,0,6,0">
+                                    <Rectangle Fill="#F1F5F9"
+                                               Stroke="#94A3B8"
+                                               StrokeThickness="1.2"
+                                               StrokeDashArray="3,2"
+                                               RadiusX="2"
+                                               RadiusY="2"/>
+                                </Grid>
+                                <TextBlock Text="{Binding SeasonLegendAvgText}"
+                                           FontSize="11.5"
+                                           Foreground="#475569"
+                                           VerticalAlignment="Center"/>
+                            </StackPanel>
+
+                            <!-- Chart Plot Area (Y-Axis Ticks + Gridlines + Dashed Average Line + 12 Bars) -->
+                            <Grid Grid.Row="2" Margin="0,2,0,0">
+                                <Grid.ColumnDefinitions>
+                                    <ColumnDefinition Width="68"/>
+                                    <ColumnDefinition Width="*"/>
+                                </Grid.ColumnDefinitions>
+
+                                <!-- 10 Y-Axis Ticks & Horizontal Grid Lines (10 rows * 24px = 240px total; 9 intervals = 216px) -->
+                                <ItemsControl Grid.Column="0"
+                                              Grid.ColumnSpan="2"
+                                              ItemsSource="{Binding YAxisTicks}">
+                                    <ItemsControl.ItemTemplate>
+                                        <DataTemplate>
+                                            <Grid Height="24">
+                                                <Grid.ColumnDefinitions>
+                                                    <ColumnDefinition Width="68"/>
+                                                    <ColumnDefinition Width="*"/>
+                                                </Grid.ColumnDefinitions>
+                                                <TextBlock Grid.Column="0"
+                                                           Text="{Binding Label}"
+                                                           FontSize="11"
+                                                           Foreground="#64748B"
+                                                           HorizontalAlignment="Right"
+                                                           VerticalAlignment="Center"
+                                                           Margin="0,0,10,0"/>
+                                                <Border Grid.Column="1"
+                                                        Height="1"
+                                                        Background="#F1F5F9"
+                                                        VerticalAlignment="Center"/>
+                                            </Grid>
+                                        </DataTemplate>
+                                    </ItemsControl.ItemTemplate>
+                                </ItemsControl>
+
+                                <!-- Plot Canvas Zone (Exact 216px height between top tick center and bottom tick center) -->
+                                <Grid Grid.Column="1"
+                                      Height="216"
+                                      VerticalAlignment="Center">
+                                    <!-- Left Vertical Axis Line -->
+                                    <Border Width="1"
+                                            HorizontalAlignment="Left"
+                                            VerticalAlignment="Stretch"
+                                            Background="#F1F5F9"/>
+
+                                    <!-- Horizontal Dashed Average Line -->
+                                    <Line X1="0"
+                                          Y1="0"
+                                          X2="1"
+                                          Y2="0"
+                                          Stretch="Fill"
+                                          Stroke="#94A3B8"
+                                          StrokeThickness="1.5"
+                                          StrokeDashArray="4,3"
+                                          VerticalAlignment="Bottom"
+                                          Margin="{Binding AvgLineMargin}"
+                                          Panel.ZIndex="1"/>
+
+                                    <!-- 12 Vertical Bars -->
+                                    <ItemsControl ItemsSource="{Binding SeasonThangItems}"
+                                                  Panel.ZIndex="2">
+                                        <ItemsControl.ItemsPanel>
+                                            <ItemsPanelTemplate>
+                                                <UniformGrid Rows="1" Columns="12"/>
+                                            </ItemsPanelTemplate>
+                                        </ItemsControl.ItemsPanel>
+                                        <ItemsControl.ItemTemplate>
+                                            <DataTemplate>
+                                                <Grid VerticalAlignment="Bottom"
+                                                      HorizontalAlignment="Center">
+                                                    <Border x:Name="BarRect"
+                                                            Width="42"
+                                                            Height="{Binding BarHeight}"
+                                                            Background="#38BDF8"
+                                                            BorderBrush="#0284C7"
+                                                            BorderThickness="1,1,1,0"
+                                                            CornerRadius="4,4,0,0"
+                                                            ToolTip="{Binding ToolTipText}"
+                                                            Cursor="Hand"/>
+                                                </Grid>
+                                                <DataTemplate.Triggers>
+                                                    <DataTrigger Binding="{Binding IsMax}" Value="True">
+                                                        <Setter TargetName="BarRect" Property="Background" Value="#8B5CF6"/>
+                                                        <Setter TargetName="BarRect" Property="BorderBrush" Value="#7C3AED"/>
+                                                    </DataTrigger>
+                                                    <DataTrigger Binding="{Binding IsMin}" Value="True">
+                                                        <Setter TargetName="BarRect" Property="Background" Value="#F59E0B"/>
+                                                        <Setter TargetName="BarRect" Property="BorderBrush" Value="#D97706"/>
+                                                    </DataTrigger>
+                                                </DataTemplate.Triggers>
+                                            </DataTemplate>
+                                        </ItemsControl.ItemTemplate>
+                                    </ItemsControl>
+                                </Grid>
+                            </Grid>
+
+                            <!-- X-Axis Labels (T01 .. T12) -->
+                            <Grid Grid.Row="3" Margin="0,2,0,0">
+                                <Grid.ColumnDefinitions>
+                                    <ColumnDefinition Width="68"/>
+                                    <ColumnDefinition Width="*"/>
+                                </Grid.ColumnDefinitions>
+
+                                <ItemsControl Grid.Column="1"
+                                              ItemsSource="{Binding SeasonThangItems}">
+                                    <ItemsControl.ItemsPanel>
+                                        <ItemsPanelTemplate>
+                                            <UniformGrid Rows="1" Columns="12"/>
+                                        </ItemsPanelTemplate>
+                                    </ItemsControl.ItemsPanel>
+                                    <ItemsControl.ItemTemplate>
+                                        <DataTemplate>
+                                            <TextBlock Text="{Binding ThangLabel}"
+                                                       FontSize="11.5"
+                                                       FontWeight="Bold"
+                                                       Foreground="#475569"
+                                                       HorizontalAlignment="Center"/>
+                                        </DataTemplate>
+                                    </ItemsControl.ItemTemplate>
+                                </ItemsControl>
+                            </Grid>
+                        </Grid>
+                    </Border>
+
+                    <!-- ROW 2: 12-MONTH COMPARISON TABLE CARD -->
+                    <Border Grid.Row="2"
+                            Background="White"
+                            BorderBrush="#E2E8F0"
+                            BorderThickness="1"
+                            CornerRadius="12"
+                            Padding="22,16">
+                        <Border.Effect>
+                            <DropShadowEffect BlurRadius="10" ShadowDepth="2" Direction="270" Color="#000000" Opacity="0.03"/>
+                        </Border.Effect>
+
+                        <StackPanel>
+                            <TextBlock Text="Bảng Đối Chiếu Số Liệu Tiêu Hao Cụ Thể Từ Tháng 01 Đến Tháng 12"
+                                       FontSize="14"
+                                       FontWeight="Bold"
+                                       Foreground="#0F172A"
+                                       Margin="0,0,0,12"/>
+
+                            <!-- Row 1: THÁNG (01 .. 12) -->
+                            <Border Background="#F8FAFC"
+                                    BorderBrush="#E2E8F0"
+                                    BorderThickness="0,1,0,1"
+                                    Padding="12,8">
+                                <Grid>
+                                    <Grid.ColumnDefinitions>
+                                        <ColumnDefinition Width="82"/>
+                                        <ColumnDefinition Width="*"/>
+                                    </Grid.ColumnDefinitions>
+
+                                    <TextBlock Grid.Column="0"
+                                               Text="THÁNG"
+                                               FontSize="11"
+                                               FontWeight="Bold"
+                                               Foreground="#64748B"
+                                               VerticalAlignment="Center"/>
+
+                                    <ItemsControl Grid.Column="1"
+                                                  ItemsSource="{Binding SeasonThangItems}">
+                                        <ItemsControl.ItemsPanel>
+                                            <ItemsPanelTemplate>
+                                                <UniformGrid Rows="1" Columns="12"/>
+                                            </ItemsPanelTemplate>
+                                        </ItemsControl.ItemsPanel>
+                                        <ItemsControl.ItemTemplate>
+                                            <DataTemplate>
+                                                <TextBlock Text="{Binding ThangTableHeader}"
+                                                           FontSize="11.5"
+                                                           FontWeight="Bold"
+                                                           Foreground="#64748B"
+                                                           HorizontalAlignment="Center"
+                                                           VerticalAlignment="Center"/>
+                                            </DataTemplate>
+                                        </ItemsControl.ItemTemplate>
+                                    </ItemsControl>
+                                </Grid>
+                            </Border>
+
+                            <!-- Row 2: Tiêu hao -->
+                            <Border Background="White"
+                                    BorderBrush="#F1F5F9"
+                                    BorderThickness="0,0,0,1"
+                                    Padding="12,11">
+                                <Grid>
+                                    <Grid.ColumnDefinitions>
+                                        <ColumnDefinition Width="82"/>
+                                        <ColumnDefinition Width="*"/>
+                                    </Grid.ColumnDefinitions>
+
+                                    <TextBlock Grid.Column="0"
+                                               Text="Tiêu hao"
+                                               FontSize="12.5"
+                                               FontWeight="Bold"
+                                               Foreground="#334155"
+                                               VerticalAlignment="Center"/>
+
+                                    <ItemsControl Grid.Column="1"
+                                                  ItemsSource="{Binding SeasonThangItems}">
+                                        <ItemsControl.ItemsPanel>
+                                            <ItemsPanelTemplate>
+                                                <UniformGrid Rows="1" Columns="12"/>
+                                            </ItemsPanelTemplate>
+                                        </ItemsControl.ItemsPanel>
+                                        <ItemsControl.ItemTemplate>
+                                            <DataTemplate>
+                                                <TextBlock Text="{Binding SoLuongTableText}"
+                                                           FontSize="13.5"
+                                                           FontWeight="Bold"
+                                                           Foreground="#0F172A"
+                                                           HorizontalAlignment="Center"
+                                                           VerticalAlignment="Center"/>
+                                            </DataTemplate>
+                                        </ItemsControl.ItemTemplate>
+                                    </ItemsControl>
+                                </Grid>
+                            </Border>
+
+                            <!-- Row 3: Đánh giá -->
+                            <Border Background="White"
+                                    Padding="12,10,12,4">
+                                <Grid>
+                                    <Grid.ColumnDefinitions>
+                                        <ColumnDefinition Width="82"/>
+                                        <ColumnDefinition Width="*"/>
+                                    </Grid.ColumnDefinitions>
+
+                                    <StackPanel Grid.Column="0" VerticalAlignment="Center">
+                                        <TextBlock Text="Đánh" FontSize="12.5" FontWeight="Bold" Foreground="#334155"/>
+                                        <TextBlock Text="giá" FontSize="12.5" FontWeight="Bold" Foreground="#334155"/>
+                                    </StackPanel>
+
+                                    <ItemsControl Grid.Column="1"
+                                                  ItemsSource="{Binding SeasonThangItems}">
+                                        <ItemsControl.ItemsPanel>
+                                            <ItemsPanelTemplate>
+                                                <UniformGrid Rows="1" Columns="12"/>
+                                            </ItemsPanelTemplate>
+                                        </ItemsControl.ItemsPanel>
+                                        <ItemsControl.ItemTemplate>
+                                            <DataTemplate>
+                                                <Border x:Name="EvalBadge"
+                                                        Background="#F8FAFC"
+                                                        CornerRadius="6"
+                                                        Padding="8,5"
+                                                        MinWidth="58"
+                                                        HorizontalAlignment="Center"
+                                                        VerticalAlignment="Center">
+                                                    <StackPanel HorizontalAlignment="Center">
+                                                        <!-- Normal label (2 lines like screenshot) -->
+                                                        <StackPanel x:Name="NormalPanel" HorizontalAlignment="Center">
+                                                            <TextBlock Text="Bình" FontSize="11" FontWeight="SemiBold" Foreground="#64748B" HorizontalAlignment="Center"/>
+                                                            <TextBlock Text="thường" FontSize="11" FontWeight="SemiBold" Foreground="#64748B" HorizontalAlignment="Center"/>
+                                                        </StackPanel>
+
+                                                        <!-- Max label: Cao nhất + Up Triangle -->
+                                                        <StackPanel x:Name="MaxPanel" Visibility="Collapsed" HorizontalAlignment="Center">
+                                                            <TextBlock Text="Cao nhất" FontSize="11" FontWeight="Bold" Foreground="#7C3AED" HorizontalAlignment="Center"/>
+                                                            <Path Data="M 0,6 L 4,0 L 8,6 Z"
+                                                                  Fill="#7C3AED"
+                                                                  HorizontalAlignment="Center"
+                                                                  Margin="0,3,0,1"/>
+                                                        </StackPanel>
+
+                                                        <!-- Min label: Thấp nhất + Down Triangle -->
+                                                        <StackPanel x:Name="MinPanel" Visibility="Collapsed" HorizontalAlignment="Center">
+                                                            <TextBlock Text="Thấp nhất" FontSize="11" FontWeight="Bold" Foreground="#D97706" HorizontalAlignment="Center"/>
+                                                            <Path Data="M 0,0 L 8,0 L 4,6 Z"
+                                                                  Fill="#D97706"
+                                                                  HorizontalAlignment="Center"
+                                                                  Margin="0,3,0,1"/>
+                                                        </StackPanel>
+                                                    </StackPanel>
+                                                </Border>
+
+                                                <DataTemplate.Triggers>
+                                                    <DataTrigger Binding="{Binding EvaluationType}" Value="1">
+                                                        <Setter TargetName="EvalBadge" Property="Background" Value="#F3E8FF"/>
+                                                        <Setter TargetName="NormalPanel" Property="Visibility" Value="Collapsed"/>
+                                                        <Setter TargetName="MaxPanel" Property="Visibility" Value="Visible"/>
+                                                    </DataTrigger>
+                                                    <DataTrigger Binding="{Binding EvaluationType}" Value="-1">
+                                                        <Setter TargetName="EvalBadge" Property="Background" Value="#FEF3C7"/>
+                                                        <Setter TargetName="NormalPanel" Property="Visibility" Value="Collapsed"/>
+                                                        <Setter TargetName="MinPanel" Property="Visibility" Value="Visible"/>
+                                                    </DataTrigger>
+                                                </DataTemplate.Triggers>
+                                            </DataTemplate>
+                                        </ItemsControl.ItemTemplate>
+                                    </ItemsControl>
+                                </Grid>
+                            </Border>
+                        </StackPanel>
+                    </Border>
+                </Grid>
+            </ScrollViewer>
         </Grid>
 
         <!-- ======================================================================= -->

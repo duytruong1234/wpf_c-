@@ -52,66 +52,9 @@
     </UserControl.Resources>
 
     <ScrollViewer VerticalScrollBarVisibility="Auto" HorizontalScrollBarVisibility="Disabled">
-        <Grid Margin="32,28,32,32">
-            <Grid.RowDefinitions>
-                <RowDefinition Height="Auto"/>
-                <RowDefinition Height="Auto"/>
-            </Grid.RowDefinitions>
-
-            <!-- HEADER -->
-            <Grid Grid.Row="0" Margin="0,0,0,28">
-                <Grid.ColumnDefinitions>
-                    <ColumnDefinition Width="*"/>
-                    <ColumnDefinition Width="Auto"/>
-                </Grid.ColumnDefinitions>
-
-                <StackPanel Grid.Column="0" Orientation="Horizontal" VerticalAlignment="Center">
-                    <Border Width="46" Height="46" CornerRadius="14" Margin="0,0,16,0">
-                        <Border.Background>
-                            <LinearGradientBrush StartPoint="0,0" EndPoint="1,1">
-                                <GradientStop Color="{StaticResource PrimaryColor}" Offset="0"/>
-                                <GradientStop Color="{StaticResource PrimaryDarkColor}" Offset="1"/>
-                            </LinearGradientBrush>
-                        </Border.Background>
-                        <ui:SymbolIcon Symbol="Settings24" FontSize="20" Foreground="White"
-                                      HorizontalAlignment="Center" VerticalAlignment="Center"/>
-                    </Border>
-                    <StackPanel VerticalAlignment="Center">
-                        <TextBlock Text="Cấu hình làm bánh" FontSize="22" FontWeight="Bold"
-                                   Foreground="{StaticResource TextPrimary}"/>
-                        <TextBlock Text="Quản lý trọng lượng bột và nguyên liệu viên theo size"
-                                   FontSize="13" Foreground="{StaticResource TextSecondary}" Margin="0,2,0,0"/>
-                    </StackPanel>
-                </StackPanel>
-
-                <!-- Nút Refresh -->
-                <Button Grid.Column="1" Command="{Binding LoadDataCommand}" Cursor="Hand"
-                        Height="38" Padding="16,0" VerticalAlignment="Center">
-                    <Button.Template>
-                        <ControlTemplate TargetType="Button">
-                            <Border x:Name="bg" Background="White" CornerRadius="10"
-                                    BorderBrush="{StaticResource Border}" BorderThickness="1"
-                                    Padding="{TemplateBinding Padding}"
-                                    Height="{TemplateBinding Height}">
-                                <StackPanel Orientation="Horizontal" VerticalAlignment="Center">
-                                    <ui:SymbolIcon Symbol="ArrowClockwise24" FontSize="14" Foreground="{StaticResource Primary}"
-                                               Margin="0,0,8,0" VerticalAlignment="Center"/>
-                                    <TextBlock Text="Làm mới" FontSize="13" FontWeight="SemiBold"
-                                               Foreground="{StaticResource Primary}"/>
-                                </StackPanel>
-                            </Border>
-                            <ControlTemplate.Triggers>
-                                <Trigger Property="IsMouseOver" Value="True">
-                                    <Setter TargetName="bg" Property="Background" Value="#F8FAFC"/>
-                                </Trigger>
-                            </ControlTemplate.Triggers>
-                        </ControlTemplate>
-                    </Button.Template>
-                </Button>
-            </Grid>
-
-            <!-- CONTENT (2 columns) -->
-            <Grid Grid.Row="1">
+        <Grid Margin="24,22,24,24">
+            <!-- CONTENT (2 columns: Trọng lượng bột & Nguyên liệu viền) -->
+            <Grid>
                 <Grid.ColumnDefinitions>
                     <ColumnDefinition Width="*"/>
                     <ColumnDefinition Width="20"/>
@@ -134,7 +77,7 @@
                         </Grid.RowDefinitions>
 
                         <!-- Card Header -->
-                        <Border Grid.Row="0" Padding="24,20"
+                        <Border Grid.Row="0" Padding="24,18"
                                 BorderBrush="{StaticResource Border}" BorderThickness="0,0,0,1">
                             <StackPanel Orientation="Horizontal">
                                 <Border Width="36" Height="36" CornerRadius="10"
@@ -145,13 +88,13 @@
                                     <TextBlock Text="Trọng lượng bột" FontSize="16" FontWeight="Bold"
                                                Foreground="{StaticResource TextPrimary}"/>
                                     <TextBlock Text="Cấu hình khối lượng bột theo size và loại cốt"
-                                               FontSize="11" Foreground="{StaticResource TextMuted}"/>
+                                               FontSize="11.5" Foreground="{StaticResource TextMuted}"/>
                                 </StackPanel>
                             </StackPanel>
                         </Border>
 
                         <!-- Form -->
-                        <StackPanel Grid.Row="1" Margin="24,20,24,0">
+                        <StackPanel Grid.Row="1" Margin="24,18,24,0">
                             <!-- Row 1: Size + Loại cốt -->
                             <Grid>
                                 <Grid.ColumnDefinitions>
@@ -207,7 +150,7 @@
 
                             <!-- Buttons -->
                             <StackPanel Orientation="Horizontal" HorizontalAlignment="Right"
-                                        Margin="0,18,0,20">
+                                        Margin="0,16,0,18">
                                 <Button Command="{Binding ClearBotCommand}" Cursor="Hand"
                                         Height="38" Padding="20,0" Margin="0,0,10,0">
                                     <Button.Template>
@@ -300,7 +243,7 @@
                                 <ItemsControl Grid.Row="1" ItemsSource="{Binding QuyDinhBots}">
                                     <ItemsControl.ItemTemplate>
                                         <DataTemplate>
-                                            <Border Padding="24,14"
+                                            <Border Padding="24,13"
                                                     BorderBrush="{StaticResource Border}" BorderThickness="0,0,0,1">
                                                 <Border.Style>
                                                     <Style TargetType="Border">
@@ -368,7 +311,7 @@
                     </Grid>
                 </Border>
 
-                <!-- RIGHT: NGUYÊN LIỆU VIÊN -->
+                <!-- RIGHT: NGUYÊN LIỆU VIỀN -->
                 <Border Grid.Column="2" Background="{StaticResource CardBg}"
                         CornerRadius="16" VerticalAlignment="Top">
                     <Border.Effect>
@@ -384,7 +327,7 @@
                         </Grid.RowDefinitions>
 
                         <!-- Card Header -->
-                        <Border Grid.Row="0" Padding="24,20"
+                        <Border Grid.Row="0" Padding="24,18"
                                 BorderBrush="{StaticResource Border}" BorderThickness="0,0,0,1">
                             <StackPanel Orientation="Horizontal">
                                 <Border Width="36" Height="36" CornerRadius="10"
@@ -392,16 +335,16 @@
                                     <ui:SymbolIcon Symbol="Cube24" FontSize="20" Foreground="#D97706" HorizontalAlignment="Center" VerticalAlignment="Center"/>
                                 </Border>
                                 <StackPanel VerticalAlignment="Center">
-                                    <TextBlock Text="Nguyên liệu viên" FontSize="16" FontWeight="Bold"
+                                    <TextBlock Text="Nguyên liệu viền" FontSize="16" FontWeight="Bold"
                                                Foreground="{StaticResource TextPrimary}"/>
                                     <TextBlock Text="Cấu hình nguyên liệu theo đế và size"
-                                               FontSize="11" Foreground="{StaticResource TextMuted}"/>
+                                               FontSize="11.5" Foreground="{StaticResource TextMuted}"/>
                                 </StackPanel>
                             </StackPanel>
                         </Border>
 
                         <!-- Form -->
-                        <StackPanel Grid.Row="1" Margin="24,20,24,0">
+                        <StackPanel Grid.Row="1" Margin="24,18,24,0">
                             <!-- Row 1: Đế bánh + Size bánh -->
                             <Grid>
                                 <Grid.ColumnDefinitions>
@@ -430,9 +373,9 @@
                                 </StackPanel>
                             </Grid>
 
-                            <!-- Row 2: Nguyên liệu viên -->
+                            <!-- Row 2: Nguyên liệu viền -->
                             <StackPanel Margin="0,14,0,0">
-                                <TextBlock Text="Nguyên liệu viên" Style="{StaticResource FieldLabel}"/>
+                                <TextBlock Text="Nguyên liệu viền" Style="{StaticResource FieldLabel}"/>
                                 <Border Background="White" BorderBrush="{StaticResource Border}" BorderThickness="1" CornerRadius="10" Padding="12,10" Height="40">
                                     <ComboBox ItemsSource="{Binding NguyenLieus}"
                                               SelectedItem="{Binding VienSelectedNguyenLieu}"
@@ -469,7 +412,7 @@
 
                             <!-- Buttons -->
                             <StackPanel Orientation="Horizontal" HorizontalAlignment="Right"
-                                        Margin="0,18,0,20">
+                                        Margin="0,16,0,18">
                                 <Button Command="{Binding ClearVienCommand}" Cursor="Hand"
                                         Height="38" Padding="20,0" Margin="0,0,10,0">
                                     <Button.Template>
@@ -566,7 +509,7 @@
                                 <ItemsControl Grid.Row="1" ItemsSource="{Binding QuyDinhViens}">
                                     <ItemsControl.ItemTemplate>
                                         <DataTemplate>
-                                            <Border Padding="24,14"
+                                            <Border Padding="24,13"
                                                     BorderBrush="{StaticResource Border}" BorderThickness="0,0,0,1">
                                                 <Border.Style>
                                                     <Style TargetType="Border">

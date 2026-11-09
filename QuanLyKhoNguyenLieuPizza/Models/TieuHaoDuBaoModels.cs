@@ -205,3 +205,47 @@ public class KetQuaDuBaoItem
     public bool IsAdditiveSelected => PhuongPhapDuocChon.Contains("cộng", StringComparison.OrdinalIgnoreCase) || PhuongPhapDuocChon.Contains("Additive", StringComparison.OrdinalIgnoreCase);
     public bool CanImportMore => GoiYNhapHang > 0;
 }
+
+public class NamKhaoSatOption
+{
+    public int Nam { get; set; }
+    public string DisplayText => $"Năm {Nam}";
+    public override string ToString() => DisplayText;
+}
+
+public class YAxisTickItem
+{
+    public string Label { get; set; } = string.Empty;
+}
+
+public class ThangTieuHaoChartItem
+{
+    public int Thang { get; set; }
+    public string ThangLabel => $"T{Thang:D2}";
+    public string ThangTableHeader => $"{Thang:D2}";
+    public decimal SoLuongTieuHao { get; set; }
+    public string DonViKho { get; set; } = string.Empty;
+
+    public string SoLuongTableText => Math.Abs(SoLuongTieuHao - Math.Round(SoLuongTieuHao)) < 0.05m
+        ? $"{Math.Round(SoLuongTieuHao):N0}"
+        : $"{SoLuongTieuHao:N1}";
+
+    public string TooltipText => $"Tháng {Thang:D2}: {SoLuongTieuHao:N2} {DonViKho}";
+
+    public bool IsMax { get; set; }
+    public bool IsMin { get; set; }
+    public double BarHeight { get; set; }
+
+    // 1: Cao nhất, -1: Thấp nhất, 0: Bình thường
+    public int EvaluationType => IsMax ? 1 : (IsMin ? -1 : 0);
+}
+
+public class ThongKeMuaVu12ThangResult
+{
+    public int NguyenLieuID { get; set; }
+    public string MaNguyenLieu { get; set; } = string.Empty;
+    public string TenNguyenLieu { get; set; } = string.Empty;
+    public string DonViKho { get; set; } = string.Empty;
+    public int Nam { get; set; }
+    public List<ThangTieuHaoChartItem> ThangItems { get; set; } = new();
+}

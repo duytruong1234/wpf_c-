@@ -80,7 +80,7 @@ public class PizzaService : DatabaseContext
 
     public async Task<Pizza?> GetPizzaByIdAsync(int pizzaId)
     {
-        // KhÃ´ng sá»­ dá»¥ng vá»›i schema dá»±a trÃªn HÃ ngHÃ³a (khÃ´ng cÃ³ báº£ng Pizza)
+        // Không sử dụng với schema dựa trên HàngHóa (không có bảng Pizza)
         return null;
     }
 
@@ -107,14 +107,14 @@ public class PizzaService : DatabaseContext
             if (string.IsNullOrEmpty(pizza.MaPizza))
                 return false;
 
-            // Kiá»ƒm tra náº¿u HÃ ngHÃ³a Ä‘Ã£ tá»“n táº¡i
+            // Kiểm tra nếu HàngHóa đã tồn tại
             using var checkCmd = new SqlCommand("SELECT COUNT(1) FROM HangHoa WHERE MaHangHoa = @Ma", conn);
             checkCmd.Parameters.AddWithValue("@Ma", pizza.MaPizza);
             var exists = Convert.ToInt32(await checkCmd.ExecuteScalarAsync()) > 0;
 
             if (exists)
             {
-                // Cáº­p nháº­t HÃ ng hÃ³a
+                // Cập nhật Hàng hóa
                 using var cmdHH = new SqlCommand(
                     @"UPDATE HangHoa SET TenHangHoa=@Ten, HinhAnh=@Anh, TinhTrang=@TT, LoaiHangHoaID=@Loai, DonViID=@DVT WHERE MaHangHoa=@Ma", conn);
                 cmdHH.Parameters.AddWithValue("@Ma", pizza.MaPizza);
@@ -188,7 +188,7 @@ public class PizzaService : DatabaseContext
 
     public async Task<bool> DeletePizzaAsync(int pizzaId)
     {
-        // KhÃ´ng sá»­ dá»¥ng vá»›i schema dá»±a trÃªn HÃ ngHÃ³a
+        // Không sử dụng với schema dựa trên HàngHóa
         return false;
     }
 
@@ -208,8 +208,8 @@ public class PizzaService : DatabaseContext
                 END TRY
                 BEGIN CATCH
                     ROLLBACK TRAN;
-                    -- Lá»—i 547 lÃ  vi pháº¡m khoÃ¡ ngoáº¡i (vd: Ä‘Ã£ tá»«ng bÃ¡n trong hoÃ¡ Ä‘Æ¡n)
-                    -- TrÆ°á»ng há»£p nÃ y ta fallback vá» Soft Delete (Ngá»«ng bÃ¡n)
+                    -- Lỗi 547 là vi phạm khoá ngoại (vd: đã từng bán trong hoá đơn)
+                    -- Trường hợp này ta fallback về Soft Delete (Ngừng bán)
                     IF ERROR_NUMBER() = 547
                     BEGIN
                         UPDATE HangHoa SET TinhTrang = 0 WHERE MaHangHoa = @Ma;
@@ -350,7 +350,7 @@ public class PizzaService : DatabaseContext
 
     public async Task<decimal> CalculateGiaVonAsync(int pizzaId)
     {
-        // KhÃ´ng sá»­ dá»¥ng vá»›i schema dá»±a trÃªn HÃ ngHÃ³a
+        // Không sử dụng với schema dựa trên HàngHóa
         return 0;
     }
 

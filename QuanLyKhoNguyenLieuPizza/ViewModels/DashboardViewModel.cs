@@ -1,4 +1,4 @@
-using System.Collections.ObjectModel;
+﻿using System.Collections.ObjectModel;
 using System.IO;
 using System.Text;
 using System.Windows;
@@ -70,6 +70,7 @@ public class DashboardViewModel : BaseViewModel
     private readonly DatabaseService _databaseService;
 
     private bool _isLoading;
+    private bool _hasCheckedFallbackPeriod;
     private DateTime _ngayBatDau;
     private DateTime _ngayKetThuc;
 
@@ -223,6 +224,18 @@ public class DashboardViewModel : BaseViewModel
             var topMonAnTask = _databaseService.GetTopMonAnBanChayAsync(fromDate, toDate, 10);
 
             await Task.WhenAll(doanhThuTask, chiPhiTask, doiSoatTask, bienDongTask, topMonAnTask);
+
+            if (!_hasCheckedFallbackPeriod && doanhThuTask.Result == 0 && chiPhiTask.Result == 0 && topMonAnTask.Result.Count == 0)
+            {
+                _hasCheckedFallbackPeriod = true;
+                _ngayBatDau = new DateTime(2026, 10, 1);
+                _ngayKetThuc = new DateTime(2026, 10, 31);
+                OnPropertyChanged(nameof(NgayBatDau));
+                OnPropertyChanged(nameof(NgayKetThuc));
+                await LoadFilteredDataAsync();
+                return;
+            }
+            _hasCheckedFallbackPeriod = true;
 
             // Section 1: Cards
             TongDoanhThuBanHang = doanhThuTask.Result;

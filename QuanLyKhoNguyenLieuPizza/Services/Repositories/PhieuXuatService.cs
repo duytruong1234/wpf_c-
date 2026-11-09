@@ -337,7 +337,7 @@ public class PhieuXuatService : DatabaseContext
                 await deleteCmd.ExecuteNonQueryAsync();
             }
 
-            // ThÃªm chi tiáº¿t
+            // Thêm chi tiết
             foreach (var ct in chiTiets)
             {
                 var ctSql = @"INSERT INTO CT_PhieuXuat (PhieuXuatID, NguyenLieuID, SoLuong, DonViID, HeSo)
@@ -630,13 +630,13 @@ public class PhieuXuatService : DatabaseContext
 
         try
         {
-            // XÃ³a chi tiáº¿t
+            // Xóa chi tiết
             var deleteCtSql = "DELETE FROM CT_PhieuXuat WHERE PhieuXuatID = @PhieuXuatID";
             using var deleteCtCmd = new SqlCommand(deleteCtSql, conn, transaction);
             deleteCtCmd.Parameters.AddWithValue("@PhieuXuatID", phieuXuatId);
             await deleteCtCmd.ExecuteNonQueryAsync();
 
-            // XÃ³a Phiáº¿uXuáº¥t
+            // Xóa PhiếuXuất
             var deleteSql = "DELETE FROM PhieuXuat WHERE PhieuXuatID = @PhieuXuatID";
             using var deleteCmd = new SqlCommand(deleteSql, conn, transaction);
             deleteCmd.Parameters.AddWithValue("@PhieuXuatID", phieuXuatId);
