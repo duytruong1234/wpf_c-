@@ -6,6 +6,7 @@
              xmlns:vm="clr-namespace:QuanLyKhoNguyenLieuPizza.ViewModels"
              xmlns:converters="clr-namespace:QuanLyKhoNguyenLieuPizza.Converters"
              xmlns:ui="http://schemas.lepo.co/wpfui/2022/xaml"
+             xmlns:components="clr-namespace:QuanLyKhoNguyenLieuPizza.Views.Components"
              mc:Ignorable="d"
              d:DesignHeight="780" d:DesignWidth="1240"
              Background="#F1F5F9"
@@ -618,20 +619,20 @@
                                             <Setter TargetName="RowBorder" Property="Background" Value="#F8FAFC"/>
                                         </Trigger>
                                         <DataTrigger Binding="{Binding PrevMonthTrend}" Value="1">
-                                            <Setter TargetName="PrevMonthBadge" Property="Background" Value="#FEF2F2"/>
-                                            <Setter TargetName="PrevMonthPctText" Property="Foreground" Value="#DC2626"/>
-                                        </DataTrigger>
-                                        <DataTrigger Binding="{Binding PrevMonthTrend}" Value="-1">
                                             <Setter TargetName="PrevMonthBadge" Property="Background" Value="#F0FDF4"/>
                                             <Setter TargetName="PrevMonthPctText" Property="Foreground" Value="#16A34A"/>
                                         </DataTrigger>
-                                        <DataTrigger Binding="{Binding PrevYearTrend}" Value="1">
-                                            <Setter TargetName="PrevYearBadge" Property="Background" Value="#FEF2F2"/>
-                                            <Setter TargetName="PrevYearPctText" Property="Foreground" Value="#DC2626"/>
+                                        <DataTrigger Binding="{Binding PrevMonthTrend}" Value="-1">
+                                            <Setter TargetName="PrevMonthBadge" Property="Background" Value="#FEF2F2"/>
+                                            <Setter TargetName="PrevMonthPctText" Property="Foreground" Value="#DC2626"/>
                                         </DataTrigger>
-                                        <DataTrigger Binding="{Binding PrevYearTrend}" Value="-1">
+                                        <DataTrigger Binding="{Binding PrevYearTrend}" Value="1">
                                             <Setter TargetName="PrevYearBadge" Property="Background" Value="#F0FDF4"/>
                                             <Setter TargetName="PrevYearPctText" Property="Foreground" Value="#16A34A"/>
+                                        </DataTrigger>
+                                        <DataTrigger Binding="{Binding PrevYearTrend}" Value="-1">
+                                            <Setter TargetName="PrevYearBadge" Property="Background" Value="#FEF2F2"/>
+                                            <Setter TargetName="PrevYearPctText" Property="Foreground" Value="#DC2626"/>
                                         </DataTrigger>
                                     </DataTemplate.Triggers>
                                 </DataTemplate>
@@ -650,6 +651,7 @@
                           Visibility="{Binding IsSingleIngredientMode, Converter={StaticResource BoolToVisibilityConverter}}">
                 <Grid>
                     <Grid.RowDefinitions>
+                        <RowDefinition Height="Auto"/>
                         <RowDefinition Height="Auto"/>
                         <RowDefinition Height="Auto"/>
                         <RowDefinition Height="Auto"/>
@@ -1006,8 +1008,153 @@
                         </Grid>
                     </Border>
 
-                    <!-- ROW 2: 12-MONTH COMPARISON TABLE CARD -->
+                    <!-- ROW 2: MULTI-YEAR LINE CHART (SO SÁNH CHUỖI TIÊU HAO GIỮA CÁC NĂM) -->
                     <Border Grid.Row="2"
+                            Background="White"
+                            BorderBrush="#E2E8F0"
+                            BorderThickness="1"
+                            CornerRadius="12"
+                            Padding="22,16"
+                            Margin="0,0,0,12">
+                        <Border.Effect>
+                            <DropShadowEffect BlurRadius="10" ShadowDepth="2" Direction="270" Color="#000000" Opacity="0.03"/>
+                        </Border.Effect>
+
+                        <StackPanel>
+                            <!-- Header + Year checkboxes -->
+                            <Grid Margin="0,0,0,10">
+                                <Grid.ColumnDefinitions>
+                                    <ColumnDefinition Width="*"/>
+                                    <ColumnDefinition Width="Auto"/>
+                                </Grid.ColumnDefinitions>
+                                <StackPanel Grid.Column="0">
+                                    <TextBlock Text="So Sánh Chuỗi Tiêu Hao Giữa Các Năm"
+                                               FontSize="15.5" FontWeight="Bold" Foreground="#0F172A"/>
+                                    <TextBlock Text="Đối chiếu lượng tiêu hao từng tháng qua các năm để nhận diện xu hướng tăng trưởng và tính lặp lại của mùa vụ"
+                                               FontSize="12" Foreground="#64748B" Margin="0,3,0,0"/>
+                                </StackPanel>
+                                <ItemsControl Grid.Column="1" ItemsSource="{Binding YearSeries}" VerticalAlignment="Center">
+                                    <ItemsControl.ItemsPanel>
+                                        <ItemsPanelTemplate>
+                                            <StackPanel Orientation="Horizontal"/>
+                                        </ItemsPanelTemplate>
+                                    </ItemsControl.ItemsPanel>
+                                    <ItemsControl.ItemTemplate>
+                                        <DataTemplate>
+                                            <CheckBox IsChecked="{Binding IsVisible, Mode=TwoWay}"
+                                                      Margin="14,0,0,0" VerticalAlignment="Center" Cursor="Hand">
+                                                <TextBlock Text="{Binding NamLabel}" FontSize="12" FontWeight="SemiBold" Foreground="#334155"/>
+                                            </CheckBox>
+                                        </DataTemplate>
+                                    </ItemsControl.ItemTemplate>
+                                </ItemsControl>
+                            </Grid>
+
+                            <Border Height="1" Background="#F1F5F9" Margin="0,0,0,10"/>
+
+                            <!-- Centered legend -->
+                            <ItemsControl ItemsSource="{Binding YearSeries}" HorizontalAlignment="Center" Margin="0,0,0,6">
+                                <ItemsControl.ItemsPanel>
+                                    <ItemsPanelTemplate>
+                                        <StackPanel Orientation="Horizontal"/>
+                                    </ItemsPanelTemplate>
+                                </ItemsControl.ItemsPanel>
+                                <ItemsControl.ItemTemplate>
+                                    <DataTemplate>
+                                        <StackPanel x:Name="LegendItem" Orientation="Horizontal" Margin="8,0">
+                                            <Border Width="11" Height="11" CornerRadius="2" Background="{Binding LineBrush}" VerticalAlignment="Center" Margin="0,0,6,0"/>
+                                            <TextBlock Text="{Binding NamLabel}" FontSize="11.5" Foreground="#475569" VerticalAlignment="Center"/>
+                                        </StackPanel>
+                                        <DataTemplate.Triggers>
+                                            <DataTrigger Binding="{Binding IsVisible}" Value="False">
+                                                <Setter TargetName="LegendItem" Property="Opacity" Value="0.35"/>
+                                            </DataTrigger>
+                                        </DataTemplate.Triggers>
+                                    </DataTemplate>
+                                </ItemsControl.ItemTemplate>
+                            </ItemsControl>
+
+                            <!-- Line chart -->
+                            <components:MultiLineChart Series="{Binding YearSeries}" Height="230" Margin="0,0,0,14"/>
+
+                            <Border Height="1" Background="#F1F5F9" Margin="0,0,0,12"/>
+
+                            <!-- Multi-year statistics table -->
+                            <TextBlock Text="📊 Bảng Thống Kê Số Liệu Tiêu Hao Từng Tháng Qua Các Năm:"
+                                       FontSize="12.5" FontWeight="Bold" Foreground="#0F172A" Margin="0,0,0,8"/>
+
+                            <Border BorderBrush="#E2E8F0" BorderThickness="1" CornerRadius="6">
+                                <StackPanel>
+                                    <!-- Header -->
+                                    <Border Background="#F8FAFC" BorderBrush="#E2E8F0" BorderThickness="0,0,0,1" Padding="0,8">
+                                        <Grid>
+                                            <Grid.ColumnDefinitions>
+                                                <ColumnDefinition Width="110"/>
+                                                <ColumnDefinition Width="*"/>
+                                                <ColumnDefinition Width="100"/>
+                                                <ColumnDefinition Width="90"/>
+                                            </Grid.ColumnDefinitions>
+                                            <TextBlock Grid.Column="0" Text="NĂM KHẢO SÁT" FontSize="10.5" FontWeight="Bold" Foreground="#64748B" HorizontalAlignment="Center"/>
+                                            <UniformGrid Grid.Column="1" Rows="1" Columns="12">
+                                                <TextBlock Text="T01" FontSize="11" FontWeight="Bold" Foreground="#64748B" HorizontalAlignment="Center"/>
+                                                <TextBlock Text="T02" FontSize="11" FontWeight="Bold" Foreground="#64748B" HorizontalAlignment="Center"/>
+                                                <TextBlock Text="T03" FontSize="11" FontWeight="Bold" Foreground="#64748B" HorizontalAlignment="Center"/>
+                                                <TextBlock Text="T04" FontSize="11" FontWeight="Bold" Foreground="#64748B" HorizontalAlignment="Center"/>
+                                                <TextBlock Text="T05" FontSize="11" FontWeight="Bold" Foreground="#64748B" HorizontalAlignment="Center"/>
+                                                <TextBlock Text="T06" FontSize="11" FontWeight="Bold" Foreground="#64748B" HorizontalAlignment="Center"/>
+                                                <TextBlock Text="T07" FontSize="11" FontWeight="Bold" Foreground="#64748B" HorizontalAlignment="Center"/>
+                                                <TextBlock Text="T08" FontSize="11" FontWeight="Bold" Foreground="#64748B" HorizontalAlignment="Center"/>
+                                                <TextBlock Text="T09" FontSize="11" FontWeight="Bold" Foreground="#64748B" HorizontalAlignment="Center"/>
+                                                <TextBlock Text="T10" FontSize="11" FontWeight="Bold" Foreground="#64748B" HorizontalAlignment="Center"/>
+                                                <TextBlock Text="T11" FontSize="11" FontWeight="Bold" Foreground="#64748B" HorizontalAlignment="Center"/>
+                                                <TextBlock Text="T12" FontSize="11" FontWeight="Bold" Foreground="#64748B" HorizontalAlignment="Center"/>
+                                            </UniformGrid>
+                                            <TextBlock Grid.Column="2" Text="TỔNG CỘNG" FontSize="10.5" FontWeight="Bold" Foreground="#64748B" HorizontalAlignment="Center"/>
+                                            <TextBlock Grid.Column="3" Text="TB/THÁNG" FontSize="10.5" FontWeight="Bold" Foreground="#64748B" HorizontalAlignment="Center"/>
+                                        </Grid>
+                                    </Border>
+
+                                    <!-- Rows -->
+                                    <ItemsControl ItemsSource="{Binding YearSeries}">
+                                        <ItemsControl.ItemTemplate>
+                                            <DataTemplate>
+                                                <Border BorderBrush="#F1F5F9" BorderThickness="0,0,0,1" Padding="0,9">
+                                                    <Grid>
+                                                        <Grid.ColumnDefinitions>
+                                                            <ColumnDefinition Width="110"/>
+                                                            <ColumnDefinition Width="*"/>
+                                                            <ColumnDefinition Width="100"/>
+                                                            <ColumnDefinition Width="90"/>
+                                                        </Grid.ColumnDefinitions>
+                                                        <Border Grid.Column="0" Background="{Binding LineBrush}" CornerRadius="4" Padding="8,3" HorizontalAlignment="Center">
+                                                            <TextBlock Text="{Binding NamLabel}" FontSize="11" FontWeight="Bold" Foreground="White"/>
+                                                        </Border>
+                                                        <ItemsControl Grid.Column="1" ItemsSource="{Binding ThangTexts}" VerticalAlignment="Center">
+                                                            <ItemsControl.ItemsPanel>
+                                                                <ItemsPanelTemplate>
+                                                                    <UniformGrid Rows="1" Columns="12"/>
+                                                                </ItemsPanelTemplate>
+                                                            </ItemsControl.ItemsPanel>
+                                                            <ItemsControl.ItemTemplate>
+                                                                <DataTemplate>
+                                                                    <TextBlock Text="{Binding}" FontSize="12" Foreground="#1E293B" HorizontalAlignment="Center"/>
+                                                                </DataTemplate>
+                                                            </ItemsControl.ItemTemplate>
+                                                        </ItemsControl>
+                                                        <TextBlock Grid.Column="2" Text="{Binding TongText}" FontSize="12" FontWeight="Bold" Foreground="#0284C7" HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                                                        <TextBlock Grid.Column="3" Text="{Binding TrungBinhText}" FontSize="12" FontWeight="Bold" Foreground="#0F172A" HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                                                    </Grid>
+                                                </Border>
+                                            </DataTemplate>
+                                        </ItemsControl.ItemTemplate>
+                                    </ItemsControl>
+                                </StackPanel>
+                            </Border>
+                        </StackPanel>
+                    </Border>
+
+                    <!-- ROW 3: 12-MONTH COMPARISON TABLE CARD -->
+                    <Border Grid.Row="3"
                             Background="White"
                             BorderBrush="#E2E8F0"
                             BorderThickness="1"

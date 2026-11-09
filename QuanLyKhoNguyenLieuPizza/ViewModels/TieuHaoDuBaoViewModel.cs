@@ -60,6 +60,9 @@ public class TieuHaoDuBaoViewModel : BaseViewModel
     public ObservableCollection<ThangTieuHaoChartItem> SeasonThangItems { get; } = new();
     public ObservableCollection<YAxisTickItem> YAxisTicks { get; } = new();
 
+    // So sánh chuỗi tiêu hao giữa các năm (biểu đồ đường)
+    public ObservableCollection<NamTieuHaoSeries> YearSeries { get; } = new();
+
     public bool IsSingleIngredientMode => _isChartViewMode;
     public bool IsAllIngredientsMode => !_isChartViewMode;
 
@@ -428,12 +431,13 @@ public class TieuHaoDuBaoViewModel : BaseViewModel
 
             try
             {
-                _selectedNguyenLieuOption = NguyenLieuOptions.FirstOrDefault(x => x.NguyenLieuID == 19)
-                                            ?? NguyenLieuOptions.FirstOrDefault(x => x.NguyenLieuID != null)
+                // Mặc định mở màn hình Bảng báo cáo kỳ (tất cả nguyên liệu);
+                // bấm nút "Biểu đồ mùa vụ 12 tháng" mới chuyển sang biểu đồ.
+                _selectedNguyenLieuOption = NguyenLieuOptions.FirstOrDefault(x => x.NguyenLieuID == null)
                                             ?? NguyenLieuOptions.FirstOrDefault();
                 _selectedKyOption = KyOptions.FirstOrDefault();
                 _selectedNamOption = NamOptions.FirstOrDefault(x => x.Nam == 2024) ?? NamOptions.FirstOrDefault();
-                _isChartViewMode = _selectedNguyenLieuOption?.NguyenLieuID != null;
+                _isChartViewMode = false;
 
                 OnPropertyChanged(nameof(SelectedNguyenLieuOption));
                 OnPropertyChanged(nameof(SelectedKyOption));
@@ -451,7 +455,8 @@ public class TieuHaoDuBaoViewModel : BaseViewModel
             }
 
             await LoadBaoCaoTieuHaoAsync();
-            await LoadMuaVu12ThangAsync();
+            if (_isChartViewMode)
+                await LoadMuaVu12ThangAsync();
         });
     }
 
@@ -559,6 +564,8 @@ public class TieuHaoDuBaoViewModel : BaseViewModel
             SeasonChartIngredientTitle = $"{data.MaNguyenLieu} - {data.TenNguyenLieu} ({dvt}) ({nam})";
             SeasonLegendBarText = $"Lượng tiêu hao ({dvt})";
             SeasonLegendAvgText = $"Mức trung bình ({avgVal:N1} {dvt})";
+
+            await LoadSoSanhNamAsync(nlId, nam, data);
         }
         catch (Exception ex)
         {
@@ -568,6 +575,53 @@ public class TieuHaoDuBaoViewModel : BaseViewModel
         {
             IsLoading = false;
         }
+    }
+
+    private static readonly System.Windows.Media.Color[] SeriesColors =
+    {
+        System.Windows.Media.Color.FromRgb(0x02, 0x84, 0xC7), // xanh dương
+        System.Windows.Media.Color.FromRgb(0x10, 0xB9, 0x81), // xanh lá
+        System.Windows.Media.Color.FromRgb(0xF5, 0x9E, 0x0B), // cam
+        System.Windows.Media.Color.FromRgb(0x8B, 0x5C, 0xF6), // tím
+        System.Windows.Media.Color.FromRgb(0xEF, 0x44, 0x44), // đỏ
+    };
+
+    /// <summary>
+    /// Nạp chuỗi tiêu hao 12 tháng của tất cả các năm cho biểu đồ đường so sánh.
+    /// </summary>
+    private async Task LoadSoSanhNamAsync(int nlId, int namHienTai, ThongKeMuaVu12ThangResult dataNamHienTai)
+    {
+        var hiddenYears = YearSeries.Where(s => !s.IsVisible).Select(s => s.Nam).ToHashSet();
+        var years = NamOptions.Select(n => n.Nam).OrderBy(y => y).ToList();
+        if (!years.Contains(namHienTai)) years.Add(namHienTai);
+        years.Sort();
+
+        var list = new List<NamTieuHaoSeries>();
+        for (int i = 0; i < years.Count; i++)
+        {
+            var y = years[i];
+            var d = y == namHienTai ? dataNamHienTai : await _databaseService.GetThongKeMuaVu12ThangAsync(nlId, y);
+
+            var values = new decimal?[12];
+            foreach (var item in d.ThangItems)
+            {
+                if (item.Thang >= 1 && item.Thang <= 12 && item.SoLuongTieuHao > 0)
+                    values[item.Thang - 1] = item.SoLuongTieuHao;
+            }
+
+            list.Add(new NamTieuHaoSeries
+            {
+                Nam = y,
+                DonViKho = string.IsNullOrEmpty(d.DonViKho) ? dataNamHienTai.DonViKho : d.DonViKho,
+                LineColor = SeriesColors[i % SeriesColors.Length],
+                Values = values,
+                IsVisible = !hiddenYears.Contains(y)
+            });
+        }
+
+        YearSeries.Clear();
+        foreach (var s in list)
+            YearSeries.Add(s);
     }
 
     private async Task OpenDishPopupAsync(TieuHaoNguyenLieuItem item)
