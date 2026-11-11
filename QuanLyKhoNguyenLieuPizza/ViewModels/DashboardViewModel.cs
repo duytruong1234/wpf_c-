@@ -228,12 +228,17 @@ public class DashboardViewModel : BaseViewModel
             if (!_hasCheckedFallbackPeriod && doanhThuTask.Result == 0 && chiPhiTask.Result == 0 && topMonAnTask.Result.Count == 0)
             {
                 _hasCheckedFallbackPeriod = true;
-                _ngayBatDau = new DateTime(2026, 10, 1);
-                _ngayKetThuc = new DateTime(2026, 10, 31);
-                OnPropertyChanged(nameof(NgayBatDau));
-                OnPropertyChanged(nameof(NgayKetThuc));
-                await LoadFilteredDataAsync();
-                return;
+                var periods = await _databaseService.GetAvailablePeriodsAsync();
+                if (periods.Count > 0)
+                {
+                    var latest = periods[0].KyDate;
+                    _ngayBatDau = new DateTime(latest.Year, latest.Month, 1);
+                    _ngayKetThuc = new DateTime(latest.Year, latest.Month, DateTime.DaysInMonth(latest.Year, latest.Month));
+                    OnPropertyChanged(nameof(NgayBatDau));
+                    OnPropertyChanged(nameof(NgayKetThuc));
+                    await LoadFilteredDataAsync();
+                    return;
+                }
             }
             _hasCheckedFallbackPeriod = true;
 

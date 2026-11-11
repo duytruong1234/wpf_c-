@@ -206,7 +206,7 @@ public static class DatabaseInitializer
 
             // Bỏ qua các lệnh ALTER DATABASE, USE [master], sp_fulltext_database
             if (trimmed.StartsWith("ALTER DATABASE", StringComparison.OrdinalIgnoreCase)) continue;
-            if (trimmed.StartsWith("USE [master]", StringComparison.OrdinalIgnoreCase)) continue;
+            if (trimmed.StartsWith("USE [", StringComparison.OrdinalIgnoreCase)) continue;
             if (trimmed.Contains("sp_fulltext_database", StringComparison.OrdinalIgnoreCase)) continue;
             if (trimmed.StartsWith("CREATE DATABASE", StringComparison.OrdinalIgnoreCase)) continue;
             if (trimmed.StartsWith("IF (1 = FULLTEXTSERVICEPROPERTY", StringComparison.OrdinalIgnoreCase)) continue;
@@ -232,7 +232,7 @@ public static class DatabaseInitializer
         System.Windows.MessageBox.Show(
             $"Đã tạo cơ sở dữ liệu '{databaseName}' thành công!\n\n" +
             $"• {successCount} lệnh SQL đã thực thi\n" +
-            "• Dữ liệu mẫu đã được nhập\n\n" +
+            "• Dữ liệu khởi tạo đã được nạp từ SQL script\n\n" +
             "Ứng dụng sẽ tiếp tục khởi động.",
             "Khởi tạo Database thành công",
             System.Windows.MessageBoxButton.OK,

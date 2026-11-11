@@ -1186,6 +1186,15 @@ public class BanHangService : DatabaseContext
                 insertCmd.Parameters.AddWithValue("@SoLuong", (double)deltaSoLuong);
                 await insertCmd.ExecuteNonQueryAsync();
             }
+
+            // Làm mới dự báo của kỳ kế tiếp khi lượng tiêu hao thực tế trong kỳ thay đổi
+            const string invalidateSql = @"
+                DELETE FROM DuBao WHERE NguyenLieuID = @NguyenLieuID AND KyDuBao = DATEADD(MONTH, 1, @KyTieuHao);
+                DELETE FROM DanhGiaDuBao WHERE NguyenLieuID = @NguyenLieuID AND DenKyTest = @KyTieuHao;";
+            using var invCmd = new SqlCommand(invalidateSql, conn, transaction);
+            invCmd.Parameters.AddWithValue("@NguyenLieuID", nguyenLieuId);
+            invCmd.Parameters.AddWithValue("@KyTieuHao", kyTieuHao);
+            await invCmd.ExecuteNonQueryAsync();
         }
         catch
         {

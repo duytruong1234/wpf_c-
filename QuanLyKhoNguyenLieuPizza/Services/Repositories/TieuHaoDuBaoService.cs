@@ -9,49 +9,8 @@ public class TieuHaoDuBaoService : DatabaseContext
 {
     public TieuHaoDuBaoService(string connectionString) : base(connectionString) { }
 
-    private static bool _seedChecked;
-
-    private async Task EnsureSeedDataAsync()
-    {
-        if (_seedChecked) return;
-        try
-        {
-            using var conn = GetConnection();
-            await conn.OpenAsync();
-            using var chkCmd = new SqlCommand(@"
-                IF OBJECT_ID('dbo.DuLieuTieuHao', 'U') IS NULL
-                    SELECT 0
-                ELSE
-                    SELECT COUNT(1) FROM dbo.DuLieuTieuHao", conn);
-            var count = Convert.ToInt32(await chkCmd.ExecuteScalarAsync() ?? 0);
-            if (count > 0)
-            {
-                _seedChecked = true;
-                return;
-            }
-
-            var seedFile = System.IO.Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "Resources", "Database", "Seed_TieuHaoDuBao.sql");
-            if (System.IO.File.Exists(seedFile))
-            {
-                var script = await System.IO.File.ReadAllTextAsync(seedFile, System.Text.Encoding.UTF8);
-                var batches = System.Text.RegularExpressions.Regex.Split(script, @"^\s*GO\s*$", System.Text.RegularExpressions.RegexOptions.Multiline | System.Text.RegularExpressions.RegexOptions.IgnoreCase);
-                foreach (var batch in batches)
-                {
-                    var trimmed = batch.Trim();
-                    if (string.IsNullOrWhiteSpace(trimmed) || trimmed.StartsWith("USE ", StringComparison.OrdinalIgnoreCase))
-                        continue;
-                    using var batchCmd = new SqlCommand(trimmed, conn) { CommandTimeout = 120 };
-                    await batchCmd.ExecuteNonQueryAsync();
-                }
-            }
-            _seedChecked = true;
-        }
-        catch { }
-    }
-
     public async Task<List<NguyenLieuFilterOption>> GetNguyenLieuFilterOptionsAsync()
     {
-        await EnsureSeedDataAsync();
         var list = new List<NguyenLieuFilterOption>
         {
             new NguyenLieuFilterOption { NguyenLieuID = null, TenHienThi = "Tất cả nguyên liệu" }
@@ -61,11 +20,12 @@ public class TieuHaoDuBaoService : DatabaseContext
         {
             using var conn = GetConnection();
             await conn.OpenAsync();
-            var sql = @"SELECT nl.NguyenLieuID, nl.MaNguyenLieu, nl.TenNguyenLieu, ISNULL(dvt.TenDonVi, 'kg') FROM NguyenLieu nl LEFT JOIN DonViTinh dvt ON nl.DonViID = dvt.DonViID WHERE ISNULL(nl.TrangThai, 1) = 1 ORDER BY nl.NguyenLieuID"; //
-            /*
-                        FROM NguyenLieu
-                        WHERE ISNULL(TrangThai, 1) = 1
-                        ORDER BY NguyenLieuID"; */
+            const string sql = @"
+                SELECT nl.NguyenLieuID, nl.MaNguyenLieu, nl.TenNguyenLieu, ISNULL(dvt.TenDonVi, 'kg')
+                FROM NguyenLieu nl
+                LEFT JOIN DonViTinh dvt ON nl.DonViID = dvt.DonViID
+                WHERE ISNULL(nl.TrangThai, 1) = 1
+                ORDER BY nl.NguyenLieuID";
             using var cmd = new SqlCommand(sql, conn);
             using var reader = await cmd.ExecuteReaderAsync();
             while (await reader.ReadAsync())
@@ -88,15 +48,15 @@ public class TieuHaoDuBaoService : DatabaseContext
 
     public async Task<List<KyThoiGianOption>> GetAvailablePeriodsAsync()
     {
-        await EnsureSeedDataAsync();
         var list = new List<KyThoiGianOption>();
         try
         {
             using var conn = GetConnection();
             await conn.OpenAsync();
-            var sql = @"SELECT DISTINCT KyTieuHao
-                        FROM DuLieuTieuHao
-                        ORDER BY KyTieuHao DESC";
+            const string sql = @"
+                SELECT DISTINCT KyTieuHao
+                FROM DuLieuTieuHao
+                ORDER BY KyTieuHao DESC";
             using var cmd = new SqlCommand(sql, conn);
             using var reader = await cmd.ExecuteReaderAsync();
             while (await reader.ReadAsync())
@@ -112,17 +72,6 @@ public class TieuHaoDuBaoService : DatabaseContext
             }
         }
         catch { }
-
-        if (list.Count == 0)
-        {
-            var fallback = new DateTime(2026, 10, 1);
-            list.Add(new KyThoiGianOption
-            {
-                KyDate = fallback,
-                DisplayEnglish = fallback.ToString("MMMM yyyy", CultureInfo.InvariantCulture),
-                DisplayMMYYYY = fallback.ToString("MM/yyyy")
-            });
-        }
 
         return list;
     }
@@ -140,11 +89,10 @@ public class TieuHaoDuBaoService : DatabaseContext
             using var conn = GetConnection();
             await conn.OpenAsync();
 
-            // 1) Count distinct sold dishes per ingredient in the selected month
             var dishCountMap = new Dictionary<int, int>();
-            var dishCountSql = @"
+            const string dishCountSql = @"
                 WITH SoldPizzas AS (
-                    SELECT DISTINCT ct.MaHangHoa, ct.SizeID, ct.MaDeBanh
+                    SELECT DISTINCT ct.MaHangHoa, RTRIM(ct.SizeID) AS SizeID, RTRIM(ct.MaDeBanh) AS MaDeBanh
                     FROM CT_PhieuBan ct
                     INNER JOIN PhieuBanHang pb ON ct.MaPhieuBan = pb.MaPhieuBan
                     WHERE pb.NgayBan >= @FromDate AND pb.NgayBan < @ToDate
@@ -152,16 +100,16 @@ public class TieuHaoDuBaoService : DatabaseContext
                 IngredientDishes AS (
                     SELECT cp.NguyenLieuID, sp.MaHangHoa, sp.SizeID
                     FROM SoldPizzas sp
-                    INNER JOIN CongThuc_Pizza cp ON sp.MaHangHoa = cp.MaHangHoa AND sp.SizeID = cp.SizeID
+                    INNER JOIN CongThuc_Pizza cp ON sp.MaHangHoa = cp.MaHangHoa AND sp.SizeID = RTRIM(cp.SizeID)
                     UNION
                     SELECT 26 AS NguyenLieuID, sp.MaHangHoa, sp.SizeID
                     FROM SoldPizzas sp
-                    INNER JOIN DoanhMuc_De dd ON sp.MaDeBanh = dd.MaDeBanh
-                    INNER JOIN QuyDinh_Bot qb ON sp.SizeID = qb.SizeID AND dd.LoaiCotBanh = qb.LoaiCotBanh
+                    INNER JOIN DoanhMuc_De dd ON sp.MaDeBanh = RTRIM(dd.MaDeBanh)
+                    INNER JOIN QuyDinh_Bot qb ON sp.SizeID = RTRIM(qb.SizeID) AND RTRIM(dd.LoaiCotBanh) = RTRIM(qb.LoaiCotBanh)
                     UNION
                     SELECT qv.NguyenLieuID, sp.MaHangHoa, sp.SizeID
                     FROM SoldPizzas sp
-                    INNER JOIN QuyDinh_Vien qv ON sp.MaDeBanh = qv.MaDeBanh AND sp.SizeID = qv.SizeID
+                    INNER JOIN QuyDinh_Vien qv ON sp.MaDeBanh = RTRIM(qv.MaDeBanh) AND sp.SizeID = RTRIM(qv.SizeID)
                 )
                 SELECT NguyenLieuID, COUNT(DISTINCT MaHangHoa + '|' + SizeID) AS DishCount
                 FROM IngredientDishes
@@ -178,7 +126,6 @@ public class TieuHaoDuBaoService : DatabaseContext
                 }
             }
 
-            // 2) Query consumption for current period, previous month, and same month last year
             var sql = @"
                 SELECT nl.NguyenLieuID,
                        ISNULL(nl.MaNguyenLieu, 'NL' + RIGHT('000' + CAST(nl.NguyenLieuID AS VARCHAR(10)), 3)) AS MaNL,
@@ -214,7 +161,6 @@ public class TieuHaoDuBaoService : DatabaseContext
             while (await reader.ReadAsync())
             {
                 var nlId = reader.GetInt32(0);
-                var maNl = reader.GetString(1);
                 var tenNl = reader.GetString(2);
                 var donVi = reader.GetString(3);
                 var curVal = reader.GetDecimal(4);
@@ -256,7 +202,6 @@ public class TieuHaoDuBaoService : DatabaseContext
             using var conn = GetConnection();
             await conn.OpenAsync();
 
-            // Load conversion factor map for this ingredient
             var quyDoiMap = new Dictionary<int, decimal>();
             int stockDonViId = 1;
             using (var nlCmd = new SqlCommand("SELECT ISNULL(DonViID, 1) FROM NguyenLieu WHERE NguyenLieuID = @Id", conn))
@@ -286,69 +231,72 @@ public class TieuHaoDuBaoService : DatabaseContext
                 return amount * (heSoFrom / heSoTo);
             }
 
-            // Query sold pizzas & recipe BOM for this ingredient
-            var sql = @"
+            const string sql = @"
                 WITH SoldByPizza AS (
                     SELECT ct.MaHangHoa,
-                           ct.SizeID,
-                           ct.MaDeBanh,
+                           RTRIM(ct.SizeID) AS SizeID,
+                           RTRIM(ct.MaDeBanh) AS MaDeBanh,
                            SUM(ISNULL(ct.SoLuong, 0)) AS TotalSold
                     FROM CT_PhieuBan ct
                     INNER JOIN PhieuBanHang pb ON ct.MaPhieuBan = pb.MaPhieuBan
                     WHERE pb.NgayBan >= @FromDate AND pb.NgayBan < @ToDate
-                    GROUP BY ct.MaHangHoa, ct.SizeID, ct.MaDeBanh
+                    GROUP BY ct.MaHangHoa, RTRIM(ct.SizeID), RTRIM(ct.MaDeBanh)
                 ),
                 BomMatches AS (
-                    -- 1) Topping / Sauce from CongThuc_Pizza
                     SELECT s.MaHangHoa,
                            s.SizeID,
-                           CAST(cp.SoLuong AS DECIMAL(18,3)) AS BomAmount,
+                           CAST(cp.SoLuong * s.TotalSold AS DECIMAL(18,4)) AS TotalBomAmount,
+                           CAST(cp.SoLuong AS DECIMAL(18,3)) AS UnitBomAmount,
                            ISNULL(cp.DonViID, 2) AS BomDonViID,
-                           SUM(s.TotalSold) AS SoLuongBan
+                           s.TotalSold AS SoLuongBan
                     FROM SoldByPizza s
-                    INNER JOIN CongThuc_Pizza cp ON s.MaHangHoa = cp.MaHangHoa AND s.SizeID = cp.SizeID
+                    INNER JOIN CongThuc_Pizza cp ON s.MaHangHoa = cp.MaHangHoa AND s.SizeID = RTRIM(cp.SizeID)
                     WHERE cp.NguyenLieuID = @NguyenLieuID
-                    GROUP BY s.MaHangHoa, s.SizeID, cp.SoLuong, cp.DonViID
 
                     UNION ALL
 
-                    -- 2) Dough flour from QuyDinh_Bot (when NguyenLieuID = 26)
                     SELECT s.MaHangHoa,
                            s.SizeID,
-                           CAST(qb.TrongLuongBot AS DECIMAL(18,3)) AS BomAmount,
+                           CAST(qb.TrongLuongBot * s.TotalSold AS DECIMAL(18,4)) AS TotalBomAmount,
+                           CAST(qb.TrongLuongBot AS DECIMAL(18,3)) AS UnitBomAmount,
                            ISNULL(qb.DonViID, 2) AS BomDonViID,
-                           SUM(s.TotalSold) AS SoLuongBan
+                           s.TotalSold AS SoLuongBan
                     FROM SoldByPizza s
-                    INNER JOIN DoanhMuc_De dd ON s.MaDeBanh = dd.MaDeBanh
-                    INNER JOIN QuyDinh_Bot qb ON s.SizeID = qb.SizeID AND dd.LoaiCotBanh = qb.LoaiCotBanh
+                    INNER JOIN DoanhMuc_De dd ON s.MaDeBanh = RTRIM(dd.MaDeBanh)
+                    INNER JOIN QuyDinh_Bot qb ON s.SizeID = RTRIM(qb.SizeID) AND RTRIM(dd.LoaiCotBanh) = RTRIM(qb.LoaiCotBanh)
                     WHERE @NguyenLieuID = 26
-                    GROUP BY s.MaHangHoa, s.SizeID, qb.TrongLuongBot, qb.DonViID
 
                     UNION ALL
 
-                    -- 3) Stuffed crust from QuyDinh_Vien
                     SELECT s.MaHangHoa,
                            s.SizeID,
-                           CAST(qv.SoLuongVien AS DECIMAL(18,3)) AS BomAmount,
+                           CAST(qv.SoLuongVien * s.TotalSold AS DECIMAL(18,4)) AS TotalBomAmount,
+                           CAST(qv.SoLuongVien AS DECIMAL(18,3)) AS UnitBomAmount,
                            ISNULL(qv.DonViID, 2) AS BomDonViID,
-                           SUM(s.TotalSold) AS SoLuongBan
+                           s.TotalSold AS SoLuongBan
                     FROM SoldByPizza s
-                    INNER JOIN QuyDinh_Vien qv ON s.MaDeBanh = qv.MaDeBanh AND s.SizeID = qv.SizeID
+                    INNER JOIN QuyDinh_Vien qv ON s.MaDeBanh = RTRIM(qv.MaDeBanh) AND s.SizeID = RTRIM(qv.SizeID)
                     WHERE qv.NguyenLieuID = @NguyenLieuID
-                    GROUP BY s.MaHangHoa, s.SizeID, qv.SoLuongVien, qv.DonViID
+                ),
+                PizzaSoldTotals AS (
+                    SELECT MaHangHoa, SizeID, SUM(TotalSold) AS TotalPizzaSold
+                    FROM SoldByPizza
+                    GROUP BY MaHangHoa, SizeID
                 )
                 SELECT bm.MaHangHoa,
                        ISNULL(hh.TenHangHoa, bm.MaHangHoa) AS TenHangHoa,
                        bm.SizeID,
-                       SUM(bm.BomAmount) AS TotalBomPerUnit,
+                       SUM(bm.TotalBomAmount) AS TotalRawConsumed,
+                       AVG(bm.UnitBomAmount) AS AvgBomPerUnit,
                        MAX(bm.BomDonViID) AS BomDonViID,
                        ISNULL(dvt.TenDonVi, 'g') AS TenDonViBom,
-                       MAX(bm.SoLuongBan) AS SoLuongDaBan
+                       MAX(pst.TotalPizzaSold) AS SoLuongDaBan
                 FROM BomMatches bm
+                INNER JOIN PizzaSoldTotals pst ON bm.MaHangHoa = pst.MaHangHoa AND bm.SizeID = pst.SizeID
                 LEFT JOIN HangHoa hh ON bm.MaHangHoa = hh.MaHangHoa
                 LEFT JOIN DonViTinh dvt ON bm.BomDonViID = dvt.DonViID
                 GROUP BY bm.MaHangHoa, hh.TenHangHoa, bm.SizeID, dvt.TenDonVi
-                ORDER BY (SUM(bm.BomAmount) * MAX(bm.SoLuongBan)) DESC";
+                ORDER BY SUM(bm.TotalBomAmount) DESC";
 
             using var cmd = new SqlCommand(sql, conn);
             cmd.Parameters.AddWithValue("@FromDate", fromDate);
@@ -362,13 +310,14 @@ public class TieuHaoDuBaoService : DatabaseContext
                 var maHh = reader.GetString(0);
                 var tenHh = reader.GetString(1);
                 var sizeId = reader.GetString(2).Trim();
-                var bomAmt = reader.GetDecimal(3);
-                var bomDvId = reader.GetInt32(4);
-                var tenDvBom = reader.GetString(5);
-                var soLuongBan = reader.GetInt32(6);
+                var totalRaw = reader.GetDecimal(3);
+                var avgBom = reader.GetDecimal(4);
+                var bomDvId = reader.GetInt32(5);
+                var tenDvBom = reader.GetString(6);
+                var soLuongBan = reader.GetInt32(7);
 
-                var stockPerUnit = ConvertToStock(bomAmt, bomDvId);
-                var totalStockConsumed = Math.Round(stockPerUnit * soLuongBan, 3);
+                var totalStockConsumed = Math.Round(ConvertToStock(totalRaw, bomDvId), 3);
+                var effectivePerUnit = soLuongBan > 0 ? Math.Round(totalRaw / soLuongBan, 1) : avgBom;
 
                 var sizeLabel = sizeId.ToUpperInvariant() switch
                 {
@@ -386,7 +335,7 @@ public class TieuHaoDuBaoService : DatabaseContext
                     TenMonAn = tenHh,
                     SizeID = sizeId,
                     KichCoText = sizeLabel,
-                    DinhMucBomText = $"{bomAmt:0.##} {tenDvBom} / cái",
+                    DinhMucBomText = $"{effectivePerUnit:0.##} {tenDvBom} / cái",
                     SoLuongDaBan = soLuongBan,
                     TongTieuHaoKho = totalStockConsumed,
                     DonViKho = donViKho
@@ -399,8 +348,9 @@ public class TieuHaoDuBaoService : DatabaseContext
     }
 
     /// <summary>
-    /// Thực thi thuật toán dự báo Holt-Winters (Cộng tính & Nhân tính, chu kỳ mùa vụ L = 12),
-    /// lưu kết quả đánh giá (MAE, RMSE, MAPE) vào bảng DanhGiaDuBao và kết quả dự báo vào bảng DuBao.
+    /// Đọc dữ liệu dự báo & đánh giá trực tiếp từ bảng SQL DuBao và DanhGiaDuBao.
+    /// Chỉ khi kỳ dự báo mới chưa có bản ghi trong CSDL (ví dụ phát sinh giao dịch kỳ mới),
+    /// hệ thống mới tính toán Holt-Winters từ bảng DuLieuTieuHao và lưu vào DuBao / DanhGiaDuBao.
     /// </summary>
     public async Task<List<KetQuaDuBaoItem>> RunHoltWintersForecastAsync(DateTime currentKy, int? filterNguyenLieuId = null)
     {
@@ -413,26 +363,137 @@ public class TieuHaoDuBaoService : DatabaseContext
             using var conn = GetConnection();
             await conn.OpenAsync();
 
-            // 1) Lấy PhuongPhapID của Additive và Multiplicative
             int additiveId = 1;
             int multiplicativeId = 2;
-            using (var ppCmd = new SqlCommand("SELECT PhuongPhapID, LoaiMuaVu FROM PhuongPhapDuBao WHERE TrangThai = 1", conn))
+            string additiveName = "Holt-Winters cộng tính";
+            string multiplicativeName = "Holt-Winters nhân tính";
+
+            using (var ppCmd = new SqlCommand("SELECT PhuongPhapID, TenPhuongPhap, LoaiMuaVu FROM PhuongPhapDuBao WHERE TrangThai = 1", conn))
             {
                 using var r = await ppCmd.ExecuteReaderAsync();
                 while (await r.ReadAsync())
                 {
                     var id = r.GetInt32(0);
-                    var loai = r.IsDBNull(1) ? "" : r.GetString(1);
-                    if (loai.Contains("Add", StringComparison.OrdinalIgnoreCase)) additiveId = id;
-                    else if (loai.Contains("Multi", StringComparison.OrdinalIgnoreCase)) multiplicativeId = id;
+                    var ten = r.IsDBNull(1) ? "" : r.GetString(1);
+                    var loai = r.IsDBNull(2) ? "" : r.GetString(2);
+                    if (loai.Contains("Add", StringComparison.OrdinalIgnoreCase))
+                    {
+                        additiveId = id;
+                        if (!string.IsNullOrWhiteSpace(ten)) additiveName = ten;
+                    }
+                    else if (loai.Contains("Multi", StringComparison.OrdinalIgnoreCase))
+                    {
+                        multiplicativeId = id;
+                        if (!string.IsNullOrWhiteSpace(ten)) multiplicativeName = ten;
+                    }
                 }
             }
 
-            // 2) Lấy danh sách nguyên liệu + tồn kho hiện tại
+            // 1) Đọc trực tiếp kết quả dự báo đã có trong bảng DuBao & DanhGiaDuBao của SQL Server
+            var existingSql = @"
+                SELECT nl.NguyenLieuID,
+                       nl.TenNguyenLieu,
+                       ISNULL(dvt.TenDonVi, 'kg') AS TenDonVi,
+                       ISNULL(tk.SoLuongTon, 0) AS SoLuongTon,
+                       ISNULL(thCur.SoLuongTieuHao, 0) AS TieuHaoHienTai,
+                       dbAdd.SoLuongDuBao AS DuBaoAdd,
+                       dbAdd.LaMoHinhDuocChon AS ChonAdd,
+                       ISNULL(dgAdd.MAE, 0) AS MaeAdd,
+                       ISNULL(dgAdd.RMSE, 0) AS RmseAdd,
+                       ISNULL(dgAdd.MAPE, 0) AS MapeAdd,
+                       dbMul.SoLuongDuBao AS DuBaoMul,
+                       ISNULL(dgMul.MAE, 0) AS MaeMul,
+                       ISNULL(dgMul.RMSE, 0) AS RmseMul,
+                       ISNULL(dgMul.MAPE, 0) AS MapeMul
+                FROM NguyenLieu nl
+                LEFT JOIN DonViTinh dvt ON nl.DonViID = dvt.DonViID
+                LEFT JOIN TonKho tk ON nl.NguyenLieuID = tk.NguyenLieuID
+                LEFT JOIN DuLieuTieuHao thCur ON nl.NguyenLieuID = thCur.NguyenLieuID AND thCur.KyTieuHao = @KyEnd
+                INNER JOIN DuBao dbAdd ON nl.NguyenLieuID = dbAdd.NguyenLieuID AND dbAdd.KyDuBao = @KyDuBao AND dbAdd.PhuongPhapID = @AddId AND dbAdd.TrangThai = 1
+                INNER JOIN DuBao dbMul ON nl.NguyenLieuID = dbMul.NguyenLieuID AND dbMul.KyDuBao = @KyDuBao AND dbMul.PhuongPhapID = @MulId AND dbMul.TrangThai = 1
+                LEFT JOIN DanhGiaDuBao dgAdd ON nl.NguyenLieuID = dgAdd.NguyenLieuID AND dgAdd.DenKyTest = @KyEnd AND dgAdd.PhuongPhapID = @AddId
+                LEFT JOIN DanhGiaDuBao dgMul ON nl.NguyenLieuID = dgMul.NguyenLieuID AND dgMul.DenKyTest = @KyEnd AND dgMul.PhuongPhapID = @MulId
+                WHERE ISNULL(nl.TrangThai, 1) = 1";
+
+            if (filterNguyenLieuId.HasValue)
+                existingSql += " AND nl.NguyenLieuID = @NlId";
+            existingSql += " ORDER BY nl.NguyenLieuID";
+
+            int expectedCount = 0;
+            var countSql = "SELECT COUNT(*) FROM NguyenLieu WHERE ISNULL(TrangThai, 1) = 1" +
+                           (filterNguyenLieuId.HasValue ? " AND NguyenLieuID = @NlId" : "");
+            using (var cntCmd = new SqlCommand(countSql, conn))
+            {
+                if (filterNguyenLieuId.HasValue)
+                    cntCmd.Parameters.AddWithValue("@NlId", filterNguyenLieuId.Value);
+                expectedCount = Convert.ToInt32(await cntCmd.ExecuteScalarAsync() ?? 0);
+            }
+
+            using (var existCmd = new SqlCommand(existingSql, conn))
+            {
+                existCmd.Parameters.AddWithValue("@KyEnd", kyEnd);
+                existCmd.Parameters.AddWithValue("@KyDuBao", kyForecast);
+                existCmd.Parameters.AddWithValue("@AddId", additiveId);
+                existCmd.Parameters.AddWithValue("@MulId", multiplicativeId);
+                if (filterNguyenLieuId.HasValue)
+                    existCmd.Parameters.AddWithValue("@NlId", filterNguyenLieuId.Value);
+
+                using var r = await existCmd.ExecuteReaderAsync();
+                int sttRead = 1;
+                while (await r.ReadAsync())
+                {
+                    int id = r.GetInt32(0);
+                    string ten = r.GetString(1);
+                    string dvt = r.GetString(2);
+                    decimal tonKho = r.GetDecimal(3);
+                    decimal curVal = r.GetDecimal(4);
+                    decimal dbAdd = r.GetDecimal(5);
+                    bool chooseAdd = r.GetBoolean(6);
+                    decimal maeAdd = r.GetDecimal(7);
+                    decimal rmseAdd = r.GetDecimal(8);
+                    decimal mapeAdd = r.GetDecimal(9);
+                    decimal dbMul = r.GetDecimal(10);
+                    decimal maeMul = r.GetDecimal(11);
+                    decimal rmseMul = r.GetDecimal(12);
+                    decimal mapeMul = r.GetDecimal(13);
+
+                    results.Add(new KetQuaDuBaoItem
+                    {
+                        STT = sttRead++,
+                        NguyenLieuID = id,
+                        MaNguyenLieu = $"NL{id:D3}",
+                        TenNguyenLieu = ten,
+                        DonViKho = dvt,
+                        TieuHaoKyHienTai = Math.Round(curVal, 2),
+                        DuBaoCongTinh = Math.Round(dbAdd, 2),
+                        MaeCongTinh = Math.Round(maeAdd, 2),
+                        RmseCongTinh = Math.Round(rmseAdd, 2),
+                        MapeCongTinh = Math.Round(mapeAdd, 2),
+                        DuBaoNhanTinh = Math.Round(dbMul, 2),
+                        MaeNhanTinh = Math.Round(maeMul, 2),
+                        RmseNhanTinh = Math.Round(rmseMul, 2),
+                        MapeNhanTinh = Math.Round(mapeMul, 2),
+                        PhuongPhapDuocChon = chooseAdd ? additiveName : multiplicativeName,
+                        SoLuongDuBaoChon = Math.Round(chooseAdd ? dbAdd : dbMul, 2),
+                        MaeChon = Math.Round(chooseAdd ? maeAdd : maeMul, 2),
+                        RmseChon = Math.Round(chooseAdd ? rmseAdd : rmseMul, 2),
+                        MapeChon = Math.Round(chooseAdd ? mapeAdd : mapeMul, 2),
+                        TonKhoHienTai = Math.Round(tonKho, 2)
+                    });
+                }
+            }
+
+            if (results.Count > 0 && results.Count >= expectedCount)
+            {
+                return results;
+            }
+
+            results.Clear();
+
+            // 2) Nếu kỳ mới chưa có bản ghi dự báo trong DuBao, tính Holt-Winters từ DuLieuTieuHao và lưu vào SQL
             var ingredients = new List<(int Id, string Ma, string Ten, string DonVi, decimal TonKho)>();
             var nlSql = @"
                 SELECT nl.NguyenLieuID,
-                       ISNULL(nl.MaNguyenLieu, '') AS MaNL,
                        nl.TenNguyenLieu,
                        ISNULL(dvt.TenDonVi, 'kg') AS TenDonVi,
                        ISNULL(tk.SoLuongTon, 0) AS SoLuongTon
@@ -452,21 +513,16 @@ public class TieuHaoDuBaoService : DatabaseContext
                 while (await r.ReadAsync())
                 {
                     var id = r.GetInt32(0);
-                    ingredients.Add((
-                        id,
-                        $"NL{id:D3}",
-                        r.GetString(2),
-                        r.GetString(3),
-                        r.GetDecimal(4)));
+                    ingredients.Add((id, $"NL{id:D3}", r.GetString(1), r.GetString(2), r.GetDecimal(3)));
                 }
             }
 
-            // 3) Lấy chuỗi thời gian DuLieuTieuHao đến kyEnd
             var historyMap = new Dictionary<int, List<(DateTime Ky, double Value)>>();
-            var thSql = @"SELECT NguyenLieuID, KyTieuHao, SoLuongTieuHao
-                          FROM DuLieuTieuHao
-                          WHERE KyTieuHao <= @KyEnd
-                          ORDER BY NguyenLieuID, KyTieuHao ASC";
+            const string thSql = @"
+                SELECT NguyenLieuID, KyTieuHao, SoLuongTieuHao
+                FROM DuLieuTieuHao
+                WHERE KyTieuHao <= @KyEnd
+                ORDER BY NguyenLieuID, KyTieuHao ASC";
             using (var thCmd = new SqlCommand(thSql, conn))
             {
                 thCmd.Parameters.AddWithValue("@KyEnd", kyEnd);
@@ -488,7 +544,6 @@ public class TieuHaoDuBaoService : DatabaseContext
             using var transaction = conn.BeginTransaction();
             try
             {
-                // Xóa dự báo cũ của kỳ kyForecast cho các nguyên liệu đang tính
                 var delDuBaoSql = filterNguyenLieuId.HasValue
                     ? "DELETE FROM DuBao WHERE KyDuBao = @KyDuBao AND NguyenLieuID = @NlId"
                     : "DELETE FROM DuBao WHERE KyDuBao = @KyDuBao";
@@ -523,22 +578,18 @@ public class TieuHaoDuBaoService : DatabaseContext
 
                     int n = values.Length;
                     int seasonLength = 12;
-                    int testCount = Math.Min(6, Math.Max(2, n / 5));
-                    int trainCount = Math.Max(seasonLength, n - testCount);
+
+                    var addEval = FitAndEvaluateHoltWinters(values, seasonLength, isMultiplicative: false);
+                    var mulEval = FitAndEvaluateHoltWinters(values, seasonLength, isMultiplicative: true);
 
                     DateTime tuKyTrain = dates[0];
-                    DateTime denKyTrain = dates[trainCount - 1];
-                    DateTime tuKyTest = dates[Math.Min(trainCount, n - 1)];
+                    DateTime denKyTrain = dates[Math.Clamp(addEval.TrainEndIdx, 0, n - 1)];
+                    DateTime tuKyTest = dates[Math.Clamp(addEval.TestStartIdx, 0, n - 1)];
                     DateTime denKyTest = dates[^1];
-
-                    // Chạy Holt-Winters Cộng tính (Additive) & Nhân tính (Multiplicative)
-                    var addEval = FitAndEvaluateHoltWinters(values, seasonLength, trainCount, isMultiplicative: false);
-                    var mulEval = FitAndEvaluateHoltWinters(values, seasonLength, trainCount, isMultiplicative: true);
 
                     bool chooseAdditive = addEval.Mape <= mulEval.Mape;
 
-                    // Lưu vào DanhGiaDuBao
-                    var insertDgSql = @"
+                    const string insertDgSql = @"
                         INSERT INTO DanhGiaDuBao (NguyenLieuID, PhuongPhapID, TuKyTrain, DenKyTrain, TuKyTest, DenKyTest, MAE, RMSE, MAPE, NgayDanhGia)
                         VALUES (@NlId, @PpId, @TuTrain, @DenTrain, @TuTest, @DenTest, @Mae, @Rmse, @Mape, GETDATE())";
 
@@ -570,8 +621,7 @@ public class TieuHaoDuBaoService : DatabaseContext
                         await dgMul.ExecuteNonQueryAsync();
                     }
 
-                    // Lưu vào DuBao
-                    var insertDbSql = @"
+                    const string insertDbSql = @"
                         INSERT INTO DuBao (NguyenLieuID, PhuongPhapID, KyDuBao, SoLuongDuBao, LaMoHinhDuocChon, NgayDuBao, TrangThai)
                         VALUES (@NlId, @PpId, @KyDuBao, @SoLuong, @LaChon, GETDATE(), 1)";
 
@@ -616,7 +666,7 @@ public class TieuHaoDuBaoService : DatabaseContext
                         MapeNhanTinh = Math.Round((decimal)mulEval.Mape, 2),
                         RmseNhanTinh = Math.Round((decimal)mulEval.Rmse, 2),
                         MaeNhanTinh = Math.Round((decimal)mulEval.Mae, 2),
-                        PhuongPhapDuocChon = chooseAdditive ? "Holt-Winters cộng tính" : "Holt-Winters nhân tính",
+                        PhuongPhapDuocChon = chooseAdditive ? additiveName : multiplicativeName,
                         SoLuongDuBaoChon = Math.Round((decimal)chosenForecast, 2),
                         MapeChon = Math.Round((decimal)chosenMape, 2),
                         RmseChon = Math.Round((decimal)chosenRmse, 2),
@@ -638,24 +688,49 @@ public class TieuHaoDuBaoService : DatabaseContext
         return results;
     }
 
-    private static (double NextForecast, double Mae, double Rmse, double Mape) FitAndEvaluateHoltWinters(
-        double[] y, int L, int trainCount, bool isMultiplicative)
+    private static (double NextForecast, double Mae, double Rmse, double Mape, int TrainEndIdx, int TestStartIdx) FitAndEvaluateHoltWinters(
+        double[] y, int L, bool isMultiplicative)
     {
         int n = y.Length;
-        if (n < L * 2)
+        double[] alphas = { 0.2, 0.35, 0.5, 0.65 };
+        double[] betas = { 0.05, 0.15, 0.25 };
+        double[] gammas = { 0.2, 0.35, 0.5 };
+
+        if (n < L)
         {
-            double avg = y.Length > 0 ? y.Average() : 10.0;
-            return (avg, 0.5, 0.6, 3.2);
+            double bestShortMape = double.MaxValue;
+            double bestShortMae = 0;
+            double bestShortRmse = 0;
+            double bestShortForecast = y.Length > 0 ? y[^1] : 0.1;
+
+            foreach (var alpha in alphas)
+            {
+                foreach (var beta in betas)
+                {
+                    var (f, mae, rmse, mape) = RunShortHoltTrend(y, alpha, beta, isMultiplicative);
+                    if (mape < bestShortMape)
+                    {
+                        bestShortMape = mape;
+                        bestShortMae = mae;
+                        bestShortRmse = rmse;
+                        bestShortForecast = f;
+                    }
+                }
+            }
+
+            int evalStart = n > 1 ? Math.Max(1, n - Math.Max(1, n / 3)) : 0;
+            int trEnd = Math.Max(0, evalStart - 1);
+            int teStart = Math.Min(Math.Max(0, n - 1), evalStart);
+            return (Math.Max(0.1, bestShortForecast), bestShortMae, bestShortRmse, bestShortMape, trEnd, teStart);
         }
+
+        int testCount = Math.Min(6, Math.Max(2, n / 5));
+        int trainCount = n > L ? Math.Max(L, n - testCount) : L - 2;
 
         double bestMape = double.MaxValue;
         double bestMae = 0;
         double bestRmse = 0;
         double bestForecast = y[^1];
-
-        double[] alphas = { 0.2, 0.35, 0.5, 0.65 };
-        double[] betas = { 0.05, 0.15, 0.25 };
-        double[] gammas = { 0.2, 0.35, 0.5 };
 
         foreach (var alpha in alphas)
         {
@@ -675,28 +750,96 @@ public class TieuHaoDuBaoService : DatabaseContext
             }
         }
 
-        return (Math.Max(0.1, bestForecast), bestMae, bestRmse, bestMape);
+        int trainEndIdx = Math.Clamp(trainCount - 1, 0, n - 1);
+        int testStartIdx = Math.Clamp(trainCount, 0, n - 1);
+        return (Math.Max(0.1, bestForecast), bestMae, bestRmse, bestMape, trainEndIdx, testStartIdx);
+    }
+
+    private static (double NextForecast, double Mae, double Rmse, double Mape) RunShortHoltTrend(
+        double[] y, double alpha, double beta, bool isMultiplicative)
+    {
+        int n = y.Length;
+        if (n == 0) return (0.1, 0, 0, 0);
+        if (n == 1)
+        {
+            double f1 = y[0] * (isMultiplicative ? 1.02 : 1.0);
+            double err = Math.Abs(y[0] - f1);
+            double pct = y[0] > 0.001 ? (err / y[0]) * 100.0 : 0.0;
+            return (Math.Max(0.1, f1), err, err, pct);
+        }
+
+        double level = y[0] > 0 ? y[0] : 1.0;
+        double trend = isMultiplicative
+            ? Math.Clamp(y[0] > 0.001 ? y[1] / y[0] : 1.0, 0.85, 1.15)
+            : (y[1] - y[0]);
+
+        int evalStart = Math.Max(1, n - Math.Max(1, n / 3));
+        double sumAbs = 0, sumSq = 0, sumPct = 0;
+        int samples = 0;
+
+        for (int t = 1; t < n; t++)
+        {
+            double yHat = isMultiplicative ? (level * trend) : (level + trend);
+            if (t >= evalStart)
+            {
+                double actual = y[t];
+                double err = Math.Abs(actual - yHat);
+                sumAbs += err;
+                sumSq += err * err;
+                if (actual > 0.001) sumPct += (err / actual) * 100.0;
+                samples++;
+            }
+
+            double prevL = level;
+            if (isMultiplicative)
+            {
+                double safeT = Math.Abs(trend) > 0.001 ? trend : 1.0;
+                level = alpha * y[t] + (1.0 - alpha) * (prevL * safeT);
+                double safePrev = Math.Abs(prevL) > 0.001 ? prevL : 1.0;
+                trend = Math.Clamp(beta * (level / safePrev) + (1.0 - beta) * safeT, 0.85, 1.15);
+            }
+            else
+            {
+                level = alpha * y[t] + (1.0 - alpha) * (prevL + trend);
+                trend = beta * (level - prevL) + (1.0 - beta) * trend;
+            }
+        }
+
+        double nextF = isMultiplicative ? (level * trend) : (level + trend);
+        if (samples == 0) samples = 1;
+        return (nextF, sumAbs / samples, Math.Sqrt(sumSq / samples), sumPct / samples);
     }
 
     private static (double NextForecast, double Mae, double Rmse, double Mape) RunSingleHoltWinters(
         double[] y, int L, int trainCount, double alpha, double beta, double gamma, bool isMultiplicative)
     {
         int n = y.Length;
-        double[] seasonals = new double[n + L + 2];
+        double[] seasonals = new double[n + L + 4];
 
-        // Khởi tạo Level & Trend từ 2 chu kỳ đầu
-        double avgFirstCycle = 0;
-        double avgSecondCycle = 0;
-        for (int i = 0; i < L; i++)
+        double level;
+        double trend;
+        if (n >= 2 * L)
         {
-            avgFirstCycle += y[i];
-            avgSecondCycle += y[i + L];
+            double avgFirstCycle = 0;
+            double avgSecondCycle = 0;
+            for (int i = 0; i < L; i++)
+            {
+                avgFirstCycle += y[i];
+                avgSecondCycle += y[i + L];
+            }
+            avgFirstCycle /= L;
+            avgSecondCycle /= L;
+            level = avgFirstCycle > 0 ? avgFirstCycle : 1.0;
+            trend = (avgSecondCycle - avgFirstCycle) / (L * L);
         }
-        avgFirstCycle /= L;
-        avgSecondCycle /= L;
-
-        double level = avgFirstCycle > 0 ? avgFirstCycle : 1.0;
-        double trend = (avgSecondCycle - avgFirstCycle) / (L * L);
+        else
+        {
+            double avgFirstCycle = 0;
+            for (int i = 0; i < L; i++) avgFirstCycle += y[i];
+            avgFirstCycle /= L;
+            level = avgFirstCycle > 0 ? avgFirstCycle : 1.0;
+            trend = (y[^1] - y[0]) / Math.Max(1.0, (n - 1) * 2.0);
+        }
 
         for (int i = 0; i < L; i++)
         {
@@ -746,6 +889,26 @@ public class TieuHaoDuBaoService : DatabaseContext
             }
         }
 
+        if (n == L)
+        {
+            double lvl = y[0];
+            double tr = (y[^1] - y[0]) / Math.Max(1.0, L - 1);
+            int evalStart = Math.Max(2, L - 3);
+            for (int t = evalStart; t < L; t++)
+            {
+                double pred = lvl + tr;
+                double actual = y[t];
+                double err = Math.Abs(actual - pred);
+                sumAbsErr += err;
+                sumSqErr += err * err;
+                if (actual > 0.001) sumPctErr += (err / actual) * 100.0;
+                testSamples++;
+                double prevL = lvl;
+                lvl = alpha * actual + (1.0 - alpha) * (prevL + tr);
+                tr = beta * (lvl - prevL) + (1.0 - beta) * tr;
+            }
+        }
+
         double nextSeasonal = seasonals[n - L];
         double nextForecast = isMultiplicative
             ? (level + trend) * nextSeasonal
@@ -777,14 +940,13 @@ public class TieuHaoDuBaoService : DatabaseContext
             using var conn = GetConnection();
             await conn.OpenAsync();
 
-            await EnsureSeedDataAsync();
-
             if (nguyenLieuId > 0)
             {
-                var nlSql = @"SELECT nl.TenNguyenLieu, ISNULL(dvt.TenDonVi, 'kg')
-                              FROM NguyenLieu nl
-                              LEFT JOIN DonViTinh dvt ON nl.DonViID = dvt.DonViID
-                              WHERE nl.NguyenLieuID = @NguyenLieuID";
+                const string nlSql = @"
+                    SELECT nl.TenNguyenLieu, ISNULL(dvt.TenDonVi, 'kg')
+                    FROM NguyenLieu nl
+                    LEFT JOIN DonViTinh dvt ON nl.DonViID = dvt.DonViID
+                    WHERE nl.NguyenLieuID = @NguyenLieuID";
                 using (var nlCmd = new SqlCommand(nlSql, conn))
                 {
                     nlCmd.Parameters.AddWithValue("@NguyenLieuID", nguyenLieuId);
@@ -796,10 +958,11 @@ public class TieuHaoDuBaoService : DatabaseContext
                     }
                 }
 
-                var thSql = @"SELECT MONTH(KyTieuHao) AS Thang, SUM(SoLuongTieuHao) AS TongTieuHao
-                              FROM DuLieuTieuHao
-                              WHERE NguyenLieuID = @NguyenLieuID AND YEAR(KyTieuHao) = @Nam
-                              GROUP BY MONTH(KyTieuHao)";
+                const string thSql = @"
+                    SELECT MONTH(KyTieuHao) AS Thang, SUM(SoLuongTieuHao) AS TongTieuHao
+                    FROM DuLieuTieuHao
+                    WHERE NguyenLieuID = @NguyenLieuID AND YEAR(KyTieuHao) = @Nam
+                    GROUP BY MONTH(KyTieuHao)";
                 using (var thCmd = new SqlCommand(thSql, conn))
                 {
                     thCmd.Parameters.AddWithValue("@NguyenLieuID", nguyenLieuId);
@@ -814,13 +977,14 @@ public class TieuHaoDuBaoService : DatabaseContext
             else
             {
                 res.MaNguyenLieu = "TẤT CẢ";
-                res.TenNguyenLieu = "Tổng hợp 25 nguyên liệu";
+                res.TenNguyenLieu = "Tổng hợp nguyên liệu";
                 res.DonViKho = "đơn vị";
 
-                var thSql = @"SELECT MONTH(KyTieuHao) AS Thang, SUM(SoLuongTieuHao) AS TongTieuHao
-                              FROM DuLieuTieuHao
-                              WHERE YEAR(KyTieuHao) = @Nam
-                              GROUP BY MONTH(KyTieuHao)";
+                const string thSql = @"
+                    SELECT MONTH(KyTieuHao) AS Thang, SUM(SoLuongTieuHao) AS TongTieuHao
+                    FROM DuLieuTieuHao
+                    WHERE YEAR(KyTieuHao) = @Nam
+                    GROUP BY MONTH(KyTieuHao)";
                 using (var thCmd = new SqlCommand(thSql, conn))
                 {
                     thCmd.Parameters.AddWithValue("@Nam", nam);

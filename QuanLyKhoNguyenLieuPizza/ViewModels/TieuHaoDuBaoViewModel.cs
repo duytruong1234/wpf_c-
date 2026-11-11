@@ -1,4 +1,4 @@
-using System.Collections.ObjectModel;
+﻿using System.Collections.ObjectModel;
 using System.Windows;
 using System.Windows.Input;
 using Microsoft.Extensions.DependencyInjection;
@@ -139,11 +139,13 @@ public class TieuHaoDuBaoViewModel : BaseViewModel
         set => SetProperty(ref _isLoading, value);
     }
 
+    private DateTime DefaultKy => SelectedKyOption?.KyThoiGian ?? KyOptions.FirstOrDefault()?.KyThoiGian ?? new DateTime(DateTime.Today.Year, DateTime.Today.Month, 1);
+
     public string ReportHeaderTitle
     {
         get
         {
-            var ky = SelectedKyOption?.KyThoiGian ?? new DateTime(2026, 10, 1);
+            var ky = DefaultKy;
             return $"Báo Cáo Tiêu Hao Nguyên Liệu - Kỳ {ky:MM/yyyy}";
         }
     }
@@ -154,7 +156,7 @@ public class TieuHaoDuBaoViewModel : BaseViewModel
     {
         get
         {
-            var ky = SelectedKyOption?.KyThoiGian ?? new DateTime(2026, 10, 1);
+            var ky = DefaultKy;
             return $"SO VỚI {ky.AddMonths(-1):MM/yyyy}";
         }
     }
@@ -163,7 +165,7 @@ public class TieuHaoDuBaoViewModel : BaseViewModel
     {
         get
         {
-            var ky = SelectedKyOption?.KyThoiGian ?? new DateTime(2026, 10, 1);
+            var ky = DefaultKy;
             return $"SO VỚI {ky.AddYears(-1):MM/yyyy}";
         }
     }
@@ -172,7 +174,7 @@ public class TieuHaoDuBaoViewModel : BaseViewModel
     {
         get
         {
-            var ky = SelectedKyOption?.KyThoiGian ?? new DateTime(2026, 10, 1);
+            var ky = DefaultKy;
             return $"Dự báo kỳ {ky.AddMonths(1):MM/yyyy}";
         }
     }
@@ -420,10 +422,6 @@ public class TieuHaoDuBaoViewModel : BaseViewModel
                 .Distinct()
                 .OrderBy(y => y)
                 .ToList();
-            if (years.Count == 0)
-            {
-                years.AddRange(new[] { 2024, 2025, 2026 });
-            }
             foreach (var y in years)
             {
                 NamOptions.Add(new NamKhaoSatOption { Nam = y });
@@ -436,7 +434,7 @@ public class TieuHaoDuBaoViewModel : BaseViewModel
                 _selectedNguyenLieuOption = NguyenLieuOptions.FirstOrDefault(x => x.NguyenLieuID == null)
                                             ?? NguyenLieuOptions.FirstOrDefault();
                 _selectedKyOption = KyOptions.FirstOrDefault();
-                _selectedNamOption = NamOptions.FirstOrDefault(x => x.Nam == 2024) ?? NamOptions.FirstOrDefault();
+                _selectedNamOption = NamOptions.FirstOrDefault();
                 _isChartViewMode = false;
 
                 OnPropertyChanged(nameof(SelectedNguyenLieuOption));
@@ -465,7 +463,7 @@ public class TieuHaoDuBaoViewModel : BaseViewModel
         try
         {
             IsLoading = true;
-            var ky = SelectedKyOption?.KyThoiGian ?? new DateTime(2026, 10, 1);
+            var ky = DefaultKy;
             var nlId = IsAllIngredientsMode ? SelectedNguyenLieuOption?.NguyenLieuID : null;
 
             var items = await _databaseService.GetBaoCaoTieuHaoAsync(ky, nlId);
@@ -493,7 +491,7 @@ public class TieuHaoDuBaoViewModel : BaseViewModel
         try
         {
             IsLoading = true;
-            var nam = SelectedNamOption?.Nam ?? 2024;
+            var nam = SelectedNamOption?.Nam ?? NamOptions.FirstOrDefault()?.Nam ?? DateTime.Today.Year;
             var data = await _databaseService.GetThongKeMuaVu12ThangAsync(nlId, nam);
             var dvt = data.DonViKho;
 
@@ -628,7 +626,7 @@ public class TieuHaoDuBaoViewModel : BaseViewModel
     {
         try
         {
-            var ky = SelectedKyOption?.KyThoiGian ?? new DateTime(2026, 10, 1);
+            var ky = DefaultKy;
             DishPopupTitle = $"Danh Sách Món Ăn Bán Ra - [{item.MaNguyenLieu} - {item.TenNguyenLieu}]";
 
             var details = await _databaseService.GetMonAnDaBanTheoNguyenLieuAsync(
@@ -659,7 +657,7 @@ public class TieuHaoDuBaoViewModel : BaseViewModel
     {
         try
         {
-            var ky = SelectedKyOption?.KyThoiGian ?? new DateTime(2026, 10, 1);
+            var ky = DefaultKy;
             var nextKy = ky.AddMonths(1);
             var nlId = SelectedNguyenLieuOption?.NguyenLieuID;
 
@@ -682,11 +680,12 @@ public class TieuHaoDuBaoViewModel : BaseViewModel
                 if (r.CanNhapThem > 0.01) needImportCount++;
             }
 
+            var minKy = KyOptions.LastOrDefault()?.KyThoiGian ?? ky;
             ForecastTotalChipText = $"Tổng: {results.Count:D2} nguyên liệu";
             ForecastAdditiveChipText = $"Cộng tính tối ưu: {addCount:D2} NL";
             ForecastMultiplicativeChipText = $"Nhân tính tối ưu: {mulCount:D2} NL";
             NextKyHeaderText = $"DỰ BÁO {nextKy:MM/yyyy}";
-            ForecastSummaryText = $"Chu kỳ mùa vụ L = 12 • Huấn luyện & kiểm thử trên chuỗi dữ liệu 01/2024 – {ky:MM/yyyy}";
+            ForecastSummaryText = $"Chu kỳ mùa vụ L = 12 • Huấn luyện & kiểm thử trên chuỗi dữ liệu {minKy:MM/yyyy} – {ky:MM/yyyy}";
         }
         catch (Exception ex)
         {
