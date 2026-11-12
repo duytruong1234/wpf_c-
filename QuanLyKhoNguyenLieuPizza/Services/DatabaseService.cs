@@ -401,4 +401,17 @@ public class DatabaseService : IDatabaseService
         => _tieuHaoDuBao.RunHoltWintersForecastAsync(currentKy, filterNguyenLieuId);
     public Task<ThongKeMuaVu12ThangResult> GetThongKeMuaVu12ThangAsync(int nguyenLieuId, int nam)
         => _tieuHaoDuBao.GetThongKeMuaVu12ThangAsync(nguyenLieuId, nam);
+    public Task<SingleIngredientForecastDetail> GetSingleIngredientForecastDetailAsync(
+        int nguyenLieuId,
+        DateTime? customTrainStart = null,
+        DateTime? customTrainEnd = null,
+        DateTime? customTestStart = null,
+        DateTime? customTestEnd = null,
+        bool persistCustomEval = false)
+        => _tieuHaoDuBao.GetSingleIngredientForecastDetailAsync(
+            nguyenLieuId, customTrainStart, customTrainEnd, customTestStart, customTestEnd, persistCustomEval);
+    public Task<bool> SetActiveForecastModelAsync(int nguyenLieuId, DateTime kyDuBao, int phuongPhapId, decimal? soLuongDuBao = null)
+        => _tieuHaoDuBao.SetActiveForecastModelAsync(nguyenLieuId, kyDuBao, phuongPhapId, soLuongDuBao);
+    public Task<List<LichSuDuBaoRow>> GetLichSuDuBaoAsync(int nguyenLieuId, string donViKho)
+        => _tieuHaoDuBao.GetLichSuDuBaoAsync(nguyenLieuId, donViKho);
 }

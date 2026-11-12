@@ -1,4 +1,4 @@
-<UserControl x:Class="QuanLyKhoNguyenLieuPizza.Views.KiemKeView"
+﻿<UserControl x:Class="QuanLyKhoNguyenLieuPizza.Views.KiemKeView"
          xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
          xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
              xmlns:components="clr-namespace:QuanLyKhoNguyenLieuPizza.Views.Components"
@@ -145,7 +145,6 @@
                             </Style>
                         </Button.Style>
                         <StackPanel Orientation="Horizontal">
-                            <TextBlock Text="🔄" FontSize="16" VerticalAlignment="Center" Margin="0,0,6,0"/>
                             <TextBlock Text="Tải lại" FontWeight="SemiBold" FontSize="14" Foreground="#475569" VerticalAlignment="Center"/>
                         </StackPanel>
                     </Button>

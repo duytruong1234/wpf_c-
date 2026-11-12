@@ -89,6 +89,18 @@ public class TieuHaoDuBaoService : DatabaseContext
             using var conn = GetConnection();
             await conn.OpenAsync();
 
+            // Đảm bảo kỳ dự báo nextMonth đã có trong bảng DuBao (nếu vừa phát sinh giao dịch kỳ mới)
+            int dbCountForNext = 0;
+            using (var chkCmd = new SqlCommand("SELECT COUNT(*) FROM DuBao WHERE KyDuBao = @KyNext AND LaMoHinhDuocChon = 1 AND TrangThai = 1", conn))
+            {
+                chkCmd.Parameters.AddWithValue("@KyNext", nextMonth);
+                dbCountForNext = Convert.ToInt32(await chkCmd.ExecuteScalarAsync() ?? 0);
+            }
+            if (dbCountForNext == 0)
+            {
+                await EnsureFiveModelsForecastForPeriodAsync(conn, kyCur);
+            }
+
             var dishCountMap = new Dictionary<int, int>();
             const string dishCountSql = @"
                 WITH SoldPizzas AS (
@@ -133,12 +145,24 @@ public class TieuHaoDuBaoService : DatabaseContext
                        ISNULL(dvt.TenDonVi, 'kg') AS TenDonVi,
                        ISNULL(thCur.SoLuongTieuHao, 0) AS CurVal,
                        ISNULL(thPrevM.SoLuongTieuHao, 0) AS PrevMVal,
-                       ISNULL(thPrevY.SoLuongTieuHao, 0) AS PrevYVal
+                       ISNULL(thPrevY.SoLuongTieuHao, 0) AS PrevYVal,
+                       ISNULL(dbChosen.PhuongPhapID, 1) AS ChosenPpId,
+                       ISNULL(dbChosen.TenPhuongPhap, N'Holt-Winters cộng tính') AS ChosenPpName,
+                       ISNULL(dbChosen.SoLuongDuBao, 0) AS NextForecastVal
                 FROM NguyenLieu nl
                 LEFT JOIN DonViTinh dvt ON nl.DonViID = dvt.DonViID
                 LEFT JOIN DuLieuTieuHao thCur ON nl.NguyenLieuID = thCur.NguyenLieuID AND thCur.KyTieuHao = @KyCur
                 LEFT JOIN DuLieuTieuHao thPrevM ON nl.NguyenLieuID = thPrevM.NguyenLieuID AND thPrevM.KyTieuHao = @KyPrevM
                 LEFT JOIN DuLieuTieuHao thPrevY ON nl.NguyenLieuID = thPrevY.NguyenLieuID AND thPrevY.KyTieuHao = @KyPrevY
+                OUTER APPLY (
+                    SELECT TOP 1 db.PhuongPhapID, pp.TenPhuongPhap, db.SoLuongDuBao
+                    FROM DuBao db
+                    LEFT JOIN PhuongPhapDuBao pp ON db.PhuongPhapID = pp.PhuongPhapID
+                    WHERE db.NguyenLieuID = nl.NguyenLieuID
+                      AND db.KyDuBao = @KyNext
+                      AND db.TrangThai = 1
+                    ORDER BY db.LaMoHinhDuocChon DESC, db.PhuongPhapID ASC
+                ) dbChosen
                 WHERE ISNULL(nl.TrangThai, 1) = 1";
 
             if (nguyenLieuId.HasValue)
@@ -151,6 +175,7 @@ public class TieuHaoDuBaoService : DatabaseContext
             cmd.Parameters.AddWithValue("@KyCur", kyCur);
             cmd.Parameters.AddWithValue("@KyPrevM", kyPrevMonth);
             cmd.Parameters.AddWithValue("@KyPrevY", kyPrevYear);
+            cmd.Parameters.AddWithValue("@KyNext", nextMonth);
             if (nguyenLieuId.HasValue)
             {
                 cmd.Parameters.AddWithValue("@NguyenLieuID", nguyenLieuId.Value);
@@ -166,6 +191,9 @@ public class TieuHaoDuBaoService : DatabaseContext
                 var curVal = reader.GetDecimal(4);
                 var prevMVal = reader.GetDecimal(5);
                 var prevYVal = reader.GetDecimal(6);
+                var ppId = reader.GetInt32(7);
+                var ppName = reader.GetString(8);
+                var nextForecast = reader.GetDecimal(9);
 
                 dishCountMap.TryGetValue(nlId, out var soMon);
 
@@ -179,7 +207,10 @@ public class TieuHaoDuBaoService : DatabaseContext
                     SoMonAnDaBan = soMon,
                     TongTieuHao = curVal,
                     TieuHaoThangTruoc = prevMVal,
-                    TieuHaoCungKyNamTruoc = prevYVal
+                    TieuHaoCungKyNamTruoc = prevYVal,
+                    DuBaoPhuongPhapID = ppId,
+                    DuBaoTenPhuongPhapBadge = ForecastMethodHelper.ToBadgeName(ppId, ppName),
+                    DuBaoKyToi = Math.Round(nextForecast, 2)
                 });
             }
         }
@@ -222,76 +253,82 @@ public class TieuHaoDuBaoService : DatabaseContext
                 }
             }
 
-            decimal ConvertToStock(decimal amount, int recipeDonViId)
+            decimal ConvertToStock(decimal amount, int fromDonViId)
             {
-                if (recipeDonViId == stockDonViId) return amount;
-                var heSoFrom = quyDoiMap.TryGetValue(recipeDonViId, out var hf) ? hf : 1m;
-                var heSoTo = quyDoiMap.TryGetValue(stockDonViId, out var ht) ? ht : 1m;
-                if (heSoTo == 0) return amount;
-                return amount * (heSoFrom / heSoTo);
+                if (fromDonViId == stockDonViId) return amount;
+                decimal heSoFrom = quyDoiMap.TryGetValue(fromDonViId, out var hf) ? hf : 1m;
+                decimal heSoStock = quyDoiMap.TryGetValue(stockDonViId, out var hs) ? hs : 1m;
+                if (heSoStock <= 0) heSoStock = 1m;
+                return amount * (heSoFrom / heSoStock);
             }
 
             const string sql = @"
-                WITH SoldByPizza AS (
+                WITH SoldLines AS (
                     SELECT ct.MaHangHoa,
                            RTRIM(ct.SizeID) AS SizeID,
                            RTRIM(ct.MaDeBanh) AS MaDeBanh,
-                           SUM(ISNULL(ct.SoLuong, 0)) AS TotalSold
+                           SUM(ct.SoLuong) AS SoLuongBan
                     FROM CT_PhieuBan ct
                     INNER JOIN PhieuBanHang pb ON ct.MaPhieuBan = pb.MaPhieuBan
                     WHERE pb.NgayBan >= @FromDate AND pb.NgayBan < @ToDate
                     GROUP BY ct.MaHangHoa, RTRIM(ct.SizeID), RTRIM(ct.MaDeBanh)
                 ),
-                BomMatches AS (
-                    SELECT s.MaHangHoa,
-                           s.SizeID,
-                           CAST(cp.SoLuong * s.TotalSold AS DECIMAL(18,4)) AS TotalBomAmount,
-                           CAST(cp.SoLuong AS DECIMAL(18,3)) AS UnitBomAmount,
+                BomMatched AS (
+                    SELECT sl.MaHangHoa,
+                           sl.SizeID,
+                           sl.SoLuongBan,
+                           CAST(cp.SoLuong AS DECIMAL(18,4)) AS BomPerPizza,
                            ISNULL(cp.DonViID, 2) AS BomDonViID,
-                           s.TotalSold AS SoLuongBan
-                    FROM SoldByPizza s
-                    INNER JOIN CongThuc_Pizza cp ON s.MaHangHoa = cp.MaHangHoa AND s.SizeID = RTRIM(cp.SizeID)
+                           sl.SoLuongBan * CAST(cp.SoLuong AS DECIMAL(18,4)) AS TotalBomAmount
+                    FROM SoldLines sl
+                    INNER JOIN CongThuc_Pizza cp
+                        ON sl.MaHangHoa = cp.MaHangHoa
+                       AND sl.SizeID = RTRIM(cp.SizeID)
                     WHERE cp.NguyenLieuID = @NguyenLieuID
 
                     UNION ALL
 
-                    SELECT s.MaHangHoa,
-                           s.SizeID,
-                           CAST(qb.TrongLuongBot * s.TotalSold AS DECIMAL(18,4)) AS TotalBomAmount,
-                           CAST(qb.TrongLuongBot AS DECIMAL(18,3)) AS UnitBomAmount,
+                    SELECT sl.MaHangHoa,
+                           sl.SizeID,
+                           sl.SoLuongBan,
+                           CAST(qb.TrongLuongBot AS DECIMAL(18,4)) AS BomPerPizza,
                            ISNULL(qb.DonViID, 2) AS BomDonViID,
-                           s.TotalSold AS SoLuongBan
-                    FROM SoldByPizza s
-                    INNER JOIN DoanhMuc_De dd ON s.MaDeBanh = RTRIM(dd.MaDeBanh)
-                    INNER JOIN QuyDinh_Bot qb ON s.SizeID = RTRIM(qb.SizeID) AND RTRIM(dd.LoaiCotBanh) = RTRIM(qb.LoaiCotBanh)
+                           sl.SoLuongBan * CAST(qb.TrongLuongBot AS DECIMAL(18,4)) AS TotalBomAmount
+                    FROM SoldLines sl
+                    INNER JOIN DoanhMuc_De dd ON sl.MaDeBanh = RTRIM(dd.MaDeBanh)
+                    INNER JOIN QuyDinh_Bot qb
+                        ON sl.SizeID = RTRIM(qb.SizeID)
+                       AND RTRIM(dd.LoaiCotBanh) = RTRIM(qb.LoaiCotBanh)
                     WHERE @NguyenLieuID = 26
 
                     UNION ALL
 
-                    SELECT s.MaHangHoa,
-                           s.SizeID,
-                           CAST(qv.SoLuongVien * s.TotalSold AS DECIMAL(18,4)) AS TotalBomAmount,
-                           CAST(qv.SoLuongVien AS DECIMAL(18,3)) AS UnitBomAmount,
+                    SELECT sl.MaHangHoa,
+                           sl.SizeID,
+                           sl.SoLuongBan,
+                           CAST(qv.SoLuongVien AS DECIMAL(18,4)) AS BomPerPizza,
                            ISNULL(qv.DonViID, 2) AS BomDonViID,
-                           s.TotalSold AS SoLuongBan
-                    FROM SoldByPizza s
-                    INNER JOIN QuyDinh_Vien qv ON s.MaDeBanh = RTRIM(qv.MaDeBanh) AND s.SizeID = RTRIM(qv.SizeID)
+                           sl.SoLuongBan * CAST(qv.SoLuongVien AS DECIMAL(18,4)) AS TotalBomAmount
+                    FROM SoldLines sl
+                    INNER JOIN QuyDinh_Vien qv
+                        ON sl.MaDeBanh = RTRIM(qv.MaDeBanh)
+                       AND sl.SizeID = RTRIM(qv.SizeID)
                     WHERE qv.NguyenLieuID = @NguyenLieuID
                 ),
                 PizzaSoldTotals AS (
-                    SELECT MaHangHoa, SizeID, SUM(TotalSold) AS TotalPizzaSold
-                    FROM SoldByPizza
+                    SELECT MaHangHoa, SizeID, SUM(SoLuongBan) AS TotalPizzaSold
+                    FROM SoldLines
                     GROUP BY MaHangHoa, SizeID
                 )
                 SELECT bm.MaHangHoa,
                        ISNULL(hh.TenHangHoa, bm.MaHangHoa) AS TenHangHoa,
                        bm.SizeID,
                        SUM(bm.TotalBomAmount) AS TotalRawConsumed,
-                       AVG(bm.UnitBomAmount) AS AvgBomPerUnit,
+                       AVG(bm.BomPerPizza) AS AvgBomPerPizza,
                        MAX(bm.BomDonViID) AS BomDonViID,
                        ISNULL(dvt.TenDonVi, 'g') AS TenDonViBom,
-                       MAX(pst.TotalPizzaSold) AS SoLuongDaBan
-                FROM BomMatches bm
+                       MAX(pst.TotalPizzaSold) AS TotalSold
+                FROM BomMatched bm
                 INNER JOIN PizzaSoldTotals pst ON bm.MaHangHoa = pst.MaHangHoa AND bm.SizeID = pst.SizeID
                 LEFT JOIN HangHoa hh ON bm.MaHangHoa = hh.MaHangHoa
                 LEFT JOIN DonViTinh dvt ON bm.BomDonViID = dvt.DonViID
@@ -347,11 +384,522 @@ public class TieuHaoDuBaoService : DatabaseContext
         return result;
     }
 
+    // =========================================================================
+    // DỰ BÁO 5 MÔ HÌNH (WMA, SES, HOLT, HW ADDITIVE, HW MULTIPLICATIVE)
+    // =========================================================================
+
+    public async Task<SingleIngredientForecastDetail> GetSingleIngredientForecastDetailAsync(
+        int nguyenLieuId,
+        DateTime? customTrainStart = null,
+        DateTime? customTrainEnd = null,
+        DateTime? customTestStart = null,
+        DateTime? customTestEnd = null,
+        bool persistCustomEval = false)
+    {
+        var detail = new SingleIngredientForecastDetail
+        {
+            NguyenLieuID = nguyenLieuId,
+            MaNguyenLieu = $"NL{nguyenLieuId:D3}"
+        };
+
+        try
+        {
+            using var conn = GetConnection();
+            await conn.OpenAsync();
+
+            // 1) Thông tin nguyên liệu + Tồn kho quy đổi đúng đơn vị chuẩn của nguyên liệu
+            const string infoSql = @"
+                SELECT nl.TenNguyenLieu,
+                       ISNULL(dvtNl.TenDonVi, 'kg') AS DonViKho,
+                       ROUND(ISNULL(tk.SoLuongTon, 0) *
+                             CASE
+                                 WHEN ISNULL(tk.DonViID, nl.DonViID) = nl.DonViID THEN 1.0
+                                 ELSE ISNULL(qdTk.HeSo, 1.0) / NULLIF(ISNULL(qdNl.HeSo, 1.0), 0)
+                             END, 2) AS TonKhoChuan
+                FROM NguyenLieu nl
+                LEFT JOIN DonViTinh dvtNl ON nl.DonViID = dvtNl.DonViID
+                LEFT JOIN TonKho tk ON nl.NguyenLieuID = tk.NguyenLieuID
+                LEFT JOIN QuyDoiDonVi qdTk ON qdTk.NguyenLieuID = nl.NguyenLieuID AND qdTk.DonViID = tk.DonViID
+                LEFT JOIN QuyDoiDonVi qdNl ON qdNl.NguyenLieuID = nl.NguyenLieuID AND qdNl.DonViID = nl.DonViID
+                WHERE nl.NguyenLieuID = @NlId";
+
+            using (var infoCmd = new SqlCommand(infoSql, conn))
+            {
+                infoCmd.Parameters.AddWithValue("@NlId", nguyenLieuId);
+                using var r = await infoCmd.ExecuteReaderAsync();
+                if (await r.ReadAsync())
+                {
+                    detail.TenNguyenLieu = r.GetString(0);
+                    detail.DonViKho = r.GetString(1);
+                    detail.TonKhoHienTai = r.GetDecimal(2);
+                }
+            }
+
+            // 2) Đọc toàn bộ chuỗi lịch sử tiêu hao của nguyên liệu từ SQL
+            var allDates = new List<DateTime>();
+            var allVals = new List<double>();
+            using (var thCmd = new SqlCommand(@"
+                SELECT KyTieuHao, SoLuongTieuHao
+                FROM DuLieuTieuHao
+                WHERE NguyenLieuID = @NlId
+                ORDER BY KyTieuHao ASC", conn))
+            {
+                thCmd.Parameters.AddWithValue("@NlId", nguyenLieuId);
+                using var r = await thCmd.ExecuteReaderAsync();
+                while (await r.ReadAsync())
+                {
+                    var d = r.GetDateTime(0);
+                    allDates.Add(new DateTime(d.Year, d.Month, 1));
+                    allVals.Add((double)r.GetDecimal(1));
+                }
+            }
+
+            if (allDates.Count == 0)
+                return detail;
+
+            var latestKy = allDates[^1];
+            var nextKy = latestKy.AddMonths(1);
+            detail.LatestActualKy = latestKy;
+            detail.NextForecastKy = nextKy;
+            detail.LastKyActual = (decimal)allVals[^1];
+
+            // Đảm bảo đã có đủ 5 mô hình trong SQL cho nextKy
+            int countNextInSql = 0;
+            using (var cntCmd = new SqlCommand("SELECT COUNT(*) FROM DuBao WHERE NguyenLieuID = @NlId AND KyDuBao = @KyNext AND TrangThai = 1", conn))
+            {
+                cntCmd.Parameters.AddWithValue("@NlId", nguyenLieuId);
+                cntCmd.Parameters.AddWithValue("@KyNext", nextKy);
+                countNextInSql = Convert.ToInt32(await cntCmd.ExecuteScalarAsync() ?? 0);
+            }
+            if (countNextInSql < 5)
+            {
+                await EnsureFiveModelsForecastForPeriodAsync(conn, latestKy);
+            }
+
+            // 3) Đọc mô hình đang được chọn (LaMoHinhDuocChon = 1) và số lượng dự báo cho nextKy từ SQL DuBao
+            var sqlForecastNextMap = new Dictionary<int, decimal>();
+            int activePpId = 2;
+            using (var dbNextCmd = new SqlCommand(@"
+                SELECT PhuongPhapID, SoLuongDuBao, LaMoHinhDuocChon
+                FROM DuBao
+                WHERE NguyenLieuID = @NlId AND KyDuBao = @KyNext AND TrangThai = 1
+                ORDER BY PhuongPhapID", conn))
+            {
+                dbNextCmd.Parameters.AddWithValue("@NlId", nguyenLieuId);
+                dbNextCmd.Parameters.AddWithValue("@KyNext", nextKy);
+                using var r = await dbNextCmd.ExecuteReaderAsync();
+                while (await r.ReadAsync())
+                {
+                    int pid = r.GetInt32(0);
+                    decimal fval = r.GetDecimal(1);
+                    bool chosen = r.GetBoolean(2);
+                    sqlForecastNextMap[pid] = fval;
+                    if (chosen) activePpId = pid;
+                }
+            }
+            detail.ActivePhuongPhapID = activePpId;
+
+            // 4) Đọc kết quả dự báo của tháng vừa rồi (latestKy) từ SQL DuBao
+            using (var lastKyCmd = new SqlCommand(@"
+                SELECT TOP 1 db.PhuongPhapID, pp.TenPhuongPhap, db.SoLuongDuBao
+                FROM DuBao db
+                LEFT JOIN PhuongPhapDuBao pp ON db.PhuongPhapID = pp.PhuongPhapID
+                WHERE db.NguyenLieuID = @NlId AND db.KyDuBao = @LatestKy AND db.TrangThai = 1
+                ORDER BY db.LaMoHinhDuocChon DESC, db.PhuongPhapID ASC", conn))
+            {
+                lastKyCmd.Parameters.AddWithValue("@NlId", nguyenLieuId);
+                lastKyCmd.Parameters.AddWithValue("@LatestKy", latestKy);
+                using var r = await lastKyCmd.ExecuteReaderAsync();
+                if (await r.ReadAsync())
+                {
+                    int lPid = r.GetInt32(0);
+                    string lName = r.IsDBNull(1) ? "" : r.GetString(1);
+                    detail.HasLastKyData = true;
+                    detail.LastKyMethodName = ForecastMethodHelper.ToShortName(lPid, lName);
+                    detail.LastKyForecast = Math.Round(r.GetDecimal(2), 2);
+                }
+            }
+
+            // 5) Xác định khoảng Huấn luyện (Train) & Kiểm thử (Test)
+            var (defTrEndIdx, defTeStartIdx) = DefaultSplitIndices(allDates.Count);
+            DateTime trStart = customTrainStart ?? allDates[0];
+            DateTime trEnd = customTrainEnd ?? allDates[defTrEndIdx];
+            DateTime teStart = customTestStart ?? allDates[defTeStartIdx];
+            DateTime teEnd = customTestEnd ?? latestKy;
+
+            // Nếu chưa truyền custom, ưu tiên đọc khoảng Train/Test đã lưu trong DanhGiaDuBao của SQL
+            if (!customTrainStart.HasValue)
+            {
+                using var dgRangeCmd = new SqlCommand(@"
+                    SELECT TOP 1 TuKyTrain, DenKyTrain, TuKyTest, DenKyTest
+                    FROM DanhGiaDuBao
+                    WHERE NguyenLieuID = @NlId AND DenKyTest = @LatestKy
+                    ORDER BY DanhGiaID DESC", conn);
+                dgRangeCmd.Parameters.AddWithValue("@NlId", nguyenLieuId);
+                dgRangeCmd.Parameters.AddWithValue("@LatestKy", latestKy);
+                using var r = await dgRangeCmd.ExecuteReaderAsync();
+                if (await r.ReadAsync())
+                {
+                    trStart = new DateTime(r.GetDateTime(0).Year, r.GetDateTime(0).Month, 1);
+                    trEnd = new DateTime(r.GetDateTime(1).Year, r.GetDateTime(1).Month, 1);
+                    teStart = new DateTime(r.GetDateTime(2).Year, r.GetDateTime(2).Month, 1);
+                    teEnd = new DateTime(r.GetDateTime(3).Year, r.GetDateTime(3).Month, 1);
+                }
+            }
+
+            // Chuẩn hóa chỉ số trên mảng thời gian thực tế
+            int idxStart = FindNearestIndex(allDates, trStart);
+            int idxTrEnd = Math.Max(idxStart, FindNearestIndex(allDates, trEnd));
+            int idxTeStart = Math.Max(idxTrEnd + 1, FindNearestIndex(allDates, teStart));
+            if (idxTeStart >= allDates.Count) idxTeStart = allDates.Count - 1;
+            if (idxTrEnd >= idxTeStart && idxTeStart > idxStart) idxTrEnd = idxTeStart - 1;
+            int idxTeEnd = Math.Max(idxTeStart, FindNearestIndex(allDates, teEnd));
+
+            detail.TrainStart = allDates[idxStart];
+            detail.TrainEnd = allDates[idxTrEnd];
+            detail.TestStart = allDates[idxTeStart];
+            detail.TestEnd = allDates[idxTeEnd];
+            detail.TrainMonthsCount = idxTrEnd - idxStart + 1;
+            detail.TestMonthsCount = idxTeEnd - idxTeStart + 1;
+
+            // Cắt chuỗi từ TrainStart..TestEnd để huấn luyện & kiểm thử đúng khoảng chọn
+            int subLen = idxTeEnd - idxStart + 1;
+            double[] ySub = new double[subLen];
+            for (int i = 0; i < subLen; i++)
+                ySub[i] = allVals[idxStart + i];
+
+            int localTrainEnd = idxTrEnd - idxStart;
+            int localTestStart = idxTeStart - idxStart;
+            int localTestEnd = subLen - 1;
+
+            var evalAdd = FitEvalHw(ySub, 12, localTrainEnd, localTestStart, localTestEnd, isMul: false);
+            var evalMul = FitEvalHw(ySub, 12, localTrainEnd, localTestStart, localTestEnd, isMul: true);
+            var evalWma = RunWma(ySub, localTestStart, localTestEnd);
+            var evalSes = FitEvalSes(ySub, localTrainEnd, localTestStart, localTestEnd);
+            var evalHolt = FitEvalHolt(ySub, localTrainEnd, localTestStart, localTestEnd);
+
+            var rawModels = new Dictionary<int, (double NextF, double[] Preds, double Mae, double Rmse, double Mape)>
+            {
+                [1] = evalAdd,
+                [2] = evalMul,
+                [3] = evalWma,
+                [4] = evalSes,
+                [5] = evalHolt
+            };
+
+            int testCount = localTestEnd - localTestStart + 1;
+            detail.TestActualValues = new double[testCount];
+            for (int i = 0; i < testCount; i++)
+            {
+                var d = allDates[idxTeStart + i];
+                detail.TestMonthLabels.Add($"{d:MM/yyyy}");
+                detail.TestActualValues[i] = Math.Round(ySub[localTestStart + i], 2);
+            }
+
+            int bestPp = rawModels.OrderBy(kv => kv.Value.Mape).First().Key;
+            detail.OptimalPhuongPhapID = bestPp;
+
+            foreach (var (ppId, res) in rawModels)
+            {
+                var testPreds = new double[testCount];
+                for (int i = 0; i < testCount; i++)
+                    testPreds[i] = Math.Round(res.Preds[localTestStart + i], 2);
+
+                // Nếu đang ở kỳ mới nhất và không chạy custom backtest, lấy đúng số dự báo đã lưu trong bảng DuBao của SQL
+                decimal nextF = (!persistCustomEval && idxTeEnd == allDates.Count - 1 && sqlForecastNextMap.TryGetValue(ppId, out var sqlF))
+                    ? Math.Round(sqlF, 2)
+                    : Math.Round((decimal)res.NextF, 2);
+
+                detail.Models[ppId] = new ModelEvalSummary
+                {
+                    PhuongPhapID = ppId,
+                    DonViKho = detail.DonViKho,
+                    NextForecast = nextF,
+                    Mae = Math.Round((decimal)res.Mae, 2),
+                    Rmse = Math.Round((decimal)res.Rmse, 2),
+                    Mape = Math.Round((decimal)res.Mape, 2),
+                    TestPredictions = testPreds
+                };
+            }
+
+            // Tạo danh sách các dòng đối chiếu từng tháng kiểm thử
+            for (int i = 0; i < testCount; i++)
+            {
+                decimal act = (decimal)detail.TestActualValues[i];
+                detail.MonthRows.Add(new BacktestMonthRow
+                {
+                    ThangText = detail.TestMonthLabels[i],
+                    Actual = act,
+                    DonViKho = detail.DonViKho,
+                    Wma = new ModelCellValue { Forecast = (decimal)detail.Models[3].TestPredictions[i], Actual = act, DonViKho = detail.DonViKho },
+                    Ses = new ModelCellValue { Forecast = (decimal)detail.Models[4].TestPredictions[i], Actual = act, DonViKho = detail.DonViKho },
+                    Holt = new ModelCellValue { Forecast = (decimal)detail.Models[5].TestPredictions[i], Actual = act, DonViKho = detail.DonViKho },
+                    HwAdd = new ModelCellValue { Forecast = (decimal)detail.Models[1].TestPredictions[i], Actual = act, DonViKho = detail.DonViKho },
+                    HwMul = new ModelCellValue { Forecast = (decimal)detail.Models[2].TestPredictions[i], Actual = act, DonViKho = detail.DonViKho }
+                });
+            }
+
+            // Nếu người dùng bấm "Chạy lại kiểm thử", lưu kết quả đánh giá mới vào bảng DanhGiaDuBao trong SQL
+            if (persistCustomEval)
+            {
+                using var tx = conn.BeginTransaction();
+                try
+                {
+                    using (var delCmd = new SqlCommand("DELETE FROM DanhGiaDuBao WHERE NguyenLieuID = @NlId AND DenKyTest = @DenTest", conn, tx))
+                    {
+                        delCmd.Parameters.AddWithValue("@NlId", nguyenLieuId);
+                        delCmd.Parameters.AddWithValue("@DenTest", detail.TestEnd);
+                        await delCmd.ExecuteNonQueryAsync();
+                    }
+
+                    foreach (var (ppId, mSum) in detail.Models)
+                    {
+                        using var insCmd = new SqlCommand(@"
+                            INSERT INTO DanhGiaDuBao (NguyenLieuID, PhuongPhapID, TuKyTrain, DenKyTrain, TuKyTest, DenKyTest, MAE, RMSE, MAPE, NgayDanhGia)
+                            VALUES (@NlId, @PpId, @TuTr, @DenTr, @TuTe, @DenTe, @Mae, @Rmse, @Mape, GETDATE())", conn, tx);
+                        insCmd.Parameters.AddWithValue("@NlId", nguyenLieuId);
+                        insCmd.Parameters.AddWithValue("@PpId", ppId);
+                        insCmd.Parameters.AddWithValue("@TuTr", detail.TrainStart);
+                        insCmd.Parameters.AddWithValue("@DenTr", detail.TrainEnd);
+                        insCmd.Parameters.AddWithValue("@TuTe", detail.TestStart);
+                        insCmd.Parameters.AddWithValue("@DenTe", detail.TestEnd);
+                        insCmd.Parameters.AddWithValue("@Mae", mSum.Mae);
+                        insCmd.Parameters.AddWithValue("@Rmse", mSum.Rmse);
+                        insCmd.Parameters.AddWithValue("@Mape", mSum.Mape);
+                        await insCmd.ExecuteNonQueryAsync();
+                    }
+
+                    tx.Commit();
+                }
+                catch
+                {
+                    tx.Rollback();
+                }
+            }
+        }
+        catch { }
+
+        return detail;
+    }
+
     /// <summary>
-    /// Đọc dữ liệu dự báo & đánh giá trực tiếp từ bảng SQL DuBao và DanhGiaDuBao.
-    /// Chỉ khi kỳ dự báo mới chưa có bản ghi trong CSDL (ví dụ phát sinh giao dịch kỳ mới),
-    /// hệ thống mới tính toán Holt-Winters từ bảng DuLieuTieuHao và lưu vào DuBao / DanhGiaDuBao.
+    /// Cập nhật mô hình được chọn làm chính (LaMoHinhDuocChon = 1) trong bảng SQL DuBao.
     /// </summary>
+    public async Task<bool> SetActiveForecastModelAsync(int nguyenLieuId, DateTime kyDuBao, int phuongPhapId, decimal? soLuongDuBao = null)
+    {
+        var ky = new DateTime(kyDuBao.Year, kyDuBao.Month, 1);
+        try
+        {
+            using var conn = GetConnection();
+            await conn.OpenAsync();
+            using var cmd = new SqlCommand(@"
+                UPDATE DuBao
+                SET LaMoHinhDuocChon = CASE WHEN PhuongPhapID = @PpId THEN 1 ELSE 0 END,
+                    SoLuongDuBao = CASE WHEN PhuongPhapID = @PpId AND @NewVal IS NOT NULL THEN @NewVal ELSE SoLuongDuBao END,
+                    NgayDuBao = GETDATE()
+                WHERE NguyenLieuID = @NlId AND KyDuBao = @KyDuBao AND TrangThai = 1", conn);
+            cmd.Parameters.AddWithValue("@NlId", nguyenLieuId);
+            cmd.Parameters.AddWithValue("@KyDuBao", ky);
+            cmd.Parameters.AddWithValue("@PpId", phuongPhapId);
+            cmd.Parameters.AddWithValue("@NewVal", soLuongDuBao.HasValue ? Math.Round(soLuongDuBao.Value, 3) : (object)DBNull.Value);
+            return await cmd.ExecuteNonQueryAsync() > 0;
+        }
+        catch
+        {
+            return false;
+        }
+    }
+
+    /// <summary>
+    /// Đọc lịch sử dự báo của một nguyên liệu qua các kỳ từ bảng SQL DuBao & DuLieuTieuHao.
+    /// </summary>
+    public async Task<List<LichSuDuBaoRow>> GetLichSuDuBaoAsync(int nguyenLieuId, string donViKho)
+    {
+        var rows = new List<LichSuDuBaoRow>();
+        try
+        {
+            using var conn = GetConnection();
+            await conn.OpenAsync();
+
+            const string sql = @"
+                SELECT db.KyDuBao,
+                       db.NgayDuBao,
+                       db.PhuongPhapID,
+                       pp.TenPhuongPhap,
+                       db.SoLuongDuBao,
+                       th.SoLuongTieuHao
+                FROM DuBao db
+                LEFT JOIN PhuongPhapDuBao pp ON db.PhuongPhapID = pp.PhuongPhapID
+                LEFT JOIN DuLieuTieuHao th ON th.NguyenLieuID = db.NguyenLieuID AND th.KyTieuHao = db.KyDuBao
+                WHERE db.NguyenLieuID = @NlId
+                  AND db.LaMoHinhDuocChon = 1
+                  AND db.TrangThai = 1
+                ORDER BY db.KyDuBao DESC";
+
+            using var cmd = new SqlCommand(sql, conn);
+            cmd.Parameters.AddWithValue("@NlId", nguyenLieuId);
+            using var r = await cmd.ExecuteReaderAsync();
+            while (await r.ReadAsync())
+            {
+                var ky = r.GetDateTime(0);
+                var ngayDb = r.IsDBNull(1) ? ky.AddDays(-1) : r.GetDateTime(1);
+                int ppId = r.GetInt32(2);
+                string ppName = r.IsDBNull(3) ? "" : r.GetString(3);
+                decimal duBao = Math.Round(r.GetDecimal(4), 2);
+                bool isPending = r.IsDBNull(5);
+
+                string thucTeStr = "--";
+                string saiSoStr = "--";
+                string apeStr = "--";
+
+                if (!isPending)
+                {
+                    decimal thucTe = Math.Round(r.GetDecimal(5), 2);
+                    decimal saiSo = Math.Abs(thucTe - duBao);
+                    decimal ape = thucTe > 0.001m ? Math.Round(saiSo / thucTe * 100m, 2) : 0m;
+                    thucTeStr = $"{thucTe:N2} {donViKho}";
+                    saiSoStr = $"{saiSo:N2} {donViKho}";
+                    apeStr = $"{ape:N2}%";
+                }
+
+                rows.Add(new LichSuDuBaoRow
+                {
+                    KyDuBao = ky,
+                    IsPending = isPending,
+                    NgayThucHienText = $"{ngayDb:dd/MM/yyyy}",
+                    TenPhuongPhap = ForecastMethodHelper.ToShortName(ppId, ppName),
+                    TieuHaoDuBaoText = $"{duBao:N2} {donViKho}",
+                    TieuHaoThucTeText = thucTeStr,
+                    SaiSoLechText = saiSoStr,
+                    ApeText = apeStr
+                });
+            }
+        }
+        catch { }
+
+        return rows;
+    }
+
+    private async Task EnsureFiveModelsForecastForPeriodAsync(SqlConnection conn, DateTime kyEnd)
+    {
+        var kyForecast = kyEnd.AddMonths(1);
+
+        // Đảm bảo đủ 5 dòng trong PhuongPhapDuBao
+        int ppCount = Convert.ToInt32(await new SqlCommand("SELECT COUNT(*) FROM PhuongPhapDuBao", conn).ExecuteScalarAsync() ?? 0);
+        if (ppCount < 5)
+        {
+            const string ensurePpSql = @"
+                IF NOT EXISTS (SELECT 1 FROM PhuongPhapDuBao WHERE PhuongPhapID = 1)
+                    INSERT INTO PhuongPhapDuBao (TenPhuongPhap, LoaiMuaVu, ChuKyMuaVu, TrangThai) VALUES (N'Holt-Winters cộng tính', N'Additive', 12, 1);
+                IF NOT EXISTS (SELECT 1 FROM PhuongPhapDuBao WHERE PhuongPhapID = 2)
+                    INSERT INTO PhuongPhapDuBao (TenPhuongPhap, LoaiMuaVu, ChuKyMuaVu, TrangThai) VALUES (N'Holt-Winters nhân tính', N'Multiplicative', 12, 1);
+                IF NOT EXISTS (SELECT 1 FROM PhuongPhapDuBao WHERE TenPhuongPhap LIKE N'%WMA%')
+                    INSERT INTO PhuongPhapDuBao (TenPhuongPhap, LoaiMuaVu, ChuKyMuaVu, TrangThai) VALUES (N'Trung bình trượt có trọng số (WMA)', N'None', 3, 1);
+                IF NOT EXISTS (SELECT 1 FROM PhuongPhapDuBao WHERE TenPhuongPhap LIKE N'%SES%')
+                    INSERT INTO PhuongPhapDuBao (TenPhuongPhap, LoaiMuaVu, ChuKyMuaVu, TrangThai) VALUES (N'San mũ đơn giản (SES)', N'None', 0, 1);
+                IF NOT EXISTS (SELECT 1 FROM PhuongPhapDuBao WHERE TenPhuongPhap LIKE N'%Holt Linear%' OR TenPhuongPhap LIKE N'%Holt tuyến tính%')
+                    INSERT INTO PhuongPhapDuBao (TenPhuongPhap, LoaiMuaVu, ChuKyMuaVu, TrangThai) VALUES (N'Holt tuyến tính (Holt Linear)', N'Trend', 0, 1);";
+            using var ppCmd = new SqlCommand(ensurePpSql, conn);
+            await ppCmd.ExecuteNonQueryAsync();
+        }
+
+        var nlIds = new List<int>();
+        using (var nlCmd = new SqlCommand("SELECT NguyenLieuID FROM NguyenLieu WHERE ISNULL(TrangThai, 1) = 1 ORDER BY NguyenLieuID", conn))
+        {
+            using var r = await nlCmd.ExecuteReaderAsync();
+            while (await r.ReadAsync()) nlIds.Add(r.GetInt32(0));
+        }
+
+        var seriesMap = new Dictionary<int, List<(DateTime Ky, double Val)>>();
+        using (var thCmd = new SqlCommand("SELECT NguyenLieuID, KyTieuHao, SoLuongTieuHao FROM DuLieuTieuHao WHERE KyTieuHao <= @KyEnd ORDER BY NguyenLieuID, KyTieuHao", conn))
+        {
+            thCmd.Parameters.AddWithValue("@KyEnd", kyEnd);
+            using var r = await thCmd.ExecuteReaderAsync();
+            while (await r.ReadAsync())
+            {
+                int id = r.GetInt32(0);
+                if (!seriesMap.TryGetValue(id, out var list))
+                {
+                    list = new List<(DateTime, double)>();
+                    seriesMap[id] = list;
+                }
+                list.Add((r.GetDateTime(1), (double)r.GetDecimal(2)));
+            }
+        }
+
+        using var tx = conn.BeginTransaction();
+        try
+        {
+            using (var delDb = new SqlCommand("DELETE FROM DuBao WHERE KyDuBao = @KyDuBao", conn, tx))
+            {
+                delDb.Parameters.AddWithValue("@KyDuBao", kyForecast);
+                await delDb.ExecuteNonQueryAsync();
+            }
+            using (var delDg = new SqlCommand("DELETE FROM DanhGiaDuBao WHERE DenKyTest = @KyEnd", conn, tx))
+            {
+                delDg.Parameters.AddWithValue("@KyEnd", kyEnd);
+                await delDg.ExecuteNonQueryAsync();
+            }
+
+            foreach (var nlId in nlIds)
+            {
+                if (!seriesMap.TryGetValue(nlId, out var pts) || pts.Count == 0) continue;
+                var y = pts.Select(x => x.Val).ToArray();
+                int n = y.Length;
+                var (trEnd, teStart) = DefaultSplitIndices(n);
+                int teEnd = n - 1;
+
+                var models = new Dictionary<int, (double NextF, double[] Preds, double Mae, double Rmse, double Mape)>
+                {
+                    [1] = FitEvalHw(y, 12, trEnd, teStart, teEnd, false),
+                    [2] = FitEvalHw(y, 12, trEnd, teStart, teEnd, true),
+                    [3] = RunWma(y, teStart, teEnd),
+                    [4] = FitEvalSes(y, trEnd, teStart, teEnd),
+                    [5] = FitEvalHolt(y, trEnd, teStart, teEnd)
+                };
+
+                int bestPp = models.OrderBy(kv => kv.Value.Mape).First().Key;
+
+                foreach (var (ppId, m) in models)
+                {
+                    using (var insDg = new SqlCommand(@"
+                        INSERT INTO DanhGiaDuBao (NguyenLieuID, PhuongPhapID, TuKyTrain, DenKyTrain, TuKyTest, DenKyTest, MAE, RMSE, MAPE, NgayDanhGia)
+                        VALUES (@NlId, @PpId, @TuTr, @DenTr, @TuTe, @DenTe, @Mae, @Rmse, @Mape, GETDATE())", conn, tx))
+                    {
+                        insDg.Parameters.AddWithValue("@NlId", nlId);
+                        insDg.Parameters.AddWithValue("@PpId", ppId);
+                        insDg.Parameters.AddWithValue("@TuTr", pts[0].Ky);
+                        insDg.Parameters.AddWithValue("@DenTr", pts[trEnd].Ky);
+                        insDg.Parameters.AddWithValue("@TuTe", pts[teStart].Ky);
+                        insDg.Parameters.AddWithValue("@DenTe", kyEnd);
+                        insDg.Parameters.AddWithValue("@Mae", Math.Round((decimal)m.Mae, 4));
+                        insDg.Parameters.AddWithValue("@Rmse", Math.Round((decimal)m.Rmse, 4));
+                        insDg.Parameters.AddWithValue("@Mape", Math.Round((decimal)m.Mape, 4));
+                        await insDg.ExecuteNonQueryAsync();
+                    }
+
+                    using (var insDb = new SqlCommand(@"
+                        INSERT INTO DuBao (NguyenLieuID, PhuongPhapID, KyDuBao, SoLuongDuBao, LaMoHinhDuocChon, NgayDuBao, TrangThai)
+                        VALUES (@NlId, @PpId, @KyDuBao, @Val, @Chosen, GETDATE(), 1)", conn, tx))
+                    {
+                        insDb.Parameters.AddWithValue("@NlId", nlId);
+                        insDb.Parameters.AddWithValue("@PpId", ppId);
+                        insDb.Parameters.AddWithValue("@KyDuBao", kyForecast);
+                        insDb.Parameters.AddWithValue("@Val", Math.Round((decimal)m.NextF, 3));
+                        insDb.Parameters.AddWithValue("@Chosen", ppId == bestPp);
+                        await insDb.ExecuteNonQueryAsync();
+                    }
+                }
+            }
+
+            tx.Commit();
+        }
+        catch
+        {
+            tx.Rollback();
+        }
+    }
+
     public async Task<List<KetQuaDuBaoItem>> RunHoltWintersForecastAsync(DateTime currentKy, int? filterNguyenLieuId = null)
     {
         var results = new List<KetQuaDuBaoItem>();
@@ -363,324 +911,88 @@ public class TieuHaoDuBaoService : DatabaseContext
             using var conn = GetConnection();
             await conn.OpenAsync();
 
-            int additiveId = 1;
-            int multiplicativeId = 2;
-            string additiveName = "Holt-Winters cộng tính";
-            string multiplicativeName = "Holt-Winters nhân tính";
-
-            using (var ppCmd = new SqlCommand("SELECT PhuongPhapID, TenPhuongPhap, LoaiMuaVu FROM PhuongPhapDuBao WHERE TrangThai = 1", conn))
-            {
-                using var r = await ppCmd.ExecuteReaderAsync();
-                while (await r.ReadAsync())
-                {
-                    var id = r.GetInt32(0);
-                    var ten = r.IsDBNull(1) ? "" : r.GetString(1);
-                    var loai = r.IsDBNull(2) ? "" : r.GetString(2);
-                    if (loai.Contains("Add", StringComparison.OrdinalIgnoreCase))
-                    {
-                        additiveId = id;
-                        if (!string.IsNullOrWhiteSpace(ten)) additiveName = ten;
-                    }
-                    else if (loai.Contains("Multi", StringComparison.OrdinalIgnoreCase))
-                    {
-                        multiplicativeId = id;
-                        if (!string.IsNullOrWhiteSpace(ten)) multiplicativeName = ten;
-                    }
-                }
-            }
-
-            // 1) Đọc trực tiếp kết quả dự báo đã có trong bảng DuBao & DanhGiaDuBao của SQL Server
-            var existingSql = @"
+            var sql = @"
                 SELECT nl.NguyenLieuID,
                        nl.TenNguyenLieu,
                        ISNULL(dvt.TenDonVi, 'kg') AS TenDonVi,
-                       ISNULL(tk.SoLuongTon, 0) AS SoLuongTon,
+                       ROUND(ISNULL(tk.SoLuongTon, 0) *
+                             CASE
+                                 WHEN ISNULL(tk.DonViID, nl.DonViID) = nl.DonViID THEN 1.0
+                                 ELSE ISNULL(qdTk.HeSo, 1.0) / NULLIF(ISNULL(qdNl.HeSo, 1.0), 0)
+                             END, 2) AS SoLuongTon,
                        ISNULL(thCur.SoLuongTieuHao, 0) AS TieuHaoHienTai,
-                       dbAdd.SoLuongDuBao AS DuBaoAdd,
-                       dbAdd.LaMoHinhDuocChon AS ChonAdd,
+                       ISNULL(dbAdd.SoLuongDuBao, 0) AS DuBaoAdd,
                        ISNULL(dgAdd.MAE, 0) AS MaeAdd,
                        ISNULL(dgAdd.RMSE, 0) AS RmseAdd,
                        ISNULL(dgAdd.MAPE, 0) AS MapeAdd,
-                       dbMul.SoLuongDuBao AS DuBaoMul,
+                       ISNULL(dbMul.SoLuongDuBao, 0) AS DuBaoMul,
                        ISNULL(dgMul.MAE, 0) AS MaeMul,
                        ISNULL(dgMul.RMSE, 0) AS RmseMul,
-                       ISNULL(dgMul.MAPE, 0) AS MapeMul
+                       ISNULL(dgMul.MAPE, 0) AS MapeMul,
+                       ISNULL(dbChon.PhuongPhapID, 1) AS ChonPpId,
+                       ISNULL(dbChon.TenPhuongPhap, N'Holt-Winters cộng tính') AS ChonTen,
+                       ISNULL(dbChon.SoLuongDuBao, 0) AS ChonVal,
+                       ISNULL(dgChon.MAE, 0) AS ChonMae,
+                       ISNULL(dgChon.RMSE, 0) AS ChonRmse,
+                       ISNULL(dgChon.MAPE, 0) AS ChonMape
                 FROM NguyenLieu nl
                 LEFT JOIN DonViTinh dvt ON nl.DonViID = dvt.DonViID
                 LEFT JOIN TonKho tk ON nl.NguyenLieuID = tk.NguyenLieuID
+                LEFT JOIN QuyDoiDonVi qdTk ON qdTk.NguyenLieuID = nl.NguyenLieuID AND qdTk.DonViID = tk.DonViID
+                LEFT JOIN QuyDoiDonVi qdNl ON qdNl.NguyenLieuID = nl.NguyenLieuID AND qdNl.DonViID = nl.DonViID
                 LEFT JOIN DuLieuTieuHao thCur ON nl.NguyenLieuID = thCur.NguyenLieuID AND thCur.KyTieuHao = @KyEnd
-                INNER JOIN DuBao dbAdd ON nl.NguyenLieuID = dbAdd.NguyenLieuID AND dbAdd.KyDuBao = @KyDuBao AND dbAdd.PhuongPhapID = @AddId AND dbAdd.TrangThai = 1
-                INNER JOIN DuBao dbMul ON nl.NguyenLieuID = dbMul.NguyenLieuID AND dbMul.KyDuBao = @KyDuBao AND dbMul.PhuongPhapID = @MulId AND dbMul.TrangThai = 1
-                LEFT JOIN DanhGiaDuBao dgAdd ON nl.NguyenLieuID = dgAdd.NguyenLieuID AND dgAdd.DenKyTest = @KyEnd AND dgAdd.PhuongPhapID = @AddId
-                LEFT JOIN DanhGiaDuBao dgMul ON nl.NguyenLieuID = dgMul.NguyenLieuID AND dgMul.DenKyTest = @KyEnd AND dgMul.PhuongPhapID = @MulId
+                LEFT JOIN DuBao dbAdd ON nl.NguyenLieuID = dbAdd.NguyenLieuID AND dbAdd.KyDuBao = @KyDuBao AND dbAdd.PhuongPhapID = 1 AND dbAdd.TrangThai = 1
+                LEFT JOIN DuBao dbMul ON nl.NguyenLieuID = dbMul.NguyenLieuID AND dbMul.KyDuBao = @KyDuBao AND dbMul.PhuongPhapID = 2 AND dbMul.TrangThai = 1
+                LEFT JOIN DanhGiaDuBao dgAdd ON nl.NguyenLieuID = dgAdd.NguyenLieuID AND dgAdd.DenKyTest = @KyEnd AND dgAdd.PhuongPhapID = 1
+                LEFT JOIN DanhGiaDuBao dgMul ON nl.NguyenLieuID = dgMul.NguyenLieuID AND dgMul.DenKyTest = @KyEnd AND dgMul.PhuongPhapID = 2
+                OUTER APPLY (
+                    SELECT TOP 1 db.PhuongPhapID, pp.TenPhuongPhap, db.SoLuongDuBao
+                    FROM DuBao db
+                    LEFT JOIN PhuongPhapDuBao pp ON db.PhuongPhapID = pp.PhuongPhapID
+                    WHERE db.NguyenLieuID = nl.NguyenLieuID AND db.KyDuBao = @KyDuBao AND db.TrangThai = 1
+                    ORDER BY db.LaMoHinhDuocChon DESC, db.PhuongPhapID ASC
+                ) dbChon
+                LEFT JOIN DanhGiaDuBao dgChon ON nl.NguyenLieuID = dgChon.NguyenLieuID AND dgChon.DenKyTest = @KyEnd AND dgChon.PhuongPhapID = dbChon.PhuongPhapID
                 WHERE ISNULL(nl.TrangThai, 1) = 1";
 
             if (filterNguyenLieuId.HasValue)
-                existingSql += " AND nl.NguyenLieuID = @NlId";
-            existingSql += " ORDER BY nl.NguyenLieuID";
+                sql += " AND nl.NguyenLieuID = @NlId";
+            sql += " ORDER BY nl.NguyenLieuID";
 
-            int expectedCount = 0;
-            var countSql = "SELECT COUNT(*) FROM NguyenLieu WHERE ISNULL(TrangThai, 1) = 1" +
-                           (filterNguyenLieuId.HasValue ? " AND NguyenLieuID = @NlId" : "");
-            using (var cntCmd = new SqlCommand(countSql, conn))
-            {
-                if (filterNguyenLieuId.HasValue)
-                    cntCmd.Parameters.AddWithValue("@NlId", filterNguyenLieuId.Value);
-                expectedCount = Convert.ToInt32(await cntCmd.ExecuteScalarAsync() ?? 0);
-            }
-
-            using (var existCmd = new SqlCommand(existingSql, conn))
-            {
-                existCmd.Parameters.AddWithValue("@KyEnd", kyEnd);
-                existCmd.Parameters.AddWithValue("@KyDuBao", kyForecast);
-                existCmd.Parameters.AddWithValue("@AddId", additiveId);
-                existCmd.Parameters.AddWithValue("@MulId", multiplicativeId);
-                if (filterNguyenLieuId.HasValue)
-                    existCmd.Parameters.AddWithValue("@NlId", filterNguyenLieuId.Value);
-
-                using var r = await existCmd.ExecuteReaderAsync();
-                int sttRead = 1;
-                while (await r.ReadAsync())
-                {
-                    int id = r.GetInt32(0);
-                    string ten = r.GetString(1);
-                    string dvt = r.GetString(2);
-                    decimal tonKho = r.GetDecimal(3);
-                    decimal curVal = r.GetDecimal(4);
-                    decimal dbAdd = r.GetDecimal(5);
-                    bool chooseAdd = r.GetBoolean(6);
-                    decimal maeAdd = r.GetDecimal(7);
-                    decimal rmseAdd = r.GetDecimal(8);
-                    decimal mapeAdd = r.GetDecimal(9);
-                    decimal dbMul = r.GetDecimal(10);
-                    decimal maeMul = r.GetDecimal(11);
-                    decimal rmseMul = r.GetDecimal(12);
-                    decimal mapeMul = r.GetDecimal(13);
-
-                    results.Add(new KetQuaDuBaoItem
-                    {
-                        STT = sttRead++,
-                        NguyenLieuID = id,
-                        MaNguyenLieu = $"NL{id:D3}",
-                        TenNguyenLieu = ten,
-                        DonViKho = dvt,
-                        TieuHaoKyHienTai = Math.Round(curVal, 2),
-                        DuBaoCongTinh = Math.Round(dbAdd, 2),
-                        MaeCongTinh = Math.Round(maeAdd, 2),
-                        RmseCongTinh = Math.Round(rmseAdd, 2),
-                        MapeCongTinh = Math.Round(mapeAdd, 2),
-                        DuBaoNhanTinh = Math.Round(dbMul, 2),
-                        MaeNhanTinh = Math.Round(maeMul, 2),
-                        RmseNhanTinh = Math.Round(rmseMul, 2),
-                        MapeNhanTinh = Math.Round(mapeMul, 2),
-                        PhuongPhapDuocChon = chooseAdd ? additiveName : multiplicativeName,
-                        SoLuongDuBaoChon = Math.Round(chooseAdd ? dbAdd : dbMul, 2),
-                        MaeChon = Math.Round(chooseAdd ? maeAdd : maeMul, 2),
-                        RmseChon = Math.Round(chooseAdd ? rmseAdd : rmseMul, 2),
-                        MapeChon = Math.Round(chooseAdd ? mapeAdd : mapeMul, 2),
-                        TonKhoHienTai = Math.Round(tonKho, 2)
-                    });
-                }
-            }
-
-            if (results.Count > 0 && results.Count >= expectedCount)
-            {
-                return results;
-            }
-
-            results.Clear();
-
-            // 2) Nếu kỳ mới chưa có bản ghi dự báo trong DuBao, tính Holt-Winters từ DuLieuTieuHao và lưu vào SQL
-            var ingredients = new List<(int Id, string Ma, string Ten, string DonVi, decimal TonKho)>();
-            var nlSql = @"
-                SELECT nl.NguyenLieuID,
-                       nl.TenNguyenLieu,
-                       ISNULL(dvt.TenDonVi, 'kg') AS TenDonVi,
-                       ISNULL(tk.SoLuongTon, 0) AS SoLuongTon
-                FROM NguyenLieu nl
-                LEFT JOIN DonViTinh dvt ON nl.DonViID = dvt.DonViID
-                LEFT JOIN TonKho tk ON nl.NguyenLieuID = tk.NguyenLieuID
-                WHERE ISNULL(nl.TrangThai, 1) = 1";
+            using var cmd = new SqlCommand(sql, conn);
+            cmd.Parameters.AddWithValue("@KyEnd", kyEnd);
+            cmd.Parameters.AddWithValue("@KyDuBao", kyForecast);
             if (filterNguyenLieuId.HasValue)
-                nlSql += " AND nl.NguyenLieuID = @NlId";
-            nlSql += " ORDER BY nl.NguyenLieuID";
+                cmd.Parameters.AddWithValue("@NlId", filterNguyenLieuId.Value);
 
-            using (var nlCmd = new SqlCommand(nlSql, conn))
+            using var r = await cmd.ExecuteReaderAsync();
+            int stt = 1;
+            while (await r.ReadAsync())
             {
-                if (filterNguyenLieuId.HasValue)
-                    nlCmd.Parameters.AddWithValue("@NlId", filterNguyenLieuId.Value);
-                using var r = await nlCmd.ExecuteReaderAsync();
-                while (await r.ReadAsync())
+                int id = r.GetInt32(0);
+                results.Add(new KetQuaDuBaoItem
                 {
-                    var id = r.GetInt32(0);
-                    ingredients.Add((id, $"NL{id:D3}", r.GetString(1), r.GetString(2), r.GetDecimal(3)));
-                }
-            }
-
-            var historyMap = new Dictionary<int, List<(DateTime Ky, double Value)>>();
-            const string thSql = @"
-                SELECT NguyenLieuID, KyTieuHao, SoLuongTieuHao
-                FROM DuLieuTieuHao
-                WHERE KyTieuHao <= @KyEnd
-                ORDER BY NguyenLieuID, KyTieuHao ASC";
-            using (var thCmd = new SqlCommand(thSql, conn))
-            {
-                thCmd.Parameters.AddWithValue("@KyEnd", kyEnd);
-                using var r = await thCmd.ExecuteReaderAsync();
-                while (await r.ReadAsync())
-                {
-                    var id = r.GetInt32(0);
-                    var ky = r.GetDateTime(1);
-                    var val = (double)r.GetDecimal(2);
-                    if (!historyMap.TryGetValue(id, out var list))
-                    {
-                        list = new List<(DateTime, double)>();
-                        historyMap[id] = list;
-                    }
-                    list.Add((ky, val));
-                }
-            }
-
-            using var transaction = conn.BeginTransaction();
-            try
-            {
-                var delDuBaoSql = filterNguyenLieuId.HasValue
-                    ? "DELETE FROM DuBao WHERE KyDuBao = @KyDuBao AND NguyenLieuID = @NlId"
-                    : "DELETE FROM DuBao WHERE KyDuBao = @KyDuBao";
-                using (var delCmd = new SqlCommand(delDuBaoSql, conn, transaction))
-                {
-                    delCmd.Parameters.AddWithValue("@KyDuBao", kyForecast);
-                    if (filterNguyenLieuId.HasValue)
-                        delCmd.Parameters.AddWithValue("@NlId", filterNguyenLieuId.Value);
-                    await delCmd.ExecuteNonQueryAsync();
-                }
-
-                var delDanhGiaSql = filterNguyenLieuId.HasValue
-                    ? "DELETE FROM DanhGiaDuBao WHERE DenKyTest = @KyEnd AND NguyenLieuID = @NlId"
-                    : "DELETE FROM DanhGiaDuBao WHERE DenKyTest = @KyEnd";
-                using (var delDgCmd = new SqlCommand(delDanhGiaSql, conn, transaction))
-                {
-                    delDgCmd.Parameters.AddWithValue("@KyEnd", kyEnd);
-                    if (filterNguyenLieuId.HasValue)
-                        delDgCmd.Parameters.AddWithValue("@NlId", filterNguyenLieuId.Value);
-                    await delDgCmd.ExecuteNonQueryAsync();
-                }
-
-                int stt = 1;
-                foreach (var nl in ingredients)
-                {
-                    if (!historyMap.TryGetValue(nl.Id, out var series) || series.Count == 0)
-                        continue;
-
-                    var values = series.Select(s => s.Value).ToArray();
-                    var dates = series.Select(s => s.Ky).ToArray();
-                    double curVal = values[^1];
-
-                    int n = values.Length;
-                    int seasonLength = 12;
-
-                    var addEval = FitAndEvaluateHoltWinters(values, seasonLength, isMultiplicative: false);
-                    var mulEval = FitAndEvaluateHoltWinters(values, seasonLength, isMultiplicative: true);
-
-                    DateTime tuKyTrain = dates[0];
-                    DateTime denKyTrain = dates[Math.Clamp(addEval.TrainEndIdx, 0, n - 1)];
-                    DateTime tuKyTest = dates[Math.Clamp(addEval.TestStartIdx, 0, n - 1)];
-                    DateTime denKyTest = dates[^1];
-
-                    bool chooseAdditive = addEval.Mape <= mulEval.Mape;
-
-                    const string insertDgSql = @"
-                        INSERT INTO DanhGiaDuBao (NguyenLieuID, PhuongPhapID, TuKyTrain, DenKyTrain, TuKyTest, DenKyTest, MAE, RMSE, MAPE, NgayDanhGia)
-                        VALUES (@NlId, @PpId, @TuTrain, @DenTrain, @TuTest, @DenTest, @Mae, @Rmse, @Mape, GETDATE())";
-
-                    using (var dgAdd = new SqlCommand(insertDgSql, conn, transaction))
-                    {
-                        dgAdd.Parameters.AddWithValue("@NlId", nl.Id);
-                        dgAdd.Parameters.AddWithValue("@PpId", additiveId);
-                        dgAdd.Parameters.AddWithValue("@TuTrain", tuKyTrain);
-                        dgAdd.Parameters.AddWithValue("@DenTrain", denKyTrain);
-                        dgAdd.Parameters.AddWithValue("@TuTest", tuKyTest);
-                        dgAdd.Parameters.AddWithValue("@DenTest", denKyTest);
-                        dgAdd.Parameters.AddWithValue("@Mae", Math.Round((decimal)addEval.Mae, 4));
-                        dgAdd.Parameters.AddWithValue("@Rmse", Math.Round((decimal)addEval.Rmse, 4));
-                        dgAdd.Parameters.AddWithValue("@Mape", Math.Round((decimal)addEval.Mape, 4));
-                        await dgAdd.ExecuteNonQueryAsync();
-                    }
-
-                    using (var dgMul = new SqlCommand(insertDgSql, conn, transaction))
-                    {
-                        dgMul.Parameters.AddWithValue("@NlId", nl.Id);
-                        dgMul.Parameters.AddWithValue("@PpId", multiplicativeId);
-                        dgMul.Parameters.AddWithValue("@TuTrain", tuKyTrain);
-                        dgMul.Parameters.AddWithValue("@DenTrain", denKyTrain);
-                        dgMul.Parameters.AddWithValue("@TuTest", tuKyTest);
-                        dgMul.Parameters.AddWithValue("@DenTest", denKyTest);
-                        dgMul.Parameters.AddWithValue("@Mae", Math.Round((decimal)mulEval.Mae, 4));
-                        dgMul.Parameters.AddWithValue("@Rmse", Math.Round((decimal)mulEval.Rmse, 4));
-                        dgMul.Parameters.AddWithValue("@Mape", Math.Round((decimal)mulEval.Mape, 4));
-                        await dgMul.ExecuteNonQueryAsync();
-                    }
-
-                    const string insertDbSql = @"
-                        INSERT INTO DuBao (NguyenLieuID, PhuongPhapID, KyDuBao, SoLuongDuBao, LaMoHinhDuocChon, NgayDuBao, TrangThai)
-                        VALUES (@NlId, @PpId, @KyDuBao, @SoLuong, @LaChon, GETDATE(), 1)";
-
-                    using (var dbAdd = new SqlCommand(insertDbSql, conn, transaction))
-                    {
-                        dbAdd.Parameters.AddWithValue("@NlId", nl.Id);
-                        dbAdd.Parameters.AddWithValue("@PpId", additiveId);
-                        dbAdd.Parameters.AddWithValue("@KyDuBao", kyForecast);
-                        dbAdd.Parameters.AddWithValue("@SoLuong", Math.Round((decimal)addEval.NextForecast, 3));
-                        dbAdd.Parameters.AddWithValue("@LaChon", chooseAdditive);
-                        await dbAdd.ExecuteNonQueryAsync();
-                    }
-
-                    using (var dbMul = new SqlCommand(insertDbSql, conn, transaction))
-                    {
-                        dbMul.Parameters.AddWithValue("@NlId", nl.Id);
-                        dbMul.Parameters.AddWithValue("@PpId", multiplicativeId);
-                        dbMul.Parameters.AddWithValue("@KyDuBao", kyForecast);
-                        dbMul.Parameters.AddWithValue("@SoLuong", Math.Round((decimal)mulEval.NextForecast, 3));
-                        dbMul.Parameters.AddWithValue("@LaChon", !chooseAdditive);
-                        await dbMul.ExecuteNonQueryAsync();
-                    }
-
-                    var chosenForecast = chooseAdditive ? addEval.NextForecast : mulEval.NextForecast;
-                    var chosenMape = chooseAdditive ? addEval.Mape : mulEval.Mape;
-                    var chosenRmse = chooseAdditive ? addEval.Rmse : mulEval.Rmse;
-                    var chosenMae = chooseAdditive ? addEval.Mae : mulEval.Mae;
-
-                    results.Add(new KetQuaDuBaoItem
-                    {
-                        STT = stt++,
-                        NguyenLieuID = nl.Id,
-                        MaNguyenLieu = nl.Ma,
-                        TenNguyenLieu = nl.Ten,
-                        DonViKho = nl.DonVi,
-                        TieuHaoKyHienTai = Math.Round((decimal)curVal, 2),
-                        DuBaoCongTinh = Math.Round((decimal)addEval.NextForecast, 2),
-                        MapeCongTinh = Math.Round((decimal)addEval.Mape, 2),
-                        RmseCongTinh = Math.Round((decimal)addEval.Rmse, 2),
-                        MaeCongTinh = Math.Round((decimal)addEval.Mae, 2),
-                        DuBaoNhanTinh = Math.Round((decimal)mulEval.NextForecast, 2),
-                        MapeNhanTinh = Math.Round((decimal)mulEval.Mape, 2),
-                        RmseNhanTinh = Math.Round((decimal)mulEval.Rmse, 2),
-                        MaeNhanTinh = Math.Round((decimal)mulEval.Mae, 2),
-                        PhuongPhapDuocChon = chooseAdditive ? additiveName : multiplicativeName,
-                        SoLuongDuBaoChon = Math.Round((decimal)chosenForecast, 2),
-                        MapeChon = Math.Round((decimal)chosenMape, 2),
-                        RmseChon = Math.Round((decimal)chosenRmse, 2),
-                        MaeChon = Math.Round((decimal)chosenMae, 2),
-                        TonKhoHienTai = Math.Round(nl.TonKho, 2)
-                    });
-                }
-
-                transaction.Commit();
-            }
-            catch
-            {
-                transaction.Rollback();
-                throw;
+                    STT = stt++,
+                    NguyenLieuID = id,
+                    MaNguyenLieu = $"NL{id:D3}",
+                    TenNguyenLieu = r.GetString(1),
+                    DonViKho = r.GetString(2),
+                    TonKhoHienTai = r.GetDecimal(3),
+                    TieuHaoKyHienTai = Math.Round(r.GetDecimal(4), 2),
+                    DuBaoCongTinh = Math.Round(r.GetDecimal(5), 2),
+                    MaeCongTinh = Math.Round(r.GetDecimal(6), 2),
+                    RmseCongTinh = Math.Round(r.GetDecimal(7), 2),
+                    MapeCongTinh = Math.Round(r.GetDecimal(8), 2),
+                    DuBaoNhanTinh = Math.Round(r.GetDecimal(9), 2),
+                    MaeNhanTinh = Math.Round(r.GetDecimal(10), 2),
+                    RmseNhanTinh = Math.Round(r.GetDecimal(11), 2),
+                    MapeNhanTinh = Math.Round(r.GetDecimal(12), 2),
+                    PhuongPhapDuocChon = ForecastMethodHelper.ToShortName(r.GetInt32(13), r.GetString(14)),
+                    SoLuongDuBaoChon = Math.Round(r.GetDecimal(15), 2),
+                    MaeChon = Math.Round(r.GetDecimal(16), 2),
+                    RmseChon = Math.Round(r.GetDecimal(17), 2),
+                    MapeChon = Math.Round(r.GetDecimal(18), 2)
+                });
             }
         }
         catch { }
@@ -688,238 +1000,271 @@ public class TieuHaoDuBaoService : DatabaseContext
         return results;
     }
 
-    private static (double NextForecast, double Mae, double Rmse, double Mape, int TrainEndIdx, int TestStartIdx) FitAndEvaluateHoltWinters(
-        double[] y, int L, bool isMultiplicative)
+    // =========================================================================
+    // THUẬT TOÁN 5 MÔ HÌNH DỰ BÁO CHUỖI THỜI GIAN
+    // =========================================================================
+
+    private static (int TrainEndIdx, int TestStartIdx) DefaultSplitIndices(int n)
     {
-        int n = y.Length;
-        double[] alphas = { 0.2, 0.35, 0.5, 0.65 };
-        double[] betas = { 0.05, 0.15, 0.25 };
-        double[] gammas = { 0.2, 0.35, 0.5 };
-
-        if (n < L)
+        if (n >= 25) return (23, 24);
+        if (n > 12) return (11, 12);
+        if (n > 3)
         {
-            double bestShortMape = double.MaxValue;
-            double bestShortMae = 0;
-            double bestShortRmse = 0;
-            double bestShortForecast = y.Length > 0 ? y[^1] : 0.1;
-
-            foreach (var alpha in alphas)
-            {
-                foreach (var beta in betas)
-                {
-                    var (f, mae, rmse, mape) = RunShortHoltTrend(y, alpha, beta, isMultiplicative);
-                    if (mape < bestShortMape)
-                    {
-                        bestShortMape = mape;
-                        bestShortMae = mae;
-                        bestShortRmse = rmse;
-                        bestShortForecast = f;
-                    }
-                }
-            }
-
-            int evalStart = n > 1 ? Math.Max(1, n - Math.Max(1, n / 3)) : 0;
-            int trEnd = Math.Max(0, evalStart - 1);
-            int teStart = Math.Min(Math.Max(0, n - 1), evalStart);
-            return (Math.Max(0.1, bestShortForecast), bestShortMae, bestShortRmse, bestShortMape, trEnd, teStart);
+            int testLen = Math.Max(1, n / 3);
+            return (n - testLen - 1, n - testLen);
         }
-
-        int testCount = Math.Min(6, Math.Max(2, n / 5));
-        int trainCount = n > L ? Math.Max(L, n - testCount) : L - 2;
-
-        double bestMape = double.MaxValue;
-        double bestMae = 0;
-        double bestRmse = 0;
-        double bestForecast = y[^1];
-
-        foreach (var alpha in alphas)
-        {
-            foreach (var beta in betas)
-            {
-                foreach (var gamma in gammas)
-                {
-                    var (forecast, mae, rmse, mape) = RunSingleHoltWinters(y, L, trainCount, alpha, beta, gamma, isMultiplicative);
-                    if (mape < bestMape)
-                    {
-                        bestMape = mape;
-                        bestMae = mae;
-                        bestRmse = rmse;
-                        bestForecast = forecast;
-                    }
-                }
-            }
-        }
-
-        int trainEndIdx = Math.Clamp(trainCount - 1, 0, n - 1);
-        int testStartIdx = Math.Clamp(trainCount, 0, n - 1);
-        return (Math.Max(0.1, bestForecast), bestMae, bestRmse, bestMape, trainEndIdx, testStartIdx);
+        if (n > 1) return (n - 2, n - 1);
+        return (0, 0);
     }
 
-    private static (double NextForecast, double Mae, double Rmse, double Mape) RunShortHoltTrend(
-        double[] y, double alpha, double beta, bool isMultiplicative)
+    private static int FindNearestIndex(List<DateTime> dates, DateTime target)
+    {
+        var norm = new DateTime(target.Year, target.Month, 1);
+        for (int i = 0; i < dates.Count; i++)
+        {
+            if (dates[i] >= norm) return i;
+        }
+        return dates.Count - 1;
+    }
+
+    private static (double Mae, double Rmse, double Mape) CalcMetrics(double[] y, double[] preds, int startIdx, int endIdx)
     {
         int n = y.Length;
-        if (n == 0) return (0.1, 0, 0, 0);
-        if (n == 1)
-        {
-            double f1 = y[0] * (isMultiplicative ? 1.02 : 1.0);
-            double err = Math.Abs(y[0] - f1);
-            double pct = y[0] > 0.001 ? (err / y[0]) * 100.0 : 0.0;
-            return (Math.Max(0.1, f1), err, err, pct);
-        }
-
-        double level = y[0] > 0 ? y[0] : 1.0;
-        double trend = isMultiplicative
-            ? Math.Clamp(y[0] > 0.001 ? y[1] / y[0] : 1.0, 0.85, 1.15)
-            : (y[1] - y[0]);
-
-        int evalStart = Math.Max(1, n - Math.Max(1, n / 3));
+        if (n == 0) return (0, 0, 0);
+        int s = Math.Clamp(startIdx, 0, n - 1);
+        int e = Math.Clamp(endIdx, s, n - 1);
         double sumAbs = 0, sumSq = 0, sumPct = 0;
-        int samples = 0;
-
-        for (int t = 1; t < n; t++)
+        int cnt = 0;
+        for (int t = s; t <= e; t++)
         {
-            double yHat = isMultiplicative ? (level * trend) : (level + trend);
-            if (t >= evalStart)
-            {
-                double actual = y[t];
-                double err = Math.Abs(actual - yHat);
-                sumAbs += err;
-                sumSq += err * err;
-                if (actual > 0.001) sumPct += (err / actual) * 100.0;
-                samples++;
-            }
-
-            double prevL = level;
-            if (isMultiplicative)
-            {
-                double safeT = Math.Abs(trend) > 0.001 ? trend : 1.0;
-                level = alpha * y[t] + (1.0 - alpha) * (prevL * safeT);
-                double safePrev = Math.Abs(prevL) > 0.001 ? prevL : 1.0;
-                trend = Math.Clamp(beta * (level / safePrev) + (1.0 - beta) * safeT, 0.85, 1.15);
-            }
-            else
-            {
-                level = alpha * y[t] + (1.0 - alpha) * (prevL + trend);
-                trend = beta * (level - prevL) + (1.0 - beta) * trend;
-            }
+            double err = Math.Abs(y[t] - preds[t]);
+            sumAbs += err;
+            sumSq += err * err;
+            if (y[t] > 0.001) sumPct += (err / y[t]) * 100.0;
+            cnt++;
         }
-
-        double nextF = isMultiplicative ? (level * trend) : (level + trend);
-        if (samples == 0) samples = 1;
-        return (nextF, sumAbs / samples, Math.Sqrt(sumSq / samples), sumPct / samples);
+        if (cnt == 0) return (0, 0, 0);
+        return (sumAbs / cnt, Math.Sqrt(sumSq / cnt), sumPct / cnt);
     }
 
-    private static (double NextForecast, double Mae, double Rmse, double Mape) RunSingleHoltWinters(
-        double[] y, int L, int trainCount, double alpha, double beta, double gamma, bool isMultiplicative)
+    private static (double NextF, double[] Preds, double Mae, double Rmse, double Mape) RunWma(double[] y, int testStart, int testEnd)
     {
         int n = y.Length;
-        double[] seasonals = new double[n + L + 4];
-
-        double level;
-        double trend;
-        if (n >= 2 * L)
+        var preds = new double[n];
+        for (int t = 0; t < n; t++)
         {
-            double avgFirstCycle = 0;
-            double avgSecondCycle = 0;
-            for (int i = 0; i < L; i++)
+            if (t == 0) preds[t] = y[0];
+            else if (t == 1) preds[t] = y[0];
+            else if (t == 2) preds[t] = 0.6 * y[1] + 0.4 * y[0];
+            else preds[t] = 0.5 * y[t - 1] + 0.3 * y[t - 2] + 0.2 * y[t - 3];
+        }
+
+        double nextF = n switch
+        {
+            0 => 0.1,
+            1 => y[0],
+            2 => 0.6 * y[1] + 0.4 * y[0],
+            _ => 0.5 * y[n - 1] + 0.3 * y[n - 2] + 0.2 * y[n - 3]
+        };
+
+        var (mae, rmse, mape) = CalcMetrics(y, preds, testStart, testEnd);
+        return (Math.Max(0.1, nextF), preds, mae, rmse, mape);
+    }
+
+    private static (double NextF, double[] Preds) SimSes(double[] y, int len, double alpha)
+    {
+        var preds = new double[len];
+        double level = len > 0 && y[0] > 0 ? y[0] : 1.0;
+        for (int t = 0; t < len; t++)
+        {
+            preds[t] = Math.Max(0.1, level);
+            level = alpha * y[t] + (1.0 - alpha) * level;
+        }
+        return (Math.Max(0.1, level), preds);
+    }
+
+    private static (double NextF, double[] Preds, double Mae, double Rmse, double Mape) FitEvalSes(double[] y, int trainEnd, int testStart, int testEnd)
+    {
+        double bestA = 0.35;
+        int trainLen = trainEnd + 1;
+        if (trainEnd >= 2)
+        {
+            double bestMp = double.MaxValue;
+            foreach (var a in new[] { 0.15, 0.30, 0.45, 0.60, 0.75 })
             {
-                avgFirstCycle += y[i];
-                avgSecondCycle += y[i + L];
+                var (_, p) = SimSes(y, trainLen, a);
+                var (_, _, mp) = CalcMetrics(y, p, 1, trainEnd);
+                if (mp < bestMp) { bestMp = mp; bestA = a; }
             }
-            avgFirstCycle /= L;
-            avgSecondCycle /= L;
-            level = avgFirstCycle > 0 ? avgFirstCycle : 1.0;
-            trend = (avgSecondCycle - avgFirstCycle) / (L * L);
+        }
+        var (nextF, preds) = SimSes(y, y.Length, bestA);
+        var (mae, rmse, mape) = CalcMetrics(y, preds, testStart, testEnd);
+        return (nextF, preds, mae, rmse, mape);
+    }
+
+    private static (double NextF, double[] Preds) SimHolt(double[] y, int len, double alpha, double beta)
+    {
+        var preds = new double[len];
+        if (len == 0) return (0.1, preds);
+        double level = y[0] > 0 ? y[0] : 1.0;
+        int stepRef = Math.Min(len - 1, 3);
+        double trend = len > 1 ? (y[stepRef] - y[0]) / Math.Max(1, stepRef) : 0.0;
+        preds[0] = level;
+        for (int t = 1; t < len; t++)
+        {
+            preds[t] = Math.Max(0.1, level + trend);
+            double prevL = level;
+            level = alpha * y[t] + (1.0 - alpha) * (prevL + trend);
+            trend = beta * (level - prevL) + (1.0 - beta) * trend;
+        }
+        return (Math.Max(0.1, level + trend), preds);
+    }
+
+    private static (double NextF, double[] Preds, double Mae, double Rmse, double Mape) FitEvalHolt(double[] y, int trainEnd, int testStart, int testEnd)
+    {
+        double bestA = 0.35, bestB = 0.15;
+        int trainLen = trainEnd + 1;
+        if (trainEnd >= 2)
+        {
+            double bestMp = double.MaxValue;
+            foreach (var a in new[] { 0.20, 0.35, 0.50, 0.65 })
+            {
+                foreach (var b in new[] { 0.05, 0.15, 0.25 })
+                {
+                    var (_, p) = SimHolt(y, trainLen, a, b);
+                    var (_, _, mp) = CalcMetrics(y, p, 1, trainEnd);
+                    if (mp < bestMp) { bestMp = mp; bestA = a; bestB = b; }
+                }
+            }
+        }
+        var (nextF, preds) = SimHolt(y, y.Length, bestA, bestB);
+        var (mae, rmse, mape) = CalcMetrics(y, preds, testStart, testEnd);
+        return (nextF, preds, mae, rmse, mape);
+    }
+
+    private static (double NextF, double[] Preds) SimHw(double[] y, int len, int L, double alpha, double beta, double gamma, bool isMul)
+    {
+        var preds = new double[len];
+        if (len == 0) return (0.1, preds);
+        if (len < L)
+        {
+            double lvl = y[0] > 0 ? y[0] : 1.0;
+            double tr = isMul
+                ? Math.Clamp(len > 1 && y[0] > 0.001 ? y[1] / y[0] : 1.0, 0.85, 1.15)
+                : (len > 1 ? y[1] - y[0] : 0.0);
+            preds[0] = lvl;
+            for (int t = 1; t < len; t++)
+            {
+                preds[t] = Math.Max(0.1, isMul ? lvl * tr : lvl + tr);
+                double prevL = lvl;
+                if (isMul)
+                {
+                    double safeT = Math.Abs(tr) > 0.001 ? tr : 1.0;
+                    lvl = alpha * y[t] + (1.0 - alpha) * (prevL * safeT);
+                    double safeP = Math.Abs(prevL) > 0.001 ? prevL : 1.0;
+                    tr = Math.Clamp(beta * (lvl / safeP) + (1.0 - beta) * safeT, 0.85, 1.15);
+                }
+                else
+                {
+                    lvl = alpha * y[t] + (1.0 - alpha) * (prevL + tr);
+                    tr = beta * (lvl - prevL) + (1.0 - beta) * tr;
+                }
+            }
+            return (Math.Max(0.1, isMul ? lvl * tr : lvl + tr), preds);
+        }
+
+        var seasonals = new double[len + L + 4];
+        double level, trend;
+        if (len >= 2 * L)
+        {
+            double avg1 = 0, avg2 = 0;
+            for (int i = 0; i < L; i++) { avg1 += y[i]; avg2 += y[i + L]; }
+            avg1 /= L; avg2 /= L;
+            level = avg1 > 0 ? avg1 : 1.0;
+            trend = (avg2 - avg1) / (L * L);
         }
         else
         {
-            double avgFirstCycle = 0;
-            for (int i = 0; i < L; i++) avgFirstCycle += y[i];
-            avgFirstCycle /= L;
-            level = avgFirstCycle > 0 ? avgFirstCycle : 1.0;
-            trend = (y[^1] - y[0]) / Math.Max(1.0, (n - 1) * 2.0);
+            double avg1 = 0;
+            for (int i = 0; i < L; i++) avg1 += y[i];
+            avg1 /= L;
+            level = avg1 > 0 ? avg1 : 1.0;
+            trend = (y[len - 1] - y[0]) / Math.Max(1.0, (len - 1) * 2.0);
         }
 
         for (int i = 0; i < L; i++)
         {
-            if (isMultiplicative)
-                seasonals[i] = level > 0.001 ? Math.Max(0.1, y[i] / level) : 1.0;
-            else
-                seasonals[i] = y[i] - level;
+            seasonals[i] = isMul
+                ? (level > 0.001 ? Math.Max(0.1, y[i] / level) : 1.0)
+                : (y[i] - level);
+            preds[i] = y[i];
         }
 
-        double sumAbsErr = 0;
-        double sumSqErr = 0;
-        double sumPctErr = 0;
-        int testSamples = 0;
-
-        for (int t = L; t < n; t++)
+        for (int t = L; t < len; t++)
         {
             double sPrev = seasonals[t - L];
-            double yHat = isMultiplicative
-                ? (level + trend) * sPrev
-                : (level + trend) + sPrev;
+            double yHat = isMul ? (level + trend) * sPrev : (level + trend) + sPrev;
+            preds[t] = Math.Max(0.1, yHat);
 
-            if (t >= trainCount)
-            {
-                double actual = y[t];
-                double err = Math.Abs(actual - yHat);
-                sumAbsErr += err;
-                sumSqErr += err * err;
-                if (actual > 0.001)
-                    sumPctErr += (err / actual) * 100.0;
-                testSamples++;
-            }
-
-            double prevLevel = level;
-            if (isMultiplicative)
+            double prevL = level;
+            if (isMul)
             {
                 double safeS = Math.Abs(sPrev) > 0.001 ? sPrev : 1.0;
-                level = alpha * (y[t] / safeS) + (1.0 - alpha) * (prevLevel + trend);
-                trend = beta * (level - prevLevel) + (1.0 - beta) * trend;
+                level = alpha * (y[t] / safeS) + (1.0 - alpha) * (prevL + trend);
+                trend = beta * (level - prevL) + (1.0 - beta) * trend;
                 double safeL = Math.Abs(level) > 0.001 ? level : 1.0;
                 seasonals[t] = gamma * (y[t] / safeL) + (1.0 - gamma) * sPrev;
             }
             else
             {
-                level = alpha * (y[t] - sPrev) + (1.0 - alpha) * (prevLevel + trend);
-                trend = beta * (level - prevLevel) + (1.0 - beta) * trend;
+                level = alpha * (y[t] - sPrev) + (1.0 - alpha) * (prevL + trend);
+                trend = beta * (level - prevL) + (1.0 - beta) * trend;
                 seasonals[t] = gamma * (y[t] - level) + (1.0 - gamma) * sPrev;
             }
         }
 
-        if (n == L)
+        double nextS = seasonals[len - L];
+        double nextF = Math.Max(0.1, isMul ? (level + trend) * nextS : (level + trend) + nextS);
+        return (nextF, preds);
+    }
+
+    private static (double NextF, double[] Preds, double Mae, double Rmse, double Mape) FitEvalHw(
+        double[] y, int L, int trainEnd, int testStart, int testEnd, bool isMul)
+    {
+        double bestA = 0.35, bestB = 0.15, bestG = 0.35;
+        int trainLen = trainEnd + 1;
+        double[] alphas = { 0.20, 0.35, 0.50, 0.65 };
+        double[] betas = { 0.05, 0.15, 0.25 };
+        double[] gammas = { 0.20, 0.35, 0.50 };
+
+        if (trainLen > L)
         {
-            double lvl = y[0];
-            double tr = (y[^1] - y[0]) / Math.Max(1.0, L - 1);
-            int evalStart = Math.Max(2, L - 3);
-            for (int t = evalStart; t < L; t++)
-            {
-                double pred = lvl + tr;
-                double actual = y[t];
-                double err = Math.Abs(actual - pred);
-                sumAbsErr += err;
-                sumSqErr += err * err;
-                if (actual > 0.001) sumPctErr += (err / actual) * 100.0;
-                testSamples++;
-                double prevL = lvl;
-                lvl = alpha * actual + (1.0 - alpha) * (prevL + tr);
-                tr = beta * (lvl - prevL) + (1.0 - beta) * tr;
-            }
+            double bestMp = double.MaxValue;
+            foreach (var a in alphas)
+                foreach (var b in betas)
+                    foreach (var g in gammas)
+                    {
+                        var (_, p) = SimHw(y, trainLen, L, a, b, g, isMul);
+                        var (_, _, mp) = CalcMetrics(y, p, L, trainEnd);
+                        if (mp < bestMp) { bestMp = mp; bestA = a; bestB = b; bestG = g; }
+                    }
+        }
+        else if (y.Length > L)
+        {
+            double bestMp = double.MaxValue;
+            foreach (var a in alphas)
+                foreach (var b in betas)
+                    foreach (var g in gammas)
+                    {
+                        var (_, p) = SimHw(y, y.Length, L, a, b, g, isMul);
+                        var (_, _, mp) = CalcMetrics(y, p, Math.Max(L, testStart), testEnd);
+                        if (mp < bestMp) { bestMp = mp; bestA = a; bestB = b; bestG = g; }
+                    }
         }
 
-        double nextSeasonal = seasonals[n - L];
-        double nextForecast = isMultiplicative
-            ? (level + trend) * nextSeasonal
-            : (level + trend) + nextSeasonal;
-
-        if (testSamples == 0) testSamples = 1;
-        double mae = sumAbsErr / testSamples;
-        double rmse = Math.Sqrt(sumSqErr / testSamples);
-        double mape = sumPctErr / testSamples;
-
-        return (nextForecast, mae, rmse, mape);
+        var (nextF, preds) = SimHw(y, y.Length, L, bestA, bestB, bestG, isMul);
+        var (mae, rmse, mape) = CalcMetrics(y, preds, testStart, testEnd);
+        return (nextF, preds, mae, rmse, mape);
     }
 
     public async Task<ThongKeMuaVu12ThangResult> GetThongKeMuaVu12ThangAsync(int nguyenLieuId, int nam)
